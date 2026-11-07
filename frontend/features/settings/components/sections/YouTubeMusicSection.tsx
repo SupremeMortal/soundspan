@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from "react";
 import {
     DeviceAuthLinkPanel,
-    SettingsSection,
     SettingsRow,
     SettingsToggle,
     SettingsSelect,
@@ -26,31 +25,28 @@ import {
 
 const logger = createFrontendLogger("Settings.YouTubeMusicSection");
 
-// ── Admin Section: enable/disable toggle (system-wide) ─────────────
+// ── Admin settings: shown inside the Playback provider block ───────
 
-interface YouTubeMusicAdminSectionProps {
+interface YouTubeMusicProviderSettingsProps {
     settings: SystemSettings;
     onUpdate: (updates: Partial<SystemSettings>) => void;
 }
 
 /**
- * Renders the YouTubeMusicAdminSection component.
+ * YouTube Music instance settings: the terms notice and the optional Google
+ * OAuth app used for account linking.
  */
-export function YouTubeMusicAdminSection({
+export function YouTubeMusicProviderSettings({
     settings,
     onUpdate,
-}: YouTubeMusicAdminSectionProps) {
+}: YouTubeMusicProviderSettingsProps) {
     const [oauthExpanded, setOauthExpanded] = useState(
         !!(settings.ytMusicClientId || settings.ytMusicClientSecret),
     );
 
     return (
-        <SettingsSection
-            id="youtube-music-admin"
-            title="YouTube Music"
-            description="Enable or disable YouTube Music integration for all users"
-        >
-            <div className="mx-4 mt-3 mb-1 flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2">
+        <div className="space-y-3">
+            <div className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2">
                 <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
                 <p className="text-xs text-amber-200/80">
                     This integration uses unofficial libraries and is not
@@ -60,83 +56,75 @@ export function YouTubeMusicAdminSection({
                     YouTube&apos;s Terms of Service.
                 </p>
             </div>
-            <SettingsRow
-                label="Enable YouTube Music"
-                description="Enable YouTube Music search, browse, and streaming for all users"
-            >
-                <SettingsToggle
-                    checked={settings.ytMusicEnabled}
-                    onChange={(v) => onUpdate({ ytMusicEnabled: v })}
-                />
-            </SettingsRow>
-
-            {settings.ytMusicEnabled && (
-                <div className="mx-4 mb-2">
-                    <button
-                        onClick={() => setOauthExpanded(!oauthExpanded)}
-                        className="flex items-center gap-2 text-sm text-gray-400 hover:text-gray-200 transition-colors py-2"
-                    >
-                        {oauthExpanded ? (
-                            <ChevronDown className="w-4 h-4" />
-                        ) : (
-                            <ChevronRight className="w-4 h-4" />
-                        )}
-                        <span>Account Linking (Optional)</span>
-                    </button>
-                    <p className="text-xs text-gray-400 ml-6 mb-2">
-                        Configure Google OAuth credentials to allow users to
-                        link their personal YouTube Music accounts for library
-                        access. Not required for search, browse, or streaming.
-                    </p>
-                    {oauthExpanded && (
-                        <>
-                            <SettingsRow
-                                label="Client ID"
-                                description={
-                                    <>
-                                        Google OAuth client ID (
-                                        <a
-                                            href="https://console.cloud.google.com/apis/credentials"
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="text-blue-400 hover:underline"
-                                        >
-                                            create one here
-                                        </a>{" "}
-                                        — select &quot;TVs and Limited Input
-                                        devices&quot;)
-                                    </>
-                                }
-                            >
-                                <SettingsInput
-                                    value={settings.ytMusicClientId || ""}
-                                    onChange={(v) =>
-                                        onUpdate({ ytMusicClientId: v })
-                                    }
-                                    placeholder="Enter Client ID"
-                                    className="w-64"
-                                />
-                            </SettingsRow>
-
-                            <SettingsRow
-                                label="Client Secret"
-                                description="Corresponding client secret for the OAuth app"
-                            >
-                                <SettingsInput
-                                    type="password"
-                                    value={settings.ytMusicClientSecret || ""}
-                                    onChange={(v) =>
-                                        onUpdate({ ytMusicClientSecret: v })
-                                    }
-                                    placeholder="Enter Client Secret"
-                                    className="w-64"
-                                />
-                            </SettingsRow>
-                        </>
+            <p className="text-xs text-gray-400">
+                While YouTube Music is in the priority list, every user can
+                search, browse, and stream it.
+            </p>
+            <div>
+                <button
+                    onClick={() => setOauthExpanded(!oauthExpanded)}
+                    className="flex items-center gap-2 text-sm text-gray-400 hover:text-gray-200 transition-colors py-2"
+                >
+                    {oauthExpanded ? (
+                        <ChevronDown className="w-4 h-4" />
+                    ) : (
+                        <ChevronRight className="w-4 h-4" />
                     )}
-                </div>
-            )}
-        </SettingsSection>
+                    <span>Account Linking (Optional)</span>
+                </button>
+                <p className="text-xs text-gray-400 ml-6 mb-2">
+                    Configure Google OAuth credentials to allow users to link
+                    their personal YouTube Music accounts for library access.
+                    Not required for search, browse, or streaming.
+                </p>
+                {oauthExpanded && (
+                    <>
+                        <SettingsRow
+                            label="Client ID"
+                            description={
+                                <>
+                                    Google OAuth client ID (
+                                    <a
+                                        href="https://console.cloud.google.com/apis/credentials"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-blue-400 hover:underline"
+                                    >
+                                        create one here
+                                    </a>{" "}
+                                    — select &quot;TVs and Limited Input
+                                    devices&quot;)
+                                </>
+                            }
+                        >
+                            <SettingsInput
+                                value={settings.ytMusicClientId || ""}
+                                onChange={(v) =>
+                                    onUpdate({ ytMusicClientId: v })
+                                }
+                                placeholder="Enter Client ID"
+                                className="w-64"
+                            />
+                        </SettingsRow>
+
+                        <SettingsRow
+                            label="Client Secret"
+                            description="Corresponding client secret for the OAuth app"
+                        >
+                            <SettingsInput
+                                type="password"
+                                value={settings.ytMusicClientSecret || ""}
+                                onChange={(v) =>
+                                    onUpdate({ ytMusicClientSecret: v })
+                                }
+                                placeholder="Enter Client Secret"
+                                className="w-64"
+                            />
+                        </SettingsRow>
+                    </>
+                )}
+            </div>
+        </div>
     );
 }
 

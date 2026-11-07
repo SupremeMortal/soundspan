@@ -1,5 +1,8 @@
 import { prisma } from "../utils/db";
+import { getSystemSettings } from "../utils/systemSettings";
 import {
+    isPlaybackProviderActive,
+    isPlaybackSourceUsable,
     parsePlaybackSourceOrder,
     rankPlaybackSource,
 } from "./playbackSourcePriority";
@@ -17,10 +20,19 @@ interface PeerFallbackCandidates {
     youtubeVideoId: string | null;
 }
 
-/** Applies the bounded peer failure ladder without performing I/O. */
+/** Returns whether peers are in the admin's playback provider list. */
+export async function isPeerPlaybackActive(): Promise<boolean> {
+    const settings = await getSystemSettings();
+    return isPlaybackProviderActive(settings?.playbackProviders, "peers");
+}
+
+/**
+ * Applies the bounded peer failure ladder without performing I/O. Providers
+ * absent from the playback provider list are left out.
+ */
 export function choosePeerPlaybackFallback(
     candidates: PeerFallbackCandidates,
-    playbackSourceOrder?: string,
+    playbackProviders?: string,
 ): PeerPlaybackFallback[] {
     const ladder: PeerPlaybackFallback[] = [];
     if (candidates.localTwinId) {
@@ -39,8 +51,14 @@ export function choosePeerPlaybackFallback(
             youtubeVideoId: candidates.youtubeVideoId,
         });
     }
-    const order = parsePlaybackSourceOrder(playbackSourceOrder);
-    providers.sort(
+    const order = parsePlaybackSourceOrder(playbackProviders);
+    const active = providers.filter((provider) =>
+        isPlaybackSourceUsable(
+            { source: provider.source, available: true },
+            order,
+        ),
+    );
+    active.sort(
         (left, right) =>
             rankPlaybackSource(
                 { source: right.source, available: true },
@@ -48,7 +66,7 @@ export function choosePeerPlaybackFallback(
             ) -
             rankPlaybackSource({ source: left.source, available: true }, order),
     );
-    return [...ladder, ...providers];
+    return [...ladder, ...active];
 }
 
 /** Loads the local dedup winner and existing provider mappings for one peer track. */
@@ -62,7 +80,7 @@ export async function loadPeerPlaybackFallback(
         }),
         prisma.systemSettings.findUnique({
             where: { id: "default" },
-            select: { playbackSourceOrder: true },
+            select: { playbackProviders: true },
         }),
     ]);
     const linkedIds = [trackId, track?.dedupOfTrackId].filter(
@@ -103,6 +121,6 @@ export async function loadPeerPlaybackFallback(
             tidalTrackId: tidal?.tidalId ?? null,
             youtubeVideoId: youtube?.videoId ?? null,
         },
-        systemSettings?.playbackSourceOrder,
+        systemSettings?.playbackProviders,
     );
 }

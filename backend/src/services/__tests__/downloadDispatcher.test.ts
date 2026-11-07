@@ -105,8 +105,7 @@ describe("dispatchAlbumDownload", () => {
         });
         mockUpdate.mockResolvedValue({});
         mockGetSystemSettings.mockResolvedValue({
-            downloadSource: "soulseek",
-            primaryFailureFallback: "none",
+            playbackProviders: "soulseek",
         });
         mockTidalAvailable.mockResolvedValue(false);
         mockLidarrAvailable.mockResolvedValue(true);
@@ -120,8 +119,7 @@ describe("dispatchAlbumDownload", () => {
 
     it("dispatches an available configured YouTube source", async () => {
         mockGetSystemSettings.mockResolvedValue({
-            downloadSource: "youtube",
-            primaryFailureFallback: "none",
+            playbackProviders: "ytmusic",
         });
         mockYoutubeAvailable.mockResolvedValue(true);
 
@@ -138,8 +136,7 @@ describe("dispatchAlbumDownload", () => {
 
     it("dispatches an available configured TIDAL source", async () => {
         mockGetSystemSettings.mockResolvedValue({
-            downloadSource: "tidal",
-            primaryFailureFallback: "none",
+            playbackProviders: "tidal",
         });
         mockTidalAvailable.mockResolvedValue(true);
 
@@ -160,8 +157,7 @@ describe("dispatchAlbumDownload", () => {
 
     it("dispatches a resolved routing snapshot without probing sources twice", async () => {
         mockGetSystemSettings.mockResolvedValue({
-            downloadSource: "tidal",
-            primaryFailureFallback: "none",
+            playbackProviders: "tidal",
         });
         mockTidalAvailable.mockResolvedValue(true);
         const routing = await resolveAlbumDownloadRouting(baseParams);
@@ -176,16 +172,14 @@ describe("dispatchAlbumDownload", () => {
         expect(mockProcessTidalDownload).toHaveBeenCalledTimes(1);
     });
 
-    it("passes the resolved Soulseek runtime fallback snapshot to TIDAL", async () => {
+    it("passes the resolved runtime fallback snapshot to TIDAL", async () => {
         mockGetSystemSettings.mockResolvedValue({
-            downloadSource: "tidal",
-            primaryFailureFallback: "soulseek",
+            playbackProviders: "tidal,soulseek",
         });
         mockTidalAvailable.mockResolvedValue(true);
         const routing = await resolveAlbumDownloadRouting(baseParams);
         mockGetSystemSettings.mockResolvedValue({
-            downloadSource: "tidal",
-            primaryFailureFallback: "lidarr",
+            playbackProviders: "tidal,lidarr",
         });
 
         await dispatchResolvedAlbumDownload(routing, baseParams);
@@ -201,10 +195,9 @@ describe("dispatchAlbumDownload", () => {
         expect(mockStartDownload).not.toHaveBeenCalled();
     });
 
-    it("uses YouTube as an available explicit fallback", async () => {
+    it("dispatches YouTube when it is the first available listed source", async () => {
         mockGetSystemSettings.mockResolvedValue({
-            downloadSource: "tidal",
-            primaryFailureFallback: "youtube",
+            playbackProviders: "tidal,ytmusic",
         });
         mockYoutubeAvailable.mockResolvedValue(true);
 
@@ -220,8 +213,7 @@ describe("dispatchAlbumDownload", () => {
 
     it("falls back from unavailable YouTube to Soulseek", async () => {
         mockGetSystemSettings.mockResolvedValue({
-            downloadSource: "youtube",
-            primaryFailureFallback: "soulseek",
+            playbackProviders: "ytmusic,soulseek",
         });
 
         await dispatchAlbumDownload(baseParams);
@@ -253,26 +245,46 @@ describe("dispatchAlbumDownload", () => {
         expect(mockStartDownload).not.toHaveBeenCalled();
     });
 
-    it("keeps an all-unavailable legacy resolution on Soulseek", async () => {
-        mockGetSystemSettings.mockResolvedValue({ downloadSource: "soulseek" });
-        mockLidarrAvailable.mockResolvedValue(false);
-        mockSoulseekAvailable.mockResolvedValue(false);
+    it("hands off at runtime to the next available source in the chain", async () => {
+        mockGetSystemSettings.mockResolvedValue({
+            playbackProviders: "peers,tidal,ytmusic,lidarr",
+        });
+        mockTidalAvailable.mockResolvedValue(true);
 
         await dispatchAlbumDownload(baseParams);
 
-        expect(mockProcessSoulseekDownload).toHaveBeenCalledWith(
+        expect(mockProcessTidalDownload).toHaveBeenCalledWith(
             "job-1",
             "Artist",
             "Album",
             "user-1",
+            { fallbackSource: "lidarr" },
         );
+    });
+
+    it("never dispatches an available source that is not listed", async () => {
+        mockGetSystemSettings.mockResolvedValue({
+            playbackProviders: "soulseek",
+        });
+        mockSoulseekAvailable.mockResolvedValue(false);
+
+        await dispatchAlbumDownload(baseParams);
+
+        expect(mockProcessSoulseekDownload).not.toHaveBeenCalled();
         expect(mockStartDownload).not.toHaveBeenCalled();
+        expect(mockUpdate).toHaveBeenCalledWith(
+            expect.objectContaining({
+                data: expect.objectContaining({
+                    status: "failed",
+                    error: "No enabled download source is available (tried soulseek)",
+                }),
+            }),
+        );
     });
 
     it("passes a supplied artist MBID to the Lidarr manager", async () => {
         mockGetSystemSettings.mockResolvedValue({
-            downloadSource: "lidarr",
-            primaryFailureFallback: "none",
+            playbackProviders: "lidarr",
         });
 
         await dispatchAlbumDownload({
@@ -293,8 +305,7 @@ describe("dispatchAlbumDownload", () => {
 
     it("uses the subject for both names when no delimiter or metadata exists", async () => {
         mockGetSystemSettings.mockResolvedValue({
-            downloadSource: "lidarr",
-            primaryFailureFallback: "none",
+            playbackProviders: "lidarr",
         });
 
         await dispatchAlbumDownload({
@@ -315,8 +326,7 @@ describe("dispatchAlbumDownload", () => {
 
     it("logs unsuccessful manager starts without throwing", async () => {
         mockGetSystemSettings.mockResolvedValue({
-            downloadSource: "lidarr",
-            primaryFailureFallback: "none",
+            playbackProviders: "lidarr",
         });
 
         mockStartDownload.mockResolvedValueOnce({
@@ -331,10 +341,9 @@ describe("dispatchAlbumDownload", () => {
         );
     });
 
-    it("fails without dispatch when the unavailable primary uses Skip", async () => {
+    it("fails without dispatch when the only listed source is unavailable", async () => {
         mockGetSystemSettings.mockResolvedValue({
-            downloadSource: "tidal",
-            primaryFailureFallback: "none",
+            playbackProviders: "tidal",
         });
 
         await dispatchAlbumDownload(baseParams);
@@ -345,22 +354,21 @@ describe("dispatchAlbumDownload", () => {
             where: { id: "job-1" },
             data: {
                 status: "failed",
-                error: 'tidal is unavailable and "When primary source fails" is set to Skip',
+                error: "No enabled download source is available (tried tidal)",
                 completedAt: expect.any(Date),
                 metadata: {
                     preserved: true,
                     currentSource: "tidal",
-                    statusText: "tidal unavailable — skipped",
+                    statusText: "Download sources unavailable — skipped",
                     failedAt: expect.any(String),
                 },
             },
         });
     });
 
-    it("uses the explicitly configured manager fallback", async () => {
+    it("dispatches the next listed source when the first is unavailable", async () => {
         mockGetSystemSettings.mockResolvedValue({
-            downloadSource: "tidal",
-            primaryFailureFallback: "lidarr",
+            playbackProviders: "tidal,lidarr",
         });
 
         await dispatchAlbumDownload(baseParams);
@@ -374,15 +382,14 @@ describe("dispatchAlbumDownload", () => {
         );
     });
 
-    it("fails when both the primary and configured fallback are unavailable", async () => {
+    it("fails when every listed source is unavailable", async () => {
         mockFindUnique.mockResolvedValueOnce({
             id: "job-1",
             userId: "user-1",
             metadata: "scalar metadata",
         });
         mockGetSystemSettings.mockResolvedValue({
-            downloadSource: "tidal",
-            primaryFailureFallback: "lidarr",
+            playbackProviders: "tidal,lidarr",
         });
         mockLidarrAvailable.mockResolvedValue(false);
 
@@ -393,30 +400,38 @@ describe("dispatchAlbumDownload", () => {
             where: { id: "job-1" },
             data: {
                 status: "failed",
-                error: "tidal is unavailable and the configured fallback (lidarr) is also unavailable",
+                error: "No enabled download source is available (tried tidal, lidarr)",
                 completedAt: expect.any(Date),
                 metadata: {
                     currentSource: "tidal",
-                    statusText: "tidal and fallback lidarr unavailable",
+                    statusText: "Download sources unavailable — skipped",
                     failedAt: expect.any(String),
                 },
             },
         });
     });
 
-    it("preserves the legacy availability ladder when fallback is absent", async () => {
-        mockGetSystemSettings.mockResolvedValue({ downloadSource: "tidal" });
+    it("fails clearly when no download provider is listed", async () => {
+        mockGetSystemSettings.mockResolvedValue({ playbackProviders: "peers" });
 
         await dispatchAlbumDownload(baseParams);
 
-        expect(mockProcessSoulseekDownload).toHaveBeenCalledWith(
-            "job-1",
-            "Artist",
-            "Album",
-            "user-1",
-        );
+        expect(mockProcessSoulseekDownload).not.toHaveBeenCalled();
         expect(mockStartDownload).not.toHaveBeenCalled();
-        expect(mockUpdate).not.toHaveBeenCalled();
+        expect(mockUpdate).toHaveBeenCalledWith({
+            where: { id: "job-1" },
+            data: {
+                status: "failed",
+                error: "No download source is enabled in the playback provider list",
+                completedAt: expect.any(Date),
+                metadata: {
+                    preserved: true,
+                    currentSource: null,
+                    statusText: "No download source enabled — skipped",
+                    failedAt: expect.any(String),
+                },
+            },
+        });
     });
 
     it("returns without probing sources when the job no longer exists", async () => {

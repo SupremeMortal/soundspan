@@ -49,9 +49,15 @@ async function mount(settings: Partial<SystemSettings>) {
 }
 
 function providerNames(container: HTMLElement): string[] {
-    return Array.from(container.querySelectorAll("[data-search-provider]")).map(
-        (row) => row.getAttribute("data-search-provider") ?? "",
+    return Array.from(container.querySelectorAll("[data-provider]")).map(
+        (row) => row.getAttribute("data-provider") ?? "",
     );
+}
+
+function availableNames(container: HTMLElement): string[] {
+    return Array.from(
+        container.querySelectorAll("[data-available-provider]"),
+    ).map((row) => row.getAttribute("data-available-provider") ?? "");
 }
 
 async function click(element: Element | null): Promise<void> {
@@ -61,19 +67,15 @@ async function click(element: Element | null): Promise<void> {
     });
 }
 
-test("lists providers in the stored priority order", async (t) => {
+test("lists enabled providers in priority order and the rest as available", async (t) => {
     const harness = await mount({
         searchProviderOrder: "deezer,lastfm,youtube,tidal",
-        searchProvidersEnabled: "deezer,lastfm",
+        searchProvidersEnabled: "lastfm,deezer",
     });
     t.after(harness.unmount);
 
-    assert.deepEqual(providerNames(harness.container), [
-        "deezer",
-        "lastfm",
-        "youtube",
-        "tidal",
-    ]);
+    assert.deepEqual(providerNames(harness.container), ["deezer", "lastfm"]);
+    assert.deepEqual(availableNames(harness.container), ["tidal", "youtube"]);
 });
 
 test("moving a provider up saves the new order", async (t) => {
@@ -88,14 +90,17 @@ test("moving a provider up saves the new order", async (t) => {
     );
 
     assert.deepEqual(harness.updates, [
-        { searchProviderOrder: "deezer,lastfm,tidal,youtube" },
+        {
+            searchProviderOrder: "deezer,lastfm,tidal,youtube",
+            searchProvidersEnabled: "deezer,lastfm",
+        },
     ]);
 });
 
 test("the first provider cannot move up and the last cannot move down", async (t) => {
     const harness = await mount({
         searchProviderOrder: "lastfm,deezer,tidal,youtube",
-        searchProvidersEnabled: "lastfm",
+        searchProvidersEnabled: "lastfm,deezer",
     });
     t.after(harness.unmount);
 
@@ -103,26 +108,59 @@ test("the first provider cannot move up and the last cannot move down", async (t
         '[aria-label="Move Last.fm up"]',
     ) as HTMLButtonElement;
     const down = harness.container.querySelector(
-        '[aria-label="Move YouTube Music down"]',
+        '[aria-label="Move Deezer down"]',
     ) as HTMLButtonElement;
     assert.equal(up.disabled, true);
     assert.equal(down.disabled, true);
 });
 
-test("turning a provider on adds it to the enabled list in priority order", async (t) => {
+test("enabling an available provider adds it to the end of the list", async (t) => {
     const harness = await mount({
         searchProviderOrder: "tidal,lastfm,deezer,youtube",
         searchProvidersEnabled: "lastfm",
     });
     t.after(harness.unmount);
 
+    await click(harness.container.querySelector('[aria-label="Enable TIDAL"]'));
+
+    assert.deepEqual(harness.updates, [
+        {
+            searchProviderOrder: "lastfm,tidal,deezer,youtube",
+            searchProvidersEnabled: "lastfm,tidal",
+        },
+    ]);
+});
+
+test("disabling a provider moves it out of the list", async (t) => {
+    const harness = await mount({
+        searchProviderOrder: "lastfm,deezer,tidal,youtube",
+        searchProvidersEnabled: "lastfm,deezer",
+    });
+    t.after(harness.unmount);
+
     await click(
-        harness.container.querySelector(
-            '[data-search-provider="tidal"] input[type="checkbox"]',
-        ),
+        harness.container.querySelector('[aria-label="Disable Last.fm"]'),
     );
 
     assert.deepEqual(harness.updates, [
-        { searchProvidersEnabled: "tidal,lastfm" },
+        {
+            searchProviderOrder: "deezer,lastfm,tidal,youtube",
+            searchProvidersEnabled: "deezer",
+        },
     ]);
+});
+
+test("the Last.fm block holds the Last.fm API key", async (t) => {
+    const harness = await mount({
+        searchProviderOrder: "lastfm,deezer,tidal,youtube",
+        searchProvidersEnabled: "lastfm,deezer",
+        lastfmApiKey: "",
+    });
+    t.after(harness.unmount);
+
+    await click(
+        harness.container.querySelector('[aria-label="Show Last.fm settings"]'),
+    );
+
+    assert.ok(harness.container.querySelector("#search-lastfm-api-key"));
 });

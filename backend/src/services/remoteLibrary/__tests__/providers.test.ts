@@ -23,7 +23,7 @@ describe("remote library provider access", () => {
         mockGetSystemSettings.mockResolvedValue({
             tidalEnabled: true,
             ytMusicEnabled: true,
-            playbackSourceOrder: "library,peers,tidal,ytmusic",
+            playbackProviders: "peers,tidal,ytmusic",
         });
     });
 
@@ -59,7 +59,7 @@ describe("remote library provider access", () => {
             tidalEnabled: true,
             tidalStreamingUseInstanceAccount: true,
             ytMusicEnabled: true,
-            playbackSourceOrder: "library,peers,tidal,ytmusic",
+            playbackProviders: "peers,tidal,ytmusic",
         });
 
         const access = await loadRemoteLibraryAccess("user-1");
@@ -76,7 +76,7 @@ describe("remote library provider access", () => {
             tidalEnabled: false,
             tidalStreamingUseInstanceAccount: true,
             ytMusicEnabled: true,
-            playbackSourceOrder: "library,peers,tidal,ytmusic",
+            playbackProviders: "peers,tidal,ytmusic",
         });
 
         const access = await loadRemoteLibraryAccess("user-1");
@@ -102,7 +102,7 @@ describe("remote library provider access", () => {
         mockGetSystemSettings.mockResolvedValueOnce({
             tidalEnabled: false,
             ytMusicEnabled: false,
-            playbackSourceOrder: "library,peers,tidal,ytmusic",
+            playbackProviders: "peers,tidal,ytmusic",
         });
 
         const access = await loadRemoteLibraryAccess("user-1");
@@ -113,21 +113,21 @@ describe("remote library provider access", () => {
         });
     });
 
-    it("loads user and system settings once and parses playback order", async () => {
+    it("loads user and system settings once and derives the playback order from the provider list", async () => {
         mockGetSystemSettings.mockResolvedValueOnce({
             tidalEnabled: true,
             ytMusicEnabled: true,
-            playbackSourceOrder: "ytmusic,tidal,peers,library",
+            playbackProviders: "ytmusic,lidarr,tidal,peers",
         });
 
         const access = await loadRemoteLibraryAccess("user-1");
 
         expect(access.providers).toEqual({ tidal: true, youtube: true });
         expect(access.playbackSourceOrder).toEqual([
+            "library",
             "ytmusic",
             "tidal",
             "peers",
-            "library",
         ]);
         expect(mockFindUserSettings).toHaveBeenCalledTimes(1);
         expect(mockGetSystemSettings).toHaveBeenCalledTimes(1);

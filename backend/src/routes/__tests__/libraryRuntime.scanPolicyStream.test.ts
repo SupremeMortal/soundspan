@@ -11,6 +11,7 @@ import {
     mockProxyFederatedTrackStream,
     mockProxyFederatedCover,
     mockLoadPeerPlaybackFallback,
+    mockIsPeerPlaybackActive,
     mockServeMappedProviderStream,
     mockTerminateCommittedStream,
     mockGetYtMusicUserIdOrPublic,
@@ -1321,6 +1322,40 @@ describe("library stream runtime coverage", () => {
         );
         expect(mockStreamWithRangeSupport).toHaveBeenCalled();
         existsSpy.mockRestore();
+    });
+
+    it("skips an online peer that is not in the playback provider list", async () => {
+        mockIsPeerPlaybackActive.mockResolvedValueOnce(false);
+        mockTrackFindUnique.mockResolvedValueOnce(
+            createNativeTrack({
+                id: "fed-track-1",
+                origin: "FEDERATED",
+                peerId: "peer-1",
+                remoteId: "remote-track-1",
+                filePath: null,
+            }),
+        );
+        const res = createRes();
+
+        await streamHandler(
+            {
+                params: { id: "fed-track-1" },
+                query: {},
+                headers: {},
+                user: { id: "user-1" },
+            } as any,
+            res,
+        );
+
+        expect(mockProxyFederatedTrackStream).not.toHaveBeenCalled();
+        expect(mockLoadPeerPlaybackFallback).toHaveBeenCalledWith(
+            "fed-track-1",
+        );
+        expect(res.statusCode).toBe(503);
+        expect(res.body).toEqual({
+            error: "Federation peer is offline",
+            code: "PEER_OFFLINE",
+        });
     });
 
     it("serves an existing TIDAL mapping when an offline peer has no local twin", async () => {

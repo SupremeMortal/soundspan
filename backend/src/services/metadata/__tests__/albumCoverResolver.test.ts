@@ -23,6 +23,11 @@ jest.mock("../../../utils/redis", () => ({
     },
 }));
 
+const mockGetSystemSettings = jest.fn();
+jest.mock("../../../utils/systemSettings", () => ({
+    getSystemSettings: () => mockGetSystemSettings(),
+}));
+
 jest.mock("../../../utils/logger", () => ({
     logger: {
         child: jest.fn().mockReturnValue({
@@ -44,6 +49,7 @@ const INPUT = {
 describe("resolveAlbumCover", () => {
     beforeEach(() => {
         jest.clearAllMocks();
+        mockGetSystemSettings.mockResolvedValue(null);
         mockRedisGet.mockResolvedValue(null);
         mockRedisSetEx.mockResolvedValue(undefined);
         mockCoverArtGet.mockResolvedValue(null);
@@ -213,5 +219,43 @@ describe("resolveAlbumCover", () => {
             },
         ]);
         expect(mockCoverArtGet).toHaveBeenCalledTimes(1);
+    });
+
+    it("tries only the listed providers in the stored order", async () => {
+        mockGetSystemSettings.mockResolvedValue({
+            albumCoverProviders: "fanart,coverartarchive",
+        });
+        const calls: string[] = [];
+        mockCoverArtGet.mockImplementation(async () => {
+            calls.push("coverartarchive");
+            return null;
+        });
+        mockFanartAlbumCover.mockImplementation(async () => {
+            calls.push("fanart");
+            return null;
+        });
+
+        await expect(resolveAlbumCover(INPUT)).resolves.toBeNull();
+        expect(calls).toEqual(["fanart", "coverartarchive"]);
+        expect(mockDeezerAlbumCover).not.toHaveBeenCalled();
+    });
+
+    it("resolves nothing when the list is empty", async () => {
+        mockGetSystemSettings.mockResolvedValue({ albumCoverProviders: "" });
+
+        await expect(resolveAlbumCover(INPUT)).resolves.toBeNull();
+        expect(mockCoverArtGet).not.toHaveBeenCalled();
+        expect(mockDeezerAlbumCover).not.toHaveBeenCalled();
+        expect(mockFanartAlbumCover).not.toHaveBeenCalled();
+    });
+
+    it("uses the default list when settings cannot be read", async () => {
+        mockGetSystemSettings.mockRejectedValue(new Error("db down"));
+        mockCoverArtGet.mockResolvedValue("https://caa.example/a.jpg");
+
+        await expect(resolveAlbumCover(INPUT)).resolves.toEqual({
+            url: "https://caa.example/a.jpg",
+            source: "coverartarchive",
+        });
     });
 });

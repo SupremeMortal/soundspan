@@ -2711,7 +2711,7 @@ describe("library catalog list runtime coverage", () => {
         mockGetSystemSettings.mockResolvedValueOnce({
             tidalEnabled: true,
             ytMusicEnabled: false,
-            playbackSourceOrder: "library,peers,tidal,ytmusic",
+            playbackProviders: "peers,tidal,ytmusic",
         });
         mockUserSettingsFindUnique.mockResolvedValueOnce({
             tidalOAuthJson: "token",
@@ -3175,7 +3175,7 @@ describe("library catalog list runtime coverage", () => {
         [true, "tidal:77"],
         [false, "liked-both"],
     ])(
-        "prefers the TIDAL copy of a doubly-liked song for an unlinked user only when the instance account is shared (%s)",
+        "prefers the TIDAL copy of a doubly-liked peer song for an unlinked user only when the instance account is shared (%s)",
         async (sharedAccount, expectedId) => {
             const likedAt = new Date("2026-03-01T00:00:00.000Z");
             mockLikedTrackCount.mockResolvedValueOnce(1);
@@ -3202,12 +3202,19 @@ describe("library catalog list runtime coverage", () => {
                 },
             ]);
             (prisma as any).systemSettings.findUnique.mockResolvedValueOnce({
-                playbackSourceOrder: "tidal,library,peers,ytmusic",
+                playbackProviders: "tidal,peers,ytmusic",
                 tidalEnabled: true,
                 tidalStreamingUseInstanceAccount: sharedAccount,
             });
             mockTrackFindMany.mockResolvedValueOnce([
-                createRadioTrack("liked-both", { origin: "LOCAL" }),
+                createRadioTrack("liked-both", {
+                    origin: "FEDERATED",
+                    federationPeer: {
+                        id: "peer-1",
+                        name: "Peer One",
+                        outboundStatus: "ACTIVE",
+                    },
+                }),
             ]);
             mockTrackMappingFindMany.mockResolvedValueOnce([
                 {
@@ -3229,6 +3236,58 @@ describe("library catalog list runtime coverage", () => {
             ).toEqual([expectedId]);
         },
     );
+
+    it("keeps the library copy of a doubly-liked song ahead of TIDAL", async () => {
+        const likedAt = new Date("2026-03-01T00:00:00.000Z");
+        mockLikedTrackCount.mockResolvedValueOnce(1);
+        mockRemoteLikedTrackCount.mockResolvedValueOnce(1);
+        mockUserSettingsFindUnique.mockResolvedValueOnce({
+            tidalOAuthJson: "token",
+            ytMusicOAuthJson: null,
+        });
+        mockLikedTrackFindMany.mockResolvedValueOnce([
+            { trackId: "liked-both", likedAt },
+        ]);
+        mockRemoteLikedTrackFindMany.mockResolvedValueOnce([
+            {
+                id: "remote-like-1",
+                likedAt,
+                trackTidalId: "tt-77",
+                trackTidal: remoteTidalDisplayRow({
+                    id: "tt-77",
+                    tidalId: 77,
+                    title: "Shared song",
+                }),
+                trackYtMusicId: null,
+                trackYtMusic: null,
+            },
+        ]);
+        (prisma as any).systemSettings.findUnique.mockResolvedValueOnce({
+            playbackProviders: "tidal,peers",
+            tidalEnabled: true,
+        });
+        mockTrackFindMany.mockResolvedValueOnce([
+            createRadioTrack("liked-both", { origin: "LOCAL" }),
+        ]);
+        mockTrackMappingFindMany.mockResolvedValueOnce([
+            {
+                trackId: "liked-both",
+                trackTidalId: "tt-77",
+                trackYtMusicId: null,
+            },
+        ]);
+        const res = createRes();
+
+        await likedPlaylistHandler(
+            { query: { limit: "10" }, user: { id: "user-1" } } as any,
+            res,
+        );
+
+        expect(res.statusCode).toBe(200);
+        expect(
+            res.body.tracks.map((track: { id: string }) => track.id),
+        ).toEqual(["liked-both"]);
+    });
 
     it("requires authentication for liked playlist retrieval", async () => {
         const req = { query: { limit: "5" } } as any;

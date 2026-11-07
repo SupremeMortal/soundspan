@@ -40,13 +40,12 @@ const defaultSystemSettings: SystemSettings = {
     libraryDeletionEnabled: false,
     audioAnalyzerWorkers: 2,
     soulseekConcurrentDownloads: 4,
-    // Download preferences
-    downloadSource: "soulseek",
     federationInstanceName: null,
-    playbackSourceOrder: "library,peers,tidal,ytmusic",
+    playbackProviders: "",
+    artistImageProviders: "wikidata,fanart,deezer,lastfm",
+    albumCoverProviders: "coverartarchive,deezer,fanart",
     searchProviderOrder: "lastfm,deezer,tidal,youtube",
     searchProvidersEnabled: "lastfm,deezer",
-    primaryFailureFallback: "none",
     // YouTube Music streaming
     ytMusicEnabled: false,
     ytMusicClientId: "",
@@ -203,6 +202,12 @@ export function useSystemSettings() {
                 changed.push("Lidarr");
             }
             if (
+                originalSettings.playbackProviders
+                    .split(",")
+                    .includes("soulseek") !==
+                    settingsToSave.playbackProviders
+                        .split(",")
+                        .includes("soulseek") ||
                 originalSettings.soulseekUsername !==
                     settingsToSave.soulseekUsername ||
                 originalSettings.soulseekPassword !==

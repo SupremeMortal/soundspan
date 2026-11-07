@@ -31,7 +31,10 @@ import {
     type ResponseFormat,
 } from "../../utils/subsonicResponse";
 import { AppError, ErrorCode } from "../../utils/errors";
-import { loadPeerPlaybackFallback } from "../../services/peerPlaybackFallback";
+import {
+    isPeerPlaybackActive,
+    loadPeerPlaybackFallback,
+} from "../../services/peerPlaybackFallback";
 import {
     isMappedProviderResponseUnusable,
     mappedProviderResponseState,
@@ -497,7 +500,8 @@ async function proxySubsonicFederatedStream(input: {
         !peer ||
         peer.outboundStatus !== "ACTIVE" ||
         !peer.baseUrl ||
-        !peer.outboundToken
+        !peer.outboundToken ||
+        !(await isPeerPlaybackActive())
     ) {
         return "failed";
     }

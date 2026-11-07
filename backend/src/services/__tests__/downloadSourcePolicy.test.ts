@@ -17,8 +17,10 @@ jest.mock("../youtubeDownload", () => ({
 }));
 
 import {
+    downloadSourceChain,
     probeDownloadSourceAvailability,
     resolveDownloadSource,
+    resolveRuntimeFallback,
 } from "../downloadSourcePolicy";
 
 const availability = {
@@ -48,134 +50,87 @@ describe("probeDownloadSourceAvailability", () => {
     });
 });
 
+describe("downloadSourceChain", () => {
+    it("keeps the download providers of the list in order", () => {
+        expect(
+            downloadSourceChain("peers,lidarr,ytmusic,soulseek,tidal"),
+        ).toEqual(["lidarr", "youtube", "soulseek", "tidal"]);
+    });
+
+    it("is empty when no download provider is in the list", () => {
+        expect(downloadSourceChain("peers")).toEqual([]);
+        expect(downloadSourceChain("")).toEqual([]);
+    });
+});
+
 describe("resolveDownloadSource", () => {
     it.each(["tidal", "lidarr", "soulseek", "youtube"] as const)(
-        "dispatches an available configured %s source",
+        "dispatches %s when it leads the chain and is available",
         (source) => {
             expect(
-                resolveDownloadSource({
-                    configuredSource: source,
-                    fallback: "none",
-                    availability,
-                }),
+                resolveDownloadSource({ chain: [source], availability }),
             ).toEqual({ kind: "dispatch", source });
         },
     );
 
-    it("dispatches youtube as an available explicit fallback", () => {
+    it("dispatches the first available source in chain order", () => {
         expect(
             resolveDownloadSource({
-                configuredSource: "tidal",
-                fallback: "youtube",
+                chain: ["tidal", "youtube", "soulseek"],
                 availability: { ...availability, tidal: false },
             }),
         ).toEqual({ kind: "dispatch", source: "youtube" });
     });
 
-    it("dispatches another source when youtube is unavailable", () => {
+    it("never dispatches a source outside the chain", () => {
         expect(
             resolveDownloadSource({
-                configuredSource: "youtube",
-                fallback: "soulseek",
-                availability: { ...availability, youtube: false },
-            }),
-        ).toEqual({ kind: "dispatch", source: "soulseek" });
-    });
-
-    it("fails with the existing exact Skip status text", () => {
-        expect(
-            resolveDownloadSource({
-                configuredSource: "tidal",
-                fallback: "none",
+                chain: ["tidal"],
                 availability: { ...availability, tidal: false },
             }),
         ).toEqual({
             kind: "fail",
-            statusText: "tidal unavailable — skipped",
-            error: 'tidal is unavailable and "When primary source fails" is set to Skip',
+            statusText: "Download sources unavailable — skipped",
+            error: "No enabled download source is available (tried tidal)",
         });
     });
 
-    it("fails for a self-referential fallback", () => {
-        expect(
-            resolveDownloadSource({
-                configuredSource: "youtube",
-                fallback: "youtube",
-                availability: { ...availability, youtube: false },
-            }),
-        ).toEqual({
+    it("fails clearly when the chain is empty", () => {
+        expect(resolveDownloadSource({ chain: [], availability })).toEqual({
             kind: "fail",
-            statusText: "youtube unavailable — skipped",
-            error: "youtube is unavailable and the configured fallback is also youtube",
+            statusText: "No download source enabled — skipped",
+            error: "No download source is enabled in the playback provider list",
         });
     });
+});
 
-    it("fails with the existing exact unavailable-fallback status text", () => {
+describe("resolveRuntimeFallback", () => {
+    it("hands off to the next available source after the dispatched one", () => {
         expect(
-            resolveDownloadSource({
-                configuredSource: "tidal",
-                fallback: "lidarr",
-                availability: {
-                    ...availability,
-                    tidal: false,
-                    lidarr: false,
-                },
-            }),
-        ).toEqual({
-            kind: "fail",
-            statusText: "tidal and fallback lidarr unavailable",
-            error: "tidal is unavailable and the configured fallback (lidarr) is also unavailable",
-        });
+            resolveRuntimeFallback(
+                ["tidal", "lidarr", "youtube", "soulseek"],
+                "tidal",
+                { ...availability, lidarr: false },
+            ),
+        ).toBe("youtube");
     });
 
-    it.each([
-        ["tidal", "soulseek"],
-        ["soulseek", "tidal"],
-        ["lidarr", "tidal"],
-        ["youtube", "tidal"],
-    ] as const)(
-        "uses the legacy ladder for unavailable %s when fallback is absent",
-        (configuredSource, source) => {
-            expect(
-                resolveDownloadSource({
-                    configuredSource,
-                    fallback: undefined,
-                    availability: {
-                        ...availability,
-                        [configuredSource]: false,
-                    },
-                }),
-            ).toEqual({ kind: "dispatch", source });
-        },
-    );
-
-    it("includes youtube at the end of an existing source's legacy ladder", () => {
+    it("never falls back to a source ahead of the dispatched one", () => {
         expect(
-            resolveDownloadSource({
-                configuredSource: "tidal",
-                fallback: undefined,
-                availability: {
-                    tidal: false,
-                    soulseek: false,
-                    lidarr: false,
-                    youtube: true,
-                },
-            }),
-        ).toEqual({ kind: "dispatch", source: "youtube" });
+            resolveRuntimeFallback(
+                ["tidal", "youtube"],
+                "youtube",
+                availability,
+            ),
+        ).toBeUndefined();
     });
 
-    it("preserves the configured source when every legacy option is unavailable", () => {
+    it("has no fallback when nothing later is available", () => {
         expect(
-            resolveDownloadSource({
-                configuredSource: "youtube",
-                fallback: null,
-                availability: {
-                    tidal: false,
-                    soulseek: false,
-                    lidarr: false,
-                    youtube: false,
-                },
+            resolveRuntimeFallback(["tidal", "soulseek"], "tidal", {
+                ...availability,
+                soulseek: false,
             }),
-        ).toEqual({ kind: "dispatch", source: "youtube" });
+        ).toBeUndefined();
     });
 });

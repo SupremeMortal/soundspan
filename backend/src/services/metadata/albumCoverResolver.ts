@@ -5,9 +5,14 @@ import {
 import { logger } from "../../utils/logger";
 import { rgMbidKind } from "../../utils/musicIds";
 import { redisClient } from "../../utils/redis";
+import { getSystemSettings } from "../../utils/systemSettings";
 import { coverArtService } from "../coverArt";
 import { deezerService } from "../deezer";
 import { fanartService } from "../fanart";
+import {
+    type AlbumCoverProvider,
+    parseAlbumCoverProviders,
+} from "../metadataProviderSettings";
 
 const log = logger.child("AlbumCoverResolver");
 const OVERALL_BUDGET_MS = 8_000;
@@ -18,7 +23,7 @@ const CACHE_PREFIX = "metadata:album-cover:";
 const MAX_IN_FLIGHT = 1_000;
 
 /** Provider rung that produced an album cover. */
-export type AlbumCoverSource = "coverartarchive" | "deezer" | "fanart";
+export type AlbumCoverSource = AlbumCoverProvider;
 
 /** Album identity accepted by the canonical cover resolver. */
 export interface AlbumCoverInput {
@@ -164,6 +169,19 @@ const ALBUM_COVER_RUNGS: readonly AlbumCoverRung[] = [
     },
 ];
 
+/** The admin's active album cover rungs, in the stored order. */
+async function activeRungs(): Promise<AlbumCoverRung[]> {
+    let stored: unknown;
+    try {
+        stored = (await getSystemSettings())?.albumCoverProviders;
+    } catch (error) {
+        log.debug("Album cover provider settings unreadable", error);
+    }
+    return parseAlbumCoverProviders(stored).flatMap((source) =>
+        ALBUM_COVER_RUNGS.filter((rung) => rung.source === source),
+    );
+}
+
 async function tryRung(
     rung: AlbumCoverRung,
     input: AlbumCoverInput,
@@ -197,9 +215,10 @@ async function runLadder(
     deadlineMs: number,
 ): Promise<RungResult> {
     const realMbid = realReleaseGroupMbid(input.rgMbid);
+    const rungs = await activeRungs();
     let transient = false;
-    for (let index = 0; index < ALBUM_COVER_RUNGS.length; index += 1) {
-        const rung = ALBUM_COVER_RUNGS[index];
+    for (let index = 0; index < rungs.length; index += 1) {
+        const rung = rungs[index];
         if (rung.requiresMbid && !realMbid) continue;
         const result = await tryRung(rung, input, realMbid, deadlineMs);
         if (result.status === "resolved") return result;
@@ -235,7 +254,7 @@ async function resolveWithoutDedupe(
 
 const inFlight = new Map<string, Promise<AlbumCoverResolution | null>>();
 
-/** Resolve an album cover through the canonical bounded provider ladder. */
+/** Resolve an album cover through the admin-ordered, bounded provider ladder. */
 export async function resolveAlbumCover(
     input: AlbumCoverInput,
 ): Promise<AlbumCoverResolution | null> {

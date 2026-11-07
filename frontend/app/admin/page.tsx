@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { useAuth } from "@/lib/auth-context";
@@ -9,26 +9,14 @@ import { RestartModal } from "@/components/ui/RestartModal";
 import { useSystemSettings } from "@/features/settings/hooks/useSystemSettings";
 import { GradientSpinner } from "@/components/ui/GradientSpinner";
 import { InlineStatus, useInlineStatus } from "@/components/ui/InlineStatus";
-import { SettingsLayout, SidebarItem } from "@/features/settings/components/ui";
+import { SettingsTabsLayout } from "@/features/settings/components/ui";
+import {
+    ADMIN_TABS,
+    ADMIN_TABS_WITH_SAVE,
+    AdminTab,
+    resolveAdminTab,
+} from "@/features/settings/adminTabs";
 import { useFeatures } from "@/lib/features-context";
-
-const baseSidebarItems: SidebarItem[] = [
-    { id: "playback-sources", label: "Playback Sources" },
-    { id: "search-providers", label: "Search Providers" },
-    { id: "download-preferences", label: "Download Preferences" },
-    { id: "download-services", label: "Download Services" },
-    { id: "audiobookshelf", label: "Media Servers" },
-    { id: "youtube-music-admin", label: "YouTube Music" },
-    { id: "ai-services", label: "Artwork" },
-    { id: "storage", label: "Storage" },
-    { id: "library-safety", label: "Library Safety" },
-    { id: "library-health", label: "Library Health" },
-    { id: "library-insights", label: "Library Insights" },
-    { id: "cache", label: "Cache & Automation" },
-    { id: "queue-dashboard", label: "Queue Dashboard" },
-    { id: "backup", label: "Backup" },
-    { id: "users", label: "Users" },
-];
 
 function renderSectionFallback() {
     return (
@@ -38,22 +26,6 @@ function renderSectionFallback() {
     );
 }
 
-const DownloadPreferencesSection = dynamic(
-    () =>
-        import("@/features/settings/components/sections/DownloadPreferencesSection").then(
-            (mod) => mod.DownloadPreferencesSection,
-        ),
-    { loading: renderSectionFallback },
-);
-
-const PlaybackSourcesSection = dynamic(
-    () =>
-        import("@/features/settings/components/sections/PlaybackSourcesSection").then(
-            (mod) => mod.PlaybackSourcesSection,
-        ),
-    { loading: renderSectionFallback },
-);
-
 const SearchProvidersSection = dynamic(
     () =>
         import("@/features/settings/components/sections/SearchProvidersSection").then(
@@ -62,10 +34,26 @@ const SearchProvidersSection = dynamic(
     { loading: renderSectionFallback },
 );
 
-const DownloadServicesSection = dynamic(
+const PlaybackProvidersSection = dynamic(
     () =>
-        import("@/features/settings/components/sections/DownloadServicesSection").then(
-            (mod) => mod.DownloadServicesSection,
+        import("@/features/settings/components/sections/PlaybackProvidersSection").then(
+            (mod) => mod.PlaybackProvidersSection,
+        ),
+    { loading: renderSectionFallback },
+);
+
+const MetadataProvidersSection = dynamic(
+    () =>
+        import("@/features/settings/components/sections/MetadataProvidersSection").then(
+            (mod) => mod.MetadataProvidersSection,
+        ),
+    { loading: renderSectionFallback },
+);
+
+const DisplaySection = dynamic(
+    () =>
+        import("@/features/settings/components/sections/DisplaySection").then(
+            (mod) => mod.DisplaySection,
         ),
     { loading: renderSectionFallback },
 );
@@ -74,38 +62,6 @@ const AudiobookshelfSection = dynamic(
     () =>
         import("@/features/settings/components/sections/AudiobookshelfSection").then(
             (mod) => mod.AudiobookshelfSection,
-        ),
-    { loading: renderSectionFallback },
-);
-
-const YouTubeMusicAdminSection = dynamic(
-    () =>
-        import("@/features/settings/components/sections/YouTubeMusicSection").then(
-            (mod) => mod.YouTubeMusicAdminSection,
-        ),
-    { loading: renderSectionFallback },
-);
-
-const AIServicesSection = dynamic(
-    () =>
-        import("@/features/settings/components/sections/AIServicesSection").then(
-            (mod) => mod.AIServicesSection,
-        ),
-    { loading: renderSectionFallback },
-);
-
-const StoragePathsSection = dynamic(
-    () =>
-        import("@/features/settings/components/sections/StoragePathsSection").then(
-            (mod) => mod.StoragePathsSection,
-        ),
-    { loading: renderSectionFallback },
-);
-
-const LibrarySafetySection = dynamic(
-    () =>
-        import("@/features/settings/components/sections/LibrarySafetySection").then(
-            (mod) => mod.LibrarySafetySection,
         ),
     { loading: renderSectionFallback },
 );
@@ -181,16 +137,7 @@ export default function AdminPage() {
         Record<string, boolean>
     >({});
     const saveStatus = useInlineStatus();
-    const sidebarItems = useMemo(
-        () =>
-            federation
-                ? [
-                      ...baseSidebarItems,
-                      { id: "federation", label: "Federation" },
-                  ]
-                : baseSidebarItems,
-        [federation],
-    );
+    const [activeTab, setActiveTab] = useState<AdminTab>(ADMIN_TABS[0].id);
 
     const isAdmin = user?.role === "admin";
 
@@ -212,22 +159,18 @@ export default function AdminPage() {
         }
     }, [authLoading, isAuthenticated, isAdmin, router]);
 
-    // Handle initial hash for section scrolling
+    // Open the tab named by the URL hash, including old section anchors.
     useEffect(() => {
-        if (typeof window !== "undefined") {
-            const hash = window.location.hash.substring(1);
-            if (hash) {
-                setTimeout(() => {
-                    const element = document.getElementById(hash);
-                    if (element) {
-                        element.scrollIntoView({
-                            behavior: "smooth",
-                            block: "start",
-                        });
-                    }
-                }, 100);
-            }
-        }
+        const syncFromHash = () =>
+            setActiveTab(resolveAdminTab(window.location.hash));
+        syncFromHash();
+        window.addEventListener("hashchange", syncFromHash);
+        return () => window.removeEventListener("hashchange", syncFromHash);
+    }, []);
+
+    const handleTabChange = useCallback((tab: AdminTab) => {
+        setActiveTab(tab);
+        window.history.replaceState(null, "", `#${tab}`);
     }, []);
 
     const handleSaveAll = useCallback(async () => {
@@ -304,107 +247,100 @@ export default function AdminPage() {
 
     return (
         <>
-            <SettingsLayout
-                sidebarItems={sidebarItems}
-                isAdmin={true}
+            <SettingsTabsLayout
                 title="Admin"
+                tabs={ADMIN_TABS}
+                activeTab={activeTab}
+                onTabChange={handleTabChange}
             >
-                <PlaybackSourcesSection
-                    settings={systemSettings}
-                    onUpdate={updateSystemSettings}
-                />
+                {activeTab === "playback" && (
+                    <>
+                        <PlaybackProvidersSection
+                            settings={systemSettings}
+                            onUpdate={updateSystemSettings}
+                            onTest={handleTestService}
+                            testingServices={testingServices}
+                            peerSettings={
+                                federation ? (
+                                    <FederationSection
+                                        settings={systemSettings}
+                                        onUpdateSettings={updateSystemSettings}
+                                    />
+                                ) : undefined
+                            }
+                        />
+                        <AudiobookshelfSection
+                            settings={systemSettings}
+                            onUpdate={updateSystemSettings}
+                            onTest={handleTestService}
+                            isTesting={testingServices.audiobookshelf || false}
+                        />
+                    </>
+                )}
 
-                <SearchProvidersSection
-                    settings={systemSettings}
-                    onUpdate={updateSystemSettings}
-                />
-
-                <DownloadPreferencesSection
-                    settings={systemSettings}
-                    onUpdate={updateSystemSettings}
-                />
-
-                <DownloadServicesSection
-                    settings={systemSettings}
-                    onUpdate={updateSystemSettings}
-                    onTest={handleTestService}
-                    testingServices={testingServices}
-                />
-
-                <AudiobookshelfSection
-                    settings={systemSettings}
-                    onUpdate={updateSystemSettings}
-                    onTest={handleTestService}
-                    isTesting={testingServices.audiobookshelf || false}
-                />
-
-                <YouTubeMusicAdminSection
-                    settings={systemSettings}
-                    onUpdate={updateSystemSettings}
-                />
-
-                <AIServicesSection
-                    settings={systemSettings}
-                    onUpdate={updateSystemSettings}
-                    onTest={handleTestService}
-                    isTesting={
-                        testingServices.openai ||
-                        testingServices.fanart ||
-                        false
-                    }
-                />
-
-                <StoragePathsSection
-                    settings={systemSettings}
-                    onUpdate={updateSystemSettings}
-                    onTest={handleTestService}
-                    isTesting={false}
-                />
-
-                <LibrarySafetySection
-                    settings={systemSettings}
-                    onUpdate={updateSystemSettings}
-                />
-
-                <LibraryHealthSection />
-
-                <LibraryInsightsSection />
-
-                <CacheSection
-                    settings={systemSettings}
-                    onUpdate={updateSystemSettings}
-                />
-
-                <QueueDashboardSection />
-                <BackupSection />
-
-                <UserManagementSection />
-
-                {federation && (
-                    <FederationSection
+                {activeTab === "search" && (
+                    <SearchProvidersSection
                         settings={systemSettings}
-                        onUpdateSettings={updateSystemSettings}
+                        onUpdate={updateSystemSettings}
+                        onTest={handleTestService}
+                        testingServices={testingServices}
                     />
                 )}
 
-                {/* Save Button - Fixed at bottom */}
-                <div className="sticky bottom-0 pt-8 pb-8">
-                    <div className="relative">
-                        <button
-                            onClick={handleSaveAll}
-                            disabled={isSaving}
-                            className="w-full bg-white text-black font-semibold py-3 px-4 rounded-full
-                                hover:scale-[1.02] active:scale-[0.98] transition-transform
-                                disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-                        >
-                            {isSaving ? "Saving..." : "Save"}
-                        </button>
-                        <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 bg-surface/90 backdrop-blur-sm px-3 py-0.5 rounded-full">
-                            <InlineStatus {...saveStatus.props} />
+                {activeTab === "metadata" && (
+                    <>
+                        <MetadataProvidersSection
+                            settings={systemSettings}
+                            onUpdate={updateSystemSettings}
+                            onTest={handleTestService}
+                            testingServices={testingServices}
+                        />
+                        <CacheSection
+                            settings={systemSettings}
+                            onUpdate={updateSystemSettings}
+                        />
+                    </>
+                )}
+
+                {activeTab === "insights" && (
+                    <>
+                        <LibraryHealthSection />
+                        <LibraryInsightsSection />
+                        <QueueDashboardSection />
+                    </>
+                )}
+
+                {activeTab === "users" && <UserManagementSection />}
+
+                {activeTab === "system" && (
+                    <>
+                        <DisplaySection
+                            settings={systemSettings}
+                            onUpdate={updateSystemSettings}
+                        />
+                        <BackupSection />
+                    </>
+                )}
+
+                {ADMIN_TABS_WITH_SAVE.has(activeTab) && (
+                    <div className="sticky bottom-0 pt-8 pb-8">
+                        <div className="relative">
+                            <button
+                                onClick={handleSaveAll}
+                                disabled={isSaving}
+                                className="w-full bg-white text-black font-semibold py-3 px-4 rounded-full
+                                    hover:scale-[1.02] active:scale-[0.98] transition-transform
+                                    disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                            >
+                                {isSaving ? "Saving..." : "Save"}
+                            </button>
+                            <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 bg-surface/90 backdrop-blur-sm px-3 py-0.5 rounded-full">
+                                <InlineStatus {...saveStatus.props} />
+                            </div>
                         </div>
                     </div>
-                </div>
-            </SettingsLayout>
+                )}
+            </SettingsTabsLayout>
 
             <RestartModal
                 isOpen={showRestartModal}

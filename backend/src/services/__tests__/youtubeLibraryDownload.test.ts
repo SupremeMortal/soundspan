@@ -104,7 +104,7 @@ describe("youtubeLibraryDownload", () => {
             metadata: { retained: true },
         });
         mockUpdate.mockResolvedValue({});
-        mockSettings.mockResolvedValue({ primaryFailureFallback: "none" });
+        mockSettings.mockResolvedValue({ playbackProviders: "" });
         mockSearch.mockResolvedValue([
             { browseId: "MPRE123", title: "Album", artists: ["Artist"] },
         ]);
@@ -461,7 +461,7 @@ describe("youtubeLibraryDownload", () => {
     it("does not bounce a tidal fallback back to tidal on another search miss", async () => {
         mockSearch.mockResolvedValueOnce([]);
         mockSettings.mockResolvedValueOnce({
-            primaryFailureFallback: "tidal",
+            playbackProviders: "ytmusic,tidal",
         });
 
         await processYoutubeDownload("job-1", "Artist", "Album", "user-1", {

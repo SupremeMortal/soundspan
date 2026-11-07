@@ -123,8 +123,7 @@ describe("acquisitionService", () => {
         getSystemSettings.mockResolvedValue({
             musicPath: "/music",
             soulseekConcurrentDownloads: 4,
-            downloadSource: "soulseek",
-            primaryFailureFallback: "none",
+            playbackProviders: "soulseek",
             lidarrEnabled: false,
             lidarrUrl: null,
             lidarrApiKey: null,
@@ -168,10 +167,9 @@ describe("acquisitionService", () => {
         });
     });
 
-    it("respects the shared policy when an unavailable primary is set to Skip", async () => {
+    it("has no acquisition source when the only listed one is unavailable", async () => {
         getSystemSettings.mockResolvedValue({
-            downloadSource: "lidarr",
-            primaryFailureFallback: "none",
+            playbackProviders: "lidarr",
         });
 
         await expect(
@@ -363,11 +361,10 @@ describe("acquisitionService", () => {
         });
     });
 
-    it("uses the shared policy for primary and runtime fallback routing", async () => {
+    it("uses the download chain order for primary and fallback routing", async () => {
         getSystemSettings.mockResolvedValue({
             musicPath: "/music",
-            downloadSource: "soulseek",
-            primaryFailureFallback: "lidarr",
+            playbackProviders: "soulseek,lidarr",
         });
         probeDownloadSourceAvailability.mockResolvedValue({
             tidal: true,
@@ -405,8 +402,7 @@ describe("acquisitionService", () => {
         getSystemSettings.mockResolvedValue({
             musicPath: "/music",
             soulseekConcurrentDownloads: 4,
-            downloadSource: "lidarr",
-            primaryFailureFallback: "soulseek",
+            playbackProviders: "lidarr,soulseek",
         });
         probeDownloadSourceAvailability.mockResolvedValue({
             tidal: false,
@@ -439,12 +435,38 @@ describe("acquisitionService", () => {
         );
     });
 
+    it("skips streaming providers and a source missing from the chain", async () => {
+        getSystemSettings.mockResolvedValue({
+            musicPath: "/music",
+            playbackProviders: "tidal,ytmusic,lidarr",
+        });
+        probeDownloadSourceAvailability.mockResolvedValue({
+            tidal: true,
+            lidarr: true,
+            soulseek: true,
+            youtube: true,
+        });
+        simpleDownloadManager.startDownload.mockResolvedValueOnce({
+            success: false,
+            error: "Lidarr primary failed",
+        });
+
+        await expect(
+            svc.acquireAlbum(
+                { artistName: "Artist", albumTitle: "Album", mbid: "rg-1" },
+                { userId: "user-1" },
+            ),
+        ).resolves.toMatchObject({ success: false });
+
+        expect(simpleDownloadManager.startDownload).toHaveBeenCalledTimes(1);
+        expect(processSoulseekDownload).not.toHaveBeenCalled();
+    });
+
     it("does not create a Soulseek job when the music path is missing", async () => {
         getSystemSettings.mockResolvedValue({
             musicPath: "",
             soulseekConcurrentDownloads: 4,
-            downloadSource: "soulseek",
-            primaryFailureFallback: "none",
+            playbackProviders: "soulseek",
         });
 
         await expect(

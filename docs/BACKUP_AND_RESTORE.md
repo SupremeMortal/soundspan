@@ -83,7 +83,7 @@ the encryption key for you. Three things depend on the others:
 ## Take a backup
 
 1. Sign in as an admin.
-2. Open **Admin → Backup**.
+2. Open **Admin → System** and find **Backup**.
 3. Type a passphrase of at least 12 characters twice.
 4. Select **Download backup**.
 

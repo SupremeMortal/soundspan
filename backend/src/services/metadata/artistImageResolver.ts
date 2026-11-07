@@ -2,10 +2,15 @@ import { logger } from "../../utils/logger";
 import { isRealArtistMbid } from "../../utils/musicIds";
 import { redisClient } from "../../utils/redis";
 import { normalizeArtistName } from "../../utils/artistNormalization";
+import { getSystemSettings } from "../../utils/systemSettings";
 import { deezerService } from "../deezer";
 import { fanartService } from "../fanart";
 import { lastFmService } from "../lastfm";
 import { wikidataService } from "../wikidata";
+import {
+    type ArtistImageProvider,
+    parseArtistImageProviders,
+} from "../metadataProviderSettings";
 
 const log = logger.child("ArtistImageResolver");
 const OVERALL_BUDGET_MS = 8_000;
@@ -17,7 +22,7 @@ const LASTFM_PLACEHOLDER_HASH = "2a96cbd8b46e442fc41c2b86b821562f";
 const MAX_IN_FLIGHT = 1_000;
 
 /** Provider rung that produced an artist image. */
-export type ArtistImageSource = "wikidata" | "fanart" | "deezer" | "lastfm";
+export type ArtistImageSource = ArtistImageProvider;
 
 /** Artist identity accepted by the canonical image resolver. */
 export interface ArtistImageInput {
@@ -198,6 +203,19 @@ const ARTIST_IMAGE_RUNGS: readonly ArtistImageRung[] = [
     },
 ];
 
+/** The admin's active artist image rungs, in the stored order. */
+async function activeRungs(): Promise<ArtistImageRung[]> {
+    let stored: unknown;
+    try {
+        stored = (await getSystemSettings())?.artistImageProviders;
+    } catch (error) {
+        log.debug("Artist image provider settings unreadable", error);
+    }
+    return parseArtistImageProviders(stored).flatMap((source) =>
+        ARTIST_IMAGE_RUNGS.filter((rung) => rung.source === source),
+    );
+}
+
 async function tryRung(
     rung: ArtistImageRung,
     input: ArtistImageInput,
@@ -224,9 +242,10 @@ async function runLadder(
     deadlineMs: number,
 ): Promise<RungResult> {
     const realMbid = isRealArtistMbid(input.mbid) ? input.mbid! : null;
+    const rungs = await activeRungs();
     let transient = false;
-    for (let index = 0; index < ARTIST_IMAGE_RUNGS.length; index += 1) {
-        const rung = ARTIST_IMAGE_RUNGS[index];
+    for (let index = 0; index < rungs.length; index += 1) {
+        const rung = rungs[index];
         if (rung.requiresMbid && !realMbid) continue;
         const result = await tryRung(rung, input, realMbid, deadlineMs);
         if (result.status === "resolved") return result;
@@ -262,7 +281,7 @@ async function resolveWithoutDedupe(
 
 const inFlight = new Map<string, Promise<ArtistImageResolution | null>>();
 
-/** Resolve an artist image through the canonical bounded provider ladder. */
+/** Resolve an artist image through the admin-ordered, bounded provider ladder. */
 export async function resolveArtistImage(
     input: ArtistImageInput,
 ): Promise<ArtistImageResolution | null> {

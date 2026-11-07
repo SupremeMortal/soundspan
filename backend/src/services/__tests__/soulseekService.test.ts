@@ -227,6 +227,22 @@ describe("soulseek service", () => {
         await expect(soulseekService.isAvailable()).resolves.toBe(false);
     });
 
+    it("is unavailable when Soulseek is not in the playback provider list", async () => {
+        mockGetSystemSettings.mockResolvedValueOnce({
+            soulseekUsername: "test-user",
+            soulseekPassword: "secret",
+            playbackProviders: "peers,tidal",
+        });
+        await expect(soulseekService.isAvailable()).resolves.toBe(false);
+
+        mockGetSystemSettings.mockResolvedValueOnce({
+            soulseekUsername: "test-user",
+            soulseekPassword: "secret",
+            playbackProviders: "lidarr,soulseek",
+        });
+        await expect(soulseekService.isAvailable()).resolves.toBe(true);
+    });
+
     it("reports status with connection and username", async () => {
         const service = soulseekService as any;
         service.client = { search: jest.fn(), download: jest.fn() };

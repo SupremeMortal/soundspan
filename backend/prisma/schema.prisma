@@ -279,12 +279,17 @@ model SystemSettings {
   maxConcurrentDownloads      Int      @default(3)
   downloadRetryAttempts       Int      @default(3)
   transcodeCacheMaxGb         Int      @default(10)
-  downloadSource              String   @default("soulseek")
-  playbackSourceOrder         String   @default("library,peers,tidal,ytmusic")
+  /// Active playback and download providers in admin priority order
+  /// (peers, tidal, ytmusic, soulseek, lidarr). Membership enables a provider;
+  /// the library is implicit and always plays first.
+  playbackProviders           String   @default("peers")
+  /// Active artist image providers in priority order (wikidata, fanart, deezer, lastfm).
+  artistImageProviders        String   @default("wikidata,fanart,deezer,lastfm")
+  /// Active album cover providers in priority order (coverartarchive, deezer, fanart).
+  albumCoverProviders         String   @default("coverartarchive,deezer,fanart")
   // Search's Discover results: every catalog provider in priority order, and the enabled subset.
   searchProviderOrder         String   @default("lastfm,deezer,tidal,youtube")
   searchProvidersEnabled      String   @default("lastfm,deezer")
-  primaryFailureFallback      String   @default("none")
   updatedAt                   DateTime @updatedAt
   createdAt                   DateTime @default(now())
   enrichmentConcurrency       Int      @default(1)

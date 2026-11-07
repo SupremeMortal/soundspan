@@ -187,7 +187,7 @@ Admins can manage users, integrations, downloads, enrichment automation, queue d
 - User Management
 - `Connected Now` live card under User Management for currently connected accounts
 - Integration and storage settings
-- Download source/fallback settings
+- Provider lists: playback and download providers, artist image providers, and album cover providers, each in priority order (see [Provider Lists](INTEGRATIONS.md#provider-lists))
 - Enrichment controls
 - `Rebuild` on the Vibe Map's status chip, which throws away the cached map and builds a fresh one right away instead of waiting for the daily rebuild; the current map stays on screen until the new one is ready
 - Activity panel events and active jobs
@@ -199,7 +199,7 @@ Admins can manage users, integrations, downloads, enrichment automation, queue d
 
 ### Backups
 
-`Admin → Backup` downloads a backup of everything in the database. Type a passphrase of at least 12 characters twice, then select `Download backup`. Keep the passphrase: the backup can't be restored without it. Music files are not in the backup. To restore, deploy a fresh soundspan and select `Restore from a backup` on its first-run screen. [`BACKUP_AND_RESTORE.md`](BACKUP_AND_RESTORE.md) lists what a backup restores and what you lose since the last one.
+`Admin → System → Backup` downloads a backup of everything in the database. Type a passphrase of at least 12 characters twice, then select `Download backup`. Keep the passphrase: the backup can't be restored without it. Music files are not in the backup. To restore, deploy a fresh soundspan and select `Restore from a backup` on its first-run screen. [`BACKUP_AND_RESTORE.md`](BACKUP_AND_RESTORE.md) lists what a backup restores and what you lose since the last one.
 
 ### Album downloads
 
@@ -207,7 +207,7 @@ Album downloads run through a queue. One album downloads at a time across the wh
 
 - `Download all missing albums` on an artist page queues each missing album and shows progress as the list is worked through. Promo releases, bootlegs, remix/live/demo/compilation groups, and albums where the artist is only featured are skipped.
 - A download that delivers only part of an album is reported as `Partial download: N/M tracks` instead of claiming success.
-- If the requested album cannot be found on the primary source, the job moves to your configured fallback source or fails with a clear reason. It never substitutes a different release.
+- If the requested album cannot be found on the first download provider in the playback provider list, the job moves to the next available one or fails with a clear reason. It never substitutes a different release.
 
 Technical admin configuration and security notes are in [`CONFIGURATION_AND_SECURITY.md`](CONFIGURATION_AND_SECURITY.md).
 

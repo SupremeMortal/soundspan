@@ -28,6 +28,11 @@ jest.mock("../../../utils/redis", () => ({
     },
 }));
 
+const mockGetSystemSettings = jest.fn();
+jest.mock("../../../utils/systemSettings", () => ({
+    getSystemSettings: () => mockGetSystemSettings(),
+}));
+
 jest.mock("../../../utils/logger", () => ({
     logger: {
         child: jest.fn().mockReturnValue({
@@ -45,6 +50,7 @@ const INPUT = { artistName: "Radiohead", mbid: REAL_MBID };
 describe("resolveArtistImage", () => {
     beforeEach(() => {
         jest.clearAllMocks();
+        mockGetSystemSettings.mockResolvedValue(null);
         mockRedisGet.mockResolvedValue(null);
         mockRedisSetEx.mockResolvedValue(undefined);
         mockWikidataArtistInfo.mockResolvedValue({});
@@ -214,5 +220,36 @@ describe("resolveArtistImage", () => {
             },
         ]);
         expect(mockWikidataArtistInfo).toHaveBeenCalledTimes(1);
+    });
+
+    it("tries only the listed providers in the stored order", async () => {
+        mockGetSystemSettings.mockResolvedValue({
+            artistImageProviders: "lastfm,wikidata",
+        });
+        const calls: string[] = [];
+        mockLastFmArtistInfo.mockImplementation(async () => {
+            calls.push("lastfm");
+            return null;
+        });
+        mockWikidataArtistInfo.mockImplementation(async () => {
+            calls.push("wikidata");
+            return { heroUrl: "https://wikidata.example/a.jpg" };
+        });
+
+        await expect(resolveArtistImage(INPUT)).resolves.toEqual({
+            url: "https://wikidata.example/a.jpg",
+            source: "wikidata",
+        });
+        expect(calls).toEqual(["lastfm", "wikidata"]);
+        expect(mockFanartArtistImage).not.toHaveBeenCalled();
+        expect(mockDeezerArtistImage).not.toHaveBeenCalled();
+    });
+
+    it("resolves nothing when the list is empty", async () => {
+        mockGetSystemSettings.mockResolvedValue({ artistImageProviders: "" });
+
+        await expect(resolveArtistImage(INPUT)).resolves.toBeNull();
+        expect(mockWikidataArtistInfo).not.toHaveBeenCalled();
+        expect(mockLastFmArtistInfo).not.toHaveBeenCalled();
     });
 });

@@ -149,11 +149,15 @@ Download endpoints (start/status/list/cancel) are admin-gated server-side (`requ
 
 ### Track Resolution Priority
 
-When a track needs playback, resolution follows this priority chain:
+When a track needs playback, the local library always comes first, then the
+streaming providers (peers, TIDAL, YouTube Music) in the order of the admin's
+`SystemSettings.playbackProviders` list. A provider missing from that list is
+never used:
 
 ```
-LOCAL Track.filePath → TIDAL (if user connected) → YouTube Music → Unplayable
-FEDERATED Track → owning peer stream proxy → Unplayable when peer is offline
+LOCAL Track.filePath → listed streaming providers in list order → Unplayable
+FEDERATED Track → owning peer stream proxy (peers listed and peer online)
+  → local twin → listed TIDAL/YouTube Music mappings in list order → Unplayable
 ```
 
 The `TrackMapping` table bridges between local tracks and provider tracks.

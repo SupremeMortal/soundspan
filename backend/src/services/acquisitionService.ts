@@ -22,8 +22,8 @@ import PQueue from "p-queue";
 import {
     type DownloadSource,
     type DownloadSourceAvailability,
+    downloadSourceChain,
     probeDownloadSourceAvailability,
-    resolveDownloadSource,
 } from "./downloadSourcePolicy";
 import { processSoulseekDownload } from "./soulseekLibraryDownload";
 import { patchDownloadJobMetadata } from "./downloadJobStatus";
@@ -91,83 +91,39 @@ const NO_ACQUISITION_SOURCES: DownloadBehavior = {
     fallbackSource: null,
 };
 
-function acquisitionAvailability(
-    availability: DownloadSourceAvailability,
-): DownloadSourceAvailability {
-    return { ...availability, tidal: false, youtube: false };
-}
-
 function isAcquisitionSource(
     source: DownloadSource,
 ): source is "soulseek" | "lidarr" {
     return source === "soulseek" || source === "lidarr";
 }
 
-function availableAcquisitionSource(
-    source: DownloadSource,
-    availability: DownloadSourceAvailability,
-): "soulseek" | "lidarr" | null {
-    return isAcquisitionSource(source) && availability[source] ? source : null;
-}
-
-function fallbackAcquisitionSource(
-    configuredSource: DownloadSource,
-    fallback: string | null | undefined,
-    availability: DownloadSourceAvailability,
-    primarySource: "soulseek" | "lidarr",
-): "soulseek" | "lidarr" | null {
-    const resolution = resolveDownloadSource({
-        configuredSource,
-        fallback,
-        availability: { ...availability, [primarySource]: false },
-    });
-    if (resolution.kind === "fail") return null;
-    return availableAcquisitionSource(resolution.source, availability);
-}
-
+/**
+ * Album acquisition (Discovery Weekly, playlist import) uses Soulseek and
+ * Lidarr only: the first available one in the admin's download chain is the
+ * primary source and the next available one is the fallback.
+ */
 function acquisitionBehavior(
-    configuredSource: DownloadSource,
-    fallback: string | null | undefined,
+    chain: readonly DownloadSource[],
     availability: DownloadSourceAvailability,
 ): DownloadBehavior {
-    const primaryResolution = resolveDownloadSource({
-        configuredSource,
-        fallback,
-        availability,
-    });
-    if (primaryResolution.kind === "fail") return NO_ACQUISITION_SOURCES;
-    const primarySource = availableAcquisitionSource(
-        primaryResolution.source,
-        availability,
+    const [primarySource, fallbackSource] = chain.filter(
+        (source): source is "soulseek" | "lidarr" =>
+            isAcquisitionSource(source) && availability[source],
     );
     if (!primarySource) return NO_ACQUISITION_SOURCES;
-    const fallbackSource = fallbackAcquisitionSource(
-        configuredSource,
-        fallback,
-        availability,
-        primarySource,
-    );
-    const hasFallbackSource =
-        fallbackSource !== null && fallbackSource !== primarySource;
     return {
         hasPrimarySource: true,
         primarySource,
-        hasFallbackSource,
-        fallbackSource: hasFallbackSource ? fallbackSource : null,
+        hasFallbackSource: fallbackSource !== undefined,
+        fallbackSource: fallbackSource ?? null,
     };
 }
 
 async function resolveAcquisitionBehavior(): Promise<DownloadBehavior> {
     const settings = await getSystemSettings();
-    const configuredSource = (settings?.downloadSource ||
-        "soulseek") as DownloadSource;
-    const availability = acquisitionAvailability(
-        await probeDownloadSourceAvailability(),
-    );
     return acquisitionBehavior(
-        configuredSource,
-        settings?.primaryFailureFallback,
-        availability,
+        downloadSourceChain(settings?.playbackProviders),
+        await probeDownloadSourceAvailability(),
     );
 }
 

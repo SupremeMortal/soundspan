@@ -82,7 +82,7 @@ describe("tidalLibraryDownload", () => {
             metadata: { retained: true },
         });
         mockUpdate.mockResolvedValue({});
-        mockSettings.mockResolvedValue({ primaryFailureFallback: "none" });
+        mockSettings.mockResolvedValue({ playbackProviders: "" });
         mockFindAlbum.mockResolvedValue({
             albumId: 123,
             title: "Album",
@@ -316,7 +316,7 @@ describe("tidalLibraryDownload", () => {
     it("does not hand a youtube fallback back to youtube on another search miss", async () => {
         mockFindAlbum.mockResolvedValueOnce(null);
         mockSettings.mockResolvedValueOnce({
-            primaryFailureFallback: "youtube",
+            playbackProviders: "tidal,ytmusic",
         });
 
         await processTidalDownload("job-1", "Artist", "Album", "user-1", {

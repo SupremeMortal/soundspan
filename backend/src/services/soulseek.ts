@@ -7,6 +7,7 @@ import type { SlskClient } from "slsk-client";
 import path from "path";
 import { mkdir, rename, rm, stat } from "fs/promises";
 import { getSystemSettings } from "../utils/systemSettings";
+import { isPlaybackProviderActive } from "./playbackSourcePriority";
 import { sessionLog } from "../utils/playlistLogger";
 import { logger } from "../utils/logger";
 import { safeResolvePath } from "../utils/safeResolvePath";
@@ -302,12 +303,17 @@ class SoulseekService {
     }
 
     /**
-     * Check if Soulseek is available (credentials configured)
+     * Check if Soulseek is available: credentials are configured and
+     * `soulseek` is in the admin's playback provider list.
      */
     async isAvailable(): Promise<boolean> {
         try {
             const settings = await getSystemSettings();
-            return !!(settings?.soulseekUsername && settings?.soulseekPassword);
+            return !!(
+                settings?.soulseekUsername &&
+                settings?.soulseekPassword &&
+                isPlaybackProviderActive(settings.playbackProviders, "soulseek")
+            );
         } catch {
             return false;
         }

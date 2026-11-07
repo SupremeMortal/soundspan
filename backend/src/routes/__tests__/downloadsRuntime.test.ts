@@ -261,8 +261,7 @@ describe("downloads routes runtime", () => {
 
         mockGetSystemSettings.mockResolvedValue({
             musicPath: "/music",
-            downloadSource: "soulseek",
-            primaryFailureFallback: "none",
+            playbackProviders: "soulseek",
         });
 
         mockLidarrIsEnabled.mockResolvedValue(true);

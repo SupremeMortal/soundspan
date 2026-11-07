@@ -10,6 +10,7 @@ const mockLookup = jest.fn();
 const mockProxyFederatedTrackStream = jest.fn();
 const mockProxyFederatedCover = jest.fn();
 const mockLoadPeerPlaybackFallback = jest.fn();
+const mockIsPeerPlaybackActive = jest.fn().mockResolvedValue(true);
 const mockServeMappedProviderStream = jest.fn();
 const mockTerminateCommittedStream = jest.fn((res: Response) => res.end());
 const mockGetYtMusicUserIdOrPublic = jest.fn();
@@ -222,6 +223,7 @@ jest.mock("../../services/federationCoverProxy", () => ({
         mockProxyFederatedCover(...args),
 }));
 jest.mock("../../services/peerPlaybackFallback", () => ({
+    isPeerPlaybackActive: () => mockIsPeerPlaybackActive(),
     loadPeerPlaybackFallback: (...args: unknown[]) =>
         mockLoadPeerPlaybackFallback(...args),
 }));
@@ -777,6 +779,7 @@ export {
     mockProxyFederatedTrackStream,
     mockProxyFederatedCover,
     mockLoadPeerPlaybackFallback,
+    mockIsPeerPlaybackActive,
     mockServeMappedProviderStream,
     mockTerminateCommittedStream,
     mockGetYtMusicUserIdOrPublic,

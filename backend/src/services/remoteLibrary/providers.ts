@@ -40,7 +40,7 @@ export async function loadRemoteLibraryAccess(
             youtube: systemSettings?.ytMusicEnabled === true,
         },
         playbackSourceOrder: parsePlaybackSourceOrder(
-            systemSettings?.playbackSourceOrder,
+            systemSettings?.playbackProviders,
         ),
     };
 }

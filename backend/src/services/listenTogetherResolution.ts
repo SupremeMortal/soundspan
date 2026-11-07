@@ -3,6 +3,8 @@ import { prisma } from "../utils/db";
 import { logger } from "../utils/logger";
 import { usesTidalInstanceAccount } from "./tidalAccountMode";
 import {
+    isPlaybackProviderActive,
+    isPlaybackSourceUsable,
     parsePlaybackSourceOrder,
     rankPlaybackSource,
     type PlaybackSource,
@@ -43,7 +45,7 @@ export interface UserProviderProfile {
     hasLocal: true;
     hasTidal: boolean;
     hasYtMusic: boolean;
-    playbackSourceOrder?: string;
+    playbackProviders?: string;
 }
 
 export interface TrackResolutionInput {
@@ -126,7 +128,7 @@ export async function getUserProviderProfile(
                 where: { id: "default" },
                 select: {
                     ytMusicEnabled: true,
-                    playbackSourceOrder: true,
+                    playbackProviders: true,
                     tidalEnabled: true,
                     tidalStreamingUseInstanceAccount: true,
                 },
@@ -135,19 +137,21 @@ export async function getUserProviderProfile(
         options.signal,
     );
 
+    const playbackProviders = systemSettings?.playbackProviders;
     const profile: UserProviderProfile = {
         userId,
         hasLocal: true,
         hasTidal:
-            hasToken(settings?.tidalOAuthJson) ||
-            usesTidalInstanceAccount(systemSettings),
+            isPlaybackProviderActive(playbackProviders, "tidal") &&
+            (hasToken(settings?.tidalOAuthJson) ||
+                usesTidalInstanceAccount(systemSettings)),
         // YouTube playback/search has a public fallback path and should not require
         // per-user OAuth connectivity to mark tracks playable. Still respect
-        // global system-level YouTube enablement.
-        hasYtMusic: systemSettings?.ytMusicEnabled !== false,
-        playbackSourceOrder: (
-            systemSettings as { playbackSourceOrder?: string } | null
-        )?.playbackSourceOrder,
+        // global system-level YouTube enablement and the provider list.
+        hasYtMusic:
+            isPlaybackProviderActive(playbackProviders, "ytmusic") &&
+            systemSettings?.ytMusicEnabled !== false,
+        playbackProviders,
     };
 
     profileCache.set(userId, {
@@ -322,9 +326,9 @@ async function resolveMappedTrack(
     if (!mapping) return { available: false, reason: "no-mapping" };
     if (mapping.stale) return { available: false, reason: "stale" };
     const candidates = mappedCandidates(mapping, item, profile);
-    const order = parsePlaybackSourceOrder(profile.playbackSourceOrder);
+    const order = parsePlaybackSourceOrder(profile.playbackProviders);
     const preferred = candidates
-        .filter((candidate) => candidate.available)
+        .filter((candidate) => isPlaybackSourceUsable(candidate, order))
         .sort(
             (left, right) =>
                 rankPlaybackSource(right, order) -

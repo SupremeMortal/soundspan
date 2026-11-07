@@ -1,12 +1,12 @@
 "use client";
 
-import { SettingsRow, SettingsInput, IntegrationCard } from "../ui";
+import { SettingsRow, SettingsInput, SettingsSelect } from "../ui";
 import { SystemSettings } from "../../types";
-import { AlertTriangle, ExternalLink, Share2 } from "lucide-react";
+import { AlertTriangle, ExternalLink } from "lucide-react";
 import { InlineStatus } from "@/components/ui/InlineStatus";
 import { useConnectionTest } from "@/features/settings/hooks/useConnectionTest";
 
-interface SoulseekCardProps {
+interface SoulseekProviderSettingsProps {
     settings: SystemSettings;
     onUpdate: (updates: Partial<SystemSettings>) => void;
     onTest: (
@@ -15,15 +15,21 @@ interface SoulseekCardProps {
     isTesting: boolean;
 }
 
+const CONCURRENCY_OPTIONS = Array.from({ length: 10 }, (_, index) => {
+    const value = String(index + 1);
+    return { value, label: value === "4" ? "4 (Default)" : value };
+});
+
 /**
- * Renders the SoulseekCard component.
+ * Soulseek account and download settings, shown inside its Playback provider
+ * block.
  */
-export function SoulseekCard({
+export function SoulseekProviderSettings({
     settings,
     onUpdate,
     onTest,
     isTesting,
-}: SoulseekCardProps) {
+}: SoulseekProviderSettingsProps) {
     const {
         status: testStatus,
         message: testMessage,
@@ -52,15 +58,8 @@ export function SoulseekCard({
     );
 
     return (
-        <IntegrationCard
-            icon={<Share2 className="w-5 h-5 text-green-400" />}
-            title="Soulseek"
-            statusText={hasCredentials ? "Configured" : "Not configured"}
-            statusColor={hasCredentials ? "green" : "gray"}
-            connected={false}
-            expanded={true}
-            warning={warningBanner}
-        >
+        <div className="space-y-3">
+            {warningBanner}
             <div className="space-y-1">
                 <SettingsRow
                     label="Soulseek Username"
@@ -100,6 +99,23 @@ export function SoulseekCard({
                     />
                 </SettingsRow>
 
+                <SettingsRow
+                    label="Concurrent downloads"
+                    description="Number of songs Soulseek downloads at the same time"
+                >
+                    <SettingsSelect
+                        value={String(
+                            settings.soulseekConcurrentDownloads ?? 4,
+                        )}
+                        onChange={(v) =>
+                            onUpdate({
+                                soulseekConcurrentDownloads: parseInt(v, 10),
+                            })
+                        }
+                        options={CONCURRENCY_OPTIONS}
+                    />
+                </SettingsRow>
+
                 <div className="pt-2 space-y-2">
                     <div className="inline-flex items-center gap-3">
                         <button
@@ -124,6 +140,6 @@ export function SoulseekCard({
                     </p>
                 </div>
             </div>
-        </IntegrationCard>
+        </div>
     );
 }

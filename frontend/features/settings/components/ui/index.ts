@@ -9,3 +9,10 @@ export { ConnectionCard } from "./ConnectionCard";
 export { IntegrationCard } from "./IntegrationCard";
 export { InfoTooltip } from "./InfoTooltip";
 export { DeviceAuthLinkPanel } from "./DeviceAuthLinkPanel";
+export {
+    ProviderPriorityBoard,
+    PinnedProviderBlock,
+    type ProviderDefinition,
+    type ProviderStatus,
+} from "./ProviderPriorityBoard";
+export { SettingsTabsLayout, type SettingsTab } from "./SettingsTabsLayout";

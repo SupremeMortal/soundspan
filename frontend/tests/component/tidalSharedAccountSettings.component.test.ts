@@ -148,13 +148,13 @@ test("user card keeps the per-user connect flow when sharing is off", async () =
     await view.unmount();
 });
 
-test("admin card toggles sharing the TIDAL account with every user", async () => {
-    const { TidalCard } =
+test("admin TIDAL settings toggle sharing the TIDAL account with every user", async () => {
+    const { TidalProviderSettings } =
         await import("../../features/settings/components/sections/TidalSection");
     const updates: Array<Partial<SystemSettings>> = [];
 
     const view = await mount(
-        React.createElement(TidalCard, {
+        React.createElement(TidalProviderSettings, {
             settings: systemSettings,
             onUpdate: (next: Partial<SystemSettings>) => updates.push(next),
             onTest: async () => ({ success: true }),
@@ -181,13 +181,13 @@ test("admin card toggles sharing the TIDAL account with every user", async () =>
     await view.unmount();
 });
 
-test("admin card toggles downloading TIDAL songs before playing", async () => {
-    const { TidalCard } =
+test("admin TIDAL settings toggle downloading TIDAL songs before playing", async () => {
+    const { TidalProviderSettings } =
         await import("../../features/settings/components/sections/TidalSection");
     const updates: Array<Partial<SystemSettings>> = [];
 
     const view = await mount(
-        React.createElement(TidalCard, {
+        React.createElement(TidalProviderSettings, {
             settings: systemSettings,
             onUpdate: (next: Partial<SystemSettings>) => updates.push(next),
             onTest: async () => ({ success: true }),

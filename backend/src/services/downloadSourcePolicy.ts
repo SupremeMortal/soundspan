@@ -3,28 +3,33 @@ import { lidarrService } from "./lidarr";
 import { soulseekService } from "./soulseek";
 import { tidalService } from "./tidal";
 import { youtubeDownloadService } from "./youtubeDownload";
+import {
+    parsePlaybackProviders,
+    type PlaybackProvider,
+} from "./playbackSourcePriority";
 
 export type DownloadSource = "tidal" | "lidarr" | "soulseek" | "youtube";
 
 /** Health snapshot used by the pure source-resolution policy. */
 export type DownloadSourceAvailability = Record<DownloadSource, boolean>;
 
-/** Result of resolving a configured source and fallback preference. */
+/** Result of resolving the admin's download chain against availability. */
 export type DownloadSourceResolution =
     | { kind: "dispatch"; source: DownloadSource }
     | { kind: "fail"; statusText: string; error: string };
 
 interface DownloadSourcePolicyInput {
-    configuredSource: DownloadSource;
-    fallback: string | null | undefined;
+    chain: readonly DownloadSource[];
     availability: DownloadSourceAvailability;
 }
 
-const LEGACY_FALLBACK_ORDER: Record<DownloadSource, DownloadSource[]> = {
-    tidal: ["soulseek", "lidarr", "youtube"],
-    soulseek: ["tidal", "lidarr", "youtube"],
-    lidarr: ["tidal", "soulseek", "youtube"],
-    youtube: ["tidal", "soulseek", "lidarr"],
+const DOWNLOAD_SOURCE_BY_PROVIDER: Partial<
+    Record<PlaybackProvider, DownloadSource>
+> = {
+    tidal: "tidal",
+    ytmusic: "youtube",
+    soulseek: "soulseek",
+    lidarr: "lidarr",
 };
 
 /** Probe every supported album-download source concurrently. */
@@ -38,73 +43,47 @@ export async function probeDownloadSourceAvailability(): Promise<DownloadSourceA
     return { tidal, lidarr, soulseek, youtube };
 }
 
-function isDownloadSource(value: unknown): value is DownloadSource {
-    return (
-        value === "tidal" ||
-        value === "lidarr" ||
-        value === "soulseek" ||
-        value === "youtube"
-    );
-}
-
-function unavailablePrimary(
-    source: DownloadSource,
-    selfFallback: boolean,
-): DownloadSourceResolution {
-    const error = selfFallback
-        ? `${source} is unavailable and the configured fallback is also ${source}`
-        : `${source} is unavailable and "When primary source fails" is set to Skip`;
-    return {
-        kind: "fail",
-        error,
-        statusText: `${source} unavailable — skipped`,
-    };
-}
-
-function unavailableFallback(
-    source: DownloadSource,
-    fallback: DownloadSource,
-): DownloadSourceResolution {
-    return {
-        kind: "fail",
-        error: `${source} is unavailable and the configured fallback (${fallback}) is also unavailable`,
-        statusText: `${source} and fallback ${fallback} unavailable`,
-    };
-}
-
-function resolveLegacyFallback(
-    source: DownloadSource,
-    availability: DownloadSourceAvailability,
-): DownloadSource {
-    return (
-        LEGACY_FALLBACK_ORDER[source].find(
-            (candidate) => availability[candidate],
-        ) ?? source
-    );
+/**
+ * Download sources in the order the admin listed their providers. Providers
+ * that cannot download (peers) and providers absent from the list are left out.
+ */
+export function downloadSourceChain(
+    playbackProviders: unknown,
+): DownloadSource[] {
+    return parsePlaybackProviders(playbackProviders).flatMap((provider) => {
+        const source = DOWNLOAD_SOURCE_BY_PROVIDER[provider];
+        return source ? [source] : [];
+    });
 }
 
 /** Resolve the source without performing settings, health, or persistence I/O. */
 export function resolveDownloadSource({
-    configuredSource,
-    fallback,
+    chain,
     availability,
 }: DownloadSourcePolicyInput): DownloadSourceResolution {
-    if (availability[configuredSource]) {
-        return { kind: "dispatch", source: configuredSource };
-    }
-    if (fallback === "none" || fallback === configuredSource) {
-        return unavailablePrimary(
-            configuredSource,
-            fallback === configuredSource,
-        );
-    }
-    if (isDownloadSource(fallback)) {
-        return availability[fallback]
-            ? { kind: "dispatch", source: fallback }
-            : unavailableFallback(configuredSource, fallback);
+    const source = chain.find((candidate) => availability[candidate]);
+    if (source) return { kind: "dispatch", source };
+    if (chain.length === 0) {
+        return {
+            kind: "fail",
+            error: "No download source is enabled in the playback provider list",
+            statusText: "No download source enabled — skipped",
+        };
     }
     return {
-        kind: "dispatch",
-        source: resolveLegacyFallback(configuredSource, availability),
+        kind: "fail",
+        error: `No enabled download source is available (tried ${chain.join(", ")})`,
+        statusText: "Download sources unavailable — skipped",
     };
+}
+
+/** The next available source after the dispatched one, for a runtime hand-off. */
+export function resolveRuntimeFallback(
+    chain: readonly DownloadSource[],
+    dispatchedSource: DownloadSource,
+    availability: DownloadSourceAvailability,
+): DownloadSource | undefined {
+    const index = chain.indexOf(dispatchedSource);
+    if (index < 0) return undefined;
+    return chain.slice(index + 1).find((candidate) => availability[candidate]);
 }

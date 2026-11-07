@@ -10,10 +10,32 @@ jest.mock("../../utils/db", () => ({
     },
 }));
 
+const mockGetSystemSettings = jest.fn();
+jest.mock("../../utils/systemSettings", () => ({
+    getSystemSettings: () => mockGetSystemSettings(),
+}));
+
 import {
     choosePeerPlaybackFallback,
+    isPeerPlaybackActive,
     loadPeerPlaybackFallback,
 } from "../peerPlaybackFallback";
+
+describe("isPeerPlaybackActive", () => {
+    it.each([
+        ["peers,tidal", true],
+        ["tidal,soulseek", false],
+        ["", false],
+    ])("reads %p as %p", async (playbackProviders, expected) => {
+        mockGetSystemSettings.mockResolvedValueOnce({ playbackProviders });
+        await expect(isPeerPlaybackActive()).resolves.toBe(expected);
+    });
+
+    it("treats a missing settings row as the default list", async () => {
+        mockGetSystemSettings.mockResolvedValueOnce(null);
+        await expect(isPeerPlaybackActive()).resolves.toBe(true);
+    });
+});
 
 describe("peer playback fallback ladder", () => {
     beforeEach(() => {
@@ -23,7 +45,7 @@ describe("peer playback fallback ladder", () => {
             duration: 180,
         });
         mockSystemSettingsFindUnique.mockResolvedValue({
-            playbackSourceOrder: "library,peers,tidal,ytmusic",
+            playbackProviders: "peers,tidal,ytmusic",
         });
     });
 
@@ -62,11 +84,27 @@ describe("peer playback fallback ladder", () => {
                     tidalTrackId: 42,
                     youtubeVideoId: "video-1",
                 },
-                "library,peers,ytmusic,tidal",
+                "peers,ytmusic,tidal",
             ),
         ).toEqual([
             { source: "ytmusic", youtubeVideoId: "video-1" },
             { source: "tidal", tidalTrackId: 42 },
+        ]);
+    });
+
+    it("leaves out providers that are not in the provider list", () => {
+        expect(
+            choosePeerPlaybackFallback(
+                {
+                    localTwinId: "local-1",
+                    tidalTrackId: 42,
+                    youtubeVideoId: "video-1",
+                },
+                "peers,ytmusic,soulseek",
+            ),
+        ).toEqual([
+            { source: "library", trackId: "local-1" },
+            { source: "ytmusic", youtubeVideoId: "video-1" },
         ]);
     });
 

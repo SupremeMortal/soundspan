@@ -653,8 +653,7 @@ export async function handleGetLikedTracks(req: Request, res: Response) {
     }
 
     const sourceOrder = parsePlaybackSourceOrder(
-        (systemSettings as { playbackSourceOrder?: unknown } | null)
-            ?.playbackSourceOrder,
+        systemSettings?.playbackProviders,
     );
     const choosePriority = (entry: MergedEntry): number => {
         if (entry.kind === "local") {

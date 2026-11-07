@@ -6,7 +6,6 @@ import {
     SettingsInput,
     SettingsSelect,
     SettingsToggle,
-    IntegrationCard,
 } from "../ui";
 import { SystemSettings } from "../../types";
 import {
@@ -15,14 +14,13 @@ import {
     XCircle,
     Loader2,
     AlertTriangle,
-    Music2,
 } from "lucide-react";
 import { InlineStatus } from "@/components/ui/InlineStatus";
 import { api } from "@/lib/api";
 import { useDeviceAuthPolling } from "@/hooks/useDeviceAuthPolling";
 import { useConnectionTest } from "@/features/settings/hooks/useConnectionTest";
 
-interface TidalCardProps {
+interface TidalProviderSettingsProps {
     settings: SystemSettings;
     onUpdate: (updates: Partial<SystemSettings>) => void;
     onTest: (
@@ -42,14 +40,15 @@ const QUALITY_OPTIONS = [
 ];
 
 /**
- * Renders the TidalCard component.
+ * TIDAL account, streaming, and download settings, shown inside its Playback
+ * provider block.
  */
-export function TidalCard({
+export function TidalProviderSettings({
     settings,
     onUpdate,
     onTest,
     isTesting,
-}: TidalCardProps) {
+}: TidalProviderSettingsProps) {
     const {
         status: testStatus,
         message: testMessage,
@@ -130,15 +129,6 @@ export function TidalCard({
         settings.tidalConnected && settings.tidalEnabled
     );
 
-    const statusText = settings.tidalEnabled
-        ? isAuthenticated
-            ? `Enabled (User: ${settings.tidalUserId})`
-            : "Enabled — not authenticated"
-        : "Disabled";
-
-    const statusColor: "green" | "gray" =
-        settings.tidalEnabled && isAuthenticated ? "green" : "gray";
-
     const warningBanner = (
         <div className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2">
             <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
@@ -152,22 +142,8 @@ export function TidalCard({
     );
 
     return (
-        <IntegrationCard
-            icon={<Music2 className="w-5 h-5 text-cyan-400" />}
-            title="TIDAL"
-            statusText={statusText}
-            statusColor={statusColor}
-            connected={false}
-            expanded={settings.tidalEnabled}
-            warning={warningBanner}
-            headerAction={
-                <SettingsToggle
-                    id="tidal-enabled"
-                    checked={settings.tidalEnabled}
-                    onChange={(checked) => onUpdate({ tidalEnabled: checked })}
-                />
-            }
-        >
+        <div className="space-y-3">
+            {warningBanner}
             <div className="space-y-1">
                 {/* Authentication */}
                 <SettingsRow
@@ -481,6 +457,6 @@ export function TidalCard({
                     </p>
                 </div>
             </div>
-        </IntegrationCard>
+        </div>
     );
 }

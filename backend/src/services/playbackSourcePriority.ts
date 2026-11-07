@@ -1,4 +1,27 @@
-/** Providers accepted by the persisted playback source-order setting. */
+/**
+ * Admin-ordered playback providers. One ordered list both enables providers
+ * (membership) and ranks them; the owned library is implicit and always first.
+ */
+export const PLAYBACK_PROVIDER_VALUES = [
+    "peers",
+    "tidal",
+    "ytmusic",
+    "soulseek",
+    "lidarr",
+] as const;
+
+/** One provider an admin can place in the playback provider list. */
+export type PlaybackProvider = (typeof PLAYBACK_PROVIDER_VALUES)[number];
+
+/**
+ * Persisted default list. The TIDAL, YouTube Music and Lidarr enable flags
+ * still default to off and Soulseek still needs credentials, so the default
+ * turns nothing on by itself.
+ */
+export const DEFAULT_PLAYBACK_PROVIDERS_VALUE =
+    PLAYBACK_PROVIDER_VALUES.join(",");
+
+/** Sources considered when choosing what plays a track. */
 export const PLAYBACK_SOURCE_VALUES = [
     "library",
     "peers",
@@ -6,48 +29,107 @@ export const PLAYBACK_SOURCE_VALUES = [
     "ytmusic",
 ] as const;
 
-/** One configurable tier in playback source selection. */
+/** One tier in playback source selection. */
 export type PlaybackSource = (typeof PLAYBACK_SOURCE_VALUES)[number];
-/** A complete ordered permutation of playback source tiers. */
+/** Library first, then the active streaming providers in admin order. */
 export type PlaybackSourceOrder = readonly PlaybackSource[];
 
-/** Default playback order: owned library, online peers, TIDAL, then YT Music. */
+/** Order used when every streaming provider is active. */
 export const DEFAULT_PLAYBACK_SOURCE_ORDER: PlaybackSourceOrder =
     PLAYBACK_SOURCE_VALUES;
-/** Persisted string representation of the default playback order. */
-export const DEFAULT_PLAYBACK_SOURCE_ORDER_VALUE =
-    PLAYBACK_SOURCE_VALUES.join(",");
-// Offline peers remain a last-resort identity at 100, below the lowest
-// available provider tier (200), regardless of the configured order.
+// Offline peers and providers absent from the list remain a last-resort
+// identity at 100, below the lowest active provider tier (200).
 const UNAVAILABLE_SOURCE_PRIORITY = 100;
 
-/** Parses a stored source order and safely restores the default on drift. */
+const PROVIDER_SET = new Set<string>(PLAYBACK_PROVIDER_VALUES);
+
+function isPlaybackProvider(value: string): value is PlaybackProvider {
+    return PROVIDER_SET.has(value);
+}
+
+function isStreamingSource(
+    provider: PlaybackProvider,
+): provider is Exclude<PlaybackSource, "library"> {
+    return (
+        provider === "peers" || provider === "tidal" || provider === "ytmusic"
+    );
+}
+
+function splitList(value: string): string[] {
+    return value
+        .split(",")
+        .map((entry) => entry.trim())
+        .filter(Boolean);
+}
+
+/**
+ * Parses the stored provider list. Unknown and repeated entries are dropped;
+ * a missing value (no settings row) means the default list.
+ */
+export function parsePlaybackProviders(value: unknown): PlaybackProvider[] {
+    const stored =
+        typeof value === "string" ? value : DEFAULT_PLAYBACK_PROVIDERS_VALUE;
+    return [...new Set(splitList(stored).filter(isPlaybackProvider))];
+}
+
+/** Returns true for a duplicate-free list of known providers (may be empty). */
+export function isPlaybackProviderList(value: string): boolean {
+    const entries = splitList(value);
+    return (
+        entries.every(isPlaybackProvider) &&
+        new Set(entries).size === entries.length
+    );
+}
+
+/** Returns whether a provider is in the stored playback provider list. */
+export function isPlaybackProviderActive(
+    value: unknown,
+    provider: PlaybackProvider,
+): boolean {
+    return parsePlaybackProviders(value).includes(provider);
+}
+
+/** Enable flags that mirror provider list membership. */
+export function playbackProviderEnableFlags(value: string): {
+    lidarrEnabled: boolean;
+    tidalEnabled: boolean;
+    ytMusicEnabled: boolean;
+} {
+    const providers = parsePlaybackProviders(value);
+    return {
+        lidarrEnabled: providers.includes("lidarr"),
+        tidalEnabled: providers.includes("tidal"),
+        ytMusicEnabled: providers.includes("ytmusic"),
+    };
+}
+
+/** Derives the playback source order from the stored provider list. */
 export function parsePlaybackSourceOrder(value: unknown): PlaybackSourceOrder {
-    if (typeof value !== "string") return DEFAULT_PLAYBACK_SOURCE_ORDER;
-    const entries = value.split(",").map((entry) => entry.trim());
-    if (entries.length !== PLAYBACK_SOURCE_VALUES.length) {
-        return DEFAULT_PLAYBACK_SOURCE_ORDER;
-    }
-    const values = new Set(entries);
-    const valid = PLAYBACK_SOURCE_VALUES.every((source) => values.has(source));
-    return valid
-        ? (entries as PlaybackSource[])
-        : DEFAULT_PLAYBACK_SOURCE_ORDER;
+    return [
+        "library",
+        ...parsePlaybackProviders(value).filter(isStreamingSource),
+    ];
 }
 
-/** Returns true only for a complete, duplicate-free provider permutation. */
-export function isPlaybackSourceOrder(value: string): boolean {
-    const parsed = parsePlaybackSourceOrder(value);
-    return parsed.join(",") === value;
+/** Returns whether a candidate is available and its source is active. */
+export function isPlaybackSourceUsable(
+    candidate: { source: PlaybackSource; available: boolean },
+    order: PlaybackSourceOrder,
+): boolean {
+    return candidate.available && order.includes(candidate.source);
 }
 
-/** Ranks a candidate. Offline/unavailable sources always remain below providers. */
+/**
+ * Ranks a candidate. Offline sources and sources absent from the order always
+ * remain below active providers.
+ */
 export function rankPlaybackSource(
     candidate: { source: PlaybackSource; available: boolean },
     order: PlaybackSourceOrder,
 ): number {
-    if (!candidate.available) return UNAVAILABLE_SOURCE_PRIORITY;
+    if (!isPlaybackSourceUsable(candidate, order)) {
+        return UNAVAILABLE_SOURCE_PRIORITY;
+    }
     const index = order.indexOf(candidate.source);
-    const normalizedIndex = index >= 0 ? index : order.length;
-    return (order.length - normalizedIndex + 1) * 100;
+    return (order.length - index + 1) * 100;
 }

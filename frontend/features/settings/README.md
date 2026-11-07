@@ -4,7 +4,7 @@ Start-here guide for `frontend/features/settings`.
 
 ## Start Here
 
-1. Route entrypoints: `frontend/app/device/page.tsx`, `frontend/app/settings/page.tsx`
+1. Route entrypoints: `frontend/app/device/page.tsx`, `frontend/app/settings/page.tsx` (user settings, sidebar layout), `frontend/app/admin/page.tsx` (admin settings, tab layout from `adminTabs.ts`)
 2. Primary tests and route entrypoints for this domain are listed below.
 3. Targeted verification commands:
 - `npm --prefix backend test -- --runInBand src/routes/__tests__/settingsDisplayNameCompat.test.ts src/routes/__tests__/systemSettingsRuntime.test.ts src/routes/__tests__/deviceLinkRuntime.test.ts`
@@ -17,14 +17,12 @@ Start-here guide for `frontend/features/settings`.
 | --- | --- |
 | `components/sections/AccountSection.tsx` | components |
 | `components/sections/AppPasswordsPanel.tsx` | components |
-| `components/sections/AIServicesSection.tsx` | components |
+| `components/sections/ProviderKeySettings.tsx` | components |
 | `components/sections/APIKeysSection.tsx` | components |
 | `components/sections/AudiobookshelfSection.tsx` | components |
 | `components/sections/BackupSection.tsx` | components |
+| `components/sections/DisplaySection.tsx` | components |
 | `components/sections/CacheSection.tsx` | components |
-| `components/sections/DownloadPreferencesSection.tsx` | components |
-| `components/sections/downloadSourceConfig.ts` | components |
-| `components/sections/DownloadServicesSection.tsx` | components |
 | `components/sections/FederationSection.tsx` | components |
 | `components/sections/federationPairing.tsx` | components |
 | `components/sections/federationPeerSettings.tsx` | components |
@@ -32,12 +30,12 @@ Start-here guide for `frontend/features/settings`.
 | `components/sections/IntegrationsSection.tsx` | components |
 | `components/sections/LibraryHealthSection.tsx` | components |
 | `components/sections/libraryHealthDetails.tsx` | components |
-| `components/sections/LibrarySafetySection.tsx` | components |
 | `components/sections/LidarrSection.tsx` | components |
 | `components/sections/LinkedIdentitiesPanel.tsx` | components |
+| `components/sections/MetadataProvidersSection.tsx` | components |
 | `components/sections/playbackHistoryConfig.ts` | components |
 | `components/sections/PlaybackHistorySection.tsx` | components |
-| `components/sections/PlaybackSourcesSection.tsx` | components |
+| `components/sections/PlaybackProvidersSection.tsx` | components |
 | `components/sections/SearchProvidersSection.tsx` | components |
 | `components/sections/QueueDashboardSection.tsx` | components |
 | `components/sections/PlaybackSection.tsx` | components |
@@ -45,7 +43,6 @@ Start-here guide for `frontend/features/settings`.
 | `components/sections/SocialSection.tsx` | components |
 | `components/sections/SignInSecuritySection.tsx` | components |
 | `components/sections/SoulseekSection.tsx` | components |
-| `components/sections/StoragePathsSection.tsx` | components |
 | `components/sections/TidalSection.tsx` | components |
 | `components/sections/TidalStreamingSection.tsx` | components |
 | `components/sections/UserManagementSection.tsx` | components |
@@ -57,12 +54,14 @@ Start-here guide for `frontend/features/settings`.
 | `components/ui/InfoTooltip.tsx` | components |
 | `components/ui/IntegrationCard.tsx` | components |
 | `components/ui/ProfilePictureUpload.tsx` | components |
+| `components/ui/ProviderPriorityBoard.tsx` | drag-ordered provider list (being listed enables a provider) |
 | `components/ui/SettingsInput.tsx` | components |
 | `components/ui/SettingsLayout.tsx` | components |
 | `components/ui/SettingsRow.tsx` | components |
 | `components/ui/SettingsSection.tsx` | components |
 | `components/ui/SettingsSelect.tsx` | components |
 | `components/ui/SettingsSidebar.tsx` | components |
+| `components/ui/SettingsTabsLayout.tsx` | components |
 | `components/ui/SettingsToggle.tsx` | components |
 | `components/ui/settingsFieldStyles.ts` | shared settings-field styles |
 | `hooks/settingsHydration.ts` | hooks |
@@ -71,7 +70,9 @@ Start-here guide for `frontend/features/settings`.
 | `hooks/useSettingsData.ts` | hooks |
 | `hooks/useSystemSettings.ts` | hooks |
 | `hooks/useTwoFactor.ts` | hooks |
+| `adminTabs.ts` | root |
 | `lastFmScrobblingCopy.ts` | root |
+| `providerPriority.ts` | root |
 | `types.ts` | root |
 
 ## Update Rule

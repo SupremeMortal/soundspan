@@ -9,6 +9,7 @@ const mockLookup = jest.fn();
 const mockProxyFederatedTrackStream = jest.fn();
 const mockProxyFederatedCover = jest.fn();
 const mockLoadPeerPlaybackFallback = jest.fn();
+const mockIsPeerPlaybackActive = jest.fn();
 const mockServeMappedProviderStream = jest.fn();
 const mockTerminateCommittedStream = jest.fn((res: Response) => {
     if (typeof res.destroy === "function") res.destroy();
@@ -91,6 +92,7 @@ jest.mock("../../services/federationCoverProxy", () => ({
     proxyFederatedCover: mockProxyFederatedCover,
 }));
 jest.mock("../../services/peerPlaybackFallback", () => ({
+    isPeerPlaybackActive: mockIsPeerPlaybackActive,
     loadPeerPlaybackFallback: mockLoadPeerPlaybackFallback,
 }));
 jest.mock("../../services/mappedProviderStream", () => ({
@@ -204,6 +206,7 @@ beforeEach(() => {
     mockProxyFederatedTrackStream.mockResolvedValue(undefined);
     mockProxyFederatedCover.mockResolvedValue(true);
     mockLoadPeerPlaybackFallback.mockResolvedValue([]);
+    mockIsPeerPlaybackActive.mockResolvedValue(true);
     mockServeMappedProviderStream.mockResolvedValue({ status: "served" });
     mockGetYtMusicUserIdOrPublic.mockResolvedValue("user-1");
 });
@@ -411,6 +414,31 @@ describe("handleStream", () => {
             quality: "original",
         });
         expect(mockAudioServiceConstructor).not.toHaveBeenCalled();
+    });
+
+    it("uses the fallback ladder when peers are not in the provider list", async () => {
+        mockIsPeerPlaybackActive.mockResolvedValue(false);
+        mockTrackFindFirst.mockResolvedValue({
+            id: "federated-track",
+            origin: "FEDERATED",
+            remoteId: "remote-track",
+            mime: "audio/flac",
+            filePath: null,
+            fileModified: new Date("2026-08-15T12:00:00Z"),
+            federationPeer: {
+                id: "peer-1",
+                baseUrl: "https://peer.example",
+                outboundToken: "v2:encrypted-token",
+                outboundStatus: "ACTIVE",
+            },
+        });
+
+        await handleStream(buildReq({ id: "tr-federated-track" }), buildRes());
+
+        expect(mockProxyFederatedTrackStream).not.toHaveBeenCalled();
+        expect(mockLoadPeerPlaybackFallback).toHaveBeenCalledWith(
+            "federated-track",
+        );
     });
 
     it("logs a normalized warning when an active federated proxy fails", async () => {

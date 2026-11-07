@@ -1,17 +1,11 @@
 "use client";
 
-import {
-    SettingsRow,
-    SettingsInput,
-    SettingsToggle,
-    IntegrationCard,
-} from "../ui";
+import { SettingsRow, SettingsInput } from "../ui";
 import { SystemSettings } from "../../types";
 import { InlineStatus } from "@/components/ui/InlineStatus";
-import { Download } from "lucide-react";
 import { useConnectionTest } from "@/features/settings/hooks/useConnectionTest";
 
-interface LidarrCardProps {
+interface LidarrProviderSettingsProps {
     settings: SystemSettings;
     onUpdate: (updates: Partial<SystemSettings>) => void;
     onTest: (
@@ -21,14 +15,14 @@ interface LidarrCardProps {
 }
 
 /**
- * Renders the LidarrCard component.
+ * Lidarr connection settings, shown inside its Playback provider block.
  */
-export function LidarrCard({
+export function LidarrProviderSettings({
     settings,
     onUpdate,
     onTest,
     isTesting,
-}: LidarrCardProps) {
+}: LidarrProviderSettingsProps) {
     const {
         status: testStatus,
         message: testMessage,
@@ -47,77 +41,50 @@ export function LidarrCard({
 
     const handleTest = () => runTest(() => onTest("lidarr"));
 
-    const isConfigured =
-        settings.lidarrEnabled && settings.lidarrUrl && settings.lidarrApiKey;
-
-    const statusText = settings.lidarrEnabled
-        ? isConfigured
-            ? "Enabled"
-            : "Enabled — needs configuration"
-        : "Disabled";
-
-    const statusColor: "green" | "gray" = isConfigured ? "green" : "gray";
-
     return (
-        <IntegrationCard
-            icon={<Download className="w-5 h-5 text-blue-400" />}
-            title="Lidarr"
-            statusText={statusText}
-            statusColor={statusColor}
-            connected={false}
-            expanded={settings.lidarrEnabled}
-            headerAction={
-                <SettingsToggle
-                    id="lidarr-enabled"
-                    checked={settings.lidarrEnabled}
-                    onChange={(checked) => onUpdate({ lidarrEnabled: checked })}
+        <div className="space-y-1">
+            <SettingsRow label="Lidarr URL">
+                <SettingsInput
+                    value={settings.lidarrUrl}
+                    onChange={(v) => onUpdate({ lidarrUrl: v })}
+                    placeholder="http://localhost:8686"
+                    className="w-64"
                 />
-            }
-        >
-            <div className="space-y-1">
-                <SettingsRow label="Lidarr URL">
-                    <SettingsInput
-                        value={settings.lidarrUrl}
-                        onChange={(v) => onUpdate({ lidarrUrl: v })}
-                        placeholder="http://localhost:8686"
-                        className="w-64"
-                    />
-                </SettingsRow>
+            </SettingsRow>
 
-                <SettingsRow label="API Key">
-                    <SettingsInput
-                        type="password"
-                        value={settings.lidarrApiKey}
-                        onChange={(v) => onUpdate({ lidarrApiKey: v })}
-                        placeholder="Enter API key"
-                        className="w-64"
-                    />
-                </SettingsRow>
+            <SettingsRow label="API Key">
+                <SettingsInput
+                    type="password"
+                    value={settings.lidarrApiKey}
+                    onChange={(v) => onUpdate({ lidarrApiKey: v })}
+                    placeholder="Enter API key"
+                    className="w-64"
+                />
+            </SettingsRow>
 
-                <div className="pt-2">
-                    <div className="inline-flex items-center gap-3">
-                        <button
-                            onClick={handleTest}
-                            disabled={
-                                isTesting ||
-                                !settings.lidarrUrl ||
-                                !settings.lidarrApiKey
-                            }
-                            className="px-4 py-1.5 text-sm bg-white text-black font-medium rounded-full
+            <div className="pt-2">
+                <div className="inline-flex items-center gap-3">
+                    <button
+                        onClick={handleTest}
+                        disabled={
+                            isTesting ||
+                            !settings.lidarrUrl ||
+                            !settings.lidarrApiKey
+                        }
+                        className="px-4 py-1.5 text-sm bg-white text-black font-medium rounded-full
                                 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed transition-transform"
-                        >
-                            {testStatus === "loading"
-                                ? "Testing..."
-                                : "Test Connection"}
-                        </button>
-                        <InlineStatus
-                            status={testStatus}
-                            message={testMessage}
-                            onClear={reset}
-                        />
-                    </div>
+                    >
+                        {testStatus === "loading"
+                            ? "Testing..."
+                            : "Test Connection"}
+                    </button>
+                    <InlineStatus
+                        status={testStatus}
+                        message={testMessage}
+                        onClear={reset}
+                    />
                 </div>
             </div>
-        </IntegrationCard>
+        </div>
     );
 }

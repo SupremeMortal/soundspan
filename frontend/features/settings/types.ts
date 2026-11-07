@@ -5,12 +5,6 @@
 
 export type Tab = "user" | "account" | "system";
 
-/** Library download sources selectable as the primary preference. */
-export type DownloadSource = "soulseek" | "lidarr" | "tidal" | "youtube";
-
-/** Fallback behavior when the primary download source is unavailable. */
-export type DownloadFallback = "none" | DownloadSource;
-
 export interface UserSettings {
     displayName?: string | null;
     hasProfilePicture?: boolean;
@@ -73,13 +67,15 @@ export interface SystemSettings {
     libraryDeletionEnabled: boolean;
     audioAnalyzerWorkers: number;
     soulseekConcurrentDownloads: number;
-    // Download Preferences
-    downloadSource: DownloadSource;
     // Federation identity
     federationInstanceName: string | null;
-    primaryFailureFallback: DownloadFallback;
-    // Playback source priority (comma-separated provider order)
-    playbackSourceOrder: string;
+    // Active Playback providers in priority order (comma-separated). The
+    // local library is always first and is not listed; being listed enables
+    // a provider for streaming and downloads.
+    playbackProviders: string;
+    // Active metadata providers in priority order (comma-separated)
+    artistImageProviders: string;
+    albumCoverProviders: string;
     // Search's Discover providers: full priority order and the enabled subset
     searchProviderOrder: string;
     searchProvidersEnabled: string;

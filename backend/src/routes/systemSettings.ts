@@ -15,8 +15,8 @@ import {
 } from "../utils/routeErrorResponse";
 import { config } from "../config";
 import { federationInstanceNameSchema } from "./systemSettingsFederationSchema";
-import { isPlaybackSourceOrder } from "../services/playbackSourcePriority";
 import { searchProviderFields } from "../services/searchProviderSettings";
+import * as providerLists from "../services/providerListEnablement";
 import { invalidateUserProviderProfileCache } from "../services/listenTogetherResolution";
 import { testSoulseekCredentials } from "../services/soulseek/slskSession";
 import {
@@ -99,17 +99,8 @@ const systemSettingsSchema = z.object({
     transcodeCacheMaxGb: z.number().optional(),
     soulseekConcurrentDownloads: z.number().min(1).max(10).optional(),
 
-    downloadSource: z
-        .enum(["soulseek", "lidarr", "tidal", "youtube"])
-        .optional(),
-    playbackSourceOrder: z
-        .string()
-        .refine(isPlaybackSourceOrder, "Invalid playback source order")
-        .optional(),
     ...searchProviderFields,
-    primaryFailureFallback: z
-        .enum(["none", "lidarr", "soulseek", "tidal", "youtube"])
-        .optional(),
+    ...providerLists.providerListFields,
 
     federationInstanceName: federationInstanceNameSchema,
     // TIDAL — credential fields (tidalAccessToken, tidalRefreshToken,
@@ -188,7 +179,8 @@ function buildEnvironmentUpdate(
  *           System settings object with decrypted sensitive fields.
  *           TIDAL token material is never included; the boolean
  *           `tidalConnected` reports whether the admin download
- *           connection is established.
+ *           connection is established. The provider lists are as in
+ *           the update request.
  *       401:
  *         description: Not authenticated
  *       403:
@@ -279,6 +271,9 @@ router.get("/", async (req, res) => {
  *               managed only through the TIDAL authentication endpoints.
  *             properties:
  *               federationInstanceName: { type: string, nullable: true, maxLength: 100, description: Empty or whitespace-only values clear the name }
+ *               playbackProviders: { type: string, example: "peers,tidal,ytmusic,soulseek,lidarr", description: "Comma-separated active playback and download providers in priority order (duplicate-free; empty allowed), any of peers, tidal, ytmusic, soulseek, lidarr. The library always plays first. Streaming uses peers, tidal and ytmusic in this order; album downloads try tidal, ytmusic, soulseek and lidarr in this order. Saving it sets lidarrEnabled, tidalEnabled and ytMusicEnabled from membership, and Soulseek is used only while listed." }
+ *               artistImageProviders: { type: string, example: "wikidata,fanart,deezer,lastfm", description: "Comma-separated active artist image providers in priority order (duplicate-free; empty allowed), any of wikidata, fanart, deezer, lastfm." }
+ *               albumCoverProviders: { type: string, example: "coverartarchive,deezer,fanart", description: "Comma-separated active album cover providers in priority order (duplicate-free; empty allowed), any of coverartarchive, deezer, fanart. Saving either metadata list sets fanartEnabled to whether fanart is in either list." }
  *     responses:
  *       200:
  *         description: Settings saved successfully
@@ -292,7 +287,9 @@ router.get("/", async (req, res) => {
 // POST /system-settings
 router.post("/", async (req, res) => {
     try {
-        const data = systemSettingsSchema.parse(req.body);
+        const data = await providerLists.applyProviderListEnablement(
+            systemSettingsSchema.parse(req.body),
+        );
 
         logger.debug("[SYSTEM SETTINGS] Saving settings...");
         logger.debug(
@@ -363,14 +360,15 @@ router.post("/", async (req, res) => {
             logger.warn("Failed to refresh Last.fm API key:", err);
         }
 
-        // Disconnect Soulseek if credentials changed. An empty-string
-        // password is a no-change round-trip (see the secret semantics
-        // above), so it must not bounce the connection; null (explicit
-        // clear) and non-empty values are real credential changes.
+        // Disconnect Soulseek if credentials changed or it left the provider
+        // list. An empty-string password is a no-change round-trip (see the
+        // secret semantics above), so it must not bounce the connection;
+        // null (explicit clear) and non-empty values are real changes.
         if (
             data.soulseekUsername !== undefined ||
             (data.soulseekPassword !== undefined &&
-                data.soulseekPassword !== "")
+                data.soulseekPassword !== "") ||
+            providerLists.removesSoulseek(data)
         ) {
             try {
                 const { soulseekService } =

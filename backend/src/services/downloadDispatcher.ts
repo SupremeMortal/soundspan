@@ -6,8 +6,10 @@ import {
     type DownloadSource,
     type DownloadSourceAvailability,
     type DownloadSourceResolution,
+    downloadSourceChain,
     probeDownloadSourceAvailability,
     resolveDownloadSource,
+    resolveRuntimeFallback,
 } from "./downloadSourcePolicy";
 import { simpleDownloadManager } from "./simpleDownloadManager";
 import { processTidalDownload } from "./tidalLibraryDownload";
@@ -45,7 +47,7 @@ type ProviderDownloadProcessor = (
 type FailedDownloadSourceResolution = Extract<
     DownloadSourceResolution,
     { kind: "fail" }
-> & { source: DownloadSource };
+> & { source: DownloadSource | null };
 
 /** Resolved album-download routing snapshot used by queue workers. */
 export type AlbumDownloadRouting =
@@ -81,7 +83,7 @@ function parseAlbumNames({
 async function failJobWithoutDispatch(
     jobId: string,
     jobMetadata: unknown,
-    source: string,
+    source: string | null,
     message: string,
     statusText: string,
 ): Promise<void> {
@@ -175,24 +177,6 @@ async function dispatchResolvedSource(
     }
 }
 
-function resolveRuntimeFallback(
-    configuredSource: DownloadSource,
-    dispatchedSource: DownloadSource,
-    fallback: string | null | undefined,
-    availability: DownloadSourceAvailability,
-): DownloadSource | undefined {
-    if (configuredSource !== dispatchedSource) return undefined;
-    const resolution = resolveDownloadSource({
-        configuredSource,
-        fallback,
-        availability: { ...availability, [configuredSource]: false },
-    });
-    if (resolution.kind === "fail" || resolution.source === dispatchedSource) {
-        return undefined;
-    }
-    return resolution.source;
-}
-
 /** Resolve one album download against a single settings and availability snapshot. */
 export async function resolveAlbumDownloadRouting(
     params: AlbumDownloadDispatchParams,
@@ -210,32 +194,26 @@ export async function resolveAlbumDownloadRouting(
     logger.debug(`Parsed: Artist="${names.artist}", Album="${names.album}"`);
 
     const settings = await getSystemSettings();
-    const configuredSource = (settings?.downloadSource ||
-        "soulseek") as DownloadSource;
+    const chain = downloadSourceChain(settings?.playbackProviders);
     const availability = await probeDownloadSourceAvailability();
-    const resolution = resolveDownloadSource({
-        configuredSource,
-        fallback: settings?.primaryFailureFallback,
-        availability,
-    });
+    const resolution = resolveDownloadSource({ chain, availability });
     if (resolution.kind === "fail") {
         return {
             kind: "fail",
             job,
-            resolution: { ...resolution, source: configuredSource },
+            resolution: { ...resolution, source: chain[0] ?? null },
         };
     }
 
     logger.debug(
-        `Download source: configured=${configuredSource}, effective=${resolution.source}`,
+        `Download source: chain=${chain.join(",")}, effective=${resolution.source}`,
     );
     return {
         kind: "dispatch",
         source: resolution.source,
         fallbackSource: resolveRuntimeFallback(
-            configuredSource,
+            chain,
             resolution.source,
-            settings?.primaryFailureFallback,
             availability,
         ),
         availability,
@@ -275,8 +253,9 @@ export async function dispatchResolvedAlbumDownload(
 }
 
 /**
- * Dispatch an existing album download job through the configured source and
- * fallback policy. Missing jobs and non-album types are left undispatched.
+ * Dispatch an existing album download job through the admin's download chain
+ * (the download-capable providers of the playback provider list, in order).
+ * Missing jobs and non-album types are left undispatched.
  */
 export async function dispatchAlbumDownload(
     params: AlbumDownloadDispatchParams,

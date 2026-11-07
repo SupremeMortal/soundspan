@@ -336,6 +336,27 @@ describe("systemSettings runtime routes", () => {
         expect(res.body.federationInstanceName).toBe("Living Room Library");
     });
 
+    it("returns the provider lists", async () => {
+        mockSystemSettingsFindUnique.mockResolvedValueOnce({
+            id: "default",
+            playbackProviders: "tidal,peers",
+            artistImageProviders: "deezer",
+            albumCoverProviders: "",
+        } as any);
+        const res = createRes();
+
+        await getSettingsHandler({ user: { id: "user-1" } } as any, res);
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body).toEqual(
+            expect.objectContaining({
+                playbackProviders: "tidal,peers",
+                artistImageProviders: "deezer",
+                albumCoverProviders: "",
+            }),
+        );
+    });
+
     it("saves the shared TIDAL account toggle and applies it immediately", async () => {
         const req = {
             user: { id: "admin-1" },
@@ -594,56 +615,148 @@ describe("systemSettings runtime routes", () => {
         expect(upsertArg.update.transcodeCacheMaxGb).toBe(12);
     });
 
-    it("accepts youtube as a download source and fallback", async () => {
-        const req = {
-            user: { id: "admin-1" },
-            body: {
-                downloadSource: "youtube",
-                primaryFailureFallback: "youtube",
-            },
-        } as any;
+    async function postSettings(body: Record<string, unknown>) {
         const res = createRes();
+        await postSettingsHandler(
+            { user: { id: "admin-1" }, body } as any,
+            res,
+        );
+        return res;
+    }
 
-        await postSettingsHandler(req, res);
+    function savedUpdate(): Record<string, unknown> {
+        return mockSystemSettingsUpsert.mock.calls[0][0].update as Record<
+            string,
+            unknown
+        >;
+    }
+
+    it("saves the playback provider list and syncs the enable flags", async () => {
+        const res = await postSettings({
+            playbackProviders: "soulseek,tidal,peers",
+        });
 
         expect(res.statusCode).toBe(200);
-        expect(mockSystemSettingsUpsert).toHaveBeenCalledWith(
+        expect(savedUpdate()).toEqual(
             expect.objectContaining({
-                update: expect.objectContaining({
-                    downloadSource: "youtube",
-                    primaryFailureFallback: "youtube",
-                }),
+                playbackProviders: "soulseek,tidal,peers",
+                tidalEnabled: true,
+                ytMusicEnabled: false,
+                lidarrEnabled: false,
+            }),
+        );
+        expect(mockWriteEnvFile).toHaveBeenCalledWith(
+            expect.objectContaining({ LIDARR_ENABLED: "false" }),
+        );
+    });
+
+    it("lets membership override a conflicting enable flag", async () => {
+        const res = await postSettings({
+            playbackProviders: "lidarr",
+            lidarrEnabled: false,
+            tidalEnabled: true,
+        });
+
+        expect(res.statusCode).toBe(200);
+        expect(savedUpdate()).toEqual(
+            expect.objectContaining({
+                lidarrEnabled: true,
+                tidalEnabled: false,
+                ytMusicEnabled: false,
             }),
         );
     });
 
-    it("accepts a closed playback source order", async () => {
-        const req = {
-            user: { id: "admin-1" },
-            body: { playbackSourceOrder: "peers,library,tidal,ytmusic" },
-        } as any;
-        const res = createRes();
-
-        await postSettingsHandler(req, res);
+    it("accepts an empty playback provider list", async () => {
+        const res = await postSettings({ playbackProviders: "" });
 
         expect(res.statusCode).toBe(200);
-        expect(mockSystemSettingsUpsert).toHaveBeenCalledWith(
+        expect(savedUpdate()).toEqual(
             expect.objectContaining({
-                update: expect.objectContaining({
-                    playbackSourceOrder: "peers,library,tidal,ytmusic",
-                }),
+                playbackProviders: "",
+                lidarrEnabled: false,
+                tidalEnabled: false,
+                ytMusicEnabled: false,
             }),
         );
     });
 
-    it("rejects malformed playback source orders", async () => {
-        const req = {
-            user: { id: "admin-1" },
-            body: { playbackSourceOrder: "library,peers,spotify,ytmusic" },
-        } as any;
-        const res = createRes();
+    it("leaves the enable flags alone when the list is not in the update", async () => {
+        const res = await postSettings({ tidalEnabled: true });
 
-        await postSettingsHandler(req, res);
+        expect(res.statusCode).toBe(200);
+        expect(savedUpdate()).toEqual({ tidalEnabled: true });
+    });
+
+    it.each(["peers,library", "tidal,tidal", "spotify"])(
+        "rejects the playback provider list %p",
+        async (playbackProviders) => {
+            const res = await postSettings({ playbackProviders });
+
+            expect(res.statusCode).toBe(400);
+            expect(mockSystemSettingsUpsert).not.toHaveBeenCalled();
+        },
+    );
+
+    it("ignores the replaced download and playback order fields", async () => {
+        const res = await postSettings({
+            downloadSource: "youtube",
+            primaryFailureFallback: "youtube",
+            playbackSourceOrder: "peers,library,tidal,ytmusic",
+        });
+
+        expect(res.statusCode).toBe(200);
+        expect(savedUpdate()).toEqual({});
+    });
+
+    it("disconnects Soulseek when it leaves the provider list", async () => {
+        await postSettings({ playbackProviders: "peers,tidal" });
+        expect(mockSoulseekService.disconnect).toHaveBeenCalledTimes(1);
+
+        await postSettings({ playbackProviders: "soulseek" });
+        expect(mockSoulseekService.disconnect).toHaveBeenCalledTimes(1);
+    });
+
+    it("saves both metadata lists and enables Fanart.tv from them", async () => {
+        const res = await postSettings({
+            artistImageProviders: "deezer,lastfm",
+            albumCoverProviders: "fanart,coverartarchive",
+            fanartEnabled: false,
+        });
+
+        expect(res.statusCode).toBe(200);
+        expect(savedUpdate()).toEqual({
+            artistImageProviders: "deezer,lastfm",
+            albumCoverProviders: "fanart,coverartarchive",
+            fanartEnabled: true,
+        });
+    });
+
+    it("reads the stored other metadata list to decide Fanart.tv", async () => {
+        mockSystemSettingsFindUnique.mockResolvedValueOnce({
+            artistImageProviders: "wikidata",
+            albumCoverProviders: "fanart",
+        } as any);
+        const kept = await postSettings({ artistImageProviders: "deezer" });
+        expect(kept.statusCode).toBe(200);
+        expect(savedUpdate().fanartEnabled).toBe(true);
+
+        mockSystemSettingsUpsert.mockClear();
+        mockSystemSettingsFindUnique.mockResolvedValueOnce({
+            artistImageProviders: "wikidata,deezer",
+            albumCoverProviders: "fanart",
+        } as any);
+        const dropped = await postSettings({ albumCoverProviders: "deezer" });
+        expect(dropped.statusCode).toBe(200);
+        expect(savedUpdate().fanartEnabled).toBe(false);
+    });
+
+    it.each([
+        { artistImageProviders: "coverartarchive" },
+        { artistImageProviders: "deezer,deezer" },
+        { albumCoverProviders: "wikidata" },
+    ])("rejects the metadata list %p", async (body) => {
+        const res = await postSettings(body);
 
         expect(res.statusCode).toBe(400);
         expect(mockSystemSettingsUpsert).not.toHaveBeenCalled();

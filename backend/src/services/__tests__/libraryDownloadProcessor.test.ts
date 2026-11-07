@@ -110,7 +110,7 @@ describe("libraryDownloadProcessor", () => {
             },
         });
         mockUpdate.mockResolvedValue({});
-        mockSettings.mockResolvedValue({ primaryFailureFallback: "none" });
+        mockSettings.mockResolvedValue({ playbackProviders: "" });
         findMatch.mockResolvedValue({ id: "match-1" });
         download.mockResolvedValue({ downloaded: 3 });
         fallbackPeer.mockResolvedValue(undefined);
@@ -153,7 +153,7 @@ describe("libraryDownloadProcessor", () => {
     it("uses the resolved snapshot to hand a search miss to Soulseek", async () => {
         findMatch.mockResolvedValueOnce(null);
         mockSettings.mockResolvedValueOnce({
-            primaryFailureFallback: "lidarr",
+            playbackProviders: "tidal,lidarr",
         });
 
         await runLibraryAlbumDownload(

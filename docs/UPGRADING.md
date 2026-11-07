@@ -114,6 +114,34 @@ runs automatically at startup.
 `offset` to move through pages) instead of a plain list. The soundspan web app
 is already updated.
 
+**Heads-up, provider lists replace the download source settings:** a database
+migration replaces **Download source**, **When primary source fails**, and the
+playback source order with one ordered playback provider list, and adds ordered
+lists for artist image and album cover providers. Being in a list is what turns
+a provider on. The migration builds the playback list from your current
+settings: peers always; TIDAL, YouTube Music, and Lidarr when they were
+enabled; Soulseek when its username and password are set. Your download source
+comes first, then your fallback, keeping your TIDAL and YouTube Music playback
+order. Check the list on the `Admin → Playback` tab after upgrading. What changes:
+
+- Album downloads try every listed download provider in order instead of one
+  primary and one fallback. A provider that used to be enabled but was not
+  your download source or fallback (for example Lidarr next to a Soulseek
+  primary) is now also tried when the providers ahead of it are unavailable.
+  Remove it from the list to keep it out of downloads.
+- Soulseek is used only while it is in the list.
+- Your own library always plays first. A stored playback order that ranked
+  another source above the library is not kept.
+- The Admin page is split into tabs (Playback, Search, Metadata, Insights,
+  Users, System). Links to the old sections, such as `/admin#backup`, open the
+  tab that holds them.
+- The image lists start with every provider in the previous fixed order, so
+  images resolve as before.
+- **Breaking for API-key clients of `POST /api/system-settings`:**
+  `downloadSource`, `primaryFailureFallback`, and `playbackSourceOrder` are
+  gone and ignored if sent. Use `playbackProviders`, `artistImageProviders`,
+  and `albumCoverProviders` (see the OpenAPI docs).
+
 ---
 
 ## 2.6.0: scrobbling, AcoustID, and database changes

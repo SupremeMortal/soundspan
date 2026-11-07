@@ -17,8 +17,8 @@ Connect soundspan to Lidarr to request/download new music and trigger imports.
 
 ### Setup
 
-1. Open **Admin** → **Download Services**
-2. Enable Lidarr
+1. Open **Admin** → **Playback**
+2. Add Lidarr to the playback provider list (see [Provider Lists](#provider-lists))
 3. Set Lidarr URL (for example `http://localhost:8686`)
 4. Set Lidarr API key (Lidarr → Settings → General)
 5. Test and save
@@ -55,7 +55,7 @@ byte-addressable audiobook resource.
 
 ### Setup
 
-1. Open **Admin** → **Media Servers**
+1. Open **Admin** → **Playback** → **Audiobookshelf**
 2. Turn on **Enable Audiobookshelf**
 3. Set **Server URL** (for example `http://localhost:13378`)
 4. Set **API Key** from the Audiobookshelf user settings
@@ -69,10 +69,11 @@ soundspan can connect directly to Soulseek for discovery/download flows.
 
 ### Setup
 
-1. Open **Admin** → **Download Services**
+1. Open **Admin** → **Playback**
 2. Enter Soulseek username/password
 3. Optional: select **Test Connection** to check the login. The test opens its own short Soulseek session and closes it when it finishes.
-4. Save
+4. Add Soulseek to the playback provider list (see [Provider Lists](#provider-lists)). soundspan uses Soulseek only while it is in the list and its username and password are set.
+5. Save
 
 ### Notes
 
@@ -96,9 +97,10 @@ Stream unowned tracks via per-user YouTube Music OAuth.
 ### Admin setup
 
 1. Create OAuth client in Google Cloud Console
-2. Open **Admin** → **YouTube Music**
-3. Enable and set client ID/secret
-4. Save
+2. Open **Admin** → **Playback**
+3. Set client ID/secret
+4. Add YouTube Music to the playback provider list (see [Provider Lists](#provider-lists))
+5. Save
 
 ### Per-user setup
 
@@ -132,7 +134,7 @@ without a linked account, subject to sidecar availability and provider behavior.
 ## Search Providers
 
 Search lists artists and songs that are not in the library from catalog
-providers that an admin orders and enables under `Admin → Search Providers`:
+providers that an admin orders and enables on the `Admin → Search` tab:
 
 | Provider      | Results          | Needs                                                   |
 | ------------- | ---------------- | ------------------------------------------------------- |
@@ -148,6 +150,52 @@ the user cannot use, or one that fails, is skipped. TIDAL and YouTube Music
 songs play straight from that service; other songs play when they match an
 enabled streaming service and otherwise link to the artist page. Results are
 cached for 15 minutes per query and provider list.
+
+## Provider Lists
+
+An admin picks and orders the providers soundspan uses in drag-ordered lists:
+**Providers** on the **Admin** → **Playback** tab, and **Artist Images** and
+**Album Covers** on the **Admin** → **Metadata** tab. Drag a provider from
+**Available** into the list to turn it on, and back out to turn it off; there
+is no separate on/off switch, and each provider's settings open from its block
+in the list. A list can be empty.
+
+### Playback providers
+
+The playback provider list holds any of peers (federated libraries), TIDAL,
+YouTube Music, Soulseek, and Lidarr. A new install lists only peers. The local
+library is pinned at the top of the list and holds the music and download paths
+and the **Allow library deletion** option.
+
+- **Playback:** your own library always plays first. After it, soundspan uses
+  the streaming providers (peers, TIDAL, YouTube Music) in list order. A
+  provider that is not in the list is never used to play a song: a peer song
+  falls back to a library copy or a listed streaming service, and plays nothing
+  when none is available.
+- **Album downloads:** soundspan tries the download providers (TIDAL, YouTube
+  Music, Soulseek, Lidarr) in list order. A download starts on the first one
+  that is available. When TIDAL or YouTube Music cannot find the album, the job
+  hands off to the next available provider in the list. When no listed
+  provider is available, the job fails with a clear reason.
+- **Discover Weekly and playlist import** use the first available of Soulseek
+  and Lidarr in list order, then the other one if the first fails.
+- Saving the list turns the TIDAL, YouTube Music, and Lidarr integrations on or
+  off to match it.
+
+### Artist images and album covers
+
+| List          | Providers                                         | Default order                          |
+| ------------- | ------------------------------------------------- | -------------------------------------- |
+| Artist images | Wikidata, Fanart.tv, Deezer, Last.fm              | Wikidata, Fanart.tv, Deezer, Last.fm   |
+| Album covers  | Cover Art Archive, Deezer, Fanart.tv              | Cover Art Archive, Deezer, Fanart.tv   |
+
+soundspan tries the listed providers in order and keeps the first image found.
+Wikidata, Fanart.tv, and Cover Art Archive need a MusicBrainz match and are
+skipped for artists or albums without one. Saving either list turns Fanart.tv on
+when it is in either list and off when it is in neither. A found image, or a
+lookup that found nothing, is cached, so a list change applies to other
+artists and albums right away and to already-looked-up ones once their cache
+entry expires (up to 7 days for a found image, 1 day for a miss).
 
 ## Track Mapping and Playlist Import APIs
 
@@ -176,7 +224,7 @@ Stream unowned tracks via per-user TIDAL OAuth.
 ### Requirements
 
 - Running `tidal-streamer` sidecar
-- TIDAL enabled in admin settings
+- TIDAL in the admin playback provider list (see [Provider Lists](#provider-lists))
 
 ### Per-user setup
 
@@ -193,7 +241,7 @@ Songs you like from TIDAL appear in your Library with a TIDAL badge while you ar
 
 An admin can let every user stream TIDAL through the admin download account instead of linking their own:
 
-1. Connect TIDAL under **Admin** → **Download Services** (see [TIDAL Downloads](#tidal-downloads))
+1. Connect TIDAL under **Admin** → **Playback** (see [TIDAL Downloads](#tidal-downloads))
 2. Turn on **Share this account with all users** in the same card
 3. Save
 
@@ -228,14 +276,15 @@ Use TIDAL as a download source for tracks/albums.
 ### Setup
 
 1. Ensure `tidal-streamer` service is running
-2. Open **Admin** → **Download Services**
+2. Open **Admin** → **Playback**
 3. Authenticate via device-code flow
 4. Choose download quality and naming template
-5. Save
+5. Add TIDAL to the playback provider list (see [Provider Lists](#provider-lists))
+6. Save
 
 ### Download songs as they play
 
-Turn on **Download songs as they play** in the TIDAL card under **Admin** → **Download Services** to keep a copy of everything people play:
+Turn on **Download songs as they play** in the TIDAL settings under **Admin** → **Playback** to keep a copy of everything people play:
 
 - Every TIDAL song plays from its download. The first time anyone plays a song, soundspan downloads it once into the music library with the admin TIDAL account at the highest quality TIDAL offers for it, and the listener hears those same bytes as they arrive, so playback starts straight away. Nothing plays without ending up in the library.
 - The download finishes even if the listener skips the song, and other people playing the same song meanwhile share it. As soon as it finishes, soundspan adds that file to the library on its own; no library scan is needed.
@@ -297,10 +346,8 @@ Use YouTube Music as a download source for albums, the same way TIDAL works.
 ### Setup
 
 1. Ensure the `ytmusic-streamer` sidecar is running
-2. Open **Admin** → **YouTube Music** and enable YouTube Music
-3. Open **Admin** → **Download Preferences**
-4. Choose **YouTube Music (Albums)** as the primary source, or pick **Try YouTube Music** as the fallback for another source
-5. Save
+2. Add YouTube Music to the playback provider list (see [Provider Lists](#provider-lists)). Its place in the list decides when album downloads try it.
+3. Save
 
 No account link is needed for downloads — the sidecar uses public album pages.
 
@@ -308,7 +355,7 @@ No account link is needed for downloads — the sidecar uses public album pages.
 
 When a download job runs, soundspan searches YouTube Music for the album, then the sidecar downloads each track and files it under your music folder as `Artist/Album/01. Title.mp3`. The library scanner picks the album up automatically when the job finishes.
 
-If the album is not found on YouTube Music, the job follows your **When Primary Source Fails** setting — it can hand off to Soulseek, Lidarr, or TIDAL, or skip.
+If the album is not found on YouTube Music, the job hands off to the next available download provider in the playback provider list, if there is one.
 
 ### Sidecar environment values
 

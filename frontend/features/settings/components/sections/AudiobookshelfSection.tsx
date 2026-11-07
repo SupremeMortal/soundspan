@@ -49,8 +49,8 @@ export function AudiobookshelfSection({
     return (
         <SettingsSection
             id="audiobookshelf"
-            title="Media Servers"
-            description="Connect to external media servers for audiobooks and podcasts"
+            title="Audiobookshelf"
+            description="Audiobooks and podcasts from an Audiobookshelf server"
         >
             <SettingsRow
                 label="Enable Audiobookshelf"
