@@ -271,6 +271,9 @@ model SystemSettings {
   /// When true, playing a TIDAL song first downloads it to the library with
   /// the admin account above (highest quality) and plays the local file.
   tidalDownloadBeforePlay     Boolean  @default(false)
+  /// Quality YouTube Music tracks are fetched and stored at for downloads.
+  /// Same vocabulary as the per-user ytMusicQuality: LOW, MEDIUM, HIGH, LOSSLESS.
+  ytMusicQuality              String   @default("HIGH")
   /// Admin offline-download policy, one switch per source. Evaluated by
   /// resolveOfflinePolicy; a disabled source cannot be downloaded to devices.
   offlineAllowLocal           Boolean  @default(true)

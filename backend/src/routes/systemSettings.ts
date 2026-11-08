@@ -16,6 +16,7 @@ import {
 import { config } from "../config";
 import { federationInstanceNameSchema } from "./systemSettingsFederationSchema";
 import { searchProviderFields } from "../services/searchProviderSettings";
+import { downloadQualityFields } from "../services/offline/downloadQualitySettings";
 import { offlinePolicyFields } from "../services/offline/offlinePolicySettings";
 import * as providerLists from "../services/providerListEnablement";
 import { invalidateUserProviderProfileCache } from "../services/listenTogetherResolution";
@@ -111,9 +112,7 @@ const systemSettingsSchema = z.object({
     // settings form round-trip wipe the admin download connection.
     tidalEnabled: z.boolean().optional(),
     tidalCountryCode: z.string().nullable().optional(),
-    tidalQuality: z
-        .enum(["LOW", "HIGH", "LOSSLESS", "HI_RES_LOSSLESS"])
-        .optional(),
+    ...downloadQualityFields,
     tidalFileTemplate: z.string().nullable().optional(),
     // Share the admin TIDAL account for every user's streaming and browse.
     tidalStreamingUseInstanceAccount: z.boolean().optional(),
@@ -272,6 +271,7 @@ router.get("/", async (req, res) => {
  *               remain unchanged, and null clears them. TIDAL credentials are
  *               managed only through the TIDAL authentication endpoints.
  *             properties:
+ *               ytMusicQuality: { type: string, enum: [LOW, MEDIUM, HIGH, LOSSLESS], default: HIGH, description: Quality YouTube Music tracks are fetched and stored at }
  *               federationInstanceName: { type: string, nullable: true, maxLength: 100, description: Empty or whitespace-only values clear the name }
  *               playbackProviders: { type: string, example: "peers,tidal,ytmusic,soulseek,lidarr", description: "Comma-separated active playback and download providers in priority order (duplicate-free; empty allowed), any of peers, tidal, ytmusic, soulseek, lidarr. The library always plays first. Streaming uses peers, tidal and ytmusic in this order; album downloads try tidal, ytmusic, soulseek and lidarr in this order. Saving it sets lidarrEnabled, tidalEnabled and ytMusicEnabled from membership, and Soulseek is used only while listed." }
  *               artistImageProviders: { type: string, example: "wikidata,fanart,deezer,lastfm", description: "Comma-separated active artist image providers in priority order (duplicate-free; empty allowed), any of wikidata, fanart, deezer, lastfm." }

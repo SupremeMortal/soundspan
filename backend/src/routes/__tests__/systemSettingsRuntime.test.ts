@@ -438,6 +438,40 @@ describe("systemSettings runtime routes", () => {
         expect(mockSystemSettingsUpsert).not.toHaveBeenCalled();
     });
 
+    it.each(["LOW", "MEDIUM", "HIGH", "LOSSLESS"])(
+        "saves the admin YT Music source quality %s without touching other settings",
+        async (ytMusicQuality) => {
+            const res = createRes();
+
+            await postSettingsHandler(
+                { user: { id: "admin-1" }, body: { ytMusicQuality } } as any,
+                res,
+            );
+
+            expect(res.statusCode).toBe(200);
+            expect(mockSystemSettingsUpsert).toHaveBeenCalledTimes(1);
+            const { update } = mockSystemSettingsUpsert.mock.calls[0][0];
+            expect(update.ytMusicQuality).toBe(ytMusicQuality);
+            expect(update).not.toHaveProperty("tidalQuality");
+            expect(update).not.toHaveProperty("ytMusicEnabled");
+        },
+    );
+
+    it.each(["ultra", "high", "", 3, null])(
+        "rejects the invalid admin YT Music source quality %p",
+        async (ytMusicQuality) => {
+            const res = createRes();
+
+            await postSettingsHandler(
+                { user: { id: "admin-1" }, body: { ytMusicQuality } } as any,
+                res,
+            );
+
+            expect(res.statusCode).toBe(400);
+            expect(mockSystemSettingsUpsert).not.toHaveBeenCalled();
+        },
+    );
+
     it("rejects a non-boolean shared TIDAL account toggle", async () => {
         const res = createRes();
 
