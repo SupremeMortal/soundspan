@@ -398,9 +398,11 @@ jobs:
             frontend/package-lock.json
             packages/media-metadata-contract/package-lock.json
 
-      - name: Install media metadata contract
+      - name: Install and build media metadata contract
         working-directory: packages/media-metadata-contract
-        run: npm ci
+        run: |
+          npm ci
+          npm run build
 
       - name: Test and typecheck media metadata contract
         run: |
