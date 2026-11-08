@@ -26,6 +26,13 @@ import {
 
 const logger = createFrontendLogger("Settings.YouTubeMusicSection");
 
+const SOURCE_QUALITY_OPTIONS = [
+    { value: "LOW", label: "Low (64 kbps)" },
+    { value: "MEDIUM", label: "Medium (128 kbps)" },
+    { value: "HIGH", label: "High (256 kbps)" },
+    { value: "LOSSLESS", label: "Lossless (best available)" },
+];
+
 // ── Admin settings: shown inside the Playback provider block ───────
 
 interface YouTubeMusicProviderSettingsProps {
@@ -125,6 +132,23 @@ export function YouTubeMusicProviderSettings({
                     </>
                 )}
             </div>
+            <SettingsRow
+                label="Source Quality"
+                description="YouTube Music tracks are stored at this quality for every user. A lower quality requested by a user is transcoded from it."
+                htmlFor="yt-music-source-quality"
+            >
+                <SettingsSelect
+                    id="yt-music-source-quality"
+                    value={settings.ytMusicQuality || "HIGH"}
+                    onChange={(v) =>
+                        onUpdate({
+                            ytMusicQuality:
+                                v as SystemSettings["ytMusicQuality"],
+                        })
+                    }
+                    options={SOURCE_QUALITY_OPTIONS}
+                />
+            </SettingsRow>
             <OfflineDownloadToggle
                 field="offlineAllowYtMusic"
                 id="offline-allow-ytmusic"

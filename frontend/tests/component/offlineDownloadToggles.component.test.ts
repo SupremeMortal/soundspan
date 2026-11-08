@@ -164,3 +164,50 @@ test("YouTube Music provider settings carry the offline toggle", async () => {
     assert.deepEqual(view.updates, [{ offlineAllowYtMusic: false }]);
     await view.unmount();
 });
+
+function qualitySelect(container: HTMLElement): HTMLSelectElement {
+    const select = container.querySelector<HTMLSelectElement>(
+        "#yt-music-source-quality",
+    );
+    assert.ok(select, "YT Music source quality select renders");
+    return select;
+}
+
+test("YouTube Music provider settings show and change the source quality", async () => {
+    const { YouTubeMusicProviderSettings } =
+        await import("../../features/settings/components/sections/YouTubeMusicSection");
+    const view = await mountNode((onUpdate) =>
+        React.createElement(YouTubeMusicProviderSettings, {
+            settings: {
+                ...allOn,
+                ytMusicQuality: "LOSSLESS",
+            } as SystemSettings,
+            onUpdate,
+        }),
+    );
+    const select = qualitySelect(view.container);
+    assert.equal(select.value, "LOSSLESS");
+    assert.match(
+        view.container.textContent ?? "",
+        /stored at this quality for every user\. A lower quality requested by a user is transcoded from it/,
+    );
+    await React.act(async () => {
+        select.value = "MEDIUM";
+        select.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    assert.deepEqual(view.updates, [{ ytMusicQuality: "MEDIUM" }]);
+    await view.unmount();
+});
+
+test("YouTube Music source quality falls back to High when unset", async () => {
+    const { YouTubeMusicProviderSettings } =
+        await import("../../features/settings/components/sections/YouTubeMusicSection");
+    const view = await mountNode((onUpdate) =>
+        React.createElement(YouTubeMusicProviderSettings, {
+            settings: { ...allOn } as SystemSettings,
+            onUpdate,
+        }),
+    );
+    assert.equal(qualitySelect(view.container).value, "HIGH");
+    await view.unmount();
+});

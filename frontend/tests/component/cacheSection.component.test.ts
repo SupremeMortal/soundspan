@@ -101,6 +101,7 @@ const settings: SystemSettings = {
     ytMusicEnabled: false,
     ytMusicClientId: "",
     ytMusicClientSecret: "",
+    ytMusicQuality: "HIGH",
     showVersion: false,
 };
 
