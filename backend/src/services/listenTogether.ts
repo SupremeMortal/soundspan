@@ -15,6 +15,7 @@ import {
 } from "../utils/librarySorting";
 import { logger } from "../utils/logger";
 import { trackMappingService } from "./trackMappingService";
+import { parsePlaybackId } from "./playback/playbackId";
 import {
     groupManager,
     MAX_QUEUE_SIZE,
@@ -105,6 +106,17 @@ export interface LeaveResult {
 }
 
 export interface QueueTrackInput {
+    /** Opaque unified identifier; wins over every legacy identifier field. */
+    playbackId?: string;
+    /** Display metadata used when a remote track row must be created. */
+    metadata?: {
+        title: string;
+        artist: string;
+        album: string;
+        durationSec: number;
+        artworkUrl?: string;
+        isrc?: string;
+    };
     trackId?: string;
     tidalTrackId?: number;
     youtubeVideoId?: string;
@@ -181,12 +193,44 @@ async function loadLocalQueueMappingIds(
 }
 
 /**
+ * Rewrites a `{ playbackId, metadata? }` input into the legacy identifier
+ * fields the resolution below consumes. Inputs without a `playbackId` pass
+ * through untouched.
+ *
+ * @throws GroupError `INVALID_PLAYBACK_ID` when the id cannot be parsed.
+ */
+function legacyQueueInput(input: QueueTrackInput): QueueTrackInput {
+    if (input.playbackId === undefined) return input;
+    const ref = parsePlaybackId(input.playbackId);
+    if (!ref) {
+        throw new GroupError("INVALID_PLAYBACK_ID", "Invalid playbackId");
+    }
+    const { metadata } = input;
+    const display = metadata
+        ? {
+              title: metadata.title,
+              artist: metadata.artist,
+              album: metadata.album,
+              duration: metadata.durationSec,
+              thumbnailUrl: metadata.artworkUrl,
+              isrc: metadata.isrc,
+          }
+        : {};
+    if (ref.kind === "t") return { trackId: ref.trackId };
+    if (ref.kind === "td") return { tidalTrackId: ref.tidalId, ...display };
+    return { youtubeVideoId: ref.videoId, ...display };
+}
+
+/**
  * Validates and materializes mixed-source queue input into canonical queue items.
+ *
+ * @throws GroupError `INVALID_PLAYBACK_ID` when an input carries a malformed `playbackId`.
  */
 export async function validateQueueTracks(
-    inputs: QueueTrackInput[],
+    rawInputs: QueueTrackInput[],
 ): Promise<SyncQueueItem[]> {
-    if (!inputs.length) return [];
+    if (!rawInputs.length) return [];
+    const inputs = rawInputs.map(legacyQueueInput);
 
     const localInputs: Array<{ input: QueueTrackInput; trackId: string }> = [];
     const tidalInputs: Array<{ input: QueueTrackInput; tidalTrackId: number }> =

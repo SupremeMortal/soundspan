@@ -6,6 +6,7 @@ export class GroupError extends Error {
             | "NOT_MEMBER"
             | "NOT_ALLOWED"
             | "INVALID"
+            | "INVALID_PLAYBACK_ID"
             | "CONFLICT"
             | "UNAVAILABLE",
         message: string,

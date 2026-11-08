@@ -1910,6 +1910,48 @@ describe("listen together socket runtime behavior", () => {
             error: "fromIndex and toIndex required",
         });
 
+        mocks.validateQueueTracks.mockResolvedValueOnce([{ id: "track-9" }]);
+        const playbackIdAddAck = jest.fn();
+        await eventHandlers["queue"](
+            {
+                action: "add",
+                tracks: [
+                    {
+                        playbackId: "td.77",
+                        metadata: {
+                            title: "T",
+                            artist: "A",
+                            album: "B",
+                            durationSec: 10,
+                        },
+                    },
+                ],
+            },
+            playbackIdAddAck,
+        );
+        expect(mocks.validateQueueTracks).toHaveBeenLastCalledWith([
+            expect.objectContaining({ playbackId: "td.77" }),
+        ]);
+        expect(playbackIdAddAck).toHaveBeenCalledWith(
+            expect.objectContaining({ ok: true }),
+        );
+
+        mocks.validateQueueTracks.mockRejectedValueOnce(
+            new mocks.MockGroupError(
+                "INVALID_PLAYBACK_ID",
+                "Invalid playbackId",
+            ),
+        );
+        const badPlaybackIdAck = jest.fn();
+        await eventHandlers["queue"](
+            { action: "add", tracks: [{ playbackId: "nope" }] },
+            badPlaybackIdAck,
+        );
+        expect(badPlaybackIdAck).toHaveBeenCalledWith({
+            error: "Invalid playbackId",
+            code: "INVALID_PLAYBACK_ID",
+        });
+
         const unknownQueueAck = jest.fn();
         await eventHandlers["queue"]({ action: "unknown" }, unknownQueueAck);
         expect(unknownQueueAck).toHaveBeenCalledWith({
