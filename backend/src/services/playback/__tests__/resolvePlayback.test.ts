@@ -83,6 +83,7 @@ describe("resolvePlayback", () => {
                 kind: "t",
                 trackId: "trk1",
                 quality: "low",
+                libraryQuality: "low",
                 middleware: NO_MIDDLEWARE,
             });
             expect(mockTrackFindUnique).toHaveBeenCalledWith(
@@ -151,6 +152,7 @@ describe("resolvePlayback", () => {
                     kind: "td",
                     tidalId: 123,
                     quality: native,
+                    libraryQuality: lib,
                     middleware: NO_MIDDLEWARE,
                 });
             }
@@ -207,6 +209,7 @@ describe("resolvePlayback", () => {
                 videoId: "dQw4w9WgXcQ",
                 mode: "authenticated",
                 quality: "medium",
+                libraryQuality: "medium",
                 middleware: YM_MIDDLEWARE,
             });
             expect(mockEnsureUserOAuth).toHaveBeenCalledWith(USER);
@@ -276,6 +279,7 @@ describe("resolvePlayback", () => {
                     kind: "yt",
                     videoId: "dQw4w9WgXcQ",
                     quality: native,
+                    libraryQuality: lib,
                     middleware: NO_MIDDLEWARE,
                 });
             }
@@ -283,7 +287,10 @@ describe("resolvePlayback", () => {
 
         it("maps the saved playback quality when none is requested", async () => {
             const out = await resolvePlayback(USER, { parsed });
-            expect(out).toMatchObject({ quality: "HIGH" });
+            expect(out).toMatchObject({
+                quality: "HIGH",
+                libraryQuality: "high",
+            });
         });
     });
 });

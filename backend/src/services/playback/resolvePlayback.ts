@@ -47,7 +47,11 @@ export interface PlaybackMiddleware {
  * quality. `t` keeps the library vocabulary; the other kinds carry the
  * quality string their service expects.
  */
-export type ResolvedPlayback = { middleware: PlaybackMiddleware } & (
+export type ResolvedPlayback = {
+    middleware: PlaybackMiddleware;
+    /** The library-vocabulary quality that was requested or saved. */
+    libraryQuality: PlaybackQuality;
+} & (
     | { kind: "t"; trackId: string; quality: PlaybackQuality }
     | { kind: "td"; tidalId: number; quality: string }
     | {
@@ -114,10 +118,12 @@ async function resolveLibrary(
     if (!track) {
         throw new PlaybackResolutionError("TRACK_NOT_FOUND", "Track not found");
     }
+    const quality = await effectiveQuality(userId, requested);
     return {
         kind: "t",
         trackId,
-        quality: await effectiveQuality(userId, requested),
+        quality,
+        libraryQuality: quality,
         middleware: NO_MIDDLEWARE,
     };
 }
@@ -142,6 +148,7 @@ async function resolveTidal(
         kind: "td",
         tidalId,
         quality: tidalQualityForPlaybackQuality(quality),
+        libraryQuality: quality,
         middleware: NO_MIDDLEWARE,
     };
 }
@@ -162,11 +169,13 @@ async function resolveYtMusic(
     // sidecar up and the user's account linked; otherwise the public route.
     const linked =
         (await ytMusicService.isAvailable()) && (await ensureUserOAuth(userId));
+    const quality = await effectiveQuality(userId, requested);
     return {
         kind: "ym",
         videoId,
         mode: linked ? "authenticated" : "public",
-        quality: ytMusicQuality(await effectiveQuality(userId, requested)),
+        quality: ytMusicQuality(quality),
+        libraryQuality: quality,
         middleware: YT_MUSIC_MIDDLEWARE,
     };
 }
@@ -188,14 +197,15 @@ export async function resolvePlayback(
             return resolveTidal(userId, parsed.tidalId, quality);
         case "ym":
             return resolveYtMusic(userId, parsed.videoId, quality);
-        case "yt":
+        case "yt": {
+            const effective = await effectiveQuality(userId, quality);
             return {
                 kind: "yt",
                 videoId: parsed.videoId,
-                quality: youtubeQuality(
-                    await effectiveQuality(userId, quality),
-                ),
+                quality: youtubeQuality(effective),
+                libraryQuality: effective,
                 middleware: NO_MIDDLEWARE,
             };
+        }
     }
 }

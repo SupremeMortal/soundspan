@@ -4,7 +4,8 @@
  * One stream surface for every track source, addressed by an opaque
  * `playbackId`:
  *
- *   GET /stream/:playbackId - Audio stream (Range supported)
+ *   GET /stream/:playbackId      - Audio stream (Range supported)
+ *   GET /stream-info/:playbackId - Codec, quality and size of that stream
  *
  * Each request is resolved to a stream service (library, TIDAL, YT Music or
  * YouTube) by `resolvePlayback`; the services are the same ones the per-source
@@ -27,6 +28,7 @@ import {
     type PlaybackQuality,
     type ResolvedPlayback,
 } from "../services/playback/resolvePlayback";
+import { getPlaybackStreamInfo } from "../services/playback/playbackStreamInfo";
 import { streamLibraryTrack } from "../services/playback/streamLibraryTrack";
 import { streamTidalTrack } from "../services/playback/streamTidalTrack";
 import { streamYtMusicTrack } from "../services/playback/streamYtMusicTrack";
@@ -38,6 +40,7 @@ const router = Router();
 
 // Stream starts share the budget the library stream route uses.
 router.use("/stream/:playbackId", streamingLimiter);
+router.use("/stream-info/:playbackId", streamingLimiter);
 
 const qualitySchema = z.enum(["original", "high", "medium", "low"]);
 
@@ -102,6 +105,52 @@ function runYtMusicLimiter(req: Request, res: Response): Promise<boolean> {
 function sendResolutionError(res: Response, err: PlaybackResolutionError) {
     const status = err.code === "TRACK_NOT_FOUND" ? 404 : 409;
     return sendRouteError(res, status, err.message, { code: err.code });
+}
+
+/** The playback a request addresses, once validated and resolved. */
+interface ResolvedRequest {
+    playback: ResolvedPlayback;
+    userId: string;
+}
+
+/**
+ * Validates `playbackId` and `quality` and resolves the stream service for
+ * the caller. Writes the error response and returns null when it cannot.
+ */
+async function resolveRequest(
+    req: Request<{ playbackId: string }>,
+    res: Response,
+): Promise<ResolvedRequest | null> {
+    const parsed = parsePlaybackId(req.params.playbackId);
+    if (!parsed) {
+        sendRouteError(res, 400, "Invalid playbackId", {
+            code: "INVALID_PLAYBACK_ID",
+        });
+        return null;
+    }
+    let quality: PlaybackQuality | undefined;
+    if (req.query.quality !== undefined) {
+        const q = qualitySchema.safeParse(req.query.quality);
+        if (!q.success) {
+            sendRouteError(res, 400, "Invalid quality", {
+                code: "INVALID_QUALITY",
+            });
+            return null;
+        }
+        quality = q.data;
+    }
+
+    const userId = req.user!.id;
+    try {
+        const playback = await resolvePlayback(userId, { parsed, quality });
+        return { playback, userId };
+    } catch (err: unknown) {
+        if (err instanceof PlaybackResolutionError) {
+            sendResolutionError(res, err);
+            return null;
+        }
+        throw err;
+    }
 }
 
 async function dispatchStream(
@@ -205,36 +254,9 @@ router.get(
     requireAuthOrToken,
     asyncHandler(
         async (req: Request<{ playbackId: string }>, res: Response) => {
-            const parsed = parsePlaybackId(req.params.playbackId);
-            if (!parsed) {
-                sendRouteError(res, 400, "Invalid playbackId", {
-                    code: "INVALID_PLAYBACK_ID",
-                });
-                return;
-            }
-            let quality: PlaybackQuality | undefined;
-            if (req.query.quality !== undefined) {
-                const q = qualitySchema.safeParse(req.query.quality);
-                if (!q.success) {
-                    sendRouteError(res, 400, "Invalid quality", {
-                        code: "INVALID_QUALITY",
-                    });
-                    return;
-                }
-                quality = q.data;
-            }
-
-            const userId = req.user!.id;
-            let playback: ResolvedPlayback;
-            try {
-                playback = await resolvePlayback(userId, { parsed, quality });
-            } catch (err: unknown) {
-                if (err instanceof PlaybackResolutionError) {
-                    sendResolutionError(res, err);
-                    return;
-                }
-                throw err;
-            }
+            const resolved = await resolveRequest(req, res);
+            if (!resolved) return;
+            const { playback, userId } = resolved;
 
             if (
                 playback.middleware.ytMusicStreamLimiter &&
@@ -254,6 +276,124 @@ router.get(
                     });
                 } else {
                     res.end();
+                }
+            }
+        },
+    ),
+);
+
+/**
+ * @openapi
+ * /api/playback/stream-info/{playbackId}:
+ *   get:
+ *     summary: Describe the audio stream for any track source
+ *     description: >
+ *       Returns codec, quality and size of what `/api/playback/stream` serves
+ *       for a playbackId, in one shape for every source. Fields a source cannot
+ *       know are null. Authenticate with an X-API-Key header, a Bearer token, or
+ *       a token query parameter.
+ *     tags: [Playback]
+ *     security:
+ *       - apiKeyAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: playbackId
+ *         required: true
+ *         description: Opaque track identifier, as returned in track payloads.
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: quality
+ *         schema:
+ *           type: string
+ *           enum: [original, high, medium, low]
+ *         description: Requested quality; the user's saved playback quality when absent.
+ *     responses:
+ *       200:
+ *         description: Stream information
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               required: [playbackId, contentType, codec, bitrate, sampleRate, bitDepth, durationMs, contentLength, quality]
+ *               properties:
+ *                 playbackId:
+ *                   type: string
+ *                   example: td.123456
+ *                 contentType:
+ *                   type: string
+ *                   nullable: true
+ *                   example: audio/flac
+ *                 codec:
+ *                   type: string
+ *                   nullable: true
+ *                   example: flac
+ *                 bitrate:
+ *                   type: number
+ *                   nullable: true
+ *                   description: Kilobits per second
+ *                 sampleRate:
+ *                   type: number
+ *                   nullable: true
+ *                   description: Hertz
+ *                 bitDepth:
+ *                   type: number
+ *                   nullable: true
+ *                 durationMs:
+ *                   type: number
+ *                   nullable: true
+ *                 contentLength:
+ *                   type: number
+ *                   nullable: true
+ *                   description: Bytes the stream endpoint serves
+ *                 quality:
+ *                   type: string
+ *                   enum: [original, high, medium, low]
+ *                   description: The library quality that was requested or saved
+ *       400:
+ *         description: INVALID_PLAYBACK_ID or INVALID_QUALITY
+ *       401:
+ *         description: Not authenticated
+ *       404:
+ *         description: TRACK_NOT_FOUND
+ *       409:
+ *         description: SOURCE_UNAVAILABLE
+ *       429:
+ *         description: RATE_LIMITED; see the Retry-After header
+ *       502:
+ *         description: UPSTREAM_FAILED
+ */
+router.get(
+    "/stream-info/:playbackId",
+    requireAuthOrToken,
+    asyncHandler(
+        async (req: Request<{ playbackId: string }>, res: Response) => {
+            const resolved = await resolveRequest(req, res);
+            if (!resolved) return;
+            const { playback, userId } = resolved;
+
+            if (
+                playback.middleware.ytMusicStreamLimiter &&
+                !(await runYtMusicLimiter(req, res))
+            ) {
+                return;
+            }
+
+            addErrorCodes(res);
+            try {
+                await getPlaybackStreamInfo({
+                    playback,
+                    playbackId: req.params.playbackId,
+                    userId,
+                    req,
+                    res,
+                });
+            } catch (err: unknown) {
+                logger.error("[Playback] Stream info failed:", err);
+                if (!res.headersSent) {
+                    sendRouteError(res, 502, "Upstream stream info failed", {
+                        code: "UPSTREAM_FAILED",
+                    });
                 }
             }
         },

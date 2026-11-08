@@ -59,6 +59,11 @@ jest.mock("../../services/playback/streamYouTubeVideo", () => ({
     streamYouTubeVideo: (...a: unknown[]) => mockStreamYouTubeVideo(...a),
 }));
 
+const mockGetPlaybackStreamInfo = jest.fn();
+jest.mock("../../services/playback/playbackStreamInfo", () => ({
+    getPlaybackStreamInfo: (...a: unknown[]) => mockGetPlaybackStreamInfo(...a),
+}));
+
 import router from "../playback";
 import { PlaybackResolutionError } from "../../services/playback/resolvePlayback";
 
@@ -361,5 +366,132 @@ describe("GET /api/playback/stream/:playbackId", () => {
         });
         await request(makeApp()).get("/api/playback/stream/t.abc");
         expect(order).toEqual(["limiter", "auth"]);
+    });
+});
+
+describe("GET /api/playback/stream-info/:playbackId", () => {
+    const url = "/api/playback/stream-info";
+
+    it("rejects an invalid playbackId with 400 INVALID_PLAYBACK_ID", async () => {
+        const res = await request(makeApp()).get(`${url}/nope`);
+        expect(res.status).toBe(400);
+        expect(res.body.code).toBe("INVALID_PLAYBACK_ID");
+        expect(mockResolvePlayback).not.toHaveBeenCalled();
+    });
+
+    it("rejects an invalid quality with 400 INVALID_QUALITY", async () => {
+        const res = await request(makeApp()).get(`${url}/t.abc?quality=ultra`);
+        expect(res.status).toBe(400);
+        expect(res.body.code).toBe("INVALID_QUALITY");
+    });
+
+    it("rejects unauthenticated requests before resolving", async () => {
+        mockAuth.mockImplementation((_req: any, res: any) =>
+            res.status(401).json({ error: "Unauthorized" }),
+        );
+        const res = await request(makeApp()).get(`${url}/t.abc`);
+        expect(res.status).toBe(401);
+        expect(mockResolvePlayback).not.toHaveBeenCalled();
+    });
+
+    it("maps resolution errors to 404 and 409 with a code", async () => {
+        mockResolvePlayback.mockRejectedValueOnce(
+            new PlaybackResolutionError("TRACK_NOT_FOUND", "Track not found"),
+        );
+        const notFound = await request(makeApp()).get(`${url}/t.abc`);
+        expect(notFound.status).toBe(404);
+        expect(notFound.body.code).toBe("TRACK_NOT_FOUND");
+
+        mockResolvePlayback.mockRejectedValueOnce(
+            new PlaybackResolutionError("SOURCE_UNAVAILABLE", "Disabled"),
+        );
+        const unavailable = await request(makeApp()).get(`${url}/td.1`);
+        expect(unavailable.status).toBe(409);
+        expect(unavailable.body.code).toBe("SOURCE_UNAVAILABLE");
+    });
+
+    it("resolves with the requested quality and answers with the service's body", async () => {
+        const playback = {
+            kind: "t",
+            trackId: "abc",
+            quality: "high",
+            libraryQuality: "high",
+            middleware: NO_MW,
+        };
+        mockResolvePlayback.mockResolvedValue(playback);
+        mockGetPlaybackStreamInfo.mockImplementation(async ({ res }: any) => {
+            res.json({ playbackId: "t.abc", quality: "high" });
+        });
+        const res = await request(makeApp()).get(`${url}/t.abc?quality=high`);
+        expect(res.status).toBe(200);
+        expect(res.body).toEqual({ playbackId: "t.abc", quality: "high" });
+        expect(mockResolvePlayback).toHaveBeenCalledWith("user-1", {
+            parsed: { kind: "t", trackId: "abc" },
+            quality: "high",
+        });
+        expect(mockGetPlaybackStreamInfo).toHaveBeenCalledWith(
+            expect.objectContaining({
+                playback,
+                playbackId: "t.abc",
+                userId: "user-1",
+            }),
+        );
+    });
+
+    it("adds a code to error bodies the info service writes", async () => {
+        mockResolvePlayback.mockResolvedValue({
+            kind: "td",
+            tidalId: 1,
+            quality: "HIGH",
+            libraryQuality: "medium",
+            middleware: NO_MW,
+        });
+        mockGetPlaybackStreamInfo.mockImplementation(async ({ res }: any) => {
+            res.status(404).json({ error: "Stream not found" });
+        });
+        const res = await request(makeApp()).get(`${url}/td.1`);
+        expect(res.status).toBe(404);
+        expect(res.body.code).toBe("TRACK_NOT_FOUND");
+    });
+
+    it("applies the YT Music limiter when the id resolves to ym", async () => {
+        mockResolvePlayback.mockResolvedValue({
+            kind: "ym",
+            videoId: "dQw4w9WgXcQ",
+            mode: "public",
+            quality: "high",
+            libraryQuality: "high",
+            middleware: YM_MW,
+        });
+        mockYtMusicLimiter.mockImplementation((_req: any, res: any) =>
+            res.status(429).send("Slow down"),
+        );
+        const res = await request(makeApp()).get(`${url}/ym.dQw4w9WgXcQ`);
+        expect(res.status).toBe(429);
+        expect(res.body.code).toBe("RATE_LIMITED");
+        expect(mockGetPlaybackStreamInfo).not.toHaveBeenCalled();
+    });
+
+    it("answers 502 UPSTREAM_FAILED when the info service throws", async () => {
+        mockResolvePlayback.mockResolvedValue({
+            kind: "t",
+            trackId: "abc",
+            quality: "high",
+            libraryQuality: "high",
+            middleware: NO_MW,
+        });
+        mockGetPlaybackStreamInfo.mockRejectedValue(new Error("boom"));
+        const res = await request(makeApp()).get(`${url}/t.abc`);
+        expect(res.status).toBe(502);
+        expect(res.body.code).toBe("UPSTREAM_FAILED");
+    });
+
+    it("applies the streaming limiter", async () => {
+        mockStreamingLimiter.mockImplementation((_req: any, res: any) =>
+            res.status(429).json({ error: "Too many" }),
+        );
+        const res = await request(makeApp()).get(`${url}/t.abc`);
+        expect(res.status).toBe(429);
+        expect(mockAuth).not.toHaveBeenCalled();
     });
 });
