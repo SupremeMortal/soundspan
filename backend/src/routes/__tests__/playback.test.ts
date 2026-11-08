@@ -164,6 +164,7 @@ describe("GET /api/playback/stream/:playbackId", () => {
                 userId: "user-1",
                 trackId: "abc",
                 quality: "high",
+                playbackId: "t.abc",
             }),
         );
     });

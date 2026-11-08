@@ -167,6 +167,7 @@ async function dispatchStream(
                 quality: playback.quality,
                 req: req as Request<{ id: string }>,
                 res,
+                playbackId: String(req.params.playbackId),
             });
         case "td":
             return streamTidalTrack({
@@ -213,7 +214,10 @@ async function dispatchStream(
  *     summary: Stream audio for any track source
  *     description: >
  *       Streams the audio for a track identified by an opaque playbackId,
- *       whatever source backs it. Supports Range requests. Authenticate with
+ *       whatever source backs it. Supports Range requests. Library tracks
+ *       carry a strong ETag; send it back as If-Range with a Range header to
+ *       resume a download, and a changed file returns the full 200 body.
+ *       Authenticate with
  *       an X-API-Key header, a Bearer token, or a token query parameter.
  *     tags: [Playback]
  *     security:

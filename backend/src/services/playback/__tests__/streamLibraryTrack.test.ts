@@ -123,6 +123,20 @@ describe("streamLibraryTrack", () => {
         expect(mockUserSettingsFindUnique).not.toHaveBeenCalled();
     });
 
+    it("passes the playbackId through so the native stream can send an ETag", async () => {
+        await streamLibraryTrack({
+            userId: "u1",
+            trackId: "track-1",
+            quality: "low",
+            req,
+            res: createRes(),
+            playbackId: "t.track-1",
+        });
+        expect(mockServeNative).toHaveBeenCalledWith(
+            expect.objectContaining({ playbackId: "t.track-1" }),
+        );
+    });
+
     it("falls back to the user's playback quality preference", async () => {
         await streamLibraryTrack({
             userId: "u1",

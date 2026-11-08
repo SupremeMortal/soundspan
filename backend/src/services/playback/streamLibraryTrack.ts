@@ -22,6 +22,8 @@ export interface StreamLibraryTrackInput {
     quality: unknown;
     req: Request<{ id: string }>;
     res: Response;
+    /** Set by the unified stream route; enables ETag and If-Range handling. */
+    playbackId?: string;
 }
 
 /**
@@ -31,7 +33,7 @@ export interface StreamLibraryTrackInput {
 export async function streamLibraryTrack(
     input: StreamLibraryTrackInput,
 ): Promise<void> {
-    const { userId, trackId, quality, req, res } = input;
+    const { userId, trackId, quality, req, res, playbackId } = input;
     try {
         let track = await prisma.track.findUnique({
             where: { id: trackId, ...TRACK_VISIBLE_WHERE },
@@ -95,6 +97,7 @@ export async function streamLibraryTrack(
             res,
             track,
             requestedQuality,
+            playbackId,
         });
     } catch (error) {
         logger.error("Stream track error:", error);
