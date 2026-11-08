@@ -398,6 +398,15 @@ jobs:
             frontend/package-lock.json
             packages/media-metadata-contract/package-lock.json
 
+      - name: Install media metadata contract
+        working-directory: packages/media-metadata-contract
+        run: npm ci
+
+      - name: Test and typecheck media metadata contract
+        run: |
+          npm --prefix packages/media-metadata-contract test
+          npm --prefix packages/media-metadata-contract run typecheck
+
       - name: Check route error canonicalization
         run: node scripts/ci/check-route-error-canon.mjs
 
