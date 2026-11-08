@@ -70,6 +70,18 @@ export function encodePlaybackId(ref: ParsedPlaybackId): string {
     return encoded;
 }
 
+/**
+ * Like `encodePlaybackId`, but returns `undefined` for an unusable reference so
+ * response builders omit the field instead of failing the request.
+ */
+export function tryEncodePlaybackId(ref: ParsedPlaybackId): string | undefined {
+    try {
+        return encodePlaybackId(ref);
+    } catch {
+        return undefined;
+    }
+}
+
 /** Zod schema that validates and parses the string form of a `playbackId`. */
 export const playbackIdSchema: z.ZodType<ParsedPlaybackId> = z
     .string()

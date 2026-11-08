@@ -17,6 +17,11 @@ import {
 import { sendFileFromRoot } from "../utils/sendFileFromRoot";
 import { config } from "../config";
 import {
+    toYtMusicBrowseAlbum,
+    withTidalPlaybackIds,
+    withYtMusicPlaybackIds,
+} from "../services/browseTrackResponses";
+import {
     resolveYtMusicHttpStatus,
     sendYtMusicMixesErrorResponse,
 } from "./browseYtMusicErrors";
@@ -770,6 +775,9 @@ router.get("/ytmusic/mood-playlists", async (req: Request, res: Response) => {
  *     responses:
  *       200:
  *         description: Album details normalized to playlist shape
+ *         content:
+ *           application/json:
+ *             schema: { $ref: "#/components/schemas/BrowseTrackList" }
  *       404:
  *         description: Album not found
  *       401:
@@ -793,30 +801,7 @@ router.get(
 
             const album = await ytMusicService.getBrowseAlbum(id);
 
-            // Normalize to YtMusicBrowsePlaylist shape so the frontend detail page
-            // can render it uniformly without knowing whether it's an album or playlist.
-            const description = [album.artist, album.year]
-                .filter(Boolean)
-                .join(" \u00B7 ");
-
-            const result = {
-                id,
-                title: album.title,
-                description,
-                trackCount: album.trackCount ?? album.tracks.length,
-                thumbnailUrl: album.coverUrl,
-                tracks: album.tracks.map((t) => ({
-                    videoId: t.videoId,
-                    title: t.title,
-                    artist: t.artist,
-                    artists: t.artists,
-                    album: album.title ?? "",
-                    duration: t.duration_seconds ?? 0,
-                    thumbnailUrl: album.coverUrl,
-                })),
-                source: "ytmusic" as const,
-                type: "album" as const,
-            };
+            const result = toYtMusicBrowseAlbum(id, album);
             setCache(cacheKey, result);
             res.json(result);
         } catch (error: any) {
@@ -854,6 +839,9 @@ router.get(
  *     responses:
  *       200:
  *         description: Playlist details with tracks
+ *         content:
+ *           application/json:
+ *             schema: { $ref: "#/components/schemas/BrowseTrackList" }
  *       404:
  *         description: Playlist not found
  *       401:
@@ -882,7 +870,7 @@ router.get(
             }
 
             const playlist = await ytMusicService.getBrowsePlaylist(id, limit);
-            const result = { ...playlist, source: "ytmusic" as const };
+            const result = withYtMusicPlaybackIds(playlist);
             setCache(cacheKey, result);
             res.json(result);
         } catch (error: any) {
@@ -1425,6 +1413,9 @@ router.get("/tidal/genre-playlists", async (req: Request, res: Response) => {
  *     responses:
  *       200:
  *         description: Playlist details with tracks
+ *         content:
+ *           application/json:
+ *             schema: { $ref: "#/components/schemas/BrowseTrackList" }
  *       403:
  *         description: TIDAL integration not enabled or unavailable
  *       401:
@@ -1464,7 +1455,7 @@ router.get(
                 quality,
                 validLimit,
             );
-            const result = { ...playlist, source: "tidal" as const };
+            const result = withTidalPlaybackIds(playlist);
             setTidalCache(cacheKey, result);
             res.json(result);
         } catch (error: any) {
@@ -1495,6 +1486,9 @@ router.get(
  *     responses:
  *       200:
  *         description: Mix details with tracks
+ *         content:
+ *           application/json:
+ *             schema: { $ref: "#/components/schemas/BrowseTrackList" }
  *       403:
  *         description: TIDAL integration not enabled or unavailable
  *       401:
@@ -1524,7 +1518,7 @@ router.get(
                 id,
                 quality,
             );
-            const result = { ...mix, source: "tidal" as const };
+            const result = withTidalPlaybackIds(mix);
             setTidalCache(cacheKey, result);
             res.json(result);
         } catch (error: any) {

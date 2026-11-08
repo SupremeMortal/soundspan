@@ -29,6 +29,7 @@ import {
 } from "../services/youtubeDownload";
 import { requestCoalescedLibraryScan } from "../services/coalescedLibraryScan";
 import { logger } from "../utils/logger";
+import { tryEncodePlaybackId } from "../services/playback/playbackId";
 import { sendRouteError } from "../utils/routeErrorResponse";
 
 const router = Router();
@@ -55,12 +56,28 @@ const infoQuerySchema = z.object({
  *     responses:
  *       200:
  *         description: Video metadata
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 playbackId:
+ *                   type: string
+ *                   description: "Opaque track identifier. Do not parse."
+ *                 videoId:
+ *                   type: string
  */
 router.get("/info", requireAuth, async (req: Request, res: Response) => {
     try {
         const { url } = infoQuerySchema.parse(req.query);
         const info = await youtubeDownloadService.getVideoInfo(url);
-        return res.json(info);
+        return res.json({
+            ...info,
+            playbackId: tryEncodePlaybackId({
+                kind: "yt",
+                videoId: info.videoId,
+            }),
+        });
     } catch (err: any) {
         if (err instanceof z.ZodError) {
             return res.status(400).json({ error: err.issues[0].message });

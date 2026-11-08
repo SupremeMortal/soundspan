@@ -1,5 +1,6 @@
 import {
     encodePlaybackId,
+    tryEncodePlaybackId,
     parsePlaybackId,
     playbackIdSchema,
     type ParsedPlaybackId,
@@ -84,5 +85,20 @@ describe("playbackId", () => {
             expect(playbackIdSchema.safeParse(value).success).toBe(false);
         }
         expect(playbackIdSchema.safeParse(42).success).toBe(false);
+    });
+});
+
+describe("tryEncodePlaybackId", () => {
+    it("encodes a valid reference", () => {
+        expect(tryEncodePlaybackId({ kind: "td", tidalId: 7 })).toBe("td.7");
+    });
+
+    it("returns undefined instead of throwing for an unusable reference", () => {
+        expect(
+            tryEncodePlaybackId({ kind: "ym", videoId: "has space" }),
+        ).toBeUndefined();
+        expect(
+            tryEncodePlaybackId({ kind: "td", tidalId: Number.NaN }),
+        ).toBeUndefined();
     });
 });
