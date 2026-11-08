@@ -13,6 +13,11 @@ import {
     resolveOfflineItems,
 } from "../services/offline/resolveOfflineItems";
 import {
+    encodePlaybackId,
+    parsePlaybackId,
+    playbackIdSchema,
+} from "../services/playback/playbackId";
+import {
     LOCAL_TRACK_WHERE,
     TRACK_VISIBLE_WHERE,
 } from "../utils/librarySorting";
@@ -33,6 +38,24 @@ const requestItemsSchema = z.object({
     deviceId: z.string().uuid(),
     quality: qualitySchema.optional(),
 });
+
+const completeItemSchema = z.object({
+    deviceId: z.string().uuid(),
+    playbackId: playbackIdSchema,
+    quality: qualitySchema,
+    sizeBytes: z
+        .number()
+        .int()
+        .positive()
+        .max(4096 * 1024 * 1024),
+});
+
+const removeItemsSchema = z.object({
+    deviceId: z.string().uuid(),
+    playbackIds: z.array(z.string().min(1).max(256)).max(500),
+});
+
+const deviceQuerySchema = z.object({ deviceId: z.string().uuid() });
 
 /** Cache limit used when a user has no settings row (matches `/stats`). */
 const DEFAULT_MAX_CACHE_MB = 5120;
@@ -164,6 +187,229 @@ router.post("/items", async (req, res) => {
         }
         logger.error("Request offline items error:", error);
         return sendInternalRouteError(res, "Failed to resolve offline items");
+    }
+});
+
+/**
+ * @openapi
+ * /api/offline/items/complete:
+ *   post:
+ *     summary: Record that a device finished writing an offline file
+ *     description: >
+ *       Upserts the device's cached-item row for the playbackId and quality.
+ *       Calling it again for the same item updates the recorded size.
+ *     tags: [Offline]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [deviceId, playbackId, quality, sizeBytes]
+ *             properties:
+ *               deviceId: { type: string, format: uuid }
+ *               playbackId: { type: string }
+ *               quality:
+ *                 type: string
+ *                 enum: [original, high, medium, low]
+ *               sizeBytes: { type: integer, minimum: 1 }
+ *     responses:
+ *       200:
+ *         description: Item recorded
+ *       400:
+ *         description: Invalid request (code INVALID_REQUEST)
+ *       401:
+ *         description: Not authenticated
+ *       404:
+ *         description: Library track no longer exists (code TRACK_UNAVAILABLE)
+ */
+// POST /offline/items/complete
+router.post("/items/complete", async (req, res) => {
+    const parsed = completeItemSchema.safeParse(req.body);
+    if (!parsed.success) {
+        return sendRouteError(res, 400, "Invalid request", {
+            code: "INVALID_REQUEST",
+            details: parsed.error.flatten(),
+        });
+    }
+    const { deviceId, quality, sizeBytes } = parsed.data;
+    const userId = req.user!.id;
+
+    try {
+        const ref = parsed.data.playbackId;
+        const encodedId = encodePlaybackId(ref);
+        let trackId: string | null = null;
+        if (ref.kind === "t") {
+            const track = await prisma.track.findUnique({
+                where: { id: ref.trackId },
+                select: { id: true },
+            });
+            if (!track) {
+                return sendRouteError(res, 404, "Track not found", {
+                    code: "TRACK_UNAVAILABLE",
+                });
+            }
+            trackId = track.id;
+        }
+
+        const fileSizeMb = sizeBytes / BYTES_PER_MB;
+        const existing = await prisma.cachedTrack.findFirst({
+            where: { userId, deviceId, playbackId: encodedId, quality },
+        });
+        if (existing) {
+            await prisma.cachedTrack.update({
+                where: { id: existing.id },
+                data: { fileSizeMb, lastAccessedAt: new Date() },
+            });
+        } else {
+            await prisma.cachedTrack.create({
+                data: {
+                    userId,
+                    deviceId,
+                    playbackId: encodedId,
+                    trackId,
+                    // The client keeps the file; the server records no path.
+                    localPath: `${deviceId}/${encodedId}`,
+                    quality,
+                    fileSizeMb,
+                },
+            });
+        }
+        res.json({ playbackId: encodedId, quality, sizeBytes });
+    } catch (error) {
+        logger.error("Complete offline item error:", error);
+        return sendInternalRouteError(res, "Failed to complete download");
+    }
+});
+
+/**
+ * @openapi
+ * /api/offline/items:
+ *   delete:
+ *     summary: Remove a device's offline items
+ *     description: Unknown ids are ignored.
+ *     tags: [Offline]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [deviceId, playbackIds]
+ *             properties:
+ *               deviceId: { type: string, format: uuid }
+ *               playbackIds:
+ *                 type: array
+ *                 items: { type: string }
+ *     responses:
+ *       200:
+ *         description: Number of rows removed
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 deletedCount: { type: integer }
+ *       400:
+ *         description: Invalid request (code INVALID_REQUEST)
+ *       401:
+ *         description: Not authenticated
+ *   get:
+ *     summary: List what the server believes a device holds
+ *     description: >
+ *       Used to reconcile after a reinstall. `revoked` is true when an admin
+ *       disabled the item's source or the track no longer exists; the client
+ *       should remove such files.
+ *     tags: [Offline]
+ *     parameters:
+ *       - in: query
+ *         name: deviceId
+ *         required: true
+ *         schema: { type: string, format: uuid }
+ *     responses:
+ *       200:
+ *         description: The device's items
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 items:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       playbackId: { type: string }
+ *                       quality: { type: string }
+ *                       sizeBytes: { type: integer }
+ *                       revoked: { type: boolean }
+ *       400:
+ *         description: Invalid request (code INVALID_REQUEST)
+ *       401:
+ *         description: Not authenticated
+ */
+// DELETE /offline/items
+router.delete("/items", async (req, res) => {
+    const parsed = removeItemsSchema.safeParse(req.body);
+    if (!parsed.success) {
+        return sendRouteError(res, 400, "Invalid request", {
+            code: "INVALID_REQUEST",
+            details: parsed.error.flatten(),
+        });
+    }
+    try {
+        const { count } = await prisma.cachedTrack.deleteMany({
+            where: {
+                userId: req.user!.id,
+                deviceId: parsed.data.deviceId,
+                playbackId: { in: parsed.data.playbackIds },
+            },
+        });
+        res.json({ deletedCount: count });
+    } catch (error) {
+        logger.error("Delete offline items error:", error);
+        return sendInternalRouteError(res, "Failed to remove offline items");
+    }
+});
+
+// GET /offline/items
+router.get("/items", async (req, res) => {
+    const parsed = deviceQuerySchema.safeParse(req.query);
+    if (!parsed.success) {
+        return sendRouteError(res, 400, "Invalid request", {
+            code: "INVALID_REQUEST",
+            details: parsed.error.flatten(),
+        });
+    }
+    const userId = req.user!.id;
+    try {
+        const rows = await prisma.cachedTrack.findMany({
+            where: { userId, deviceId: parsed.data.deviceId },
+            orderBy: { cachedAt: "asc" },
+        });
+        const items = await Promise.all(
+            rows.map(async (row) => {
+                const ref = parsePlaybackId(row.playbackId);
+                const policy = ref
+                    ? await resolveOfflinePolicy(userId, ref)
+                    : null;
+                const revoked =
+                    policy !== null &&
+                    !policy.downloadable &&
+                    (policy.reason === "SOURCE_DOWNLOADS_DISABLED" ||
+                        policy.reason === "TRACK_UNAVAILABLE");
+                return {
+                    playbackId: row.playbackId,
+                    quality: row.quality,
+                    sizeBytes: Math.round(row.fileSizeMb * BYTES_PER_MB),
+                    revoked,
+                };
+            }),
+        );
+        res.json({ items });
+    } catch (error) {
+        logger.error("List offline items error:", error);
+        return sendInternalRouteError(res, "Failed to list offline items");
     }
 });
 
@@ -583,10 +829,20 @@ router.delete("/albums/:id", async (req, res) => {
  * /api/offline/stats:
  *   get:
  *     summary: Get offline cache usage statistics
+ *     description: >
+ *       With `deviceId`, the response also carries a `device` object with that
+ *       device's totals; the top-level numbers always cover every device.
  *     tags: [Offline]
+ *     parameters:
+ *       - in: query
+ *         name: deviceId
+ *         required: false
+ *         schema: { type: string, format: uuid }
  *     responses:
  *       200:
  *         description: Cache usage stats including size and track count
+ *       400:
+ *         description: Invalid deviceId (code INVALID_REQUEST)
  *       401:
  *         description: Not authenticated
  */
@@ -594,6 +850,16 @@ router.delete("/albums/:id", async (req, res) => {
 router.get("/stats", async (req, res) => {
     try {
         const userId = req.user!.id;
+        let deviceId: string | undefined;
+        if (req.query?.deviceId !== undefined) {
+            const parsed = deviceQuerySchema.safeParse(req.query);
+            if (!parsed.success) {
+                return sendRouteError(res, 400, "Invalid request", {
+                    code: "INVALID_REQUEST",
+                });
+            }
+            deviceId = parsed.data.deviceId;
+        }
 
         const [settings, cacheStats] = await Promise.all([
             prisma.userSettings.findUnique({
@@ -610,12 +876,28 @@ router.get("/stats", async (req, res) => {
         const maxMb = settings?.maxCacheSizeMb || 5120;
         const trackCount = cacheStats._count || 0;
 
-        res.json({
+        const body = {
             usedMb,
             maxMb,
             availableMb: maxMb - usedMb,
             percentUsed: (usedMb / maxMb) * 100,
             trackCount,
+        };
+        if (deviceId === undefined) {
+            return res.json(body);
+        }
+        const deviceStats = await prisma.cachedTrack.aggregate({
+            where: { userId, deviceId },
+            _sum: { fileSizeMb: true },
+            _count: true,
+        });
+        res.json({
+            ...body,
+            device: {
+                deviceId,
+                usedMb: deviceStats._sum.fileSizeMb || 0,
+                trackCount: deviceStats._count || 0,
+            },
         });
     } catch (error) {
         logger.error("Get cache stats error:", error);
