@@ -218,7 +218,9 @@ export async function revokeApiKeySockets(apiKeyId: string): Promise<void> {
     if (!ns) return;
     const sockets = await ns.fetchSockets();
     if (sockets.length > MAX_SOCKET_REVOCATION_SCAN) {
-        throw new Error("Listen Together API-key socket scan exceeded its bound");
+        throw new Error(
+            "Listen Together API-key socket scan exceeded its bound",
+        );
     }
     for (const socket of sockets) {
         if ((socket.data as { apiKeyId?: string }).apiKeyId === apiKeyId) {
