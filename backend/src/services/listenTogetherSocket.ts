@@ -10,6 +10,7 @@
 import type { Server as HttpServer } from "http";
 import { Server, type Namespace, type Socket } from "socket.io";
 import { verifyAccessToken } from "../middleware/auth";
+import { resolveApiKeySocketData } from "./listenTogetherSocketApiKeyAuth";
 import { prisma } from "../utils/db";
 import { logger } from "../utils/logger";
 import { config } from "../config";
@@ -105,6 +106,8 @@ interface AuthenticatedSocket extends Socket {
         userId: string;
         username: string;
         groupId: string | null;
+        /** Set only when the socket authenticated with an API key. */
+        apiKeyId?: string;
     };
 }
 
@@ -835,10 +838,21 @@ function configureClusterStateSync(ns: Namespace): void {
 
 function configureSocketAuthentication(ns: Namespace): void {
     ns.use(async (socket, next) => {
+        const token = socket.handshake.auth?.token as string | undefined;
+        const apiKey = socket.handshake.auth?.apiKey as unknown;
+        if (!token === !apiKey) {
+            return next(new Error("Authentication required"));
+        }
+        if (apiKey) {
+            try {
+                socket.data = await resolveApiKeySocketData(apiKey);
+                return next();
+            } catch (error) {
+                return next(error as Error);
+            }
+        }
         try {
-            const token = socket.handshake.auth?.token as string | undefined;
-            if (!token) return next(new Error("Authentication required"));
-            const decoded = verifyAccessToken(token);
+            const decoded = verifyAccessToken(token as string);
             const user = await prisma.user.findUnique({
                 where: { id: decoded.userId },
                 select: {
