@@ -17,6 +17,7 @@ import { config } from "../config";
 import { logger } from "../utils/logger";
 import type { CanonicalMediaSearchResult } from "@soundspan/media-metadata-contract";
 import { cachedSingleflight } from "../utils/singleflight";
+import { tryEncodePlaybackId } from "./playback/playbackId";
 
 // ── Sidecar URL ────────────────────────────────────────────────────
 const YTMUSIC_STREAMER_URL = config.ytmusicStreamer.url;
@@ -233,6 +234,14 @@ function toCanonicalSearchResultItem(
         return null;
     }
 
+    const playbackId = tryEncodePlaybackId({
+        kind: "ym",
+        videoId: providerTrackId,
+    });
+    if (!playbackId) {
+        return null;
+    }
+
     const durationSecRaw = parseDuration(record);
     const durationSec =
         Number.isFinite(durationSecRaw) && durationSecRaw > 0
@@ -240,6 +249,7 @@ function toCanonicalSearchResultItem(
             : null;
 
     return {
+        playbackId,
         source: "youtube",
         provider: "ytmusic",
         providerTrackId,

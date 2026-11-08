@@ -219,8 +219,12 @@ describe("youtubeMusic service", () => {
                         videoId: "",
                         title: "Missing video id",
                     },
+                    {
+                        videoId: "not a valid id!",
+                        title: "Unencodable video id",
+                    },
                 ],
-                total: 2,
+                total: 3,
             },
         });
 
@@ -229,9 +233,10 @@ describe("youtubeMusic service", () => {
         ).resolves.toEqual({
             query: "artist one",
             filter: "songs",
-            total: 2,
+            total: 3,
             results: [
                 {
+                    playbackId: "ym.vid-1",
                     source: "youtube",
                     provider: "ytmusic",
                     providerTrackId: "vid-1",
