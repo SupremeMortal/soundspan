@@ -162,7 +162,7 @@ Each endpoint below accepts `{ playbackId, metadata? }` as an alternative to its
 |---|---|
 | `POST /api/plays` | `trackId` / `tidalTrackId` / `youtubeVideoId` + metadata |
 | Playlist add / remove / reorder (`routes/playlists.ts`) | same trio + metadata |
-| Like / unlike (`routes/library/tracks.ts`, `routes/library/remoteTracks.ts`) | local id or provider-prefixed id |
+| Like / unlike: new `POST /api/library/preferences` (`routes/library/playbackPreferences.ts`), body `{ playbackId, signal, metadata? }`, runs the matching legacy handler in `routes/library/tracks.ts` (`t`) or `routes/library/remoteTracks.ts` (`td`, `ym`); `yt` answers 409 `SOURCE_UNAVAILABLE` | local id or provider-prefixed id |
 | `POST /api/playback-state` queue items | `streamSource` + provider ids |
 | Listen Together queue add / replace / reorder (socket events and REST) | `streamSource` + provider ids |
 

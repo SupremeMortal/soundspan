@@ -150,6 +150,7 @@ composed from these order-dependent domain and helper modules:
 | `backend/src/routes/library/radio.ts`                      | Library radio generation routes                               |
 | `backend/src/routes/library/radioPlaylists.ts`             | Persisted generated-radio playlist mutation routes            |
 | `backend/src/routes/library/remoteTracks.ts`               | Remote-track preference routes                                |
+| `backend/src/routes/library/playbackPreferences.ts`        | Track preference route keyed by `playbackId`                  |
 | `backend/src/routes/library/trackAudioInfo.ts`             | Track audio-information helper                                |
 | `backend/src/routes/library/tracks.ts`                     | Track browse, detail, preference, stream, and deletion routes |
 
