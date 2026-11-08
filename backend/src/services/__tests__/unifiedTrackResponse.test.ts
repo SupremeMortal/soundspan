@@ -414,9 +414,10 @@ describe("unifiedTrackResponse", () => {
                 trackId: "ckabc123",
                 track: localRecord,
             });
-            expect(
-                parsePlaybackId(String(local.track?.playbackId)),
-            ).toEqual({ kind: "t", trackId: local.track?.id });
+            expect(parsePlaybackId(String(local.track?.playbackId))).toEqual({
+                kind: "t",
+                trackId: local.track?.id,
+            });
 
             const tidal = formatUnifiedTrackItem({
                 ...base,
@@ -430,9 +431,10 @@ describe("unifiedTrackResponse", () => {
                     duration: 1,
                 },
             });
-            expect(
-                parsePlaybackId(String(tidal.track?.playbackId)),
-            ).toEqual({ kind: "td", tidalId: tidal.track?.tidalTrackId });
+            expect(parsePlaybackId(String(tidal.track?.playbackId))).toEqual({
+                kind: "td",
+                tidalId: tidal.track?.tidalTrackId,
+            });
 
             const yt = formatUnifiedTrackItem({
                 ...base,
