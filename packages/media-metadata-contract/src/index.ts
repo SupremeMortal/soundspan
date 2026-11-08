@@ -47,6 +47,11 @@ export interface LegacyStreamFields {
 
 /** Normalized search result returned by remote media providers. */
 export interface CanonicalMediaSearchResult {
+    /**
+     * Opaque playback identifier for this track. Clients must not parse it;
+     * pass it back to the playback API as-is.
+     */
+    playbackId?: string;
     source: Exclude<CanonicalMediaSource, "local">;
     provider: "tidal" | "ytmusic";
     providerTrackId: string;
