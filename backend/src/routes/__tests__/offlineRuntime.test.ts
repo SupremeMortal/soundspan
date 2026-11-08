@@ -43,6 +43,12 @@ jest.mock("../../utils/db", () => ({
     prisma,
 }));
 
+const mockResolveOfflinePolicy = jest.fn();
+jest.mock("../../services/offline/offlinePolicy", () => ({
+    resolveOfflinePolicy: (...args: unknown[]) =>
+        mockResolveOfflinePolicy(...args),
+}));
+
 import router from "../offline";
 import { prisma as prismaClient } from "../../utils/db";
 
@@ -99,6 +105,7 @@ describe("offline routes runtime", () => {
 
     beforeEach(() => {
         jest.clearAllMocks();
+        mockResolveOfflinePolicy.mockResolvedValue({ downloadable: true });
 
         mockUserSettingsFindUnique.mockResolvedValue({
             userId: "u1",
@@ -272,6 +279,31 @@ describe("offline routes runtime", () => {
         expect(res.statusCode).toBe(200);
         expect(res.body.quality).toBe("low");
         expect(res.body.estimatedSizeMb).toBe(8);
+    });
+
+    it("blocks album downloads with 409 when local downloads are disabled", async () => {
+        mockResolveOfflinePolicy.mockResolvedValueOnce({
+            downloadable: false,
+            reason: "SOURCE_DOWNLOADS_DISABLED",
+        });
+        const req = {
+            session: {},
+            user: { id: "u1", username: "u1", role: "user" },
+            params: { id: "album-1" },
+            body: { quality: "high" },
+        } as any;
+        const res = createRes();
+
+        await postAlbumDownload(req, res);
+
+        expect(mockResolveOfflinePolicy).toHaveBeenCalledWith("u1", {
+            kind: "t",
+            trackId: "t1",
+        });
+        expect(res.statusCode).toBe(409);
+        expect(res.body).toEqual(
+            expect.objectContaining({ code: "SOURCE_DOWNLOADS_DISABLED" }),
+        );
     });
 
     it("returns 404 when album does not exist", async () => {

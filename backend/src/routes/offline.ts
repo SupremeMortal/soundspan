@@ -3,6 +3,7 @@ import { logger } from "../utils/logger";
 import { requireAuth } from "../middleware/auth";
 import { prisma } from "../utils/db";
 import { z } from "zod";
+import { resolveOfflinePolicy } from "../services/offline/offlinePolicy";
 import {
     LOCAL_TRACK_WHERE,
     TRACK_VISIBLE_WHERE,
@@ -54,6 +55,8 @@ const completeTrackSchema = z.object({
  *         description: Cache size limit exceeded or invalid request
  *       404:
  *         description: Album not found
+ *       409:
+ *         description: An admin disabled offline downloads for local tracks (code SOURCE_DOWNLOADS_DISABLED)
  *       401:
  *         description: Not authenticated
  */
@@ -97,6 +100,21 @@ router.post("/albums/:id/download", async (req, res) => {
 
         if (!album) {
             return res.status(404).json({ error: "Album not found" });
+        }
+
+        // Album tracks are local (LOCAL_TRACK_WHERE), so one policy check
+        // against the first track covers the whole job.
+        if (album.tracks.length > 0) {
+            const policy = await resolveOfflinePolicy(userId, {
+                kind: "t",
+                trackId: album.tracks[0].id,
+            });
+            if (!policy.downloadable) {
+                return res.status(409).json({
+                    error: "Downloads are disabled for this source",
+                    code: policy.reason,
+                });
+            }
         }
 
         // Calculate total size estimate

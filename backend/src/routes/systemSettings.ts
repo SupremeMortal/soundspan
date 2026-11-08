@@ -16,6 +16,7 @@ import {
 import { config } from "../config";
 import { federationInstanceNameSchema } from "./systemSettingsFederationSchema";
 import { searchProviderFields } from "../services/searchProviderSettings";
+import { offlinePolicyFields } from "../services/offline/offlinePolicySettings";
 import * as providerLists from "../services/providerListEnablement";
 import { invalidateUserProviderProfileCache } from "../services/listenTogetherResolution";
 import { testSoulseekCredentials } from "../services/soulseek/slskSession";
@@ -100,6 +101,7 @@ const systemSettingsSchema = z.object({
     soulseekConcurrentDownloads: z.number().min(1).max(10).optional(),
 
     ...searchProviderFields,
+    ...offlinePolicyFields,
     ...providerLists.providerListFields,
 
     federationInstanceName: federationInstanceNameSchema,

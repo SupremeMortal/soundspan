@@ -400,6 +400,44 @@ describe("systemSettings runtime routes", () => {
         );
     });
 
+    it("saves the five offline download toggles", async () => {
+        const res = createRes();
+        const toggles = {
+            offlineAllowLocal: false,
+            offlineAllowFederated: false,
+            offlineAllowTidal: false,
+            offlineAllowYtMusic: false,
+            offlineAllowYouTube: false,
+        };
+
+        await postSettingsHandler(
+            { user: { id: "admin-1" }, body: toggles } as any,
+            res,
+        );
+
+        expect(res.statusCode).toBe(200);
+        expect(mockSystemSettingsUpsert).toHaveBeenCalledWith(
+            expect.objectContaining({
+                update: expect.objectContaining(toggles),
+            }),
+        );
+    });
+
+    it("rejects a non-boolean offline download toggle", async () => {
+        const res = createRes();
+
+        await postSettingsHandler(
+            {
+                user: { id: "admin-1" },
+                body: { offlineAllowTidal: "no" },
+            } as any,
+            res,
+        );
+
+        expect(res.statusCode).toBe(400);
+        expect(mockSystemSettingsUpsert).not.toHaveBeenCalled();
+    });
+
     it("rejects a non-boolean shared TIDAL account toggle", async () => {
         const res = createRes();
 
