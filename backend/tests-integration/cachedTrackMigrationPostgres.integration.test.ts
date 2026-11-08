@@ -103,9 +103,24 @@ describeWithPostgres("CachedTrack playbackId migration (PostgreSQL)", () => {
              FROM "CachedTrack" ORDER BY "id"`,
         );
         expect(result.rows).toEqual([
-            { id: "old1", deviceId: null, playbackId: "t.trk1", trackId: "trk1" },
-            { id: "old2", deviceId: null, playbackId: "t.trk1", trackId: "trk1" },
-            { id: "old3", deviceId: null, playbackId: "t.trk2", trackId: "trk2" },
+            {
+                id: "old1",
+                deviceId: null,
+                playbackId: "t.trk1",
+                trackId: "trk1",
+            },
+            {
+                id: "old2",
+                deviceId: null,
+                playbackId: "t.trk1",
+                trackId: "trk1",
+            },
+            {
+                id: "old3",
+                deviceId: null,
+                playbackId: "t.trk2",
+                trackId: "trk2",
+            },
         ]);
     });
 
@@ -174,8 +189,9 @@ describeWithPostgres("CachedTrack playbackId migration (PostgreSQL)", () => {
             `SELECT indexname FROM pg_indexes
              WHERE tablename = 'CachedTrack' ORDER BY indexname`,
         );
-        expect(indexes.rows.map((r) => r.indexname)).not.toContain(
-            "CachedTrack_userId_trackId_quality_key",
+        const names = indexes.rows.map((r) => r.indexname);
+        expect(names.includes("CachedTrack_userId_trackId_quality_key")).toBe(
+            false,
         );
     });
 

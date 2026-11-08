@@ -309,7 +309,8 @@ router.get("/albums", async (req, res) => {
 
         // Rows without a library track (other sources) have nothing to group.
         const removedCachedTracks = cachedTracks.filter(
-            (cached) => cached.track !== null && cached.track.removedAt !== null,
+            (cached) =>
+                cached.track !== null && cached.track.removedAt !== null,
         );
         if (removedCachedTracks.length > 0) {
             await prisma.cachedTrack.deleteMany({

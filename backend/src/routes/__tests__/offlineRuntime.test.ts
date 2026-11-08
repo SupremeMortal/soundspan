@@ -581,7 +581,9 @@ describe("offline routes runtime", () => {
         } as any;
         const res = createRes();
 
-        mockCachedTrackFindFirst.mockRejectedValueOnce(new Error("write failed"));
+        mockCachedTrackFindFirst.mockRejectedValueOnce(
+            new Error("write failed"),
+        );
         await postTrackComplete(req, res);
 
         expect(res.statusCode).toBe(500);
