@@ -1914,4 +1914,45 @@ describe("listenTogetherManager runtime behavior", () => {
         });
         expect(delta.queue).toHaveLength(11);
     });
+    it("emits playbackId on snapshots and queue deltas for stored items without one", () => {
+        groupManager.setCallbacks(createCallbacks());
+        const local = { ...track("ckz1"), localTrackId: "ckz1" };
+        const tidal: SyncQueueItem = {
+            ...track("tidal:77"),
+            mediaSource: "tidal",
+            streamSource: "tidal",
+            tidalTrackId: 77,
+        };
+        groupManager.create("g-playback-id", {
+            name: "PB",
+            joinCode: "PBID01",
+            groupType: "host-follower",
+            visibility: "private",
+            hostUserId: "host",
+            hostUsername: "Host",
+            queue: [local],
+            currentIndex: 0,
+            currentTimeMs: 0,
+            isPlaying: false,
+            createdAt: new Date(),
+        });
+        expect(
+            groupManager.snapshotById("g-playback-id")?.playback.queue[0]
+                .playbackId,
+        ).toBe("t.ckz1");
+
+        const delta = groupManager.modifyQueue("g-playback-id", "host", {
+            action: "add",
+            items: [tidal],
+        });
+        expect(delta.queue.map((q) => q.playbackId)).toEqual([
+            "t.ckz1",
+            "td.77",
+        ]);
+        expect(
+            groupManager
+                .snapshotById("g-playback-id")
+                ?.playback.queue.map((q) => q.playbackId),
+        ).toEqual(["t.ckz1", "td.77"]);
+    });
 });

@@ -8,6 +8,7 @@ import {
     computePosition,
     currentTrackId,
 } from "./listenTogetherPlaybackPosition";
+import { withQueueItemPlaybackId } from "./listenTogetherQueueItem";
 
 /** Bounds snapshot-age compensation so clock skew cannot add more than 2 seconds. */
 const SNAPSHOT_POSITION_COMPENSATION_MAX_MS = 2_000;
@@ -144,7 +145,7 @@ export function createGroupSnapshot(
             group.syncState === "waiting" ? group.readyDeadlineMs : null,
         readyUserIds: Array.from(group.readyUserIds),
         playback: {
-            queue: playback.queue,
+            queue: playback.queue.map(withQueueItemPlaybackId),
             currentIndex: playback.currentIndex,
             isPlaying: playback.isPlaying,
             positionMs: computePosition(playback),
