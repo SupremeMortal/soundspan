@@ -134,13 +134,8 @@ describe("resolveOfflineItems", () => {
         ).rejects.toMatchObject({ status: 400, code: "INVALID_PLAYBACK_ID" });
     });
 
-    it("returns a mixed-source album in order with one source disabled", async () => {
+    it("returns a mixed-source album in order with remote items not downloadable", async () => {
         mockAlbumFindFirst.mockResolvedValue(mixedAlbum());
-        mockPolicy.mockImplementation(async (_u: string, parsed: any) =>
-            parsed.kind === "td"
-                ? { downloadable: false, reason: "SOURCE_DOWNLOADS_DISABLED" }
-                : { downloadable: true },
-        );
         const out = await resolveOfflineItems({
             userId: "u1",
             kind: "album",
@@ -152,15 +147,87 @@ describe("resolveOfflineItems", () => {
             "td.77",
             "ym.vid1",
         ]);
-        expect(out.items[2]).toEqual({
-            playbackId: "td.77",
+        for (const id of ["td.77", "ym.vid1"]) {
+            expect(out.items.find((i) => i.playbackId === id)).toEqual({
+                playbackId: id,
+                downloadable: false,
+                reason: "SOURCE_UNAVAILABLE",
+            });
+        }
+        expect(out.estimatedTotalBytes).toBe(1000 + 2000);
+        for (const id of ["td.77", "ym.vid1"]) {
+            expect(mockStreamInfo).not.toHaveBeenCalledWith(
+                expect.objectContaining({ playbackId: id }),
+            );
+            expect(mockResolvePlayback).not.toHaveBeenCalledWith(
+                "u1",
+                expect.objectContaining({
+                    parsed: expect.objectContaining({
+                        kind: id.split(".")[0],
+                    }),
+                }),
+            );
+        }
+    });
+
+    it("honours a disabled library source toggle", async () => {
+        mockAlbumFindFirst.mockResolvedValue(mixedAlbum());
+        mockPolicy.mockImplementation(async (_u: string, parsed: any) =>
+            parsed.trackId === "fed1"
+                ? { downloadable: false, reason: "SOURCE_DOWNLOADS_DISABLED" }
+                : { downloadable: true },
+        );
+        const out = await resolveOfflineItems({
+            userId: "u1",
+            kind: "album",
+            id: "alb1",
+        });
+        expect(out.items[1]).toEqual({
+            playbackId: "t.fed1",
             downloadable: false,
             reason: "SOURCE_DOWNLOADS_DISABLED",
         });
-        expect(out.estimatedTotalBytes).toBe(1000 + 2000 + 4000);
-        expect(mockStreamInfo).not.toHaveBeenCalledWith(
-            expect.objectContaining({ playbackId: "td.77" }),
-        );
+    });
+
+    it("reports a remote track playbackId as not downloadable", async () => {
+        const out = await resolveOfflineItems({
+            userId: "u1",
+            kind: "track",
+            id: "yt.aaaaaaaaaaa",
+        });
+        expect(out).toEqual({
+            items: [
+                {
+                    playbackId: "yt.aaaaaaaaaaa",
+                    downloadable: false,
+                    reason: "SOURCE_UNAVAILABLE",
+                },
+            ],
+            estimatedTotalBytes: 0,
+        });
+        expect(mockPolicy).not.toHaveBeenCalled();
+    });
+
+    it("reports the effective library quality in the item and downloadUrl", async () => {
+        mockStreamInfo.mockImplementation(async ({ playbackId, res }: any) => {
+            res.json({
+                playbackId,
+                contentType: "audio/mpeg",
+                contentLength: 10,
+                quality: "low",
+            });
+        });
+        const out = await resolveOfflineItems({
+            userId: "u1",
+            kind: "track",
+            id: "t.local1",
+            quality: "low",
+        });
+        expect(out.items[0]).toMatchObject({
+            downloadable: true,
+            quality: "low",
+            downloadUrl: "/api/playback/stream/t.local1?quality=low",
+        });
     });
 
     it("throws a 404 for a missing album", async () => {
@@ -198,7 +265,7 @@ describe("resolveOfflineItems", () => {
             "t.local1",
             "ym.vid1",
         ]);
-        expect(out.estimatedTotalBytes).toBe(3000 + 1000 + 4000);
+        expect(out.estimatedTotalBytes).toBe(1000);
     });
 
     it("hides another user's private playlist as not found", async () => {
@@ -224,17 +291,13 @@ describe("resolveOfflineItems", () => {
             userId: "u1",
             isPublic: true,
             items: [
-                {
-                    trackId: null,
-                    trackTidal: { tidalId: 77 },
-                    trackYtMusic: null,
-                },
+                { trackId: "gone1", trackTidal: null, trackYtMusic: null },
                 { trackId: "local1", trackTidal: null, trackYtMusic: null },
             ],
         });
         mockResolvePlayback.mockImplementation(
             async (_u: string, { parsed }: any) => {
-                if (parsed.kind === "td") {
+                if (parsed.trackId === "gone1") {
                     throw new PlaybackResolutionError(
                         "SOURCE_UNAVAILABLE",
                         "down",
@@ -253,7 +316,7 @@ describe("resolveOfflineItems", () => {
         });
         expect(out.items).toEqual([
             {
-                playbackId: "td.77",
+                playbackId: "t.gone1",
                 downloadable: false,
                 reason: "SOURCE_UNAVAILABLE",
             },

@@ -211,7 +211,7 @@ All under `/api/offline`, `requireAuth`. Existing album routes stay as they are.
 }
 ```
 
-- Album and playlist requests include every visible track of the album/playlist, of any source, in order. Tracks the server will not allow offline are returned with `downloadable: false` and a reason (`SOURCE_DOWNLOADS_DISABLED`, `TRACK_UNAVAILABLE`, `SOURCE_UNAVAILABLE`), so the client can show them greyed out without knowing why in source terms.
+- Album and playlist requests include every visible track of the album/playlist, in order. Remote tracks (`td`, `ym`, `yt`) are returned with `downloadable: false` and `SOURCE_UNAVAILABLE`. Library tracks the server will not allow offline are returned with `downloadable: false` and a reason (`SOURCE_DOWNLOADS_DISABLED`, `TRACK_UNAVAILABLE`, `SOURCE_UNAVAILABLE`), so the client can show them greyed out without knowing why in source terms.
 - The cache-limit check uses `UserSettings.maxCacheSizeMb` as today, but against reported sizes plus the new request's estimate, and returns 409 `CACHE_LIMIT_EXCEEDED` with the numbers rather than a 400.
 
 #### Download quality

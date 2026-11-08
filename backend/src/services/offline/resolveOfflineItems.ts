@@ -17,6 +17,7 @@ import {
     resolvePlayback,
     type PlaybackQuality,
 } from "../playback/resolvePlayback";
+import { resolveDownloadQuality } from "./resolveDownloadQuality";
 import { resolveOfflinePolicy, type OfflineBlockReason } from "./offlinePolicy";
 
 /** What an offline request names: one track, or every track of an album or playlist. */
@@ -131,6 +132,10 @@ async function resolveItem(
     const parsed = parsePlaybackId(playbackId);
     if (!parsed) return blocked(playbackId, "TRACK_UNAVAILABLE");
 
+    // Only library tracks are offline-downloadable; remote sources keep
+    // streaming through /api/playback/stream.
+    if (parsed.kind !== "t") return blocked(playbackId, "SOURCE_UNAVAILABLE");
+
     const policy = await resolveOfflinePolicy(userId, parsed);
     if (!policy.downloadable) return blocked(playbackId, policy.reason);
 
@@ -165,8 +170,11 @@ async function resolveItem(
     }
 
     const info = captured.body as StreamInfoBody;
-    const quality =
-        (info.quality as PlaybackQuality) ?? playback.libraryQuality;
+    const { quality } = resolveDownloadQuality(
+        parsed,
+        (info.quality as PlaybackQuality) ?? playback.libraryQuality,
+        {},
+    );
     return {
         playbackId,
         downloadable: true,

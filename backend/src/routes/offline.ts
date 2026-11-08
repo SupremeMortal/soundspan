@@ -71,7 +71,7 @@ const completeTrackSchema = z.object({
  * @openapi
  * /api/offline/items:
  *   post:
- *     summary: Request offline downloads for a track, album, or playlist of any source
+ *     summary: Request offline downloads for a track, album, or playlist
  *     description: >
  *       Resolves the request to downloadable items (stream URL, expected size,
  *       quality, content type) or blocked items with a reason. Albums and
@@ -120,6 +120,7 @@ const completeTrackSchema = z.object({
  *                       contentType: { type: string, nullable: true }
  *                       reason:
  *                         type: string
+ *                         description: Remote tracks (TIDAL, YouTube Music, YouTube) are never downloadable and report SOURCE_UNAVAILABLE.
  *                         enum: [SOURCE_DOWNLOADS_DISABLED, TRACK_UNAVAILABLE, SOURCE_UNAVAILABLE]
  *                 estimatedTotalBytes: { type: integer }
  *                 cacheLimitBytes: { type: integer }
