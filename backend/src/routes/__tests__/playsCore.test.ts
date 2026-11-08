@@ -312,6 +312,7 @@ describe("plays routes integration", () => {
                 source: "LIBRARY",
                 track: {
                     id: "track-1",
+                    playbackId: "t.track-1",
                     title: "Local Song",
                     displayTitle: "Local Song (Remaster)",
                     duration: 210,
@@ -345,6 +346,7 @@ describe("plays routes integration", () => {
                 source: "LIBRARY",
                 track: {
                     id: "peer-track-1",
+                    playbackId: "t.peer-track-1",
                     title: "Peer Song",
                     displayTitle: null,
                     duration: 211,
@@ -379,6 +381,7 @@ describe("plays routes integration", () => {
                 source: "TIDAL",
                 track: {
                     id: "tidal:12345",
+                    playbackId: "td.12345",
                     title: "Tidal Song",
                     displayTitle: null,
                     duration: 205,
@@ -412,6 +415,7 @@ describe("plays routes integration", () => {
                 source: "YOUTUBE_MUSIC",
                 track: {
                     id: "yt:video-123",
+                    playbackId: "ym.video-123",
                     title: "YouTube Song",
                     displayTitle: null,
                     duration: 199,

@@ -500,6 +500,77 @@ describe("plays history compatibility", () => {
         expect(errRes.body).toEqual({ error: "Failed to get plays" });
     });
 
+    it("emits a playbackId consistent with each play's source", async () => {
+        const album = {
+            id: "album-1",
+            title: "Album",
+            artist: { id: "artist-1", name: "Artist", mbid: null },
+        };
+        mockPlayFindMany.mockResolvedValueOnce([
+            {
+                id: "play-local",
+                playedAt: new Date("2026-03-01T10:00:00.000Z"),
+                source: "LIBRARY",
+                track: {
+                    id: "ckLocal1",
+                    title: "Local",
+                    duration: 100,
+                    trackNo: 1,
+                    filePath: "/music/a.flac",
+                    removedAt: null,
+                    album,
+                },
+                trackTidal: null,
+                trackYtMusic: null,
+            },
+            {
+                id: "play-tidal",
+                playedAt: new Date("2026-03-01T09:00:00.000Z"),
+                source: "TIDAL",
+                track: null,
+                trackTidal: {
+                    id: "row-1",
+                    tidalId: 4242,
+                    title: "Tidal",
+                    artist: "Artist",
+                    album: "Album",
+                    duration: 200,
+                },
+                trackYtMusic: null,
+            },
+            {
+                id: "play-yt",
+                playedAt: new Date("2026-03-01T08:00:00.000Z"),
+                source: "YOUTUBE_MUSIC",
+                track: null,
+                trackTidal: null,
+                trackYtMusic: {
+                    id: "row-2",
+                    videoId: "vidXYZ",
+                    title: "YT",
+                    artist: "Artist",
+                    album: "Album",
+                    duration: 300,
+                },
+            },
+        ]);
+        const res = createRes();
+
+        await listPlaysHandler(
+            { user: { id: "user-1" }, query: {} } as any,
+            res,
+        );
+
+        const tracks = res.body.map((play: any) => play.track);
+        expect(tracks.map((track: any) => track.playbackId)).toEqual([
+            "t.ckLocal1",
+            "td.4242",
+            "ym.vidXYZ",
+        ]);
+        expect(tracks[1].tidalTrackId).toBe(4242);
+        expect(tracks[2].youtubeVideoId).toBe("vidXYZ");
+    });
+
     it("keeps removed tracks in history and marks them unplayable", async () => {
         mockPlayFindMany.mockResolvedValueOnce([
             {

@@ -3,6 +3,7 @@ import { logger } from "../utils/logger";
 import { prisma, Prisma } from "../utils/db";
 import { requireAuth } from "../middleware/auth";
 import { playbackStateLimiter } from "../middleware/rateLimiter";
+import { derivePlaybackIdFromStoredItem } from "../services/playback/storedPlaybackId";
 import { publishSocialPresenceUpdate } from "../services/socialPresenceEvents";
 import {
     normalizeCanonicalMediaProviderIdentity,
@@ -160,6 +161,25 @@ function sanitizeTrackQueueItem(item: any): Record<string, unknown> {
 }
 
 /**
+ * Adds a read-time `playbackId` to each stored music-track queue item,
+ * derived from the stored source fields (no schema change). Episode items,
+ * non-object entries, and items without a usable identity are left as stored.
+ */
+function withQueuePlaybackIds<State extends { queue: unknown }>(
+    state: State,
+): State {
+    if (!Array.isArray(state.queue)) return state;
+    const queue = state.queue.map((item: unknown) => {
+        if (!item || typeof item !== "object") return item;
+        const record = item as Record<string, unknown>;
+        if (record.itemType === "episode") return item;
+        const playbackId = derivePlaybackIdFromStoredItem(record);
+        return playbackId ? { ...record, playbackId } : item;
+    });
+    return { ...state, queue };
+}
+
+/**
  * @openapi
  * /api/playback-state:
  *   get:
@@ -176,6 +196,22 @@ function sanitizeTrackQueueItem(item: any): Record<string, unknown> {
  *     responses:
  *       200:
  *         description: Current playback state or null if none exists
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               nullable: true
+ *               properties:
+ *                 queue:
+ *                   type: array
+ *                   nullable: true
+ *                   description: Queue items; music-track items carry a playbackId derived when the state is read.
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       playbackId:
+ *                         type: string
+ *                         description: "Opaque track identifier. Do not parse."
  *       401:
  *         description: Not authenticated
  */
@@ -190,7 +226,7 @@ router.get("/", playbackStateLimiter, requireAuth, async (req, res) => {
         });
 
         if (playbackState) {
-            return res.json(playbackState);
+            return res.json(withQueuePlaybackIds(playbackState));
         }
 
         // Backward compatibility for pre-device rows
@@ -234,7 +270,7 @@ router.get("/", playbackStateLimiter, requireAuth, async (req, res) => {
             });
         }
 
-        res.json(legacyState);
+        res.json(withQueuePlaybackIds(legacyState));
     } catch (error) {
         logger.error("Get playback state error:", error);
         res.status(500).json({ error: "Failed to get playback state" });

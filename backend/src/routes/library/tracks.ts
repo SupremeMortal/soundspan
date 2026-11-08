@@ -169,16 +169,11 @@ export const tracksDeletionRouter = Router();
  *                   items:
  *                     type: object
  *                     properties:
- *                       source:
- *                         type: string
- *                         enum: [local, federated, tidal, youtube]
- *                       streamSource:
- *                         type: string
- *                         enum: [peer, tidal, youtube]
- *                       tidalTrackId:
- *                         type: integer
- *                       youtubeVideoId:
- *                         type: string
+ *                       playbackId: { type: string, description: "Opaque track identifier. Do not parse." }
+ *                       source: { type: string, enum: [local, federated, tidal, youtube] }
+ *                       streamSource: { type: string, enum: [peer, tidal, youtube] }
+ *                       tidalTrackId: { type: integer }
+ *                       youtubeVideoId: { type: string }
  *                       provider: { type: object }
  *                       album:
  *                         type: object
@@ -1353,6 +1348,9 @@ tracksPreferenceWriteRouter.post(
  *     responses:
  *       200:
  *         description: Track details with artist and album info
+ *         content:
+ *           application/json:
+ *             schema: { type: object, properties: { playbackId: { type: string, description: "Opaque track identifier. Do not parse." } } }
  *       404:
  *         description: Track not found
  *       401:
@@ -1393,6 +1391,7 @@ export async function handleGetTrack(
     // Transform to match frontend Track interface: artist at top level.
     const formattedTrack = {
         id: track.id,
+        playbackId: normalizedTrack.playbackId,
         title: track.title,
         artist: {
             name: track.album?.artist?.name || "Unknown Artist",

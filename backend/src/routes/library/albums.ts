@@ -56,6 +56,7 @@ import {
     libraryDeletionLogger,
 } from "../../utils/libraryDeletion";
 import { bumpSearchCacheVersion } from "../../services/searchCacheVersion";
+import { encodePlaybackId } from "../../services/playback/playbackId";
 import {
     collapseProviderDuplicateSets,
     findLibraryHeldReleaseGroups,
@@ -335,6 +336,14 @@ albumsBrowseRouter.get("/albums", handleGetAlbums);
  *               type: object
  *               description: Album record with tracks, owned state, source, and cover; only streaming-match fields are listed below.
  *               properties:
+ *                 tracks:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       playbackId:
+ *                         type: string
+ *                         description: "Opaque track identifier. Do not parse."
  *                 matchedRgMbid:
  *                   type: string
  *                   nullable: true
@@ -468,6 +477,7 @@ type AlbumDetailRequest = Request<{ id: string }>;
 function formatLocalAlbumTracks(album: AlbumWithTracks) {
     return album.tracks.map(({ federationPeer, ...track }) => ({
         ...track,
+        playbackId: encodePlaybackId({ kind: "t", trackId: track.id }),
         ...(track.origin === "FEDERATED" && federationPeer
             ? {
                   source: "federated" as const,
@@ -485,6 +495,7 @@ function formatLocalAlbumTracks(album: AlbumWithTracks) {
 function formatTidalAlbumTracks(album: AlbumWithTracks) {
     return album.tracksTidal.map((track) => ({
         id: `tidal:${track.tidalId}`,
+        playbackId: encodePlaybackId({ kind: "td", tidalId: track.tidalId }),
         title: track.title,
         duration: track.duration,
         trackNo: null,
@@ -511,6 +522,7 @@ function formatTidalAlbumTracks(album: AlbumWithTracks) {
 function formatYtAlbumTracks(album: AlbumWithTracks) {
     return album.tracksYtMusic.map((track) => ({
         id: `yt:${track.videoId}`,
+        playbackId: encodePlaybackId({ kind: "ym", videoId: track.videoId }),
         title: track.title,
         duration: track.duration,
         trackNo: null,

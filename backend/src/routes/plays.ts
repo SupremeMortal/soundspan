@@ -471,6 +471,19 @@ router.post("/", async (req, res) => {
  *     responses:
  *       200:
  *         description: List of recent plays with track details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   track:
+ *                     type: object
+ *                     properties:
+ *                       playbackId:
+ *                         type: string
+ *                         description: "Opaque track identifier. Do not parse."
  *       401:
  *         description: Not authenticated
  */
@@ -569,6 +582,7 @@ const toHistoryTrackShape = (
 ) => {
     const base = {
         id: normalized.id,
+        ...(normalized.playbackId ? { playbackId: normalized.playbackId } : {}),
         title: normalized.title,
         displayTitle: normalized.displayTitle ?? null,
         duration: normalized.duration,
