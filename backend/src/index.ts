@@ -51,6 +51,7 @@ import releasesRoutes from "./routes/releases";
 import systemRoutes from "./routes/system";
 import ytMusicRoutes from "./routes/youtubeMusic";
 import youtubeRoutes from "./routes/youtube";
+import playbackRoutes from "./routes/playback";
 import tidalStreamingRoutes from "./routes/tidalStreaming";
 import trackMappingsRoutes from "./routes/trackMappings";
 import playlistImportRoutes from "./routes/playlistImport";
@@ -113,6 +114,7 @@ function isCompressionExcludedPath(path: string): boolean {
 
     return (
         (path.startsWith("/api/library/tracks/") && path.endsWith("/stream")) ||
+        path.startsWith("/api/playback/stream/") ||
         (path.startsWith("/api/audiobooks/") &&
             (path.endsWith("/stream") || path.endsWith("/cover"))) ||
         (path.startsWith("/api/podcasts/") && path.includes("/stream")) ||
@@ -329,6 +331,8 @@ app.use("/api/system-settings", adminSurfaceLimiter, systemSettingsRoutes);
 app.use("/api/listening-state", apiLimiter, listeningStateRoutes);
 // Playback-state routes use their dedicated high-volume limiter before auth.
 app.use("/api/playback-state", playbackStateRoutes);
+// The stream route applies streamingLimiter itself, like /api/library.
+app.use("/api/playback", playbackRoutes);
 app.use("/api/offline", apiLimiter, offlineRoutes);
 app.use("/api/playlists", apiLimiter, playlistsRoutes);
 app.use("/api/share-links", shareLinkLimiter, shareLinkRoutes);
