@@ -3,6 +3,10 @@ import { logger } from "../utils/logger";
 import { requireAuth } from "../middleware/auth";
 import { prisma } from "../utils/db";
 import { z } from "zod";
+import {
+    sendInternalRouteError,
+    sendRouteError,
+} from "../utils/routeErrorResponse";
 import { resolveOfflinePolicy } from "../services/offline/offlinePolicy";
 import {
     OfflineItemsError,
@@ -154,12 +158,12 @@ router.post("/items", async (req, res) => {
         res.json({ ...resolved, cacheLimitBytes, cacheUsedBytes });
     } catch (error) {
         if (error instanceof OfflineItemsError) {
-            return res
-                .status(error.status)
-                .json({ error: error.message, code: error.code });
+            return sendRouteError(res, error.status, error.message, {
+                code: error.code,
+            });
         }
         logger.error("Request offline items error:", error);
-        res.status(500).json({ error: "Failed to resolve offline items" });
+        return sendInternalRouteError(res, "Failed to resolve offline items");
     }
 });
 
