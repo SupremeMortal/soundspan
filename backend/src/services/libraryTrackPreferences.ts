@@ -55,6 +55,7 @@ export const toLikedResponseTrack = (
     const likedAtIso = likedAt.toISOString();
     const base = {
         id: normalized.id,
+        ...(normalized.playbackId ? { playbackId: normalized.playbackId } : {}),
         title: normalized.title,
         duration: normalized.duration,
         trackNo: normalized.trackNo,
