@@ -30,7 +30,7 @@ import {
 import { requestCoalescedLibraryScan } from "../services/coalescedLibraryScan";
 import { logger } from "../utils/logger";
 import { tryEncodePlaybackId } from "../services/playback/playbackId";
-import { sendRouteError } from "../utils/routeErrorResponse";
+import { streamYouTubeVideo } from "../services/playback/streamYouTubeVideo";
 
 const router = Router();
 const downloadWatcherLogger = logger.child("YouTubeDownloadWatcher");
@@ -191,68 +191,12 @@ router.get(
     "/stream/:videoId",
     requireAuthOrToken,
     async (req: Request<{ videoId: string }>, res: Response) => {
-        try {
-            const { videoId } = req.params;
-            const quality = (
-                (req.query.quality as string) || "HIGH"
-            ).toUpperCase();
-            const rangeHeader = req.headers.range;
-
-            const proxyRes = await youtubeDownloadService.getStreamProxy(
-                videoId,
-                quality,
-                rangeHeader,
-            );
-
-            // Forward status code and relevant headers
-            res.status(proxyRes.status);
-
-            const forwardHeaders = [
-                "content-type",
-                "content-length",
-                "content-range",
-                "accept-ranges",
-            ];
-            for (const header of forwardHeaders) {
-                const value = proxyRes.headers[header];
-                if (value) res.setHeader(header, value);
-            }
-
-            proxyRes.data.on("error", (streamErr: Error) => {
-                logger.warn(
-                    `[YouTube Route] Upstream stream error for ${videoId}: ${streamErr.message}`,
-                );
-                if (!res.headersSent) {
-                    res.status(502).json({ error: "Upstream stream failed" });
-                } else {
-                    res.end();
-                }
-            });
-            // Clean up upstream stream when client disconnects
-            res.on("close", () => {
-                if (
-                    proxyRes.data &&
-                    typeof proxyRes.data.destroy === "function" &&
-                    !proxyRes.data.destroyed
-                ) {
-                    proxyRes.data.destroy();
-                }
-            });
-            proxyRes.data.pipe(res);
-        } catch (err: any) {
-            if (err.response?.status === 404) {
-                return res.status(404).json({ error: "Stream not found" });
-            }
-            if (err.response?.status === 451) {
-                return sendRouteError(
-                    res,
-                    451,
-                    "This content requires age verification and cannot be streamed.",
-                );
-            }
-            logger.error("[YouTube Route] Stream proxy failed:", err.message);
-            return res.status(500).json({ error: "Failed to stream audio" });
-        }
+        await streamYouTubeVideo({
+            videoId: req.params.videoId,
+            quality: req.query.quality,
+            range: req.headers.range,
+            res,
+        });
     },
 );
 
