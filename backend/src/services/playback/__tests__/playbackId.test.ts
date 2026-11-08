@@ -6,7 +6,10 @@ import {
 } from "../playbackId";
 
 const ROUND_TRIPS: Array<[string, ParsedPlaybackId]> = [
-    ["t.ckz1abcd0000qwertyuiop1234", { kind: "t", trackId: "ckz1abcd0000qwertyuiop1234" }],
+    [
+        "t.ckz1abcd0000qwertyuiop1234",
+        { kind: "t", trackId: "ckz1abcd0000qwertyuiop1234" },
+    ],
     ["td.123456", { kind: "td", tidalId: 123456 }],
     ["ym.dQw4w9WgXcQ", { kind: "ym", videoId: "dQw4w9WgXcQ" }],
     ["yt.a-b_c-d_e-1", { kind: "yt", videoId: "a-b_c-d_e-1" }],
@@ -43,7 +46,10 @@ describe("playbackId", () => {
 
     it("accepts a 64-character key", () => {
         const key = "a".repeat(64);
-        expect(parsePlaybackId(`t.${key}`)).toEqual({ kind: "t", trackId: key });
+        expect(parsePlaybackId(`t.${key}`)).toEqual({
+            kind: "t",
+            trackId: key,
+        });
     });
 
     it.each(INVALID)("rejects %j", (value) => {
