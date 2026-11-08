@@ -203,59 +203,61 @@ async function dispatchStream(
 router.get(
     "/stream/:playbackId",
     requireAuthOrToken,
-    asyncHandler(async (req: Request<{ playbackId: string }>, res: Response) => {
-        const parsed = parsePlaybackId(req.params.playbackId);
-        if (!parsed) {
-            sendRouteError(res, 400, "Invalid playbackId", {
-                code: "INVALID_PLAYBACK_ID",
-            });
-            return;
-        }
-        let quality: PlaybackQuality | undefined;
-        if (req.query.quality !== undefined) {
-            const q = qualitySchema.safeParse(req.query.quality);
-            if (!q.success) {
-                sendRouteError(res, 400, "Invalid quality", {
-                    code: "INVALID_QUALITY",
+    asyncHandler(
+        async (req: Request<{ playbackId: string }>, res: Response) => {
+            const parsed = parsePlaybackId(req.params.playbackId);
+            if (!parsed) {
+                sendRouteError(res, 400, "Invalid playbackId", {
+                    code: "INVALID_PLAYBACK_ID",
                 });
                 return;
             }
-            quality = q.data;
-        }
+            let quality: PlaybackQuality | undefined;
+            if (req.query.quality !== undefined) {
+                const q = qualitySchema.safeParse(req.query.quality);
+                if (!q.success) {
+                    sendRouteError(res, 400, "Invalid quality", {
+                        code: "INVALID_QUALITY",
+                    });
+                    return;
+                }
+                quality = q.data;
+            }
 
-        const userId = req.user!.id;
-        let playback: ResolvedPlayback;
-        try {
-            playback = await resolvePlayback(userId, { parsed, quality });
-        } catch (err: unknown) {
-            if (err instanceof PlaybackResolutionError) {
-                sendResolutionError(res, err);
+            const userId = req.user!.id;
+            let playback: ResolvedPlayback;
+            try {
+                playback = await resolvePlayback(userId, { parsed, quality });
+            } catch (err: unknown) {
+                if (err instanceof PlaybackResolutionError) {
+                    sendResolutionError(res, err);
+                    return;
+                }
+                throw err;
+            }
+
+            if (
+                playback.middleware.ytMusicStreamLimiter &&
+                !(await runYtMusicLimiter(req, res))
+            ) {
                 return;
             }
-            throw err;
-        }
 
-        if (
-            playback.middleware.ytMusicStreamLimiter &&
-            !(await runYtMusicLimiter(req, res))
-        ) {
-            return;
-        }
-
-        addErrorCodes(res);
-        try {
-            await dispatchStream(playback, userId, req, res);
-        } catch (err: unknown) {
-            logger.error("[Playback] Stream failed:", err);
-            if (!res.headersSent) {
-                sendRouteError(res, 502, "Upstream stream failed", {
-                    code: "UPSTREAM_FAILED",
-                });
-            } else {
-                res.end();
+            addErrorCodes(res);
+            try {
+                await dispatchStream(playback, userId, req, res);
+            } catch (err: unknown) {
+                logger.error("[Playback] Stream failed:", err);
+                if (!res.headersSent) {
+                    sendRouteError(res, 502, "Upstream stream failed", {
+                        code: "UPSTREAM_FAILED",
+                    });
+                } else {
+                    res.end();
+                }
             }
-        }
-    }),
+        },
+    ),
 );
 
 export default router;
