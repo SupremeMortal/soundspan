@@ -37,12 +37,13 @@ Offline downloads are local-only:
 - **One stream surface.** `GET /api/playback/stream/:playbackId` and `GET /api/playback/stream-info/:playbackId` serve any source, with today's auth, Range, and quality behaviour.
 - **One input shape.** Every endpoint that takes a track accepts `playbackId`.
 - **Offline for every source.** Track, album, and playlist downloads for any source, with per-device accounting and a per-item, server-decided `downloadable` flag controlled by per-source admin toggles.
+- **Admin-controlled download quality.** An admin quality setting caps what any user can download from TIDAL and YT Music; a lower request is transcoded, so every download of one item has one encoding.
 - **Same credentials everywhere.** Realtime sockets accept API keys as well as JWTs, so device-linked clients get Listen Together and presence.
 - **Additive.** No existing route, field, or behaviour is removed or changed; the frontend needs no changes.
 
 ## Non-Goals
 
-- Changing how any provider is fetched, authenticated, transcoded, or rate-limited. The new routes call the same code as the existing ones.
+- Changing how any provider is fetched, authenticated, or rate-limited. The new routes call the same code as the existing ones. Transcoding of remote sources applies only to offline downloads (see "Download quality"); streaming is unchanged.
 - Migrating the Next.js frontend. It moves to `playbackId` in a planned follow-up (see Follow-Up), not in this project.
 - Deprecating per-source endpoints in this project. They are deprecated only after the frontend follow-up lands.
 - Unifying the `Track`, `TrackTidal`, and `TrackYtMusic` tables, or changing `TrackMapping` matching.
@@ -212,11 +213,20 @@ All under `/api/offline`, `requireAuth`. Existing album routes stay as they are.
 - Album and playlist requests include every visible track of the album/playlist, of any source, in order. Tracks the server will not allow offline are returned with `downloadable: false` and a reason (`SOURCE_DOWNLOADS_DISABLED`, `TRACK_UNAVAILABLE`, `SOURCE_UNAVAILABLE`), so the client can show them greyed out without knowing why in source terms.
 - The cache-limit check uses `UserSettings.maxCacheSizeMb` as today, but against reported sizes plus the new request's estimate, and returns 409 `CACHE_LIMIT_EXCEEDED` with the numbers rather than a 400.
 
+#### Download quality
+
+Download quality is decided once, when `POST /items` resolves an item, and is the same for every request that follows.
+
+- **Admin ceiling.** Admins set the highest quality a download may have per remote provider: `tidalQuality` (existing) for `td.*` and `ytMusicQuality` (a `SystemSettings` field, same values and default as the per-user YT Music setting, shown next to the other YT Music admin settings) for `ym.*`. `yt.*` has no ceiling; its quality is the requested one. A user's `playbackQuality` never raises a download above the ceiling.
+- **Effective quality** is the lower of the ceiling and the quality requested in `POST /items` (default: the user's saved playback quality), in the library vocabulary (`original | high | medium | low`). `resolveDownloadQuality(parsedId, requested)` computes it in one place and the item reports it as `quality`.
+- **Transcoding.** The source is fetched at the ceiling's provider tier. When the effective quality is lower than what that tier delivers, the server transcodes the file with the library's existing transcode profiles into the transcode cache (`TranscodedFile`), keyed by `(playbackId, effective quality)`, and `downloadUrl` serves that file. When the effective quality equals the delivered quality, the provider stream is passed through and pinned as described below.
+- Transcoded and passthrough downloads are both served with a strong ETag and `If-Range` support, so a resumed download never mixes encodings.
+
 #### Consistent, resumable downloads
 
 Resumable downloads require that every byte range of one download comes from the same encoding. For local files and the transcode cache (`TranscodedFile`) this already holds. For proxied providers, the upstream format could differ between requests (e.g. a different YouTube itag), which would corrupt a resumed file.
 
-- `downloadUrl` pins the upstream variant with an opaque `variant` parameter that the stream service honours (the provider format/quality actually chosen when the item was resolved).
+- `downloadUrl` pins the variant with an opaque `variant` parameter that the stream service honours. The provider sidecars select a format from a quality tier only (they cannot be asked for a specific itag or codec), so `variant` encodes the effective download quality and, for a transcoded download, the transcode profile. A transcoded variant is a fixed file. A passthrough variant is accepted only while the upstream still delivers the quality it was resolved at, and otherwise returns 409 `SOURCE_UNAVAILABLE` so the client restarts with a fresh `POST /items`.
 - Stream responses for a pinned variant carry a strong `ETag` derived from `(playbackId, variant, contentLength)`. Clients resume with `Range` + `If-Range`; on mismatch the server returns the full body and the client restarts.
 - If an upstream response lacks a `Content-Length` (not expected for current providers), the stream service materializes the file into the existing transcode cache first and returns 202 with `Retry-After` until it is ready. This is a fallback, not the normal path, so no new storage class is introduced.
 
@@ -286,6 +296,7 @@ Per `AGENTS.md`: TDD, behavioural assertions, no source-text contract tests.
 - Route tests for `/api/playback/stream` and `/stream-info`: auth via each credential type, Range passthrough, error codes, rate-limit and compression parity with the per-source routes.
 - Emission test: every track-returning route's sampled payload has a valid `playbackId` consistent with its legacy fields.
 - Write-path tests: each P3 endpoint gives identical results via legacy fields and via `playbackId` (+ metadata for not-yet-persisted remote tracks).
+- Download quality: the ceiling caps the effective quality for TIDAL and YT Music; a lower request is transcoded and a request at the ceiling passes through; one `(playbackId, effective quality)` yields one file shared by concurrent requests; the YT Music admin setting validates and persists.
 - Offline: mixed-source album and playlist resolution, policy reasons, cache-limit math, per-device isolation, ETag/If-Range behaviour for pinned variants, and the `CachedTrack` migration and backfill against real PostgreSQL.
 - Offline policy: each toggle off yields `SOURCE_DOWNLOADS_DISABLED` for that source only; reconciliation marks previously completed items `revoked`; the legacy album route honours `offlineAllowLocal`.
 - Sockets: handshake with a valid, expired, revoked, or malformed API key; both credentials rejected; deleting a key disconnects its sockets and not the user's JWT sockets.
