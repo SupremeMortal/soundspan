@@ -8,7 +8,9 @@ jest.mock("../../../utils/systemSettings", () => ({
     getSystemSettings: (...args: unknown[]) => mockGetSystemSettings(...args),
 }));
 jest.mock("../../../utils/db", () => ({
-    prisma: { track: { findUnique: (...a: unknown[]) => mockTrackFindUnique(...a) } },
+    prisma: {
+        track: { findUnique: (...a: unknown[]) => mockTrackFindUnique(...a) },
+    },
 }));
 jest.mock("../../tidalStreaming", () => ({
     tidalStreamingService: {
@@ -65,9 +67,9 @@ describe("resolveOfflinePolicy", () => {
     it("allows everything when no settings row exists", async () => {
         mockGetSystemSettings.mockResolvedValue(null);
         mockTidalEnabled.mockResolvedValue(true);
-        await expect(
-            resolveOfflinePolicy("u1", IDS.local),
-        ).resolves.toEqual({ downloadable: true });
+        await expect(resolveOfflinePolicy("u1", IDS.local)).resolves.toEqual({
+            downloadable: true,
+        });
     });
 
     it.each([
@@ -82,7 +84,10 @@ describe("resolveOfflinePolicy", () => {
             const result = await resolveOfflinePolicy("u1", parsed);
             expect(result).toEqual(
                 name === blocked
-                    ? { downloadable: false, reason: "SOURCE_DOWNLOADS_DISABLED" }
+                    ? {
+                          downloadable: false,
+                          reason: "SOURCE_DOWNLOADS_DISABLED",
+                      }
                     : { downloadable: true },
             );
         }
@@ -91,7 +96,10 @@ describe("resolveOfflinePolicy", () => {
     it("reports a missing library track as TRACK_UNAVAILABLE", async () => {
         await expect(
             resolveOfflinePolicy("u1", { kind: "t", trackId: "nope" }),
-        ).resolves.toEqual({ downloadable: false, reason: "TRACK_UNAVAILABLE" });
+        ).resolves.toEqual({
+            downloadable: false,
+            reason: "TRACK_UNAVAILABLE",
+        });
     });
 
     it("reports TIDAL as SOURCE_UNAVAILABLE when the user cannot stream it", async () => {

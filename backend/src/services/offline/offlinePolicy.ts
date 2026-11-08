@@ -44,7 +44,9 @@ export async function resolveOfflinePolicy(
                 track.origin === "FEDERATED"
                     ? "offlineAllowFederated"
                     : "offlineAllowLocal";
-            return allows(field) ? ALLOWED : blocked("SOURCE_DOWNLOADS_DISABLED");
+            return allows(field)
+                ? ALLOWED
+                : blocked("SOURCE_DOWNLOADS_DISABLED");
         }
         case "td": {
             if (!allows("offlineAllowTidal")) {
