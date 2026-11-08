@@ -1055,16 +1055,18 @@ model DislikedEntity {
 model CachedTrack {
   id             String   @id @default(cuid())
   userId         String
-  trackId        String
+  deviceId       String? // client-generated per-installation UUID; null for legacy rows
+  playbackId     String // "t.<trackId>" for library tracks
+  trackId        String? // set for library tracks only
   localPath      String
   quality        String
   fileSizeMb     Float
   cachedAt       DateTime @default(now())
   lastAccessedAt DateTime @default(now())
-  track          Track    @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  track          Track?   @relation(fields: [trackId], references: [id], onDelete: Cascade)
   user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, trackId, quality])
+  @@unique([userId, deviceId, playbackId, quality])
   @@index([userId])
   @@index([lastAccessedAt])
 }

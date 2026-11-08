@@ -31,7 +31,9 @@ const prisma = {
     },
     cachedTrack: {
         aggregate: jest.fn(),
-        upsert: jest.fn(),
+        findFirst: jest.fn(),
+        create: jest.fn(),
+        update: jest.fn(),
         findMany: jest.fn(),
         deleteMany: jest.fn(),
     },
@@ -50,7 +52,10 @@ const mockAlbumFindUnique = prismaClient.album.findUnique as jest.Mock;
 const mockTrackFindFirst = prismaClient.track.findFirst as jest.Mock;
 const mockCachedTrackAggregate = prismaClient.cachedTrack
     .aggregate as jest.Mock;
-const mockCachedTrackUpsert = prismaClient.cachedTrack.upsert as jest.Mock;
+const mockCachedTrackFindFirst = prismaClient.cachedTrack
+    .findFirst as jest.Mock;
+const mockCachedTrackCreate = prismaClient.cachedTrack.create as jest.Mock;
+const mockCachedTrackUpdate = prismaClient.cachedTrack.update as jest.Mock;
 const mockCachedTrackFindMany = prismaClient.cachedTrack.findMany as jest.Mock;
 const mockCachedTrackDeleteMany = prismaClient.cachedTrack
     .deleteMany as jest.Mock;
@@ -126,14 +131,19 @@ describe("offline routes runtime", () => {
             _sum: { fileSizeMb: 100 },
             _count: 2,
         });
-        mockCachedTrackUpsert.mockResolvedValue({
+        const savedRow = {
             id: "cached-1",
             userId: "u1",
+            deviceId: null,
+            playbackId: "t.t1",
             trackId: "t1",
             localPath: "/music/t1.mp3",
             quality: "high",
             fileSizeMb: 11.2,
-        });
+        };
+        mockCachedTrackFindFirst.mockResolvedValue(null);
+        mockCachedTrackCreate.mockResolvedValue(savedRow);
+        mockCachedTrackUpdate.mockResolvedValue(savedRow);
         mockCachedTrackFindMany.mockResolvedValue([
             {
                 id: "cached-1",
@@ -355,7 +365,8 @@ describe("offline routes runtime", () => {
             error: "Invalid request",
             details: expect.any(Array),
         });
-        expect(mockCachedTrackUpsert).not.toHaveBeenCalled();
+        expect(mockCachedTrackCreate).not.toHaveBeenCalled();
+        expect(mockCachedTrackUpdate).not.toHaveBeenCalled();
     });
 
     it("rejects an out-of-allowlist completion quality", async () => {
@@ -378,7 +389,8 @@ describe("offline routes runtime", () => {
             error: "Invalid request",
             details: expect.any(Array),
         });
-        expect(mockCachedTrackUpsert).not.toHaveBeenCalled();
+        expect(mockCachedTrackCreate).not.toHaveBeenCalled();
+        expect(mockCachedTrackUpdate).not.toHaveBeenCalled();
     });
 
     it.each([
@@ -405,7 +417,8 @@ describe("offline routes runtime", () => {
             error: "Invalid request",
             details: expect.any(Array),
         });
-        expect(mockCachedTrackUpsert).not.toHaveBeenCalled();
+        expect(mockCachedTrackCreate).not.toHaveBeenCalled();
+        expect(mockCachedTrackUpdate).not.toHaveBeenCalled();
     });
 
     it("rejects an overlong completion local path", async () => {
@@ -428,10 +441,11 @@ describe("offline routes runtime", () => {
             error: "Invalid request",
             details: expect.any(Array),
         });
-        expect(mockCachedTrackUpsert).not.toHaveBeenCalled();
+        expect(mockCachedTrackCreate).not.toHaveBeenCalled();
+        expect(mockCachedTrackUpdate).not.toHaveBeenCalled();
     });
 
-    it("upserts completed cached tracks with a parsed numeric size", async () => {
+    it("creates a legacy (deviceId null) row with playbackId for a first completion", async () => {
         const req = {
             session: {},
             user: { id: "u1", username: "u1", role: "user" },
@@ -459,32 +473,79 @@ describe("offline routes runtime", () => {
             },
             select: { id: true },
         });
-
-        expect(mockCachedTrackUpsert).toHaveBeenCalledWith({
+        expect(mockCachedTrackFindFirst).toHaveBeenCalledWith({
             where: {
-                userId_trackId_quality: {
-                    userId: "u1",
-                    trackId: "t1",
-                    quality: "high",
-                },
-            },
-            create: {
                 userId: "u1",
+                deviceId: null,
+                playbackId: "t.t1",
+                quality: "high",
+            },
+        });
+        expect(mockCachedTrackCreate).toHaveBeenCalledWith({
+            data: {
+                userId: "u1",
+                deviceId: null,
+                playbackId: "t.t1",
                 trackId: "t1",
                 localPath: "/cache/t1.mp3",
                 quality: "high",
                 fileSizeMb: 15.5,
             },
-            update: {
-                localPath: "/cache/t1.mp3",
-                fileSizeMb: 15.5,
-                lastAccessedAt: expect.any(Date),
-            },
         });
+        expect(mockCachedTrackUpdate).not.toHaveBeenCalled();
         expect(res.statusCode).toBe(200);
         expect(res.body).toEqual(
             expect.objectContaining({ id: "cached-1", trackId: "t1" }),
         );
+    });
+
+    it("updates the existing legacy row instead of inserting a duplicate", async () => {
+        mockCachedTrackFindFirst.mockResolvedValueOnce({ id: "cached-9" });
+        const req = {
+            user: { id: "u1" },
+            params: { id: "t1" },
+            body: {
+                localPath: "/cache/t1-new.mp3",
+                quality: "high",
+                fileSizeMb: 12,
+            },
+        } as any;
+        const res = createRes();
+
+        await postTrackComplete(req, res);
+
+        expect(mockCachedTrackUpdate).toHaveBeenCalledWith({
+            where: { id: "cached-9" },
+            data: {
+                localPath: "/cache/t1-new.mp3",
+                fileSizeMb: 12,
+                lastAccessedAt: expect.any(Date),
+            },
+        });
+        expect(mockCachedTrackCreate).not.toHaveBeenCalled();
+        expect(res.statusCode).toBe(200);
+    });
+
+    it("skips cached rows that have no library track when listing albums", async () => {
+        mockCachedTrackFindMany.mockResolvedValueOnce([
+            {
+                id: "remote-1",
+                playbackId: "y.abc",
+                trackId: null,
+                track: null,
+                localPath: "/cache/y.mp3",
+                quality: "high",
+                fileSizeMb: 4,
+            },
+        ]);
+        const req = { user: { id: "u1" } } as any;
+        const res = createRes();
+
+        await getAlbums(req, res);
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body).toEqual([]);
+        expect(mockCachedTrackDeleteMany).not.toHaveBeenCalled();
     });
 
     it("returns 404 without caching a removed track", async () => {
@@ -503,10 +564,11 @@ describe("offline routes runtime", () => {
         await postTrackComplete(req, res);
 
         expect(res.statusCode).toBe(404);
-        expect(mockCachedTrackUpsert).not.toHaveBeenCalled();
+        expect(mockCachedTrackCreate).not.toHaveBeenCalled();
+        expect(mockCachedTrackUpdate).not.toHaveBeenCalled();
     });
 
-    it("returns 500 when a completed track upsert fails", async () => {
+    it("returns 500 when saving a completed track fails", async () => {
         const req = {
             session: {},
             user: { id: "u1", username: "u1", role: "user" },
@@ -519,7 +581,7 @@ describe("offline routes runtime", () => {
         } as any;
         const res = createRes();
 
-        mockCachedTrackUpsert.mockRejectedValueOnce(new Error("write failed"));
+        mockCachedTrackFindFirst.mockRejectedValueOnce(new Error("write failed"));
         await postTrackComplete(req, res);
 
         expect(res.statusCode).toBe(500);

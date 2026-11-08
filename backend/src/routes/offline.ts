@@ -227,27 +227,34 @@ router.post("/tracks/:id/complete", async (req, res) => {
             return res.status(404).json({ error: "Track not found" });
         }
 
-        const cachedTrack = await prisma.cachedTrack.upsert({
-            where: {
-                userId_trackId_quality: {
-                    userId,
-                    trackId,
-                    quality,
-                },
-            },
-            create: {
-                userId,
-                trackId,
-                localPath,
-                quality,
-                fileSizeMb,
-            },
-            update: {
-                localPath,
-                fileSizeMb,
-                lastAccessedAt: new Date(),
-            },
+        // Legacy rows have deviceId = null. PostgreSQL treats NULLs as distinct
+        // in unique indexes, so the composite unique cannot dedupe them and
+        // Prisma cannot upsert on a null key: find the row, then update or
+        // create it.
+        const playbackId = `t.${trackId}`;
+        const existing = await prisma.cachedTrack.findFirst({
+            where: { userId, deviceId: null, playbackId, quality },
         });
+        const cachedTrack = existing
+            ? await prisma.cachedTrack.update({
+                  where: { id: existing.id },
+                  data: {
+                      localPath,
+                      fileSizeMb,
+                      lastAccessedAt: new Date(),
+                  },
+              })
+            : await prisma.cachedTrack.create({
+                  data: {
+                      userId,
+                      deviceId: null,
+                      playbackId,
+                      trackId,
+                      localPath,
+                      quality,
+                      fileSizeMb,
+                  },
+              });
 
         res.json(cachedTrack);
     } catch (error) {
@@ -300,8 +307,9 @@ router.get("/albums", async (req, res) => {
             },
         });
 
+        // Rows without a library track (other sources) have nothing to group.
         const removedCachedTracks = cachedTracks.filter(
-            (cached) => cached.track.removedAt !== null,
+            (cached) => cached.track !== null && cached.track.removedAt !== null,
         );
         if (removedCachedTracks.length > 0) {
             await prisma.cachedTrack.deleteMany({
@@ -311,8 +319,10 @@ router.get("/albums", async (req, res) => {
                 },
             });
         }
-        const visibleCachedTracks = cachedTracks.filter(
-            (cached) => cached.track.removedAt === null,
+        const visibleCachedTracks = cachedTracks.flatMap((cached) =>
+            cached.track !== null && cached.track.removedAt === null
+                ? [{ ...cached, track: cached.track }]
+                : [],
         );
 
         // Group by album
