@@ -46,7 +46,9 @@ jest.mock("../../services/trackMappingService", () => ({
 jest.mock("../../services/deezer", () => ({ deezerService: {} }));
 jest.mock("../../services/spotifyImport", () => ({ spotifyImportService: {} }));
 jest.mock("../../services/soulseek", () => ({ soulseekService: {} }));
-jest.mock("../../utils/systemSettings", () => ({ getSystemSettings: jest.fn() }));
+jest.mock("../../utils/systemSettings", () => ({
+    getSystemSettings: jest.fn(),
+}));
 jest.mock("../../services/coalescedLibraryScan", () => ({
     requestCoalescedLibraryScan: jest.fn(),
 }));
