@@ -163,7 +163,10 @@ describe("streamLibraryTrack", () => {
             res: createRes(),
         });
         expect(mockProxyPeer).toHaveBeenCalledWith(
-            expect.objectContaining({ remoteId: "r1", requestedQuality: "low" }),
+            expect.objectContaining({
+                remoteId: "r1",
+                requestedQuality: "low",
+            }),
         );
         expect(mockServeNative).not.toHaveBeenCalled();
         expect(mockApplyFallback).not.toHaveBeenCalled();
