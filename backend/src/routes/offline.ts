@@ -5,6 +5,10 @@ import { prisma } from "../utils/db";
 import { z } from "zod";
 import { resolveOfflinePolicy } from "../services/offline/offlinePolicy";
 import {
+    OfflineItemsError,
+    resolveOfflineItems,
+} from "../services/offline/resolveOfflineItems";
+import {
     LOCAL_TRACK_WHERE,
     TRACK_VISIBLE_WHERE,
 } from "../utils/librarySorting";
@@ -19,10 +23,144 @@ const downloadAlbumSchema = z.object({
     quality: qualitySchema.optional(),
 });
 
+const requestItemsSchema = z.object({
+    kind: z.enum(["track", "album", "playlist"]),
+    id: z.string().min(1).max(256),
+    deviceId: z.string().uuid(),
+    quality: qualitySchema.optional(),
+});
+
+/** Cache limit used when a user has no settings row (matches `/stats`). */
+const DEFAULT_MAX_CACHE_MB = 5120;
+const BYTES_PER_MB = 1024 * 1024;
+
 const completeTrackSchema = z.object({
     localPath: z.string().min(1).max(1024),
     quality: qualitySchema,
     fileSizeMb: z.coerce.number().finite().positive().max(4096),
+});
+
+/**
+ * @openapi
+ * /api/offline/items:
+ *   post:
+ *     summary: Request offline downloads for a track, album, or playlist of any source
+ *     description: >
+ *       Resolves the request to downloadable items (stream URL, expected size,
+ *       quality, content type) or blocked items with a reason. Albums and
+ *       playlists include every visible track in order. Does not record
+ *       cached files; completion does.
+ *     tags: [Offline]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [kind, id, deviceId]
+ *             properties:
+ *               kind:
+ *                 type: string
+ *                 enum: [track, album, playlist]
+ *               id:
+ *                 type: string
+ *                 description: A playbackId for track; the album or playlist id otherwise
+ *               deviceId:
+ *                 type: string
+ *                 format: uuid
+ *                 description: Client-generated per-installation id
+ *               quality:
+ *                 type: string
+ *                 enum: [original, high, medium, low]
+ *     responses:
+ *       200:
+ *         description: Resolved items with cache usage
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 items:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       playbackId: { type: string }
+ *                       downloadable: { type: boolean }
+ *                       downloadUrl: { type: string }
+ *                       expectedSize: { type: integer, nullable: true }
+ *                       quality: { type: string }
+ *                       contentType: { type: string, nullable: true }
+ *                       reason:
+ *                         type: string
+ *                         enum: [SOURCE_DOWNLOADS_DISABLED, TRACK_UNAVAILABLE, SOURCE_UNAVAILABLE]
+ *                 estimatedTotalBytes: { type: integer }
+ *                 cacheLimitBytes: { type: integer }
+ *                 cacheUsedBytes: { type: integer }
+ *       400:
+ *         description: Invalid request (code INVALID_REQUEST or INVALID_PLAYBACK_ID)
+ *       401:
+ *         description: Not authenticated
+ *       404:
+ *         description: Album or playlist not found (code ALBUM_NOT_FOUND or PLAYLIST_NOT_FOUND)
+ *       409:
+ *         description: Cache limit exceeded (code CACHE_LIMIT_EXCEEDED with cacheLimitBytes, cacheUsedBytes, estimatedTotalBytes)
+ */
+// POST /offline/items
+router.post("/items", async (req, res) => {
+    const parsed = requestItemsSchema.safeParse(req.body);
+    if (!parsed.success) {
+        return res.status(400).json({
+            error: "Invalid request",
+            code: "INVALID_REQUEST",
+            details: parsed.error.flatten(),
+        });
+    }
+    const { kind, id, quality } = parsed.data;
+    const userId = req.user!.id;
+
+    try {
+        const resolved = await resolveOfflineItems({
+            userId,
+            kind,
+            id,
+            quality,
+        });
+
+        const [settings, cacheStats] = await Promise.all([
+            prisma.userSettings.findUnique({ where: { userId } }),
+            prisma.cachedTrack.aggregate({
+                where: { userId },
+                _sum: { fileSizeMb: true },
+            }),
+        ]);
+        const cacheLimitBytes = Math.round(
+            (settings?.maxCacheSizeMb ?? DEFAULT_MAX_CACHE_MB) * BYTES_PER_MB,
+        );
+        const cacheUsedBytes = Math.round(
+            (cacheStats._sum.fileSizeMb ?? 0) * BYTES_PER_MB,
+        );
+
+        if (cacheUsedBytes + resolved.estimatedTotalBytes > cacheLimitBytes) {
+            return res.status(409).json({
+                error: "Cache size limit exceeded",
+                code: "CACHE_LIMIT_EXCEEDED",
+                cacheLimitBytes,
+                cacheUsedBytes,
+                estimatedTotalBytes: resolved.estimatedTotalBytes,
+            });
+        }
+
+        res.json({ ...resolved, cacheLimitBytes, cacheUsedBytes });
+    } catch (error) {
+        if (error instanceof OfflineItemsError) {
+            return res
+                .status(error.status)
+                .json({ error: error.message, code: error.code });
+        }
+        logger.error("Request offline items error:", error);
+        res.status(500).json({ error: "Failed to resolve offline items" });
+    }
 });
 
 /**

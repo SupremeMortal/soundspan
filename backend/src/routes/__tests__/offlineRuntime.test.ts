@@ -49,6 +49,11 @@ jest.mock("../../services/offline/offlinePolicy", () => ({
         mockResolveOfflinePolicy(...args),
 }));
 
+jest.mock("../../services/offline/resolveOfflineItems", () => ({
+    OfflineItemsError: class OfflineItemsError extends Error {},
+    resolveOfflineItems: jest.fn(),
+}));
+
 import router from "../offline";
 import { prisma as prismaClient } from "../../utils/db";
 
