@@ -10,6 +10,7 @@ import {
     IntegrationCard,
 } from "../ui";
 import { UserSettings, SystemSettings } from "../../types";
+import { OfflineDownloadToggle } from "./OfflineDownloadToggle";
 import { api } from "@/lib/api";
 import { createFrontendLogger } from "@/lib/logger";
 import { useDeviceAuthPolling } from "@/hooks/useDeviceAuthPolling";
@@ -124,6 +125,12 @@ export function YouTubeMusicProviderSettings({
                     </>
                 )}
             </div>
+            <OfflineDownloadToggle
+                field="offlineAllowYtMusic"
+                id="offline-allow-ytmusic"
+                settings={settings}
+                onUpdate={onUpdate}
+            />
         </div>
     );
 }
