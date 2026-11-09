@@ -360,7 +360,7 @@ The full design, including endpoint shapes, data model, and tests, is in `docs/d
 
 ### Client Compatibility
 
-`minServer` is the first server release that contains P1–P5. Older servers are refused at sign-in with an "update your server" message (see Connecting to Any Self-Hosted Server). The client contains no fallback to the per-source endpoints.
+`minServer` is the release that ships the Unified Playback API (P1–P5). Older servers are refused at sign-in with an "update your server" message (see Connecting to Any Self-Hosted Server). The client contains no fallback to the per-source endpoints.
 
 ## Milestones
 
