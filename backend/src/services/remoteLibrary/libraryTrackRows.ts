@@ -6,6 +6,7 @@ import {
     trackBrowseWhere,
     type LibraryOriginFilter,
 } from "../../utils/librarySorting";
+import { encodePlaybackId } from "../playback/playbackId";
 
 /** Relation graph used to hydrate Library track response rows. */
 export const LIBRARY_TRACK_INCLUDE = {
@@ -46,6 +47,7 @@ export function formatLibraryTrackRow(row: LibraryTrackRow) {
     const { federationPeer, ...track } = row;
     return {
         ...track,
+        playbackId: encodePlaybackId({ kind: "t", trackId: track.id }),
         source: track.origin === "FEDERATED" ? "federated" : "local",
         ...(track.origin === "FEDERATED"
             ? { streamSource: "peer" as const }
