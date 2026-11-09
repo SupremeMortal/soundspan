@@ -66,6 +66,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `GET /api/playback/stream/:playbackId` and `/stream-info/:playbackId` for `ym.*` ids answer `409` `SOURCE_UNAVAILABLE` on a server that has no saved system settings yet. They answered `500` before.
 - `GET /api/library/tracks` now includes `playbackId` on every local and peer-library track, as its OpenAPI schema already documented. It was missing from that listing.
 - Search's albums no longer list other users' streaming albums. Every streaming-only album on the server, made when someone liked a TIDAL or YouTube Music song on it, showed up in everyone's search, revealed that person's likes, and returned "not found" when another user opened it. Search's shared, cached results now leave streaming albums out, and each user gets their own streaming albums in a separate **Albums from your streaming services** group, by the same rules as the Library: a connected provider, and not an album already in the library. `GET /api/search` returns them as `remoteAlbums` (rows carry `source: "remote"` and `remoteSources`), computed per user and never cached, for signed-in `source=all` searches without a genre filter: up to 6 for `type=all`, or the first page of `type=albums` (#953).
 - The download reconciliation cycle no longer fails on a large Lidarr library. It downloaded Lidarr's whole album list every run, and once that list passed the 64 MB response limit, every run failed. The local-library match and the stale-download cleanup in the same cycle stopped with it. The cycle now asks Lidarr only about downloads in progress: one lookup per album by its MusicBrainz ID, and, when that misses, the artist's albums (at most 10 artists of up to 1,000 albums each per run). With no download in progress it makes no Lidarr requests, and a Lidarr failure no longer stops the local-library match.
@@ -98,6 +99,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `GET /api/playback/stream/:playbackId` and `/stream-info/:playbackId` for `ym.*` ids answer `409` `SOURCE_UNAVAILABLE` on a server that has no saved system settings yet. They answered `500` before.
 - Docker Compose and all-in-one deployments can now set every documented optional tuning and integration variable; previously, about 40 documented variables were not forwarded into the containers.
 - Connecting Last.fm before approving access no longer shows a generic internal error, and credential or availability problems report clearly.
 
@@ -170,6 +172,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `GET /api/playback/stream/:playbackId` and `/stream-info/:playbackId` for `ym.*` ids answer `409` `SOURCE_UNAVAILABLE` on a server that has no saved system settings yet. They answered `500` before.
 - Docker Compose and all-in-one deployments now pass Last.fm scrobbling and catalog-persistence settings through to the app instead of silently ignoring them.
 - Scrobble forwarding now preserves OpenSubsonic millisecond timestamps, disables provider connections after invalid authentication, rate-limits credential validation and Last.fm authorization on the distributed auth tier, rejects stale Last.fm authorization completions, and mounts both Last.fm secret values from a configured Helm existing Secret (#761).
 - TIDAL and YouTube Music sidecar containers no longer crash at startup after the `app.py` decomposition when the repository-root path probe runs outside the repository directory layout.
@@ -233,6 +236,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `GET /api/playback/stream/:playbackId` and `/stream-info/:playbackId` for `ym.*` ids answer `409` `SOURCE_UNAVAILABLE` on a server that has no saved system settings yet. They answered `500` before.
 - Music request entries now link to matching local artist and album pages.
 - Approving a music request now shows the download in the approving admin's activity panel instead of running invisibly under the requester's account. (#663)
 - Discover Weekly no longer downloads albums for non-admin users; legacy-mode acquisition is admin-only. (#663)
@@ -250,6 +254,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `GET /api/playback/stream/:playbackId` and `/stream-info/:playbackId` for `ym.*` ids answer `409` `SOURCE_UNAVAILABLE` on a server that has no saved system settings yet. They answered `500` before.
 - Deployments behind a mandatory egress proxy can restore federation proxy support with the new `FEDERATION_ALLOW_PROXY` administrator opt-in; the 2.4.0 DNS-pinning hardening had disabled `HTTPS_PROXY`/`ALL_PROXY`/`NO_PROXY` handling on federation egress unconditionally (federation egress is HTTPS-only, so `HTTP_PROXY` never applies). Per-attempt peer address resolution and private-range validation still run and fail closed; only connection pinning is relinquished — proxied requests are connected by the proxy, and `NO_PROXY`-exempt requests connect directly without a pin. Default behavior is unchanged (#673).
 - OpenSubsonic full-library searches now load per-user play counts and latest-play timestamps in bounded query chunks, preventing large `search3` syncs from exceeding PostgreSQL's bind-parameter limit and returning a protocol-level error.
 - The web client no longer fails successful API calls that return `204 No Content` or an otherwise empty body. The shared request path parsed every success response as JSON, so endpoints such as federation peer deletion reported a parse error ("The string did not match the expected pattern" on Safari/WebKit, "Unexpected end of JSON input" on Chromium) even though the server had completed the operation. Empty bodies now resolve as successful void results.
@@ -281,6 +286,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `GET /api/playback/stream/:playbackId` and `/stream-info/:playbackId` for `ym.*` ids answer `409` `SOURCE_UNAVAILABLE` on a server that has no saved system settings yet. They answered `500` before.
 - Federation cover-art lookups now reject placeholder and malformed release-group identities before Cover Art Archive or MusicBrainz access, preserve usable persisted covers before routing peer-owned misses through the federation proxy, clear stale native-cover state without redirect cycles or concurrent-cover loss, advertise proxyable peer art to Subsonic clients, and exclude peer albums from local cover enrichment (#680).
 - Administrative user deletion now reserves the target with a durable deletion marker, fences new Listen Together memberships, and reconciles committed endings and departures through retry-safe publication and identity-based socket eviction on every backend replica before a guarded final delete. The cleanup replica evicts local socket and manager membership state directly, including when cluster sync is disabled, while each cluster (re)subscription audits its connected sockets against exact `(groupId, userId)` PostgreSQL membership pairs in 100-pair batches. Reconnect flaps coalesce into one active audit and one trailing rerun, and a timed-out non-cancelable Prisma batch retains that single-flight slot until it settles. Historical associations and a final all-user sweep revoke remote-only sockets even when local memory and Redis no longer show membership. One shared abortable deadline bounds collection, locks, reconciliation, and publication, abandons late idempotent effects, releases admission promptly, and prevents post-abort stages from overlapping a retry. Fenced socket mutations now treat a missing authoritative Redis snapshot as an ended group, reject malformed nested snapshots as retryable without poisoning local authority, and recheck the acting user's durable deletion marker inside the acquired lock before hydration. Marked users are revoked from stale connected sockets and local manager state before any mutation can republish them. Cleanup keyset pagination retains rows after earlier pages leave the mutating predicate. During a mixed-version backend window, admin user deletion retains pre-upgrade semantics until all pods run the new version (#667).
 - Remote-only liked albums now load with user-scoped, canonical-deduplicated provider tracks, preserve tiddl-native TIDAL and YouTube artwork in playback, expose download/search controls only for real release-group MBIDs, and omit unsupported album-wide preference actions (#666, #665).
@@ -367,6 +373,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `GET /api/playback/stream/:playbackId` and `/stream-info/:playbackId` for `ym.*` ids answer `409` `SOURCE_UNAVAILABLE` on a server that has no saved system settings yet. They answered `500` before.
 - Fixed the 2.3.2 audio-analyzer images failing to start because new loudness
   modules were missing from both the standalone and all-in-one images.
 
@@ -435,6 +442,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `GET /api/playback/stream/:playbackId` and `/stream-info/:playbackId` for `ym.*` ids answer `409` `SOURCE_UNAVAILABLE` on a server that has no saved system settings yet. They answered `500` before.
 - The DCLAP provider no longer exhausts memory on very long tracks because
   audio decoding is capped and mel segments stream through inference.
 - Purge status no longer reports a purge as running when only the daily
@@ -472,6 +480,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `GET /api/playback/stream/:playbackId` and `/stream-info/:playbackId` for `ym.*` ids answer `409` `SOURCE_UNAVAILABLE` on a server that has no saved system settings yet. They answered `500` before.
 - Fixed embedding-space index checks so existing matching indexes are not
   rebuilt on every lifecycle tick.
 - Fixed vibe worker status reads on large Redis keyspaces by using a bounded
@@ -576,6 +585,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `GET /api/playback/stream/:playbackId` and `/stream-info/:playbackId` for `ym.*` ids answer `409` `SOURCE_UNAVAILABLE` on a server that has no saved system settings yet. They answered `500` before.
 - Provider heartbeats now re-probe reachability each cycle, migration progress
   is visible in settings, coverage sampling is statement-time bounded, and Helm
   upgrade guidance waits for old backend and worker pods to be deleted.
@@ -642,6 +652,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `GET /api/playback/stream/:playbackId` and `/stream-info/:playbackId` for `ym.*` ids answer `409` `SOURCE_UNAVAILABLE` on a server that has no saved system settings yet. They answered `500` before.
 - Fixed the local-profile Docker build for the MusicCNN audio analyzer by using
   the repository root, matching the root-relative paths its Dockerfile uses.
 - The interface font (Montserrat) is now bundled with the app instead of
@@ -687,6 +698,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `GET /api/playback/stream/:playbackId` and `/stream-info/:playbackId` for `ym.*` ids answer `409` `SOURCE_UNAVAILABLE` on a server that has no saved system settings yet. They answered `500` before.
 - Guarded every Python sidecar against Docker interpreter and uv lock-target
   drift, and documented the TensorFlow 2.15 wheel ceiling that keeps the
   Essentia analyzer on Python 3.11. (#494)
@@ -833,6 +845,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `GET /api/playback/stream/:playbackId` and `/stream-info/:playbackId` for `ym.*` ids answer `409` `SOURCE_UNAVAILABLE` on a server that has no saved system settings yet. They answered `500` before.
 - OIDC browser flows now bind callback and one-time hand-off tokens to the
   initiating browser, count redirect responses against rate limits, serialize
   role demotion and identity unlink guards, enforce one identity per provider
@@ -885,6 +898,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `GET /api/playback/stream/:playbackId` and `/stream-info/:playbackId` for `ym.*` ids answer `409` `SOURCE_UNAVAILABLE` on a server that has no saved system settings yet. They answered `500` before.
 - M3U playlist import previews no longer fail with a 15-second timeout on
   large libraries. The frontend now gives the M3U preview the same 60-second
   window as URL imports. The backend now matches entries against a prebuilt
@@ -900,6 +914,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `GET /api/playback/stream/:playbackId` and `/stream-info/:playbackId` for `ym.*` ids answer `409` `SOURCE_UNAVAILABLE` on a server that has no saved system settings yet. They answered `500` before.
 - The CLAP analyzer image now ships `pgrep` so the Helm chart's default liveness and readiness probes work (#448).
 
 ## [2.0.0] - 2026-08-12
@@ -1248,6 +1263,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `GET /api/playback/stream/:playbackId` and `/stream-info/:playbackId` for `ym.*` ids answer `409` `SOURCE_UNAVAILABLE` on a server that has no saved system settings yet. They answered `500` before.
 - The release-notes generator now supports the Accessibility changelog section.
 - The all-in-one image builds again by copying the Prisma config's database-URL
   helper into every stage that runs the Prisma CLI, with a static CI guard
@@ -2133,6 +2149,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `GET /api/playback/stream/:playbackId` and `/stream-info/:playbackId` for `ym.*` ids answer `409` `SOURCE_UNAVAILABLE` on a server that has no saved system settings yet. They answered `500` before.
 - The vibe map's `/api/vibe/map` projection worker now loads under tsx dev mode: tsx's loader hooks don't propagate into `worker_threads`, so the `.ts` UMAP worker registers tsx in its own `execArgv` (compiled `dist/` deployments are unaffected).
 - Direct Soulseek downloads now require an administrator, matching the existing
   server-side authorization on YouTube acquisition and preventing ordinary
@@ -2209,6 +2226,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `GET /api/playback/stream/:playbackId` and `/stream-info/:playbackId` for `ym.*` ids answer `409` `SOURCE_UNAVAILABLE` on a server that has no saved system settings yet. They answered `500` before.
 - Queue auto-advance can no longer land on a silently paused next track (#53). Track-end advancement now _declares_ play intent — the end handler stamps a bounded (30s) intent that the next load consumes for its autoplay decision — instead of inferring it from transient UI playing state, which raced the element's `pause`→`ended` event pair under the native engine (the element's pause fires before ended, so both the isPlaying mirror and `engine.isPlaying()` could read false by load time). And when autoplay is rejected with `NotAllowedError` in a hidden tab (auto-advance while tabbed away), the native engine now retries `play()` once on the hidden→visible transition instead of sitting silent until a user gesture; the one-shot gesture retry stays armed as the fallback, and a user pause in between is respected.
 - Clearing the queue actually sticks now (#52). `DELETE /api/playback-state` removed only the caller's device row, while `GET /api/playback-state` still fell back to the shared pre-device `legacy` row and opportunistically re-migrated it onto the device — so the next playback-state poll resurrected the entire cleared queue within a minute. An explicit clear now deletes the legacy row along with the device row; the GET fallback's legacy migration for genuinely new devices is unchanged.
 - Repaired the five backend radio test failures that shipped silently with 1.7.0's generation-diversity work (#46): the library route tests' config mock lacked the new `generationDiversity` block, their mock chains didn't account for the diversify stage's artist lookup query, and the vibe random-filler matcher still required the `take` parameter that #46 replaced with uniform sampling. The backend "Tests + Coverage" job is a non-blocking visibility job, so the failures never turned a run red — worth revisiting alongside the CI gating gap tracked in #54.
@@ -2228,6 +2246,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `GET /api/playback/stream/:playbackId` and `/stream-info/:playbackId` for `ym.*` ids answer `409` `SOURCE_UNAVAILABLE` on a server that has no saved system settings yet. They answered `500` before.
 - Genre radio, auto-mixes, and every other generated queue are no longer dominated by the same 1-3 artists (#46). All generation surfaces now select through one shared damped-proportional artist allocator (each artist weighs `n^alpha`, default alpha `0.5`, under a hard per-artist ceiling, default 30% of queue size — both env-tunable via `GENERATION_ARTIST_WEIGHT_ALPHA` / `GENERATION_ARTIST_SHARE_CEILING`), so large discographies still carry more weight than one-hit wonders without ever being a majority. Pool construction biases fixed everywhere: genre radio prefers track-level genre evidence (Last.fm track tags, Essentia) over whole-discography artist tags and samples pools uniformly instead of taking a deterministic unordered slice (decade/mood/workout/discovery/favorites radio and the vibe fallbacks likewise); the mix artist-cap's refill-after-relaxation no longer un-caps itself (a shorter diverse playlist beats a full-length dominated one); mood buckets sample a 500-track quality band instead of a deterministic top-100; the Subsonic `getSongsByGenre` alphabetical slice became a day-stable seeded shuffle (pagination stays coherent within a day); and the frontend's no-op client-side "diversifier" was removed (diversity is enforced server-side). Daily/weekly mixes remain deterministic per seed. The playlist-diversity baseline script now also asserts the weighting bound on its artist-skewed stratum.
 
 ### Changed
@@ -2238,6 +2257,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `GET /api/playback/stream/:playbackId` and `/stream-info/:playbackId` for `ym.*` ids answer `409` `SOURCE_UNAVAILABLE` on a server that has no saved system settings yet. They answered `500` before.
 - The empty-string overwrite hazard is closed for **all** stored secrets, not just TIDAL. `POST /api/system-settings` now treats every encrypted secret field (`lidarrApiKey`, `lidarrWebhookSecret`, `openaiApiKey`, `fanartApiKey`, `lastfmApiKey`, `audiobookshelfApiKey`, `soulseekPassword`, `spotifyClientSecret`, `ytMusicClientSecret`) as write-only with explicit semantics: a non-empty value replaces the secret, an empty string is a no-op (so a settings-form round-trip can never wipe a stored credential), and `null` explicitly clears it. The guard iterates the canonical `ENCRYPTED_SETTINGS_COLUMNS` list, so future secret columns are covered automatically, and the post-save consumers (`.env` file sync, Lidarr webhook auto-configuration) resolve the same effective values — previously the `.env` sync wrote `null` over `LIDARR_API_KEY`/`FANART_API_KEY`/`OPENAI_API_KEY`/`AUDIOBOOKSHELF_API_KEY` on the identical empty-string round-trip. Note: clearing a secret from the settings UI (by emptying the field) is no longer possible — disable the service instead, or send an explicit `null` via the API. The Soulseek connection is also no longer bounced when the settings form round-trips an empty password.
 - Library scans no longer starve the worker's event loop and get the worker killed. The 1.6.0 opus-duration fix made every file pay for a full-file `duration: true` parse; with the scanner's 10-way concurrency a large scan pegged the single Node thread for minutes, so Bull couldn't renew job locks ("Missing lock"/"job stalled" errors, scans endlessly re-queued) and the liveness probe timed out until the kubelet killed the worker — on repeat, on both replicas. The scanner now does a cheap header-only parse first and pays for the full-file parse only when the header lacks a duration (ogg/opus, e.g. YouTube downloads), preserving the 1.6.0 fix at a fraction of the cost.
 - "Remove from playlist" works again (#34). The playlist page reads through the React Query cache, but the remove handler never updated or invalidated it after the DELETE succeeded, so the track stayed visible with no feedback (its sibling pending-track handler invalidated correctly, which is why only regular removals appeared broken). The removed row now disappears from the cache immediately (matching the backend's item-id-first/track-id-fallback semantics), the playlist is refetched for authoritative state, and a failed removal now shows an error toast instead of being logged silently.
@@ -2263,6 +2283,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `GET /api/playback/stream/:playbackId` and `/stream-info/:playbackId` for `ym.*` ids answer `409` `SOURCE_UNAVAILABLE` on a server that has no saved system settings yet. They answered `500` before.
 - Invite-code registration is now race-safe. The use-count check and increment were separated (check read before the transaction, increment unconditional), so two concurrent registrations on a single-use code could both succeed and push `useCount` past `maxUses`. Consumption is now an atomic conditional update (`useCount < maxUses`) inside the registration transaction; if no use remains the transaction aborts and no account is created.
 - The `library-scan` queue no longer grows Redis unbounded. Most enqueue sites added scan jobs without retention options, so completed/failed records accumulated forever. The queue now defaults to keeping the last 100 completed (still enough for the recent-job status lookup) and 200 failed jobs.
 - Discover Weekly generation failures are no longer recorded as success. The job processor swallowed exceptions (Last.fm/MusicBrainz outage, no seeds, DB error) into a resolved `{ success: false }` payload, so Bull marked the job `COMPLETED`, never retried it, and it was invisible in bull-board. The processor now re-throws, and the `discover-weekly` queue retries up to 3× with exponential backoff. The default recommendation path is idempotent per (user, week), so a retry replaces rather than duplicates the batch.
@@ -2358,6 +2379,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `GET /api/playback/stream/:playbackId` and `/stream-info/:playbackId` for `ym.*` ids answer `409` `SOURCE_UNAVAILABLE` on a server that has no saved system settings yet. They answered `500` before.
 - Admin Library Health now loads and dismisses health records through dedicated `/api/admin/library-health` endpoints instead of failing on a missing backend route.
 - Library validation no longer deletes unrelated health records (e.g. `UNREADABLE_METADATA`) when clearing `MISSING_FROM_DISK` entries for tracks that reappear on disk.
 - Generic import job cancellation now uses an intermediate `cancelling` state so late cancellations after playlist creation record the completed playlist instead of discarding it.
@@ -2378,6 +2400,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `GET /api/playback/stream/:playbackId` and `/stream-info/:playbackId` for `ym.*` ids answer `409` `SOURCE_UNAVAILABLE` on a server that has no saved system settings yet. They answered `500` before.
 - Frontend queued-track ID memoization now stays stable when queue membership is unchanged, reducing queue-derived state churn across local playback and Listen Together sessions.
 - Remote liked-track metadata now repairs itself when placeholder-only TIDAL or YouTube entries are liked or replayed, and the background TIDAL repair job no longer depends on whichever unrelated authenticated user happens to sort first in the database.
 - Listen Together queue creation and shared-queue additions once again truncate overflow beyond the 500-track cap instead of rejecting oversized requests outright.
@@ -2393,6 +2416,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `GET /api/playback/stream/:playbackId` and `/stream-info/:playbackId` for `ym.*` ids answer `409` `SOURCE_UNAVAILABLE` on a server that has no saved system settings yet. They answered `500` before.
 - Fixed playback not advancing to the next queued track when the phone screen is locked (Android PWA and background tabs). Browsers throttle JavaScript timers when the page is hidden, preventing the audio engine from detecting track completion. The player now listens for the native HTML5 audio `ended` event as a fallback, and foreground recovery on unlock advances to the next track when the current one finished while backgrounded.
 
 ## [1.3.2] - 2026-03-06
@@ -2414,6 +2438,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `GET /api/playback/stream/:playbackId` and `/stream-info/:playbackId` for `ym.*` ids answer `409` `SOURCE_UNAVAILABLE` on a server that has no saved system settings yet. They answered `500` before.
 - Listen Together: fixed a guest recovery race where follower-side stall/handoff recovery could run in parallel with session resync after mid-track buffering, causing doubled playback or unintended stops.
 - Library scan now promotes preexisting remote album rows into owned library albums when local files arrive, preventing downloaded albums from staying hidden behind `REMOTE` state.
 - Track-mapping reconciliation now sweeps forward through the backlog instead of retrying the same oldest skipped rows forever, so imported provider tracks can switch over to local copies after scan.
@@ -2430,6 +2455,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `GET /api/playback/stream/:playbackId` and `/stream-info/:playbackId` for `ym.*` ids answer `409` `SOURCE_UNAVAILABLE` on a server that has no saved system settings yet. They answered `500` before.
 - Listen Together: fixed a race condition where hard-refreshing the page with a large queue could disconnect the user from the session due to the Socket.IO payload exceeding the buffer limit.
 - Listen Together: fixed duplicate resume and recovery races in the playback orchestrator, including follower pause recovery and reconnect delta suppression that could cause playback state to flicker.
 
@@ -2501,6 +2527,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `GET /api/playback/stream/:playbackId` and `/stream-info/:playbackId` for `ym.*` ids answer `409` `SOURCE_UNAVAILABLE` on a server that has no saved system settings yet. They answered `500` before.
 - Fixed remote stream duration display where TIDAL HI_RES_LOSSLESS fragmented MP4 streams reported only the first fragment's duration (~4 seconds) instead of the full track length.
 - Fixed playlist and Subsonic serializers to handle nullable track references safely after the remote-track schema changes.
 - Fixed track-mapping batch validation to reject payloads missing all linkage keys.
@@ -2559,6 +2586,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `GET /api/playback/stream/:playbackId` and `/stream-info/:playbackId` for `ym.*` ids answer `409` `SOURCE_UNAVAILABLE` on a server that has no saved system settings yet. They answered `500` before.
 - Profile picture serving returned JSON-serialized byte arrays (`{"0":255,"1":216,...}`) instead of binary image data because Express `res.send()` doesn't handle `Uint8Array` from Prisma. Fixed by wrapping with `Buffer.from()`.
 - Profile picture avatar never recovered from initial 404 — once `imgError` was set (no picture uploaded yet), it stayed true permanently even after uploading. Added cross-component event dispatch and cache-busting query parameter.
 - Library could appear empty in the UI due to the Next.js API proxy double-decompressing gzip responses. Node.js `fetch` auto-decompresses but preserves `Content-Encoding` headers, causing the browser to attempt a second decompression. Fixed by stripping compression-related headers in the proxy.
@@ -2610,6 +2638,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `GET /api/playback/stream/:playbackId` and `/stream-info/:playbackId` for `ym.*` ids answer `409` `SOURCE_UNAVAILABLE` on a server that has no saved system settings yet. They answered `500` before.
 - Fixed transient Listen Together socket conflicts for `seek()`/`reportReady()` with bounded retry, backoff, and jitter.
 - Fixed segmented-playback recovery so local player state remains authoritative for resume position and play/pause intent after disruptions.
 - Fixed long buffering/spinner stalls by keeping heartbeat checks active during buffering and retrying segmented startup within bounded stage/window budgets before surfacing timeout errors.
@@ -2659,6 +2688,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `GET /api/playback/stream/:playbackId` and `/stream-info/:playbackId` for `ym.*` ids answer `409` `SOURCE_UNAVAILABLE` on a server that has no saved system settings yet. They answered `500` before.
 - Reduced unnecessary client API traffic by removing render-phase state writes and consolidating overlapping polling ownership in activity/download/playback flows.
 - Added backend response compression for compressible API responses while excluding stream/media and `no-transform` responses.
 - Added missing `next/image` `sizes` attributes across fixed-size image callsites to improve responsive image selection.
@@ -2688,6 +2718,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `GET /api/playback/stream/:playbackId` and `/stream-info/:playbackId` for `ym.*` ids answer `409` `SOURCE_UNAVAILABLE` on a server that has no saved system settings yet. They answered `500` before.
 - Fixed queue insertion behavior so Add to Queue appends to the queue tail instead of being inserted after the current track.
 - Fixed overlay player layering so playlist picker/menus render inside the correct z-index context.
 - Fixed mobile track-row spacing and control sizing on small screens.
@@ -2710,6 +2741,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `GET /api/playback/stream/:playbackId` and `/stream-info/:playbackId` for `ym.*` ids answer `409` `SOURCE_UNAVAILABLE` on a server that has no saved system settings yet. They answered `500` before.
 - Reduced repeated-artist clustering across radio/vibe/discovery recommendation paths and applied light thumbs weighting.
 - Fixed repeated thumbs taps so active thumbs-up/down cleanly toggle back to neutral; opposite action now cleanly overrides prior state.
 - Fixed intermittent UI navigation stalls by re-enabling sidebar route prefetch and bypassing Next.js route-transition requests in the service worker.
@@ -2729,6 +2761,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `GET /api/playback/stream/:playbackId` and `/stream-info/:playbackId` for `ym.*` ids answer `409` `SOURCE_UNAVAILABLE` on a server that has no saved system settings yet. They answered `500` before.
 - Activity Social tab no longer flickers to "Social status unavailable" during transient refresh failures when cached online users are already available.
 - Fixed off-theme discover play controls so they match the active UI color system.
 - Fixed weekly playlist state handling so generated playlists no longer disappear during follow-up refreshes.

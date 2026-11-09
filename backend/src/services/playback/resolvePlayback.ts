@@ -159,7 +159,7 @@ async function resolveYtMusic(
     requested: PlaybackQuality | undefined,
 ): Promise<ResolvedPlayback> {
     const settings = await getSystemSettings();
-    if (!settings.ytMusicEnabled) {
+    if (!settings?.ytMusicEnabled) {
         throw new PlaybackResolutionError(
             "SOURCE_UNAVAILABLE",
             "YouTube Music integration is not enabled",

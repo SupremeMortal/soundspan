@@ -252,6 +252,13 @@ describe("resolvePlayback", () => {
             expect(out).toMatchObject({ quality: "lossless" });
         });
 
+        it("is SOURCE_UNAVAILABLE on a fresh install with no system settings row", async () => {
+            mockGetSystemSettings.mockResolvedValue(null);
+            expect(await codeOf(resolvePlayback(USER, { parsed }))).toBe(
+                "SOURCE_UNAVAILABLE",
+            );
+        });
+
         it("is SOURCE_UNAVAILABLE when YT Music is disabled on the server", async () => {
             mockGetSystemSettings.mockResolvedValue({ ytMusicEnabled: false });
             expect(await codeOf(resolvePlayback(USER, { parsed }))).toBe(
