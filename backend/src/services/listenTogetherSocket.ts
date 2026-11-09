@@ -10,6 +10,7 @@
 import type { Server as HttpServer } from "http";
 import { Server, type Namespace, type Socket } from "socket.io";
 import { verifyAccessToken } from "../middleware/auth";
+import { resolveApiKeySocketData } from "./listenTogetherSocketApiKeyAuth";
 import { prisma } from "../utils/db";
 import { logger } from "../utils/logger";
 import { config } from "../config";
@@ -105,6 +106,8 @@ interface AuthenticatedSocket extends Socket {
         userId: string;
         username: string;
         groupId: string | null;
+        /** Set only when the socket authenticated with an API key. */
+        apiKeyId?: string;
     };
 }
 
@@ -114,7 +117,7 @@ interface SocketMutationOptions {
     signal?: AbortSignal;
     abandonOperationOnAbort?: boolean;
     flushPublications?: boolean;
-    actingUserId?: string;
+    actor?: AuthenticatedSocket["data"];
 }
 
 function resolveAck(arg1?: unknown, arg2?: unknown): SocketAck | undefined {
@@ -295,7 +298,7 @@ async function runSocketGroupMutation<T>(
     operation: (fence: GroupMutationFence) => Promise<T>,
     options: SocketMutationOptions = {},
 ): Promise<T> {
-    const { signal, abandonOperationOnAbort, actingUserId } = options;
+    const { signal, abandonOperationOnAbort, actor } = options;
     const flushPublications = options.flushPublications ?? true;
     let enteredMutationBoundary = false;
     try {
@@ -310,8 +313,9 @@ async function runSocketGroupMutation<T>(
                     await assertSocketMutationUserEligible(
                         listenTogetherNamespace,
                         groupId,
-                        actingUserId,
+                        actor?.userId,
                         clearRevokedSocketState,
+                        actor?.apiKeyId,
                     );
                     await hydrateSocketMutationAuthority(
                         groupId,
@@ -513,7 +517,7 @@ async function attachJoinedSocket(
         groupId,
         "join-group-attachment",
         async () => attachSocketInsideBoundary(socket, groupId, snapshot),
-        { actingUserId: socket.data.userId },
+        { actor: socket.data },
     );
 }
 
@@ -835,10 +839,21 @@ function configureClusterStateSync(ns: Namespace): void {
 
 function configureSocketAuthentication(ns: Namespace): void {
     ns.use(async (socket, next) => {
+        const token = socket.handshake.auth?.token as string | undefined;
+        const apiKey = socket.handshake.auth?.apiKey as unknown;
+        if (!token === !apiKey) {
+            return next(new Error("Authentication required"));
+        }
+        if (apiKey) {
+            try {
+                socket.data = await resolveApiKeySocketData(apiKey);
+                return next();
+            } catch (error) {
+                return next(error as Error);
+            }
+        }
         try {
-            const token = socket.handshake.auth?.token as string | undefined;
-            if (!token) return next(new Error("Authentication required"));
-            const decoded = verifyAccessToken(token);
+            const decoded = verifyAccessToken(token as string);
             const user = await prisma.user.findUnique({
                 where: { id: decoded.userId },
                 select: {
@@ -1010,7 +1025,7 @@ function registerPlaybackHandler(socket: AuthenticatedSocket): void {
                                 data,
                                 fence,
                             ),
-                        { actingUserId: userId },
+                        { actor: socket.data },
                     ),
                 );
                 sendAck(ack, { ok: true });
@@ -1041,7 +1056,7 @@ function queueTrackInputs(data: QueueRequest): QueueTrackInput[] {
 
 async function insertQueueTracks(
     groupId: string,
-    userId: string,
+    actor: AuthenticatedSocket["data"],
     action: "add" | "insert-next",
     requestedInputs: QueueTrackInput[],
 ): Promise<Record<string, unknown>> {
@@ -1071,13 +1086,13 @@ async function insertQueueTracks(
                 groupManager.snapshotById(groupId)?.playback.queue.length ?? 0;
             const delta = groupManager.modifyQueue(
                 groupId,
-                userId,
+                actor.userId,
                 { action, items },
                 fence,
             );
             acceptedCount = Math.max(0, delta.queue.length - before);
         },
-        { actingUserId: userId },
+        { actor },
     );
     return {
         ok: true,
@@ -1091,7 +1106,7 @@ async function insertQueueTracks(
 
 async function runQueueIndexAction(
     groupId: string,
-    userId: string,
+    actor: AuthenticatedSocket["data"],
     data: QueueRequest,
 ): Promise<Record<string, unknown>> {
     if (data.action === "remove") {
@@ -1102,12 +1117,12 @@ async function runQueueIndexAction(
             async (fence) => {
                 groupManager.modifyQueue(
                     groupId,
-                    userId,
+                    actor.userId,
                     { action: "remove", index: data.index as number },
                     fence,
                 );
             },
-            { actingUserId: userId },
+            { actor },
         );
         return { ok: true };
     }
@@ -1124,7 +1139,7 @@ async function runQueueIndexAction(
             async (fence) => {
                 groupManager.modifyQueue(
                     groupId,
-                    userId,
+                    actor.userId,
                     {
                         action: "reorder",
                         fromIndex: data.fromIndex as number,
@@ -1133,7 +1148,7 @@ async function runQueueIndexAction(
                     fence,
                 );
             },
-            { actingUserId: userId },
+            { actor },
         );
         return { ok: true };
     }
@@ -1144,12 +1159,12 @@ async function runQueueIndexAction(
             async (fence) => {
                 groupManager.modifyQueue(
                     groupId,
-                    userId,
+                    actor.userId,
                     { action: "clear" },
                     fence,
                 );
             },
-            { actingUserId: userId },
+            { actor },
         );
         return { ok: true };
     }
@@ -1158,18 +1173,18 @@ async function runQueueIndexAction(
 
 function runQueueAction(
     groupId: string,
-    userId: string,
+    actor: AuthenticatedSocket["data"],
     data: QueueRequest,
 ): Promise<Record<string, unknown>> {
     if (data.action === "add" || data.action === "insert-next") {
         return insertQueueTracks(
             groupId,
-            userId,
+            actor,
             data.action,
             queueTrackInputs(data),
         );
     }
-    return runQueueIndexAction(groupId, userId, data);
+    return runQueueIndexAction(groupId, actor, data);
 }
 
 function registerQueueHandler(socket: AuthenticatedSocket): void {
@@ -1179,7 +1194,7 @@ function registerQueueHandler(socket: AuthenticatedSocket): void {
         try {
             const result = await withListenTogetherMutationAdmission(
                 `queue:${data.action}`,
-                () => runQueueAction(groupId, userId, data),
+                () => runQueueAction(groupId, socket.data, data),
             );
             sendAck(ack, result);
         } catch (error) {
@@ -1211,7 +1226,7 @@ async function reportSocketReady(socket: AuthenticatedSocket): Promise<void> {
                 void queuePersistAndPublishSnapshot(groupId, undefined, fence);
             }
         },
-        { actingUserId: userId },
+        { actor: socket.data },
     );
 }
 
@@ -1254,7 +1269,7 @@ async function processPlaybackFailure(
                 await trackMappingService.markStale(failedItem.trackMappingId);
             }
         },
-        { actingUserId: socket.data.userId },
+        { actor: socket.data },
     );
     await publishAvailabilityForGroup(ns, groupId, runSocketGroupMutation);
 }

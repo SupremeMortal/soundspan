@@ -2,12 +2,15 @@ import type {
     FederatedTrackPeer,
     UnifiedTrackSource,
 } from "@soundspan/media-metadata-contract";
+import { encodePlaybackId } from "./playback/playbackId";
 
 /**
  * Canonical normalized track contract used across local and remote sources.
  */
 export interface UnifiedTrackResponse {
     id: string;
+    /** Opaque playback identifier; absent only when the source row lacks its external id. */
+    playbackId?: string;
     title: string;
     duration: number;
     trackNo: number | null;
@@ -142,6 +145,7 @@ export function normalizeLocalTrack(
             : { source: "local" as const };
     return {
         id: track.id,
+        playbackId: encodePlaybackId({ kind: "t", trackId: track.id }),
         title: track.title,
         duration: track.duration,
         trackNo:
@@ -218,6 +222,14 @@ export function normalizeTidalTrack(
         id: hasValidTidalTrackId
             ? `tidal:${tidalTrackId}`
             : `tidal:missing:${tidal.id}`,
+        ...(hasValidTidalTrackId
+            ? {
+                  playbackId: encodePlaybackId({
+                      kind: "td",
+                      tidalId: tidalTrackId,
+                  }),
+              }
+            : {}),
         title: tidal.title,
         duration: tidal.duration,
         trackNo: null,
@@ -250,6 +262,14 @@ export function normalizeYtMusicTrack(
 
     return {
         id: hasValidVideoId ? `yt:${youtubeVideoId}` : `yt:missing:${yt.id}`,
+        ...(hasValidVideoId
+            ? {
+                  playbackId: encodePlaybackId({
+                      kind: "ym",
+                      videoId: youtubeVideoId,
+                  }),
+              }
+            : {}),
         title: yt.title,
         duration: yt.duration,
         trackNo: null,

@@ -645,6 +645,7 @@ describe("library catalog list runtime coverage", () => {
         expect(okRes.statusCode).toBe(200);
         expect(okRes.body).toEqual({
             id: "track-1",
+            playbackId: "t.track-1",
             title: "Track 1",
             loudnessLufs: -19.2,
             truePeakDb: -2.4,
@@ -707,6 +708,7 @@ describe("library catalog list runtime coverage", () => {
             source: "federated",
             streamSource: "peer",
             peer: { id: "peer-1", name: "Peer One", online: true },
+            playbackId: "t.federated-track-1",
         });
     });
 

@@ -4,6 +4,7 @@ import {
     normalizeTidalTrack,
     normalizeYtMusicTrack,
 } from "../unifiedTrackResponse";
+import { parsePlaybackId } from "../playback/playbackId";
 
 describe("unifiedTrackResponse", () => {
     it("normalizes local tracks into canonical unified shape", () => {
@@ -32,6 +33,7 @@ describe("unifiedTrackResponse", () => {
 
         expect(result).toEqual({
             id: "track-1",
+            playbackId: "t.track-1",
             title: "Local Song",
             duration: 180,
             trackNo: 3,
@@ -84,6 +86,7 @@ describe("unifiedTrackResponse", () => {
 
         expect(result).toEqual({
             id: "fed-track-1",
+            playbackId: "t.fed-track-1",
             title: "Federated Song",
             duration: 181,
             trackNo: 4,
@@ -116,6 +119,7 @@ describe("unifiedTrackResponse", () => {
 
         expect(result).toEqual({
             id: "tidal:991",
+            playbackId: "td.991",
             title: "Tidal Song",
             duration: 245,
             trackNo: null,
@@ -149,6 +153,7 @@ describe("unifiedTrackResponse", () => {
 
         expect(result).toEqual({
             id: "yt:yt-video-7",
+            playbackId: "ym.yt-video-7",
             title: "YT Song",
             duration: 199,
             trackNo: null,
@@ -303,6 +308,151 @@ describe("unifiedTrackResponse", () => {
             source: "federated",
             streamSource: "peer",
             peer: { id: "peer-1", name: "Peer One", online: false },
+        });
+    });
+
+    describe("playbackId emission", () => {
+        const localRecord = {
+            id: "ckabc123",
+            title: "Local Song",
+            duration: 180,
+            album: { title: "A", artist: { name: "B" } },
+        };
+
+        it("emits t.<Track.id> for local and federated tracks", () => {
+            const local = normalizeLocalTrack(localRecord);
+            expect(parsePlaybackId(local.playbackId!)).toEqual({
+                kind: "t",
+                trackId: local.id,
+            });
+
+            const federated = normalizeLocalTrack({
+                ...localRecord,
+                id: "fed1",
+                origin: "FEDERATED",
+                federationPeer: {
+                    id: "peer-1",
+                    name: "Peer",
+                    outboundStatus: "ACTIVE",
+                },
+            });
+            expect(federated.source).toBe("federated");
+            expect(parsePlaybackId(federated.playbackId!)).toEqual({
+                kind: "t",
+                trackId: "fed1",
+            });
+        });
+
+        it("emits td.<tidalId>, using the external id rather than the row id", () => {
+            const result = normalizeTidalTrack({
+                id: "row-cuid",
+                tidalId: 991,
+                title: "T",
+                artist: "A",
+                album: "B",
+                duration: 1,
+            });
+            expect(parsePlaybackId(result.playbackId!)).toEqual({
+                kind: "td",
+                tidalId: result.provider.tidalTrackId,
+            });
+        });
+
+        it("omits playbackId for a TIDAL row without a valid tidal id", () => {
+            const result = normalizeTidalTrack({
+                id: "row-cuid",
+                tidalId: 0,
+                title: "T",
+                artist: "A",
+                album: "B",
+                duration: 1,
+            });
+            expect(result.playbackId).toBeUndefined();
+        });
+
+        it("emits ym.<videoId>, using the external id rather than the row id", () => {
+            const result = normalizeYtMusicTrack({
+                id: "row-cuid",
+                videoId: " vid_1-x ",
+                title: "T",
+                artist: "A",
+                album: "B",
+                duration: 1,
+            });
+            expect(parsePlaybackId(result.playbackId!)).toEqual({
+                kind: "ym",
+                videoId: result.provider.youtubeVideoId,
+            });
+        });
+
+        it("omits playbackId for a YT Music row without a video id", () => {
+            const result = normalizeYtMusicTrack({
+                id: "row-cuid",
+                videoId: "  ",
+                title: "T",
+                artist: "A",
+                album: "B",
+                duration: 1,
+            });
+            expect(result.playbackId).toBeUndefined();
+        });
+
+        it("carries playbackId into playlist items of every source", () => {
+            const base = {
+                id: "pli",
+                playlistId: "pl",
+                sort: 1,
+                trackId: null,
+                trackTidalId: null,
+                trackYtMusicId: null,
+                track: null,
+                trackTidal: null,
+                trackYtMusic: null,
+            };
+            const local = formatUnifiedTrackItem({
+                ...base,
+                trackId: "ckabc123",
+                track: localRecord,
+            });
+            expect(parsePlaybackId(String(local.track?.playbackId))).toEqual({
+                kind: "t",
+                trackId: local.track?.id,
+            });
+
+            const tidal = formatUnifiedTrackItem({
+                ...base,
+                trackTidalId: "tt",
+                trackTidal: {
+                    id: "tt",
+                    tidalId: 42,
+                    title: "T",
+                    artist: "A",
+                    album: "B",
+                    duration: 1,
+                },
+            });
+            expect(parsePlaybackId(String(tidal.track?.playbackId))).toEqual({
+                kind: "td",
+                tidalId: tidal.track?.tidalTrackId,
+            });
+
+            const yt = formatUnifiedTrackItem({
+                ...base,
+                trackYtMusicId: "yy",
+                trackYtMusic: {
+                    id: "yy",
+                    videoId: "vid9",
+                    title: "T",
+                    artist: "A",
+                    album: "B",
+                    duration: 1,
+                },
+            });
+            expect(parsePlaybackId(String(yt.track?.playbackId))).toEqual({
+                kind: "ym",
+                videoId: yt.track?.youtubeVideoId,
+            });
+            expect(yt.track?.streamSource).toBe("youtube");
         });
     });
 });

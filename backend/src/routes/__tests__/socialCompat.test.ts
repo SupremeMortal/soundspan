@@ -239,6 +239,7 @@ describe("social presence compatibility", () => {
                     listeningStatus: "playing",
                     listeningTrack: {
                         id: "track-1",
+                        playbackId: "t.track-1",
                         title: "Song One",
                         duration: 181,
                         artistName: "Artist One",
@@ -428,6 +429,7 @@ describe("social presence compatibility", () => {
                                 title: "Remote Song",
                                 duration: 220,
                                 mediaSource: "youtube",
+                                youtubeVideoId: "video-1",
                                 artist: { name: "Remote Artist" },
                                 album: { title: "Remote Album" },
                             },
@@ -462,12 +464,16 @@ describe("social presence compatibility", () => {
                 listeningStatus: "playing",
                 listeningTrack: expect.objectContaining({
                     id: "track-active",
+                    playbackId: "t.track-active",
                 }),
             }),
             expect.objectContaining({
                 id: "user-remote",
                 listeningStatus: "playing",
-                listeningTrack: expect.objectContaining({ id: "yt:video-1" }),
+                listeningTrack: expect.objectContaining({
+                    id: "yt:video-1",
+                    playbackId: "ym.video-1",
+                }),
             }),
             expect.objectContaining({
                 id: "user-removed",
@@ -809,6 +815,7 @@ describe("social presence compatibility", () => {
                     listeningStatus: "paused",
                     listeningTrack: {
                         id: "t-ghost",
+                        playbackId: "t.t-ghost",
                         title: "Ghost Song",
                         duration: 140,
                         artistName: "Ghost Artist",

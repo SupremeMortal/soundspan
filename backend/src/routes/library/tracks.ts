@@ -75,11 +75,7 @@ import {
     parsePlaybackSourceOrder,
     rankPlaybackSource,
 } from "../../services/playbackSourcePriority";
-import {
-    applyLibraryPeerFallback,
-    proxyLibraryPeerStream,
-} from "./libraryPeerStream";
-import { serveNativeLibraryTrack } from "./libraryNativeTrackStream";
+import { streamLibraryTrack } from "../../services/playback/streamLibraryTrack";
 import { bumpSearchCacheVersion } from "../../services/searchCacheVersion";
 import {
     loadLibrarySongsPage,
@@ -169,16 +165,11 @@ export const tracksDeletionRouter = Router();
  *                   items:
  *                     type: object
  *                     properties:
- *                       source:
- *                         type: string
- *                         enum: [local, federated, tidal, youtube]
- *                       streamSource:
- *                         type: string
- *                         enum: [peer, tidal, youtube]
- *                       tidalTrackId:
- *                         type: integer
- *                       youtubeVideoId:
- *                         type: string
+ *                       playbackId: { type: string, description: "Opaque track identifier. Do not parse." }
+ *                       source: { type: string, enum: [local, federated, tidal, youtube] }
+ *                       streamSource: { type: string, enum: [peer, tidal, youtube] }
+ *                       tidalTrackId: { type: integer }
+ *                       youtubeVideoId: { type: string }
  *                       provider: { type: object }
  *                       album:
  *                         type: object
@@ -976,111 +967,21 @@ export async function handleStreamTrack(
     req: Request<{ id: string }>,
     res: Response,
 ) {
-    try {
-        logger.debug("[STREAM] Request received for track:", req.params.id);
-        const { quality } = req.query;
-        const userId = req.user?.id;
+    logger.debug("[STREAM] Request received for track:", req.params.id);
+    const userId = req.user?.id;
 
-        if (!userId) {
-            logger.debug("[STREAM] No userId in session - unauthorized");
-            return sendRouteError(res, 401, "Unauthorized");
-        }
-
-        let track = await prisma.track.findUnique({
-            where: { id: req.params.id, ...TRACK_VISIBLE_WHERE },
-        });
-
-        if (!track) {
-            logger.debug("[STREAM] Track not found");
-            return sendRouteError(res, 404, "Track not found");
-        }
-
-        const isFederatedTrack =
-            config.features.federation && track.origin === "FEDERATED";
-        const federationPeer = isFederatedTrack
-            ? await loadActiveFederationStreamPeer(track.peerId)
-            : null;
-        const canProxyPeer = Boolean(federationPeer && track.remoteId);
-        const requestedQuality = await resolveStreamQuality(userId, quality);
-        if (isFederatedTrack && !canProxyPeer) {
-            const fallbackTrack = await applyLibraryPeerFallback({
-                req,
-                res,
-                userId,
-                trackId: track.id,
-                quality: requestedQuality,
-            });
-            if (!fallbackTrack) return;
-            track = fallbackTrack;
-        }
-
-        await recordStreamPlay(userId, track.id, track.title);
-
-        if (canProxyPeer && federationPeer && track.remoteId) {
-            const served = await proxyLibraryPeerStream({
-                req,
-                res,
-                peer: federationPeer,
-                remoteId: track.remoteId,
-                trackId: track.id,
-                sourceModified: track.fileModified,
-                sourceMime: track.mime,
-                requestedQuality,
-            });
-            if (served) return;
-        }
-
-        if (canProxyPeer) {
-            const fallbackTrack = await applyLibraryPeerFallback({
-                req,
-                res,
-                userId,
-                trackId: track.id,
-                quality: requestedQuality,
-            });
-            if (!fallbackTrack) return;
-            track = fallbackTrack;
-        }
-
-        return serveNativeLibraryTrack({
-            req,
-            res,
-            track,
-            requestedQuality,
-        });
-    } catch (error) {
-        logger.error("Stream track error:", error);
-        sendInternalRouteError(res, "Failed to stream track");
+    if (!userId) {
+        logger.debug("[STREAM] No userId in session - unauthorized");
+        return sendRouteError(res, 401, "Unauthorized");
     }
-}
 
-async function recordStreamPlay(
-    userId: string,
-    trackId: string,
-    title: string,
-): Promise<void> {
-    const recent = await prisma.play.findFirst({
-        where: {
-            userId,
-            trackId,
-            playedAt: { gte: new Date(Date.now() - 30 * 1000) },
-        },
-        orderBy: { playedAt: "desc" },
+    await streamLibraryTrack({
+        userId,
+        trackId: req.params.id,
+        quality: req.query.quality,
+        req,
+        res,
     });
-    if (recent) return;
-    await prisma.play.create({ data: { userId, trackId } });
-    logger.debug("[STREAM] Logged new play for track:", title);
-}
-
-async function resolveStreamQuality(
-    userId: string,
-    requested: unknown,
-): Promise<string> {
-    if (typeof requested === "string") return requested;
-    const settings = await prisma.userSettings.findUnique({
-        where: { userId },
-    });
-    return settings?.playbackQuality || "medium";
 }
 
 tracksStreamRouter.get("/tracks/:id/stream", handleStreamTrack);
@@ -1353,6 +1254,9 @@ tracksPreferenceWriteRouter.post(
  *     responses:
  *       200:
  *         description: Track details with artist and album info
+ *         content:
+ *           application/json:
+ *             schema: { type: object, properties: { playbackId: { type: string, description: "Opaque track identifier. Do not parse." } } }
  *       404:
  *         description: Track not found
  *       401:
@@ -1393,6 +1297,7 @@ export async function handleGetTrack(
     // Transform to match frontend Track interface: artist at top level.
     const formattedTrack = {
         id: track.id,
+        playbackId: normalizedTrack.playbackId,
         title: track.title,
         artist: {
             name: track.album?.artist?.name || "Unknown Artist",

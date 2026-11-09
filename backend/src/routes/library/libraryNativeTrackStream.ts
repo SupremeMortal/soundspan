@@ -14,6 +14,39 @@ import {
 
 const log = logger.child("LibraryNativeTrackStream");
 
+/**
+ * ETag inputs for the unified stream: the file actually served identifies the
+ * variant (original file or one transcode-cache quality). The per-source
+ * routes pass no playbackId and keep their validator-free responses.
+ */
+function sendServedFile(
+    input: {
+        req: Request;
+        res: Response;
+        service: AudioStreamingService;
+        playbackId?: string;
+    },
+    served: { filePath: string; mimeType: string },
+): Promise<void> {
+    const { req, res, service, playbackId } = input;
+    if (!playbackId) {
+        return service.streamFileWithRangeSupport(
+            req,
+            res,
+            served.filePath,
+            served.mimeType,
+        );
+    }
+    return service.streamFileWithRangeSupport(
+        req,
+        res,
+        served.filePath,
+        served.mimeType,
+        undefined,
+        { playbackId, variant: served.filePath },
+    );
+}
+
 async function streamNativeFile(input: {
     req: Request;
     res: Response;
@@ -21,6 +54,7 @@ async function streamNativeFile(input: {
     quality: Quality;
     absolutePath: string;
     service: AudioStreamingService;
+    playbackId?: string;
 }): Promise<void> {
     try {
         const streamFile = await input.service.getStreamFilePath(
@@ -29,12 +63,7 @@ async function streamNativeFile(input: {
             input.track.fileModified,
             input.absolutePath,
         );
-        await input.service.streamFileWithRangeSupport(
-            input.req,
-            input.res,
-            streamFile.filePath,
-            streamFile.mimeType,
-        );
+        await sendServedFile(input, streamFile);
     } catch (error: any) {
         if (error.code !== "FFMPEG_NOT_FOUND" || input.quality === "original") {
             throw error;
@@ -45,12 +74,7 @@ async function streamNativeFile(input: {
             input.track.fileModified,
             input.absolutePath,
         );
-        await input.service.streamFileWithRangeSupport(
-            input.req,
-            input.res,
-            original.filePath,
-            original.mimeType,
-        );
+        await sendServedFile(input, original);
     }
 }
 
@@ -60,6 +84,8 @@ export async function serveNativeLibraryTrack(input: {
     res: Response;
     track: Track;
     requestedQuality: string;
+    /** Set by the unified stream route to send an ETag and honour If-Range. */
+    playbackId?: string;
 }): Promise<Response | void> {
     if (!input.track.filePath) {
         return sendRouteError(input.res, 404, "Track not available");

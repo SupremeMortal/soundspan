@@ -15,6 +15,7 @@ import {
 } from "../utils/librarySorting";
 import { logger } from "../utils/logger";
 import { trackMappingService } from "./trackMappingService";
+import { legacyQueueInput } from "./listenTogetherQueueInput";
 import {
     groupManager,
     MAX_QUEUE_SIZE,
@@ -105,6 +106,17 @@ export interface LeaveResult {
 }
 
 export interface QueueTrackInput {
+    /** Opaque unified identifier; wins over every legacy identifier field. */
+    playbackId?: string;
+    /** Display metadata used when a remote track row must be created. */
+    metadata?: {
+        title: string;
+        artist: string;
+        album: string;
+        durationSec: number;
+        artworkUrl?: string;
+        isrc?: string;
+    };
     trackId?: string;
     tidalTrackId?: number;
     youtubeVideoId?: string;
@@ -182,11 +194,14 @@ async function loadLocalQueueMappingIds(
 
 /**
  * Validates and materializes mixed-source queue input into canonical queue items.
+ *
+ * @throws GroupError `INVALID_PLAYBACK_ID` when an input carries a malformed `playbackId`.
  */
 export async function validateQueueTracks(
-    inputs: QueueTrackInput[],
+    rawInputs: QueueTrackInput[],
 ): Promise<SyncQueueItem[]> {
-    if (!inputs.length) return [];
+    if (!rawInputs.length) return [];
+    const inputs = rawInputs.map(legacyQueueInput);
 
     const localInputs: Array<{ input: QueueTrackInput; trackId: string }> = [];
     const tidalInputs: Array<{ input: QueueTrackInput; tidalTrackId: number }> =

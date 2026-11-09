@@ -34,6 +34,14 @@ const SearchProvidersSection = dynamic(
     { loading: renderSectionFallback },
 );
 
+const OfflineDownloadsSection = dynamic(
+    () =>
+        import("@/features/settings/components/sections/OfflineDownloadsSection").then(
+            (mod) => mod.OfflineDownloadsSection,
+        ),
+    { loading: renderSectionFallback },
+);
+
 const PlaybackProvidersSection = dynamic(
     () =>
         import("@/features/settings/components/sections/PlaybackProvidersSection").then(
@@ -268,6 +276,10 @@ export default function AdminPage() {
                                     />
                                 ) : undefined
                             }
+                        />
+                        <OfflineDownloadsSection
+                            settings={systemSettings}
+                            onUpdate={updateSystemSettings}
                         />
                         <AudiobookshelfSection
                             settings={systemSettings}

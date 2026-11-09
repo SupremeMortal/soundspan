@@ -11,6 +11,7 @@ import ffmpeg from "fluent-ffmpeg";
 import PQueue from "p-queue";
 import { AppError, ErrorCode, ErrorCategory } from "../utils/errors";
 import { parseRangeHeader } from "../utils/rangeParser";
+import { buildPlaybackEtag, ifRangeAllowsRange } from "./playback/playbackEtag";
 import { parseFile } from "music-metadata";
 import { isOriginAllowed } from "../utils/cors";
 import { config } from "../config";
@@ -998,14 +999,32 @@ export class AudioStreamingService {
         filePath: string,
         mimeType: string,
         pacing?: Transform,
+        validator?: { playbackId: string; variant: string },
     ): Promise<void> {
         try {
             // Get file stats for size
             const stats = await fsPromises.stat(filePath);
             const fileSize = stats.size;
 
+            // A validator makes the response resumable: a strong ETag, and a
+            // Range whose If-Range no longer matches falls back to the full body.
+            const etag = validator
+                ? buildPlaybackEtag({
+                      playbackId: validator.playbackId,
+                      variant: `${validator.variant}:${stats.mtimeMs}`,
+                      contentLength: fileSize,
+                  })
+                : undefined;
+
             // Parse Range header
-            const range = req.headers.range;
+            const range =
+                etag &&
+                !ifRangeAllowsRange(
+                    req.headers["if-range"] as string | undefined,
+                    etag,
+                )
+                    ? undefined
+                    : req.headers.range;
             let start = 0;
             let end = fileSize - 1;
 
@@ -1031,6 +1050,8 @@ export class AudioStreamingService {
                 "Cache-Control": "public, max-age=31536000",
                 "Content-Length": contentLength.toString(),
             };
+
+            if (etag) headers.ETag = etag;
 
             // Reflect the request Origin with credentials only when it passes
             // the same ALLOWED_ORIGINS allowlist the Express app enforces

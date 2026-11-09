@@ -50,6 +50,12 @@ const defaultSystemSettings: SystemSettings = {
     ytMusicEnabled: false,
     ytMusicClientId: "",
     ytMusicClientSecret: "",
+    ytMusicQuality: "HIGH",
+    offlineAllowLocal: true,
+    offlineAllowFederated: true,
+    offlineAllowTidal: true,
+    offlineAllowYtMusic: true,
+    offlineAllowYouTube: true,
     // UI
     showVersion: false,
 };

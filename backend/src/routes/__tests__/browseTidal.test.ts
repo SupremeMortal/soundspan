@@ -450,6 +450,10 @@ describe("browse tidal routes", () => {
             expect(res.status).toBe(200);
             expect(res.body).toEqual({
                 ...PLAYLIST_DETAIL_FIXTURE,
+                tracks: PLAYLIST_DETAIL_FIXTURE.tracks.map((track) => ({
+                    ...track,
+                    playbackId: `td.${track.trackId}`,
+                })),
                 source: "tidal",
             });
             expect(
@@ -486,6 +490,10 @@ describe("browse tidal routes", () => {
             expect(res.status).toBe(200);
             expect(res.body).toEqual({
                 ...MIX_DETAIL_FIXTURE,
+                tracks: MIX_DETAIL_FIXTURE.tracks.map((track) => ({
+                    ...track,
+                    playbackId: `td.${track.trackId}`,
+                })),
                 source: "tidal",
             });
             expect(tidalStreamingService.getBrowseMix).toHaveBeenCalledWith(

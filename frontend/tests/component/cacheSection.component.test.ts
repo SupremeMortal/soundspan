@@ -85,6 +85,11 @@ const settings: SystemSettings = {
     autoSync: true,
     autoEnrichMetadata: true,
     libraryDeletionEnabled: false,
+    offlineAllowLocal: true,
+    offlineAllowFederated: true,
+    offlineAllowTidal: true,
+    offlineAllowYtMusic: true,
+    offlineAllowYouTube: true,
     audioAnalyzerWorkers: 2,
     soulseekConcurrentDownloads: 4,
     federationInstanceName: null,
@@ -96,6 +101,7 @@ const settings: SystemSettings = {
     ytMusicEnabled: false,
     ytMusicClientId: "",
     ytMusicClientSecret: "",
+    ytMusicQuality: "HIGH",
     showVersion: false,
 };
 

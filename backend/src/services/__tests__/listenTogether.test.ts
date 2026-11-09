@@ -412,6 +412,130 @@ describe("listenTogether service", () => {
         ]);
     });
 
+    describe("playbackId queue inputs", () => {
+        const localRow = {
+            id: "track-1",
+            title: "Local Track",
+            duration: 200,
+            filePath: "/music/a.flac",
+            origin: "LOCAL",
+            loudnessLufs: null,
+            truePeakDb: null,
+            federationPeer: null,
+            album: {
+                id: "album-1",
+                title: "Album",
+                coverUrl: null,
+                albumLoudnessLufs: null,
+                albumTruePeakDb: null,
+                artist: { id: "artist-1", name: "Artist" },
+            },
+        };
+        const metadata = {
+            title: "Remote",
+            artist: "Remote Artist",
+            album: "Remote Album",
+            durationSec: 245,
+            artworkUrl: "https://img.example/a.jpg",
+            isrc: "USABC1234567",
+        };
+
+        function loadWithRemoteMock() {
+            const ensureRemoteTrack = jest.fn(async () => ({ id: "row-1" }));
+            jest.doMock("../trackMappingService", () => ({
+                trackMappingService: { ensureRemoteTrack },
+            }));
+            return { ...loadService(), ensureRemoteTrack };
+        }
+
+        it("matches the legacy local trackId result", async () => {
+            const { listenTogether, prisma } = loadService();
+            prisma.track.findMany.mockResolvedValue([localRow]);
+
+            const legacy = await listenTogether.validateQueueTracks([
+                { trackId: "track-1" },
+            ]);
+            const unified = await listenTogether.validateQueueTracks([
+                { playbackId: "t.track-1" },
+            ]);
+
+            expect(unified).toEqual(legacy);
+            expect(unified).toHaveLength(1);
+        });
+
+        it("matches the legacy tidal input and uses metadata", async () => {
+            const { listenTogether, prisma, ensureRemoteTrack } =
+                loadWithRemoteMock();
+            prisma.trackMapping.findFirst = jest.fn(async () => null);
+
+            const legacy = await listenTogether.validateQueueTracks([
+                {
+                    tidalTrackId: 77,
+                    title: metadata.title,
+                    artist: metadata.artist,
+                    album: metadata.album,
+                    duration: metadata.durationSec,
+                    isrc: metadata.isrc,
+                },
+            ]);
+            const unified = await listenTogether.validateQueueTracks([
+                { playbackId: "td.77", metadata },
+            ]);
+
+            expect(unified).toEqual(legacy);
+            expect(unified[0]).toEqual(
+                expect.objectContaining({
+                    id: "tidal:77",
+                    title: "Remote",
+                    duration: 245,
+                }),
+            );
+            expect(ensureRemoteTrack).toHaveBeenLastCalledWith(
+                expect.objectContaining({ provider: "tidal", tidalId: 77 }),
+            );
+        });
+
+        it("maps ym and yt ids to youtube inputs with artwork", async () => {
+            const { listenTogether, prisma } = loadWithRemoteMock();
+            prisma.trackMapping.findFirst = jest.fn(async () => null);
+
+            const queue = await listenTogether.validateQueueTracks([
+                { playbackId: "ym.dQw4w9WgXcQ", metadata },
+            ]);
+
+            expect(queue[0]).toEqual(
+                expect.objectContaining({
+                    id: "yt:dQw4w9WgXcQ",
+                    youtubeVideoId: "dQw4w9WgXcQ",
+                }),
+            );
+            expect(queue[0].album.coverArt).toBe(metadata.artworkUrl);
+        });
+
+        it("lets playbackId win over legacy identifier fields", async () => {
+            const { listenTogether, prisma } = loadService();
+            prisma.track.findMany.mockResolvedValue([localRow]);
+
+            const queue = await listenTogether.validateQueueTracks([
+                { playbackId: "t.track-1", tidalTrackId: 5, trackId: "x" },
+            ]);
+
+            expect(queue.map((item: { id: string }) => item.id)).toEqual([
+                "track-1",
+            ]);
+        });
+
+        it("rejects a malformed playbackId with INVALID_PLAYBACK_ID", async () => {
+            const { listenTogether } = loadService();
+
+            await expect(
+                listenTogether.validateQueueTracks([
+                    { playbackId: "not-a-playback-id" },
+                ]),
+            ).rejects.toMatchObject({ code: "INVALID_PLAYBACK_ID" });
+        });
+    });
+
     it("rejects group creation while the user is pending deletion", async () => {
         const { listenTogether, prisma } = loadService();
 

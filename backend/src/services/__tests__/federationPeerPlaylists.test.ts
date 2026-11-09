@@ -164,6 +164,7 @@ describe("consumer federation peer playlists", () => {
                 isResolvable: true,
                 track: {
                     id: "local-1",
+                    playbackId: "t.local-1",
                     title: "Local Twin",
                     duration: 181,
                     trackNo: 1,
@@ -196,6 +197,7 @@ describe("consumer federation peer playlists", () => {
                 isResolvable: true,
                 track: {
                     id: "federated-2",
+                    playbackId: "t.federated-2",
                     title: "Federated Track",
                     duration: 182,
                     trackNo: 2,

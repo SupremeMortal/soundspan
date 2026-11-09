@@ -41,6 +41,11 @@ jest.mock("../../utils/db", () => ({
     prisma,
 }));
 
+const mockRevokeApiKeySockets = jest.fn();
+jest.mock("../../services/listenTogetherSocketRevocation", () => ({
+    revokeApiKeySockets: (id: string) => mockRevokeApiKeySockets(id),
+}));
+
 import router from "../deviceLink";
 import { prisma as prismaClient } from "../../utils/db";
 
@@ -510,12 +515,15 @@ describe("deviceLink routes runtime", () => {
         });
         expect(res.statusCode).toBe(200);
         expect(res.body).toEqual({ success: true });
+        expect(mockRevokeApiKeySockets).toHaveBeenCalledWith("api-key-1");
 
+        mockRevokeApiKeySockets.mockClear();
         mockApiKeyFindFirst.mockResolvedValueOnce(null);
         const missingRes = createRes();
         await deleteDevice(req, missingRes);
         expect(missingRes.statusCode).toBe(404);
         expect(missingRes.body).toEqual({ error: "Device not found" });
+        expect(mockRevokeApiKeySockets).not.toHaveBeenCalled();
 
         mockApiKeyFindFirst.mockRejectedValueOnce(new Error("db down"));
         const errorRes = createRes();

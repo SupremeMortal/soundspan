@@ -29,6 +29,7 @@ import {
 } from "./tracks";
 import { coverArtRouter } from "./coverArt";
 import { remoteTracksRouter } from "./remoteTracks";
+import { playbackPreferencesRouter } from "./playbackPreferences";
 import { radioRouter } from "./radio";
 import { radioPlaylistRouter } from "./radioPlaylists";
 
@@ -58,6 +59,7 @@ router.use(tracksPreferenceReadRouter);
 router.use(albumsPreferenceRouter);
 router.use(tracksPreferenceWriteRouter);
 router.use(remoteTracksRouter);
+router.use(playbackPreferencesRouter);
 router.use(tracksDetailRouter);
 router.use(tracksDeletionRouter);
 router.use(albumsDeletionRouter);

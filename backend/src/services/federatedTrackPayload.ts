@@ -1,3 +1,5 @@
+import { encodePlaybackId } from "./playback/playbackId";
+
 interface FederatedPayloadPeer {
     id: string;
     name: string;
@@ -5,13 +7,18 @@ interface FederatedPayloadPeer {
 }
 
 /** Adds playback-only peer provenance without changing federation envelopes. */
-export function withFederatedTrackPlayback<Track extends { origin: string }>(
+export function withFederatedTrackPlayback<
+    Track extends { id: string; origin: string },
+>(
     track: Track,
     peer: FederatedPayloadPeer | null,
-) {
-    if (track.origin !== "FEDERATED" || !peer) return track;
+): Track & { playbackId?: string } {
+    if (track.origin !== "FEDERATED") return track;
+    const playbackId = encodePlaybackId({ kind: "t", trackId: track.id });
+    if (!peer) return { ...track, playbackId };
     return {
         ...track,
+        playbackId,
         source: "federated" as const,
         streamSource: "peer" as const,
         peer: {

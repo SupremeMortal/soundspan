@@ -9,6 +9,7 @@ import { redisClient } from "../utils/redis";
 import { logger } from "../utils/logger";
 import { publishSocialPresenceUpdate } from "../services/socialPresenceEvents";
 import { resolveCanonicalMediaSource } from "@soundspan/media-metadata-contract";
+import { derivePlaybackIdFromStoredItem } from "../services/playback/storedPlaybackId";
 import { TRACK_VISIBLE_WHERE } from "../utils/librarySorting";
 import { readFederationPeerPresenceSnapshots } from "../services/federationPresence";
 import type { FederationPeerPresenceSnapshot } from "../utils/federationPresenceSchemas";
@@ -283,6 +284,7 @@ type ListeningStatus = "playing" | "paused" | "idle";
 
 type QueueTrackProjection = {
     id: string;
+    playbackId?: string;
     title: string;
     duration: number;
     artistName: string;
@@ -366,9 +368,11 @@ function extractQueueTrack(
         tidalTrackId: item.tidalTrackId,
         youtubeVideoId: item.youtubeVideoId,
     });
+    const playbackId = derivePlaybackIdFromStoredItem(item);
     return {
         projection: {
             id: item.id,
+            ...(playbackId ? { playbackId } : {}),
             title: item.title,
             duration: item.duration,
             artistName: artist.name,
@@ -600,6 +604,10 @@ router.post("/presence/heartbeat", async (req, res) => {
  *                       listeningTrack:
  *                         type: object
  *                         nullable: true
+ *                         properties:
+ *                           playbackId:
+ *                             type: string
+ *                             description: "Opaque track identifier. Do not parse."
  *                       lastHeartbeatAt:
  *                         type: string
  *                         format: date-time

@@ -37,6 +37,7 @@ describe("api entrypoint runtime behavior", () => {
         "../routes/vibe",
         "../routes/system",
         "../routes/youtubeMusic",
+        "../routes/playback",
         "../routes/tidalStreaming",
         "../routes/trackMappings",
         "../routes/playlistImport",
@@ -794,6 +795,7 @@ describe("api entrypoint runtime behavior", () => {
                 route("../routes/listeningState"),
             ],
             "/api/playback-state": [route("../routes/playbackState")],
+            "/api/playback": [route("../routes/playback")],
             "/api/offline": ["api-limiter", route("../routes/offline")],
             "/api/playlists": ["api-limiter", route("../routes/playlists")],
             "/api/share-links": [
@@ -1011,6 +1013,12 @@ describe("api entrypoint runtime behavior", () => {
         expect(
             compressionConfig.filter(
                 { path: "/api/library/tracks/track-1/stream" },
+                cacheRes,
+            ),
+        ).toBe(false);
+        expect(
+            compressionConfig.filter(
+                { path: "/api/playback/stream/t.track-1" },
                 cacheRes,
             ),
         ).toBe(false);

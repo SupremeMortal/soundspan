@@ -225,12 +225,14 @@ describe("searchDiscoverMusic", () => {
                 name: "One More Time",
                 album: "Discovery",
                 tidalTrackId: 123,
+                playbackId: "td.123",
                 durationSec: 320,
             }),
             expect.objectContaining({
                 source: "youtube",
                 name: "Around the World",
                 youtubeVideoId: "vid-1",
+                playbackId: "ym.vid-1",
             }),
         ]);
         expect(ytMusicService.searchCanonical).toHaveBeenCalledWith(

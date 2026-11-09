@@ -567,6 +567,8 @@ describe("browse branch coverage", () => {
                 .set(AUTH_HEADER, AUTH_VALUE);
             expect(first.status).toBe(200);
             expect(cached.status).toBe(200);
+            expect(first.body.tracks[0].playbackId).toBe("ym.v1");
+            expect(cached.body.tracks[0].playbackId).toBe("ym.v1");
             expect(ytMusicService.getBrowseAlbum).toHaveBeenCalledTimes(1);
 
             _resetYtBrowseCache();
@@ -592,7 +594,7 @@ describe("browse branch coverage", () => {
             ytMusicService.getBrowsePlaylist.mockResolvedValue({
                 id: "PL-1",
                 title: "P",
-                tracks: [],
+                tracks: [{ videoId: "v9", title: "T9" }, { title: "no id" }],
             });
             const first = await request(app)
                 .get("/api/browse/ytmusic/playlist/PL-1")
@@ -602,6 +604,9 @@ describe("browse branch coverage", () => {
                 .set(AUTH_HEADER, AUTH_VALUE);
             expect(first.status).toBe(200);
             expect(cached.status).toBe(200);
+            expect(first.body.tracks[0].playbackId).toBe("ym.v9");
+            expect(first.body.tracks[1]).not.toHaveProperty("playbackId");
+            expect(cached.body.tracks[0].playbackId).toBe("ym.v9");
             expect(ytMusicService.getBrowsePlaylist).toHaveBeenCalledTimes(1);
 
             _resetYtBrowseCache();

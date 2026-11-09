@@ -1,5 +1,6 @@
 "use client";
 
+import { OfflineDownloadToggle } from "./OfflineDownloadToggle";
 import { useState, useRef, useCallback } from "react";
 import {
     SettingsRow,
@@ -456,6 +457,12 @@ export function TidalProviderSettings({
                         Downloads will be saved using your file naming template
                     </p>
                 </div>
+                <OfflineDownloadToggle
+                    field="offlineAllowTidal"
+                    id="offline-allow-tidal"
+                    settings={settings}
+                    onUpdate={onUpdate}
+                />
             </div>
         </div>
     );

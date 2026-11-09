@@ -1,3 +1,5 @@
+import { encodePlaybackId } from "./playback/playbackId";
+
 /**
  * Maps a radio track row with album and artist relations to the frontend
  * playback track shape.
@@ -7,6 +9,7 @@
 export function transformRadioTrack(track: any, vibeSourceFeatures: unknown) {
     return {
         id: track.id,
+        playbackId: encodePlaybackId({ kind: "t", trackId: track.id }),
         title: track.title,
         duration: track.duration,
         trackNo: track.trackNo,
