@@ -83,6 +83,8 @@ export interface SystemSettings {
     ytMusicEnabled: boolean;
     ytMusicClientId: string;
     ytMusicClientSecret: string;
+    // Offline downloads allowed for every source (admin policy)
+    offlineDownloadsEnabled: boolean;
     // UI
     showVersion: boolean;
 }

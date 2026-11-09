@@ -127,6 +127,27 @@ describe("youtube routes runtime", () => {
     });
 
     describe("GET /info", () => {
+        it("adds a yt playbackId for the video", async () => {
+            mockGetVideoInfo.mockResolvedValue({
+                videoId: "dQw4w9WgXcQ",
+                title: "Song",
+                uploader: "Up",
+                duration: 212,
+                thumbnail: null,
+                uploadDate: "20200101",
+            });
+            const req = {
+                query: { url: "https://youtu.be/dQw4w9WgXcQ" },
+            } as any;
+            const res = createRes();
+
+            await infoHandler(req, res);
+
+            expect(res.statusCode).toBe(200);
+            expect(res.body.playbackId).toBe("yt.dQw4w9WgXcQ");
+            expect(res.body.videoId).toBe("dQw4w9WgXcQ");
+        });
+
         it("returns 400 when url is missing", async () => {
             const req = { query: {} } as any;
             const res = createRes();

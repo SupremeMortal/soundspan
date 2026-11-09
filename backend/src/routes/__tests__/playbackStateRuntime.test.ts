@@ -166,6 +166,79 @@ describe("playbackState routes runtime", () => {
         expect(mockFindUnique).toHaveBeenCalledTimes(600);
     }, 30_000);
 
+    it("derives a playbackId for each stored music-track queue item", async () => {
+        const queue = [
+            { id: "ckLocal1", title: "Local" },
+            { id: "ckPeer1", streamSource: "peer", title: "Peer" },
+            {
+                id: "tidal:42",
+                streamSource: "tidal",
+                tidalTrackId: 42,
+                title: "Tidal",
+            },
+            {
+                id: "yt:vid1",
+                streamSource: "youtube",
+                youtubeVideoId: "vid1",
+                title: "YT Music",
+            },
+            {
+                id: "yt:vid2",
+                streamSource: "youtube-direct",
+                youtubeVideoId: "vid2",
+                title: "YouTube",
+            },
+            { itemType: "episode", id: "pod:ep", title: "Episode" },
+        ];
+        mockFindUnique.mockResolvedValueOnce({
+            id: "state-q",
+            userId: "u1",
+            deviceId: "device-A",
+            playbackType: "track",
+            queue,
+        });
+        const res = createRes();
+
+        await getState(
+            { user: { id: "u1" }, header: () => "device-A" } as any,
+            res,
+        );
+
+        expect(res.body.queue.map((item: any) => item.playbackId)).toEqual([
+            "t.ckLocal1",
+            "t.ckPeer1",
+            "td.42",
+            "ym.vid1",
+            "yt.vid2",
+            undefined,
+        ]);
+        expect(res.body.queue[2]).toMatchObject({ tidalTrackId: 42 });
+        expect(queue[0]).not.toHaveProperty("playbackId");
+    });
+
+    it("derives queue playbackIds for a migrated legacy state", async () => {
+        mockFindUnique.mockResolvedValueOnce(null).mockResolvedValueOnce({
+            id: "legacy",
+            userId: "u1",
+            deviceId: "legacy",
+            playbackType: "track",
+            queue: [{ id: "ckLegacy1", title: "Legacy" }],
+            currentIndex: 0,
+            isShuffle: false,
+            isPlaying: false,
+            currentTime: 0,
+        });
+        mockUpsert.mockResolvedValue({});
+        const res = createRes();
+
+        await getState(
+            { user: { id: "u1" }, header: () => "device-B" } as any,
+            res,
+        );
+
+        expect(res.body.queue[0].playbackId).toBe("t.ckLegacy1");
+    });
+
     it("gets state for a device-specific record", async () => {
         mockFindUnique.mockResolvedValueOnce({
             id: "state-1",

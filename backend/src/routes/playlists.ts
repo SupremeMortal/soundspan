@@ -28,6 +28,20 @@ import {
 } from "../services/playlistMutationLock";
 import { requestCoalescedLibraryScan } from "../services/coalescedLibraryScan";
 import { patchDownloadJobMetadataFrom } from "../services/downloadJobStatus";
+import { sendRouteError } from "../utils/routeErrorResponse";
+import { parsePlaybackId } from "../services/playback/playbackId";
+import {
+    getPlaybackIdItemWhere,
+    selectReorderIds,
+    translatePlaybackIdsToItemIds,
+    validateExactReorder,
+    type PlaybackReorderItem,
+} from "../services/playlistReorder";
+import {
+    PlaybackInputError,
+    playbackTrackInputSchema,
+    resolvePlaybackInput,
+} from "../services/playback/playbackInput";
 
 const router = Router();
 
@@ -39,19 +53,6 @@ const PLAYLIST_DETAIL_QUERY_ITEMS = PLAYLIST_DETAIL_MAX_ITEMS + 1;
 const pendingRetryPath = "/:id/pending/:trackId/retry";
 
 type RetryRequest = Request<{ id: string; trackId: string }>;
-
-type ReorderSelection =
-    | { success: true; ids: string[]; byItemId: boolean }
-    | { success: false; message: string };
-
-type UnvalidatedReorderSelection =
-    | { success: true; ids: unknown[]; byItemId: boolean }
-    | { success: false; message: string };
-
-type ReorderPlaylistItem = {
-    id: string;
-    trackId: string | null;
-};
 
 type MappingAvailabilityRow = {
     trackId: string | null;
@@ -77,114 +78,6 @@ type PendingPlaylistItemRecord = {
     spotifyAlbum: string;
     deezerPreviewUrl: string | null;
 };
-
-const reorderPayloadSchema = z.object({
-    itemIds: z.unknown().optional(),
-    trackIds: z.unknown().optional(),
-});
-
-const reorderIdsSchema = z.array(z.string().min(1));
-
-function getReorderSelection(body: unknown): UnvalidatedReorderSelection {
-    const parsedPayload = reorderPayloadSchema.safeParse(body);
-    const payload = parsedPayload.success ? parsedPayload.data : {};
-    const { itemIds, trackIds } = payload;
-    if (itemIds !== undefined && !Array.isArray(itemIds)) {
-        return { success: false, message: "itemIds must be an array" };
-    }
-    if (trackIds !== undefined && !Array.isArray(trackIds)) {
-        return { success: false, message: "trackIds must be an array" };
-    }
-
-    const byItemId = Array.isArray(itemIds);
-    const selected = byItemId ? itemIds : trackIds;
-    if (!Array.isArray(selected)) {
-        return {
-            success: false,
-            message: "itemIds or trackIds must be an array",
-        };
-    }
-    return { success: true, ids: selected, byItemId };
-}
-
-function validateReorderIds(
-    selection: Extract<UnvalidatedReorderSelection, { success: true }>,
-): ReorderSelection {
-    if (selection.ids.length > PLAYLIST_REORDER_MAX_ITEMS) {
-        return {
-            success: false,
-            message: `A playlist reorder cannot exceed ${PLAYLIST_REORDER_MAX_ITEMS} items`,
-        };
-    }
-    const parsedIds = reorderIdsSchema.safeParse(selection.ids);
-    if (!parsedIds.success) {
-        return {
-            success: false,
-            message: "Reorder identifiers must be non-empty strings",
-        };
-    }
-
-    const ids = parsedIds.data;
-    if (new Set(ids).size !== ids.length) {
-        return {
-            success: false,
-            message: "Reorder identifiers must not contain duplicates",
-        };
-    }
-    return { success: true, ids, byItemId: selection.byItemId };
-}
-
-function selectReorderIds(body: unknown): ReorderSelection {
-    const selection = getReorderSelection(body);
-    return selection.success ? validateReorderIds(selection) : selection;
-}
-
-function getExpectedReorderIds(
-    byItemId: boolean,
-    playlistItems: ReorderPlaylistItem[],
-): string[] {
-    if (byItemId) return playlistItems.map((item) => item.id);
-    return playlistItems
-        .map((item) => item.trackId)
-        .filter((trackId): trackId is string => trackId !== null);
-}
-
-function validateExactReorder(
-    selection: Extract<ReorderSelection, { success: true }>,
-    playlistItems: ReorderPlaylistItem[],
-): { status: 400 | 404; message: string } | null {
-    if (playlistItems.length > PLAYLIST_REORDER_MAX_ITEMS) {
-        return {
-            status: 400,
-            message: `Playlist exceeds the maximum reorder size of ${PLAYLIST_REORDER_MAX_ITEMS} items`,
-        };
-    }
-
-    const expectedIds = getExpectedReorderIds(
-        selection.byItemId,
-        playlistItems,
-    );
-    const expectedIdSet = new Set(expectedIds);
-    if (selection.ids.some((id) => !expectedIdSet.has(id))) {
-        return {
-            status: 404,
-            message: selection.byItemId
-                ? "One or more playlist items were not found in this playlist"
-                : "One or more tracks were not found in this playlist",
-        };
-    }
-    if (
-        selection.ids.length !== playlistItems.length ||
-        expectedIds.length !== playlistItems.length
-    ) {
-        return {
-            status: 400,
-            message:
-                "Reorder identifiers must include every playlist item exactly once",
-        };
-    }
-    return null;
-}
 
 function isPrismaRecordNotFound(value: unknown): boolean {
     return (
@@ -1313,6 +1206,30 @@ router.delete("/:id", async (req, res) => {
  *           schema:
  *             oneOf:
  *               - type: object
+ *                 required: [playbackId]
+ *                 description: >-
+ *                   Source-agnostic track reference. When present it wins and
+ *                   any legacy identifier fields are ignored.
+ *                 properties:
+ *                   playbackId:
+ *                     type: string
+ *                     minLength: 1
+ *                     description: "Opaque track identifier. Do not parse."
+ *                   metadata:
+ *                     type: object
+ *                     description: >-
+ *                       Display metadata, used only when a TIDAL or YouTube
+ *                       Music track row must be created. Missing metadata in
+ *                       that case answers 400 METADATA_REQUIRED.
+ *                     required: [title, artist, album, durationSec]
+ *                     properties:
+ *                       title: { type: string, minLength: 1 }
+ *                       artist: { type: string, minLength: 1 }
+ *                       album: { type: string, minLength: 1 }
+ *                       durationSec: { type: integer, minimum: 0 }
+ *                       artworkUrl: { type: string, minLength: 1 }
+ *                       isrc: { type: string, minLength: 1 }
+ *               - type: object
  *                 required: [trackId]
  *                 not:
  *                   anyOf:
@@ -1399,11 +1316,13 @@ router.delete("/:id", async (req, res) => {
  *       200:
  *         description: Track added to playlist (or already exists)
  *       400:
- *         description: Invalid request
+ *         description: Invalid request, or a coded playbackId error (INVALID_PLAYBACK_ID, METADATA_REQUIRED)
  *       403:
  *         description: Access denied
  *       404:
- *         description: Playlist or track not found
+ *         description: Playlist or track not found (code TRACK_NOT_FOUND for a playbackId)
+ *       409:
+ *         description: Source unavailable (code SOURCE_UNAVAILABLE)
  *       401:
  *         description: Not authenticated
  */
@@ -1412,14 +1331,25 @@ router.post("/:id/items", async (req, res) => {
     try {
         if (!req.user) return res.status(401).json({ error: "Unauthorized" });
         const userId = req.user.id;
-        const parsedBody = addTrackSchema.safeParse(req.body);
-        if (!parsedBody.success) {
-            return res.status(400).json({
-                error: "Invalid request",
-                details: parsedBody.error.issues,
-            });
+        // A playbackId wins over every legacy identifier field.
+        const playbackInput =
+            typeof req.body?.playbackId === "string"
+                ? playbackTrackInputSchema.parse({
+                      playbackId: req.body.playbackId,
+                      metadata: req.body.metadata,
+                  })
+                : null;
+        let addTrackData: AddTrackData | null = null;
+        if (!playbackInput) {
+            const parsedBody = addTrackSchema.safeParse(req.body);
+            if (!parsedBody.success) {
+                return res.status(400).json({
+                    error: "Invalid request",
+                    details: parsedBody.error.issues,
+                });
+            }
+            addTrackData = parsedBody.data;
         }
-        const addTrackData = parsedBody.data;
 
         const playlist = await prisma.playlist.findUnique({
             where: { id: req.params.id },
@@ -1431,7 +1361,9 @@ router.post("/:id/items", async (req, res) => {
             return res.status(403).json({ error: "Access denied" });
         }
 
-        const reference = await resolvePlaylistItemReference(addTrackData);
+        const reference = playbackInput
+            ? await resolvePlaybackInput(userId, playbackInput)
+            : await resolvePlaylistItemReference(addTrackData!);
         if (!reference) {
             return res.status(404).json({ error: "Track not found" });
         }
@@ -1451,6 +1383,11 @@ router.post("/:id/items", async (req, res) => {
             return res
                 .status(400)
                 .json({ error: "Invalid request", details: error.issues });
+        }
+        if (error instanceof PlaybackInputError) {
+            return sendRouteError(res, error.status, error.message, {
+                code: error.code,
+            });
         }
         if (
             error instanceof Error &&
@@ -1486,7 +1423,7 @@ router.post("/:id/items", async (req, res) => {
  *         required: true
  *         schema:
  *           type: string
- *         description: Playlist item ID (preferred) or local track ID (legacy fallback)
+ *         description: Playlist item ID (preferred), a playbackId, or local track ID (legacy fallback). A segment that parses as a playbackId removes the item holding that track.
  *     responses:
  *       200:
  *         description: Track removed from playlist
@@ -1516,8 +1453,13 @@ router.delete("/:id/items/:trackId", async (req, res) => {
         }
 
         const playlistItemIdOrTrackId = req.params.trackId;
+        // A segment that parses as a playbackId matches by the track held.
+        const playbackWhere = getPlaybackIdItemWhere(
+            req.params.id,
+            playlistItemIdOrTrackId,
+        );
         const matchedByItemId = await prisma.playlistItem.findFirst({
-            where: {
+            where: playbackWhere ?? {
                 playlistId: req.params.id,
                 id: playlistItemIdOrTrackId,
             },
@@ -1525,7 +1467,7 @@ router.delete("/:id/items/:trackId", async (req, res) => {
         });
 
         let targetItemId = matchedByItemId?.id ?? null;
-        if (!targetItemId) {
+        if (!targetItemId && !playbackWhere) {
             const matchedByTrackId = await prisma.playlistItem.findFirst({
                 where: {
                     playlistId: req.params.id,
@@ -1573,6 +1515,12 @@ router.delete("/:id/items/:trackId", async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
+ *               playbackIds:
+ *                 type: array
+ *                 maxItems: 1000
+ *                 items:
+ *                   type: string
+ *                 description: playbackIds in the desired order, one per playlist item, for playlists of any source mix. Wins over itemIds and trackIds. An unparseable id answers 400 INVALID_PLAYBACK_ID; an id not in the playlist answers 404 TRACK_NOT_FOUND.
  *               itemIds:
  *                 type: array
  *                 maxItems: 1000
@@ -1586,13 +1534,14 @@ router.delete("/:id/items/:trackId", async (req, res) => {
  *                   type: string
  *                 description: Legacy local-library track IDs in the desired order
  *             anyOf:
+ *               - required: [playbackIds]
  *               - required: [itemIds]
  *               - required: [trackIds]
  *     responses:
  *       200:
  *         description: Playlist reordered
  *       400:
- *         description: itemIds or trackIds must be an array
+ *         description: playbackIds, itemIds or trackIds must be an array
  *       403:
  *         description: Access denied
  *       404:
@@ -1622,12 +1571,48 @@ router.put("/:id/items/reorder", async (req, res) => {
             return res.status(403).json({ error: "Access denied" });
         }
 
+        const byPlaybackId = Array.isArray(req.body?.playbackIds);
+        if (byPlaybackId && selection.ids.some((id) => !parsePlaybackId(id))) {
+            return res.status(400).json({
+                error: "playbackIds must contain valid playbackIds",
+                code: "INVALID_PLAYBACK_ID",
+            });
+        }
+
         const playlistItems = await prisma.playlistItem.findMany({
             where: { playlistId: req.params.id },
-            select: { id: true, trackId: true },
+            select: {
+                id: true,
+                trackId: true,
+                ...(byPlaybackId
+                    ? {
+                          trackTidal: { select: { tidalId: true } },
+                          trackYtMusic: { select: { videoId: true } },
+                      }
+                    : {}),
+            },
             take: PLAYLIST_REORDER_MAX_ITEMS + 1,
         });
-        const invalidReorder = validateExactReorder(selection, playlistItems);
+
+        let orderedIds = selection.ids;
+        if (byPlaybackId) {
+            const translated = translatePlaybackIdsToItemIds(
+                selection.ids,
+                playlistItems as PlaybackReorderItem[],
+            );
+            if (!translated) {
+                return res.status(404).json({
+                    error: "One or more tracks were not found in this playlist",
+                    code: "TRACK_NOT_FOUND",
+                });
+            }
+            orderedIds = translated;
+        }
+
+        const invalidReorder = validateExactReorder(
+            { ...selection, ids: orderedIds },
+            playlistItems,
+        );
         if (invalidReorder) {
             return res
                 .status(invalidReorder.status)
@@ -1639,7 +1624,7 @@ router.put("/:id/items/reorder", async (req, res) => {
                 tx,
                 req.params.id,
                 userId,
-                selection.ids,
+                orderedIds,
                 selection.byItemId,
             ),
         );

@@ -48,6 +48,7 @@ import {
     invalidateGroupPersistence,
     isGroupPersistenceEligible,
 } from "./listenTogetherPersistenceState";
+import { withQueueItemPlaybackId } from "./listenTogetherQueueItem";
 import {
     applyExactCommittedMembership,
     createGroupSnapshot,
@@ -1064,7 +1065,7 @@ class GroupManager {
     private queueDelta(group: GroupState): QueueDelta {
         const pb = group.playback;
         return {
-            queue: pb.queue,
+            queue: pb.queue.map(withQueueItemPlaybackId),
             currentIndex: pb.currentIndex,
             trackId: currentTrackId(pb),
             stateVersion: pb.stateVersion,

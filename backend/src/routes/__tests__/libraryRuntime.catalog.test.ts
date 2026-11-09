@@ -2256,7 +2256,13 @@ describe("library catalog list runtime coverage", () => {
         expect(withTracksRes.body).toEqual(
             expect.objectContaining({
                 id: "album-3",
-                tracks: [{ id: "track-1", title: "Track One" }],
+                tracks: [
+                    {
+                        id: "track-1",
+                        playbackId: "t.track-1",
+                        title: "Track One",
+                    },
+                ],
                 owned: true,
             }),
         );
@@ -2359,7 +2365,13 @@ describe("library catalog list runtime coverage", () => {
                     mbid: "mbid-true",
                     name: "Artist True",
                 },
-                tracks: [{ id: "track-true", title: "Track True" }],
+                tracks: [
+                    {
+                        id: "track-true",
+                        playbackId: "t.track-true",
+                        title: "Track True",
+                    },
+                ],
             })
             .mockResolvedValueOnce({
                 id: "album-bool-true",
@@ -2371,7 +2383,13 @@ describe("library catalog list runtime coverage", () => {
                     mbid: "mbid-bool",
                     name: "Artist Bool",
                 },
-                tracks: [{ id: "track-bool", title: "Track Bool" }],
+                tracks: [
+                    {
+                        id: "track-bool",
+                        playbackId: "t.track-bool",
+                        title: "Track Bool",
+                    },
+                ],
             });
         mockOwnedAlbumFindUnique
             .mockResolvedValueOnce(null)
@@ -2390,7 +2408,13 @@ describe("library catalog list runtime coverage", () => {
         expect(stringRes.body).toEqual(
             expect.objectContaining({
                 id: "album-string-true",
-                tracks: [{ id: "track-true", title: "Track True" }],
+                tracks: [
+                    {
+                        id: "track-true",
+                        playbackId: "t.track-true",
+                        title: "Track True",
+                    },
+                ],
                 owned: false,
             }),
         );
@@ -2405,7 +2429,13 @@ describe("library catalog list runtime coverage", () => {
         expect(boolRes.body).toEqual(
             expect.objectContaining({
                 id: "album-bool-true",
-                tracks: [{ id: "track-bool", title: "Track Bool" }],
+                tracks: [
+                    {
+                        id: "track-bool",
+                        playbackId: "t.track-bool",
+                        title: "Track Bool",
+                    },
+                ],
                 owned: true,
             }),
         );

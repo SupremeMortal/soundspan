@@ -85,6 +85,7 @@ const settings: SystemSettings = {
     autoSync: true,
     autoEnrichMetadata: true,
     libraryDeletionEnabled: false,
+    offlineDownloadsEnabled: true,
     audioAnalyzerWorkers: 2,
     soulseekConcurrentDownloads: 4,
     federationInstanceName: null,

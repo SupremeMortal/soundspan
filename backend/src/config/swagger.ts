@@ -147,11 +147,34 @@ const options: swaggerJsdoc.Options = {
                     type: "object",
                     properties: {
                         id: { type: "string" },
+                        playbackId: {
+                            type: "string",
+                            description:
+                                "Opaque track identifier. Do not parse.",
+                        },
                         albumId: { type: "string" },
                         title: { type: "string" },
                         trackNo: { type: "integer" },
                         duration: { type: "integer" },
                         filePath: { type: "string" },
+                    },
+                },
+                BrowseTrackList: {
+                    type: "object",
+                    properties: {
+                        tracks: {
+                            type: "array",
+                            items: {
+                                type: "object",
+                                properties: {
+                                    playbackId: {
+                                        type: "string",
+                                        description:
+                                            "Opaque track identifier. Do not parse.",
+                                    },
+                                },
+                            },
+                        },
                     },
                 },
                 ApiKey: {

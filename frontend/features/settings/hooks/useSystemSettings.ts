@@ -50,6 +50,7 @@ const defaultSystemSettings: SystemSettings = {
     ytMusicEnabled: false,
     ytMusicClientId: "",
     ytMusicClientSecret: "",
+    offlineDownloadsEnabled: true,
     // UI
     showVersion: false,
 };

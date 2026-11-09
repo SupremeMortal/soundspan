@@ -4,6 +4,7 @@ import { requireAuth, requireInteractiveSession } from "../middleware/auth";
 import { prisma } from "../utils/db";
 import { getApiKeyExpiresAt, hashApiKey } from "../utils/apiKeyHash";
 import crypto from "crypto";
+import { revokeApiKeySockets } from "../services/listenTogetherSocketRevocation";
 import { sendRouteError } from "../utils/routeErrorResponse";
 
 const router = Router();
@@ -234,6 +235,15 @@ router.delete("/:id", requireInteractiveSession, async (req, res) => {
             return res
                 .status(404)
                 .json({ error: "API key not found or already deleted" });
+        }
+
+        try {
+            await revokeApiKeySockets(keyId);
+        } catch (revokeError) {
+            routeLogger.error("API key socket revocation failed", {
+                keyId,
+                error: revokeError,
+            });
         }
 
         routeLogger.debug("API key revoked", { keyId, userId });

@@ -32,6 +32,11 @@ jest.mock("../../utils/db", () => ({
     prisma,
 }));
 
+const mockRevokeApiKeySockets = jest.fn();
+jest.mock("../../services/listenTogetherSocketRevocation", () => ({
+    revokeApiKeySockets: (id: string) => mockRevokeApiKeySockets(id),
+}));
+
 import router from "../apiKeys";
 import { prisma as prismaClient } from "../../utils/db";
 
@@ -216,7 +221,9 @@ describe("apiKeys routes runtime", () => {
         });
         expect(res.statusCode).toBe(200);
         expect(res.body).toEqual({ message: "API key revoked successfully" });
+        expect(mockRevokeApiKeySockets).toHaveBeenCalledWith("k1");
 
+        mockRevokeApiKeySockets.mockClear();
         mockDeleteManyApiKeys.mockResolvedValueOnce({ count: 0 });
         const notFoundRes = createRes();
         await deleteKey(req, notFoundRes);
@@ -230,11 +237,24 @@ describe("apiKeys routes runtime", () => {
         await deleteKey(unauthReq, unauthRes);
         expect(unauthRes.statusCode).toBe(401);
         expect(unauthRes.body).toEqual({ error: "Not authenticated" });
+        expect(mockRevokeApiKeySockets).not.toHaveBeenCalled();
 
         mockDeleteManyApiKeys.mockRejectedValueOnce(new Error("db down"));
         const errorRes = createRes();
         await deleteKey(req, errorRes);
         expect(errorRes.statusCode).toBe(500);
         expect(errorRes.body).toEqual({ error: "Failed to revoke API key" });
+    });
+
+    it("still reports success when socket revocation fails", async () => {
+        mockRevokeApiKeySockets.mockRejectedValueOnce(new Error("redis down"));
+        const res = createRes();
+
+        await deleteKey(
+            { params: { id: "k1" }, user: { id: "u1" } } as any,
+            res,
+        );
+
+        expect(res.statusCode).toBe(200);
     });
 });

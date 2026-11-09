@@ -31,6 +31,17 @@ router.use(requireAuth);
 
 const queueTrackInputSchema = z
     .object({
+        playbackId: z.string().min(1).optional(),
+        metadata: z
+            .object({
+                title: z.string().trim().min(1),
+                artist: z.string().trim().min(1),
+                album: z.string().trim().min(1),
+                durationSec: z.number().int().nonnegative(),
+                artworkUrl: z.string().trim().min(1).optional(),
+                isrc: z.string().trim().min(1).optional(),
+            })
+            .optional(),
         trackId: z.string().min(1).optional(),
         tidalTrackId: z.number().int().positive().optional(),
         youtubeVideoId: z.string().min(1).optional(),
@@ -43,12 +54,13 @@ const queueTrackInputSchema = z
     })
     .refine(
         (value) =>
+            value.playbackId !== undefined ||
             [value.trackId, value.tidalTrackId, value.youtubeVideoId].filter(
                 (entry) => entry !== undefined,
             ).length === 1,
         {
             message:
-                "Each queue track requires exactly one of trackId, tidalTrackId, or youtubeVideoId",
+                "Each queue track requires a playbackId or exactly one of trackId, tidalTrackId, or youtubeVideoId",
         },
     );
 
@@ -82,6 +94,7 @@ function handleError(label: string, error: unknown, res: Response) {
             NOT_MEMBER: 403,
             NOT_ALLOWED: 403,
             INVALID: 400,
+            INVALID_PLAYBACK_ID: 400,
             CONFLICT: 409,
             UNAVAILABLE: 503,
         };
@@ -90,7 +103,12 @@ function handleError(label: string, error: unknown, res: Response) {
             logger.error(`[ListenTogether] ${label}:`, error.message);
             return res.status(status).json({ error: "Internal server error" });
         }
-        return res.status(status).json({ error: error.message });
+        return res.status(status).json({
+            error: error.message,
+            ...(error.code === "INVALID_PLAYBACK_ID"
+                ? { code: error.code }
+                : {}),
+        });
     }
     logger.error(`[ListenTogether] ${label} failed:`, error);
     return res.status(500).json({ error: "Internal server error" });
@@ -108,9 +126,39 @@ function handleError(label: string, error: unknown, res: Response) {
  *     tags: [Listen Together]
  *     security:
  *       - apiKeyAuth: []
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               queueTracks:
+ *                 type: array
+ *                 description: >-
+ *                   Initial queue. Each item is `{ playbackId, metadata? }`
+ *                   (the playbackId wins over legacy fields) or exactly one of
+ *                   trackId, tidalTrackId, youtubeVideoId.
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     playbackId:
+ *                       type: string
+ *                       description: "Opaque track identifier. Do not parse."
+ *                     metadata:
+ *                       type: object
+ *                       description: Display metadata used when a remote track must be created.
+ *                       properties:
+ *                         title: { type: string, minLength: 1 }
+ *                         artist: { type: string, minLength: 1 }
+ *                         album: { type: string, minLength: 1 }
+ *                         durationSec: { type: integer, minimum: 0 }
+ *                         artworkUrl: { type: string, minLength: 1 }
+ *                         isrc: { type: string, minLength: 1 }
  *     responses:
  *       201:
  *         description: Group created
+ *       400:
+ *         description: Invalid request, or an unparseable playbackId (code INVALID_PLAYBACK_ID)
  */
 router.post("/", async (req, res) => {
     try {

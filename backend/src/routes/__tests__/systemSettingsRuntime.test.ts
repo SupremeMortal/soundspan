@@ -400,6 +400,62 @@ describe("systemSettings runtime routes", () => {
         );
     });
 
+    it.each([true, false])(
+        "saves the offline downloads switch as %p",
+        async (offlineDownloadsEnabled) => {
+            const res = createRes();
+
+            await postSettingsHandler(
+                {
+                    user: { id: "admin-1" },
+                    body: { offlineDownloadsEnabled },
+                } as any,
+                res,
+            );
+
+            expect(res.statusCode).toBe(200);
+            const { update } = mockSystemSettingsUpsert.mock.calls[0][0];
+            expect(update.offlineDownloadsEnabled).toBe(offlineDownloadsEnabled);
+        },
+    );
+
+    it("rejects a non-boolean offline downloads switch", async () => {
+        const res = createRes();
+
+        await postSettingsHandler(
+            {
+                user: { id: "admin-1" },
+                body: { offlineDownloadsEnabled: "no" },
+            } as any,
+            res,
+        );
+
+        expect(res.statusCode).toBe(400);
+        expect(mockSystemSettingsUpsert).not.toHaveBeenCalled();
+    });
+
+    it("does not store per-source offline switches or an admin YT Music quality", async () => {
+        const res = createRes();
+
+        await postSettingsHandler(
+            {
+                user: { id: "admin-1" },
+                body: {
+                    offlineAllowLocal: false,
+                    offlineAllowTidal: false,
+                    ytMusicQuality: "LOSSLESS",
+                },
+            } as any,
+            res,
+        );
+
+        expect(res.statusCode).toBe(200);
+        const { update } = mockSystemSettingsUpsert.mock.calls[0][0];
+        expect(update).not.toHaveProperty("offlineAllowLocal");
+        expect(update).not.toHaveProperty("offlineAllowTidal");
+        expect(update).not.toHaveProperty("ytMusicQuality");
+    });
+
     it("rejects a non-boolean shared TIDAL account toggle", async () => {
         const res = createRes();
 

@@ -49,6 +49,7 @@ describe("listen together socket runtime behavior", () => {
             tokenVersion: 1,
             pendingDeletionAt: null,
         }));
+        const authenticateSocketApiKey: any = jest.fn();
         const getRestoreBarrier = jest.fn(
             async (): Promise<{
                 code: string;
@@ -275,6 +276,9 @@ describe("listen together socket runtime behavior", () => {
         jest.doMock("../../utils/logger", () => ({
             logger,
         }));
+        jest.doMock("../listenTogetherSocketApiKeyAuth", () => ({
+            resolveApiKeySocketData: authenticateSocketApiKey,
+        }));
         jest.doMock("../../utils/ioredis", () => ({ createIORedisClient }));
         jest.doMock("../backup/restartRequired", () => ({
             getRestoreBarrier,
@@ -350,6 +354,7 @@ describe("listen together socket runtime behavior", () => {
             logger,
             jwtVerify,
             prismaUserFindUnique,
+            authenticateSocketApiKey,
             getRestoreBarrier,
             MockGroupError,
         };
@@ -963,6 +968,77 @@ describe("listen together socket runtime behavior", () => {
             username: "User One",
             groupId: null,
         });
+    });
+
+    it("authenticates handshakes with exactly one of token or apiKey", async () => {
+        process.env = { ...originalEnv, JWT_SECRET: "test-secret" };
+        const mocks = setupListenTogetherSocketMocks();
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const socketService = require("../listenTogetherSocket");
+        socketService.setupListenTogetherSocket({ on: () => undefined } as any);
+        const authMiddleware = mocks.namespace.use.mock.calls[1][0];
+        const makeSocket = (auth: Record<string, unknown>) => ({
+            handshake: { auth },
+            data: {},
+        });
+
+        mocks.authenticateSocketApiKey.mockResolvedValueOnce({
+            userId: "user-9",
+            username: "Device User",
+            groupId: null,
+            apiKeyId: "key-9",
+        });
+        const keySocket: any = makeSocket({ apiKey: "raw-key" });
+        const keyNext = jest.fn();
+        await authMiddleware(keySocket, keyNext);
+        expect(keyNext).toHaveBeenCalledWith();
+        expect(mocks.authenticateSocketApiKey).toHaveBeenCalledWith("raw-key");
+        expect(keySocket.data).toEqual({
+            userId: "user-9",
+            username: "Device User",
+            groupId: null,
+            apiKeyId: "key-9",
+        });
+        expect(mocks.jwtVerify).not.toHaveBeenCalled();
+
+        const bothNext = jest.fn();
+        await authMiddleware(
+            makeSocket({ token: "token", apiKey: "raw-key" }),
+            bothNext,
+        );
+        expect(bothNext.mock.calls[0][0].message).toBe(
+            "Authentication required",
+        );
+        expect(mocks.authenticateSocketApiKey).toHaveBeenCalledTimes(1);
+
+        const neitherNext = jest.fn();
+        await authMiddleware(makeSocket({}), neitherNext);
+        expect(neitherNext.mock.calls[0][0].message).toBe(
+            "Authentication required",
+        );
+
+        mocks.authenticateSocketApiKey.mockRejectedValueOnce(
+            new Error("Invalid API key"),
+        );
+        const badKeyNext = jest.fn();
+        await authMiddleware(makeSocket({ apiKey: "nope" }), badKeyNext);
+        expect(badKeyNext.mock.calls[0][0].message).toBe("Invalid API key");
+
+        mocks.authenticateSocketApiKey.mockRejectedValueOnce(
+            new Error("User deletion is pending"),
+        );
+        const pendingNext = jest.fn();
+        await authMiddleware(makeSocket({ apiKey: "k" }), pendingNext);
+        expect(pendingNext.mock.calls[0][0].message).toBe(
+            "User deletion is pending",
+        );
+
+        const jwtSocket: any = makeSocket({ token: "token" });
+        const jwtNext = jest.fn();
+        await authMiddleware(jwtSocket, jwtNext);
+        expect(jwtNext).toHaveBeenCalledWith();
+        expect(jwtSocket.data.apiKeyId).toBeUndefined();
+        expect("apiKeyId" in jwtSocket.data).toBe(false);
     });
 
     it("rejects and evicts a second replica command after cleanup removed Redis authority", async () => {
@@ -1908,6 +1984,48 @@ describe("listen together socket runtime behavior", () => {
         );
         expect(reorderMissingAck).toHaveBeenCalledWith({
             error: "fromIndex and toIndex required",
+        });
+
+        mocks.validateQueueTracks.mockResolvedValueOnce([{ id: "track-9" }]);
+        const playbackIdAddAck = jest.fn();
+        await eventHandlers["queue"](
+            {
+                action: "add",
+                tracks: [
+                    {
+                        playbackId: "td.77",
+                        metadata: {
+                            title: "T",
+                            artist: "A",
+                            album: "B",
+                            durationSec: 10,
+                        },
+                    },
+                ],
+            },
+            playbackIdAddAck,
+        );
+        expect(mocks.validateQueueTracks).toHaveBeenLastCalledWith([
+            expect.objectContaining({ playbackId: "td.77" }),
+        ]);
+        expect(playbackIdAddAck).toHaveBeenCalledWith(
+            expect.objectContaining({ ok: true }),
+        );
+
+        mocks.validateQueueTracks.mockRejectedValueOnce(
+            new mocks.MockGroupError(
+                "INVALID_PLAYBACK_ID",
+                "Invalid playbackId",
+            ),
+        );
+        const badPlaybackIdAck = jest.fn();
+        await eventHandlers["queue"](
+            { action: "add", tracks: [{ playbackId: "nope" }] },
+            badPlaybackIdAck,
+        );
+        expect(badPlaybackIdAck).toHaveBeenCalledWith({
+            error: "Invalid playbackId",
+            code: "INVALID_PLAYBACK_ID",
         });
 
         const unknownQueueAck = jest.fn();

@@ -783,4 +783,69 @@ describe("remote-only album loading regression", () => {
             ]),
         );
     });
+
+    it("emits a consistent playbackId for local, TIDAL and YouTube Music album tracks", async () => {
+        mockPrisma.album.findFirst.mockResolvedValueOnce({
+            id: "album-mixed-1",
+            rgMbid: "remote:mixed",
+            title: "Mixed Album",
+            artistId: "artist-1",
+            location: "REMOTE",
+            primaryType: "Album",
+            coverUrl: null,
+            artist: { id: "artist-1", mbid: null, name: "Artist" },
+            federationPeer: null,
+            tracks: [
+                {
+                    id: "ckLocalTrack1",
+                    title: "Local Song",
+                    duration: 100,
+                    origin: "LOCAL",
+                    federationPeer: null,
+                },
+            ],
+            tracksTidal: [
+                {
+                    id: "tidal-row-9",
+                    tidalId: 777,
+                    title: "Tidal Song",
+                    artist: "Artist",
+                    artistId: "artist-1",
+                    album: "Mixed Album",
+                    albumId: "album-mixed-1",
+                    duration: 200,
+                    isrc: null,
+                    quality: null,
+                    explicit: false,
+                },
+            ],
+            tracksYtMusic: [
+                {
+                    id: "yt-row-9",
+                    videoId: "vid_abc-123",
+                    title: "YT Song",
+                    artist: "Other Artist",
+                    artistId: null,
+                    album: "Mixed Album",
+                    thumbnailUrl: null,
+                    duration: 300,
+                },
+            ],
+        });
+        mockPrisma.ownedAlbum.findUnique.mockResolvedValueOnce(null);
+
+        const res = await request(app)
+            .get("/api/library/albums/album-mixed-1")
+            .set(AUTH_HEADER, AUTH_VALUE);
+
+        expect(res.status).toBe(200);
+        const byId = new Map<string, any>(
+            res.body.tracks.map((track: any) => [track.id, track]),
+        );
+        expect(byId.get("ckLocalTrack1").playbackId).toBe("t.ckLocalTrack1");
+        expect(byId.get("tidal:777").playbackId).toBe("td.777");
+        expect(byId.get("tidal:777").tidalTrackId).toBe(777);
+        expect(byId.get("yt:vid_abc-123").playbackId).toBe("ym.vid_abc-123");
+        expect(byId.get("yt:vid_abc-123").youtubeVideoId).toBe("vid_abc-123");
+    });
 });

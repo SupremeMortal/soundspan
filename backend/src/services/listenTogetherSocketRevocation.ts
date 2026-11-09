@@ -184,6 +184,8 @@ export function createUserRevocationHandler(
     revocation: ClusterUserRevocation,
     metadata: ClusterPublicationMetadata,
 ) => () => Promise<void> {
+    // Binding identity revocation to a namespace also binds API-key revocation.
+    registerApiKeyRevocationNamespace(ns);
     return (revocation, metadata) => () =>
         revokeUserSockets(
             ns,
@@ -195,4 +197,34 @@ export function createUserRevocationHandler(
             beforeRevoke,
             afterRevoke,
         );
+}
+
+let apiKeyRevocationNamespace: Namespace | null = null;
+
+/** Bind the namespace that API-key revocation scans (null clears it). */
+export function registerApiKeyRevocationNamespace(ns: Namespace | null): void {
+    apiKeyRevocationNamespace = ns;
+}
+
+/**
+ * Disconnect every socket that authenticated with the given API key.
+ *
+ * `fetchSockets()` is adapter-aware, so with the Redis adapter it also returns
+ * sockets on other pods and `disconnect()` reaches them. Sockets that
+ * authenticated with a JWT or another key are untouched.
+ */
+export async function revokeApiKeySockets(apiKeyId: string): Promise<void> {
+    const ns = apiKeyRevocationNamespace;
+    if (!ns) return;
+    const sockets = await ns.fetchSockets();
+    if (sockets.length > MAX_SOCKET_REVOCATION_SCAN) {
+        throw new Error(
+            "Listen Together API-key socket scan exceeded its bound",
+        );
+    }
+    for (const socket of sockets) {
+        if ((socket.data as { apiKeyId?: string }).apiKeyId === apiKeyId) {
+            socket.disconnect(true);
+        }
+    }
 }

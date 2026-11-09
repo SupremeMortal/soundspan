@@ -367,6 +367,7 @@ describe("search route runtime behavior", () => {
                 tracks: [
                     expect.objectContaining({
                         id: "track-1",
+                        playbackId: "t.track-1",
                         title: "Everything In Its Right Place",
                         trackNo: 0,
                         loudnessLufs: -18.2,

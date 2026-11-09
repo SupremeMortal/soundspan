@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { logger } from "../utils/logger";
+import { sendRouteError } from "../utils/routeErrorResponse";
 import { requireAuth } from "../middleware/auth";
 import { prisma } from "../utils/db";
 import { parseBoundedInt } from "../utils/queryParams";
@@ -17,6 +18,11 @@ import {
     forwardScrobbleIsolated,
     forwardTrackReferenceIsolated,
 } from "../services/scrobbleForwarder";
+import {
+    PlaybackInputError,
+    playbackTrackInputSchema,
+    resolvePlaybackInput,
+} from "../services/playback/playbackInput";
 
 const router = Router();
 
@@ -64,6 +70,68 @@ const playSchema = z
             }
         }
     });
+
+/** Persists a library play and forwards the scrobble reference. */
+async function recordLibraryPlay(userId: string, trackId: string) {
+    const playedAt = new Date();
+    const play = await prisma.play.create({
+        data: { userId, trackId, source: "LIBRARY", playedAt },
+    });
+    forwardTrackReferenceIsolated({
+        userId,
+        mediaType: "music",
+        kind: "scrobble",
+        listenedAt: playedAt,
+        reference: { source: "local", id: trackId },
+    });
+    return play;
+}
+
+/** Persists a play of an already stored remote track and forwards the scrobble. */
+async function recordRemotePlay(
+    userId: string,
+    ref: { trackTidalId: string | null; trackYtMusicId: string | null },
+) {
+    const row = ref.trackTidalId
+        ? await prisma.trackTidal.findUnique({
+              where: { id: ref.trackTidalId },
+          })
+        : await prisma.trackYtMusic.findUnique({
+              where: { id: ref.trackYtMusicId! },
+          });
+    if (!row) {
+        throw new PlaybackInputError("TRACK_NOT_FOUND", "Track not found");
+    }
+    const playedAt = new Date();
+    const play = await prisma.play.create({
+        data: ref.trackTidalId
+            ? {
+                  userId,
+                  trackTidalId: ref.trackTidalId,
+                  source: "TIDAL",
+                  playedAt,
+              }
+            : {
+                  userId,
+                  trackYtMusicId: ref.trackYtMusicId!,
+                  source: "YOUTUBE_MUSIC",
+                  playedAt,
+              },
+    });
+    forwardScrobbleIsolated({
+        userId,
+        mediaType: "music",
+        kind: "scrobble",
+        listenedAt: playedAt,
+        track: {
+            title: row.title,
+            artist: row.artist,
+            album: row.album,
+            durationSeconds: row.duration,
+        },
+    });
+    return play;
+}
 
 const playHistoryRangeSchema = z.enum(["7d", "30d", "365d", "all"]);
 type PlayHistoryRange = z.infer<typeof playHistoryRangeSchema>;
@@ -239,6 +307,30 @@ router.delete("/history", async (req, res) => {
  *           schema:
  *             oneOf:
  *               - type: object
+ *                 required: [playbackId]
+ *                 description: >-
+ *                   Source-agnostic track reference. When present it wins and
+ *                   any legacy identifier fields are ignored.
+ *                 properties:
+ *                   playbackId:
+ *                     type: string
+ *                     minLength: 1
+ *                     description: "Opaque track identifier. Do not parse."
+ *                   metadata:
+ *                     type: object
+ *                     description: >-
+ *                       Display metadata, used only when a TIDAL or YouTube
+ *                       Music track row must be created. Missing metadata in
+ *                       that case answers 400 METADATA_REQUIRED.
+ *                     required: [title, artist, album, durationSec]
+ *                     properties:
+ *                       title: { type: string, minLength: 1 }
+ *                       artist: { type: string, minLength: 1 }
+ *                       album: { type: string, minLength: 1 }
+ *                       durationSec: { type: integer, minimum: 0 }
+ *                       artworkUrl: { type: string, minLength: 1 }
+ *                       isrc: { type: string, minLength: 1 }
+ *               - type: object
  *                 required: [trackId]
  *                 not:
  *                   anyOf:
@@ -305,16 +397,32 @@ router.delete("/history", async (req, res) => {
  *       200:
  *         description: Play logged successfully
  *       400:
- *         description: Invalid request body
+ *         description: Invalid request body, or a coded playbackId error (INVALID_PLAYBACK_ID, METADATA_REQUIRED)
  *       401:
  *         description: Not authenticated
  *       404:
- *         description: Track not found
+ *         description: Track not found (code TRACK_NOT_FOUND for a playbackId)
+ *       409:
+ *         description: Source unavailable (code SOURCE_UNAVAILABLE)
  */
 // POST /plays
 router.post("/", async (req, res) => {
     try {
         const userId = req.user!.id;
+
+        // A playbackId wins over every legacy identifier field.
+        if (typeof req.body?.playbackId === "string") {
+            const input = playbackTrackInputSchema.parse({
+                playbackId: req.body.playbackId,
+                metadata: req.body.metadata,
+            });
+            const ref = await resolvePlaybackInput(userId, input);
+            const play = ref.trackId
+                ? await recordLibraryPlay(userId, ref.trackId)
+                : await recordRemotePlay(userId, ref);
+            return res.json(play);
+        }
+
         const payload = playSchema.parse(req.body);
 
         if (payload.trackId) {
@@ -327,23 +435,7 @@ router.post("/", async (req, res) => {
                 return res.status(404).json({ error: "Track not found" });
             }
 
-            const playedAt = new Date();
-            const play = await prisma.play.create({
-                data: {
-                    userId,
-                    trackId: payload.trackId,
-                    source: "LIBRARY",
-                    playedAt,
-                },
-            });
-
-            forwardTrackReferenceIsolated({
-                userId,
-                mediaType: "music",
-                kind: "scrobble",
-                listenedAt: playedAt,
-                reference: { source: "local", id: payload.trackId },
-            });
+            const play = await recordLibraryPlay(userId, payload.trackId);
 
             return res.json(play);
         }
@@ -447,6 +539,11 @@ router.post("/", async (req, res) => {
                 .status(400)
                 .json({ error: "Invalid request", details: error.issues });
         }
+        if (error instanceof PlaybackInputError) {
+            return sendRouteError(res, error.status, error.message, {
+                code: error.code,
+            });
+        }
         logger.error("Create play error:", error);
         res.status(500).json({ error: "Failed to log play" });
     }
@@ -471,6 +568,19 @@ router.post("/", async (req, res) => {
  *     responses:
  *       200:
  *         description: List of recent plays with track details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   track:
+ *                     type: object
+ *                     properties:
+ *                       playbackId:
+ *                         type: string
+ *                         description: "Opaque track identifier. Do not parse."
  *       401:
  *         description: Not authenticated
  */
@@ -569,6 +679,7 @@ const toHistoryTrackShape = (
 ) => {
     const base = {
         id: normalized.id,
+        ...(normalized.playbackId ? { playbackId: normalized.playbackId } : {}),
         title: normalized.title,
         displayTitle: normalized.displayTitle ?? null,
         duration: normalized.duration,

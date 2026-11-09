@@ -7,6 +7,7 @@ import {
 import { prisma } from "../utils/db";
 import { hashApiKey } from "../utils/apiKeyHash";
 import crypto from "crypto";
+import { revokeApiKeySockets } from "../services/listenTogetherSocketRevocation";
 
 const router = Router();
 
@@ -354,6 +355,12 @@ router.delete<{ id: string }>(
             await prisma.apiKey.delete({
                 where: { id },
             });
+
+            try {
+                await revokeApiKeySockets(id);
+            } catch (revokeError) {
+                logger.error("Device socket revocation failed:", revokeError);
+            }
 
             res.json({ success: true });
         } catch (error) {

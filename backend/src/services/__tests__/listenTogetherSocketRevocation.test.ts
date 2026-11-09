@@ -1,5 +1,7 @@
 import type { Namespace } from "socket.io";
 import {
+    registerApiKeyRevocationNamespace,
+    revokeApiKeySockets,
     revokeGroupSockets,
     revokeUserSockets,
 } from "../listenTogetherSocketRevocation";
@@ -99,5 +101,55 @@ describe("Listen Together socket revocation", () => {
         expect(first.data.groupId).toBeNull();
         expect(second.data.groupId).toBeNull();
         expect(retained.leave).not.toHaveBeenCalled();
+    });
+});
+
+describe("Listen Together API-key socket revocation", () => {
+    function keySocket(userId: string, apiKeyId: string | undefined) {
+        return {
+            data: { userId, groupId: null, apiKeyId },
+            disconnect: jest.fn(),
+        };
+    }
+
+    function namespaceOf(sockets: ReturnType<typeof keySocket>[]) {
+        return {
+            fetchSockets: jest.fn(async () => sockets),
+        } as unknown as Namespace;
+    }
+
+    afterEach(() => registerApiKeyRevocationNamespace(null));
+
+    it("disconnects only the sockets authenticated with the deleted key", async () => {
+        const keyA1 = keySocket("user-1", "key-a");
+        const keyA2 = keySocket("user-1", "key-a");
+        const keyB = keySocket("user-1", "key-b");
+        const jwt = keySocket("user-1", undefined);
+        registerApiKeyRevocationNamespace(
+            namespaceOf([keyA1, keyB, jwt, keyA2]),
+        );
+
+        await revokeApiKeySockets("key-a");
+
+        expect(keyA1.disconnect).toHaveBeenCalledWith(true);
+        expect(keyA2.disconnect).toHaveBeenCalledWith(true);
+        expect(keyB.disconnect).not.toHaveBeenCalled();
+        expect(jwt.disconnect).not.toHaveBeenCalled();
+    });
+
+    it("is a no-op before the namespace exists", async () => {
+        await expect(revokeApiKeySockets("key-a")).resolves.toBeUndefined();
+    });
+
+    it("fails closed when the socket scan exceeds the fixed bound", async () => {
+        registerApiKeyRevocationNamespace(
+            namespaceOf(
+                Array.from({ length: 10_001 }, () => keySocket("u", "k")),
+            ),
+        );
+
+        await expect(revokeApiKeySockets("key-a")).rejects.toThrow(
+            "exceeded its bound",
+        );
     });
 });

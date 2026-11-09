@@ -6,6 +6,7 @@ import { lastFmService } from "./lastfm";
 import type { SearchProvider } from "./searchProviderSettings";
 import { tidalStreamingService } from "./tidalStreaming";
 import { ytMusicService } from "./youtubeMusic";
+import { tryEncodePlaybackId } from "./playback/playbackId";
 
 const log = logger.child("DiscoverMusicSearch");
 
@@ -38,6 +39,8 @@ export interface DiscoverTrackResult {
     previewUrl?: string | null;
     tidalTrackId?: number;
     youtubeVideoId?: string;
+    /** Opaque playable-track identifier; present for TIDAL and YouTube Music results. */
+    playbackId?: string;
     [key: string]: unknown;
 }
 
@@ -170,6 +173,10 @@ async function searchTidal({ query, limit, userId }: ProviderSearchInput) {
                 album: track.album?.title ?? null,
                 durationSec: Number(track.duration) || null,
                 tidalTrackId: Number(track.id),
+                playbackId: tryEncodePlaybackId({
+                    kind: "td",
+                    tidalId: Number(track.id),
+                }),
                 source: "tidal" as const,
             })),
     };
@@ -192,6 +199,10 @@ async function searchYouTube({ query, limit, userId }: ProviderSearchInput) {
             image: song.thumbnailUrl,
             durationSec: song.durationSec,
             youtubeVideoId: song.providerTrackId,
+            playbackId: tryEncodePlaybackId({
+                kind: "ym",
+                videoId: song.providerTrackId,
+            }),
             source: "youtube" as const,
         })),
     };

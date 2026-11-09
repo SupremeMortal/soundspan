@@ -3,12 +3,18 @@ import { logger } from "../utils/logger";
 import { prisma, Prisma } from "../utils/db";
 import { requireAuth } from "../middleware/auth";
 import { playbackStateLimiter } from "../middleware/rateLimiter";
+import { derivePlaybackIdFromStoredItem } from "../services/playback/storedPlaybackId";
 import { publishSocialPresenceUpdate } from "../services/socialPresenceEvents";
 import {
     normalizeCanonicalMediaProviderIdentity,
     toLegacyStreamFields,
 } from "@soundspan/media-metadata-contract";
 import { isForeignKeyViolationOn } from "../utils/prismaErrors";
+import { sendRouteError } from "../utils/routeErrorResponse";
+import { z } from "zod";
+import { expandPlaybackIdQueueItems } from "../services/playback/playbackQueueItems";
+import { PlaybackInputError } from "../services/playback/playbackInput";
+import { parsePlaybackId } from "../services/playback/playbackId";
 
 const router = express.Router();
 const PLAYBACK_STATE_AUDIOBOOK_FK = "PlaybackState_audiobookId_fkey";
@@ -160,6 +166,25 @@ function sanitizeTrackQueueItem(item: any): Record<string, unknown> {
 }
 
 /**
+ * Adds a read-time `playbackId` to each stored music-track queue item,
+ * derived from the stored source fields (no schema change). Episode items,
+ * non-object entries, and items without a usable identity are left as stored.
+ */
+function withQueuePlaybackIds<State extends { queue: unknown }>(
+    state: State,
+): State {
+    if (!Array.isArray(state.queue)) return state;
+    const queue = state.queue.map((item: unknown) => {
+        if (!item || typeof item !== "object") return item;
+        const record = item as Record<string, unknown>;
+        if (record.itemType === "episode") return item;
+        const playbackId = derivePlaybackIdFromStoredItem(record);
+        return playbackId ? { ...record, playbackId } : item;
+    });
+    return { ...state, queue };
+}
+
+/**
  * @openapi
  * /api/playback-state:
  *   get:
@@ -176,6 +201,22 @@ function sanitizeTrackQueueItem(item: any): Record<string, unknown> {
  *     responses:
  *       200:
  *         description: Current playback state or null if none exists
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               nullable: true
+ *               properties:
+ *                 queue:
+ *                   type: array
+ *                   nullable: true
+ *                   description: Queue items; music-track items carry a playbackId derived when the state is read.
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       playbackId:
+ *                         type: string
+ *                         description: "Opaque track identifier. Do not parse."
  *       401:
  *         description: Not authenticated
  */
@@ -190,7 +231,7 @@ router.get("/", playbackStateLimiter, requireAuth, async (req, res) => {
         });
 
         if (playbackState) {
-            return res.json(playbackState);
+            return res.json(withQueuePlaybackIds(playbackState));
         }
 
         // Backward compatibility for pre-device rows
@@ -234,7 +275,7 @@ router.get("/", playbackStateLimiter, requireAuth, async (req, res) => {
             });
         }
 
-        res.json(legacyState);
+        res.json(withQueuePlaybackIds(legacyState));
     } catch (error) {
         logger.error("Get playback state error:", error);
         res.status(500).json({ error: "Failed to get playback state" });
@@ -269,6 +310,12 @@ router.get("/", playbackStateLimiter, requireAuth, async (req, res) => {
  *                 enum: [track, audiobook, podcast]
  *               trackId:
  *                 type: string
+ *               playbackId:
+ *                 type: string
+ *                 description: >-
+ *                   Source-agnostic current track. Wins over trackId; stored as
+ *                   trackId for library tracks. Invalid ids answer 400 with
+ *                   code INVALID_PLAYBACK_ID.
  *               audiobookId:
  *                 type: string
  *               podcastId:
@@ -280,13 +327,28 @@ router.get("/", playbackStateLimiter, requireAuth, async (req, res) => {
  *                   are podcast episodes ({itemType, id, title, podcastTitle,
  *                   podcastId, episodeId, coverUrl, duration}); all other
  *                   entries are music tracks (itemType defaults to "track"
- *                   for legacy clients).
+ *                   for legacy clients). A music-track entry may instead be
+ *                   `{ playbackId, metadata? }`; the playbackId wins over any
+ *                   legacy source fields and is stored in the legacy format.
  *                 items:
  *                   type: object
  *                   properties:
  *                     itemType:
  *                       type: string
  *                       enum: [track, episode]
+ *                     playbackId:
+ *                       type: string
+ *                       description: "Opaque track identifier. Do not parse."
+ *                     metadata:
+ *                       type: object
+ *                       description: Display metadata stored for remote tracks.
+ *                       properties:
+ *                         title: { type: string, minLength: 1 }
+ *                         artist: { type: string, minLength: 1 }
+ *                         album: { type: string, minLength: 1 }
+ *                         durationSec: { type: integer, minimum: 0 }
+ *                         artworkUrl: { type: string, minLength: 1 }
+ *                         isrc: { type: string, minLength: 1 }
  *               currentIndex:
  *                 type: integer
  *               isShuffle:
@@ -299,9 +361,11 @@ router.get("/", playbackStateLimiter, requireAuth, async (req, res) => {
  *       200:
  *         description: Playback state updated
  *       400:
- *         description: Invalid playbackType or missing required fields
+ *         description: Invalid playbackType or missing required fields, or a coded playbackId error (INVALID_PLAYBACK_ID)
  *       401:
  *         description: Not authenticated
+ *       404:
+ *         description: A library playbackId names no stored track (code TRACK_NOT_FOUND)
  */
 // Update current playback state for the authenticated user
 router.post("/", playbackStateLimiter, requireAuth, async (req, res) => {
@@ -319,6 +383,19 @@ router.post("/", playbackStateLimiter, requireAuth, async (req, res) => {
             isPlaying,
             currentTime,
         } = req.body;
+
+        // A current-item playbackId wins over the legacy trackId.
+        let currentTrackId: string | undefined = trackId;
+        if (typeof req.body.playbackId === "string") {
+            const parsed = parsePlaybackId(req.body.playbackId);
+            if (!parsed) {
+                throw new PlaybackInputError(
+                    "INVALID_PLAYBACK_ID",
+                    "Invalid playbackId",
+                );
+            }
+            currentTrackId = parsed.kind === "t" ? parsed.trackId : undefined;
+        }
 
         // Validate required field
         if (!playbackType) {
@@ -351,9 +428,13 @@ router.post("/", playbackStateLimiter, requireAuth, async (req, res) => {
             safeQueue = null;
             if (queue.length > 0) {
                 // Only keep essential fields from each queue item to reduce JSON size.
+                // playbackId entries resolve to the stored legacy shape first;
+                // coded errors (400/404) propagate to the route's error handler.
+                const expandedQueue = await expandPlaybackIdQueueItems(
+                    queue.slice(0, 100),
+                );
                 try {
-                    safeQueue = queue
-                        .slice(0, 100)
+                    safeQueue = expandedQueue
                         .filter((item: any) => item && item.id)
                         .map((item: any) => {
                             // Mixed-media queues: podcast episode entries are
@@ -393,7 +474,7 @@ router.post("/", playbackStateLimiter, requireAuth, async (req, res) => {
 
         const updatePayload: Prisma.PlaybackStateUncheckedUpdateInput = {
             playbackType,
-            trackId: trackId || null,
+            trackId: currentTrackId || null,
             audiobookId: audiobookId || null,
             podcastId: podcastId || null,
             ...(hasExplicitIsPlaying ? { isPlaying: safeIsPlaying } : {}),
@@ -416,7 +497,7 @@ router.post("/", playbackStateLimiter, requireAuth, async (req, res) => {
             userId,
             deviceId,
             playbackType,
-            trackId: trackId || null,
+            trackId: currentTrackId || null,
             audiobookId: audiobookId || null,
             podcastId: podcastId || null,
             queue:
@@ -446,6 +527,16 @@ router.post("/", playbackStateLimiter, requireAuth, async (req, res) => {
 
         res.json(playbackState);
     } catch (error: any) {
+        if (error instanceof PlaybackInputError) {
+            return sendRouteError(res, error.status, error.message, {
+                code: error.code,
+            });
+        }
+        if (error instanceof z.ZodError) {
+            return res
+                .status(400)
+                .json({ error: "Invalid request", details: error.issues });
+        }
         logger.error(
             "[PlaybackState] Error saving state:",
             error?.message || error,

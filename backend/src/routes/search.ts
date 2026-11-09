@@ -17,6 +17,7 @@ import {
     resolveUsableSearchProviders,
     searchDiscoverMusic,
 } from "../services/discoverMusicSearch";
+import { tryEncodePlaybackId } from "../services/playback/playbackId";
 import { resolveSearchProviders } from "../services/searchProviderSettings";
 import { getSystemSettings } from "../utils/systemSettings";
 
@@ -250,6 +251,7 @@ function transformSearchResults(serviceResults: SearchResults) {
         })),
         tracks: serviceResults.tracks.map((track) => ({
             id: track.id,
+            playbackId: tryEncodePlaybackId({ kind: "t", trackId: track.id }),
             title: track.title,
             albumId: track.albumId,
             duration: track.duration,
@@ -394,6 +396,9 @@ router.use(requireAuth);
  *                     properties:
  *                       id:
  *                         type: string
+ *                       playbackId:
+ *                         type: string
+ *                         description: "Opaque track identifier. Do not parse."
  *                       title:
  *                         type: string
  *                       duration:
