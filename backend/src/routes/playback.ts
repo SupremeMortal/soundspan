@@ -153,12 +153,24 @@ async function resolveRequest(
     }
 }
 
+/**
+ * Only library streams carry a strong ETag, so an `If-Range` on any other
+ * source cannot be validated. Per RFC 9110 the Range is then ignored and the
+ * full body is sent, so a resumed download never splices two encodings.
+ */
+function dropUnverifiableRange(playback: ResolvedPlayback, req: Request): void {
+    if (playback.kind !== "t" && req.headers["if-range"] !== undefined) {
+        delete req.headers.range;
+    }
+}
+
 async function dispatchStream(
     playback: ResolvedPlayback,
     userId: string,
     req: Request,
     res: Response,
 ): Promise<void> {
+    dropUnverifiableRange(playback, req);
     switch (playback.kind) {
         case "t":
             return streamLibraryTrack({
@@ -214,9 +226,10 @@ async function dispatchStream(
  *     summary: Stream audio for any track source
  *     description: >
  *       Streams the audio for a track identified by an opaque playbackId,
- *       whatever source backs it. Supports Range requests. Library tracks
- *       carry a strong ETag; send it back as If-Range with a Range header to
- *       resume a download, and a changed file returns the full 200 body.
+ *       whatever source backs it. Supports Range requests. To resume a
+ *       download, send the ETag back as If-Range with a Range header: a
+ *       matching ETag answers 206, anything else (a changed file, or a
+ *       source that has no strong ETag) answers 200 with the full body.
  *       Authenticate with
  *       an X-API-Key header, a Bearer token, or a token query parameter.
  *     tags: [Playback]

@@ -1,7 +1,6 @@
 import { prisma } from "../../utils/db";
 import { TRACK_VISIBLE_WHERE } from "../../utils/librarySorting";
 import { getSystemSettings } from "../../utils/systemSettings";
-import { tidalStreamingService } from "../tidalStreaming";
 import type { ParsedPlaybackId } from "../playback/playbackId";
 
 /** Why a track cannot be downloaded for offline use. */
@@ -22,54 +21,26 @@ function blocked(reason: OfflineBlockReason): OfflinePolicyResult {
 }
 
 /**
- * Decides whether a user may download a track for offline use. The admin's
- * per-source toggles (`SystemSettings.offlineAllow*`, default on) are checked
- * first; then the source itself must be usable for this user.
+ * Decides whether a user may download a track for offline use. One admin
+ * switch (`SystemSettings.offlineDownloadsEnabled`, default on) applies to
+ * every source alike. A library track must also still exist; whether a
+ * remote source can serve the user is decided by `resolvePlayback`, exactly
+ * as for streaming.
  */
 export async function resolveOfflinePolicy(
-    userId: string,
+    _userId: string,
     parsed: ParsedPlaybackId,
 ): Promise<OfflinePolicyResult> {
     const settings = await getSystemSettings();
-    const allows = (field: string): boolean => settings?.[field] !== false;
-
-    switch (parsed.kind) {
-        case "t": {
-            const track = await prisma.track.findUnique({
-                where: { id: parsed.trackId, ...TRACK_VISIBLE_WHERE },
-                select: { origin: true },
-            });
-            if (!track) return blocked("TRACK_UNAVAILABLE");
-            const field =
-                track.origin === "FEDERATED"
-                    ? "offlineAllowFederated"
-                    : "offlineAllowLocal";
-            return allows(field)
-                ? ALLOWED
-                : blocked("SOURCE_DOWNLOADS_DISABLED");
-        }
-        case "td": {
-            if (!allows("offlineAllowTidal")) {
-                return blocked("SOURCE_DOWNLOADS_DISABLED");
-            }
-            const usable =
-                (await tidalStreamingService.isEnabled()) &&
-                (await tidalStreamingService.isAvailable()) &&
-                (await tidalStreamingService.getAuthStatus(userId))
-                    .authenticated;
-            return usable ? ALLOWED : blocked("SOURCE_UNAVAILABLE");
-        }
-        case "ym": {
-            if (!allows("offlineAllowYtMusic")) {
-                return blocked("SOURCE_DOWNLOADS_DISABLED");
-            }
-            return settings?.ytMusicEnabled
-                ? ALLOWED
-                : blocked("SOURCE_UNAVAILABLE");
-        }
-        case "yt":
-            return allows("offlineAllowYouTube")
-                ? ALLOWED
-                : blocked("SOURCE_DOWNLOADS_DISABLED");
+    if (settings?.offlineDownloadsEnabled === false) {
+        return blocked("SOURCE_DOWNLOADS_DISABLED");
     }
+    if (parsed.kind === "t") {
+        const track = await prisma.track.findUnique({
+            where: { id: parsed.trackId, ...TRACK_VISIBLE_WHERE },
+            select: { id: true },
+        });
+        if (!track) return blocked("TRACK_UNAVAILABLE");
+    }
+    return ALLOWED;
 }

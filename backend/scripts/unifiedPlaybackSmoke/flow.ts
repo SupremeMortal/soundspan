@@ -292,7 +292,7 @@ export async function assertOffline(
         `Unexpected held items ${JSON.stringify(heldItems)}`,
     );
     await sendJson(baseUrl, "POST", "/api/system-settings", auth, {
-        offlineAllowLocal: false,
+        offlineDownloadsEnabled: false,
     });
     const revoked = await sendJson(baseUrl, "GET", listRoute, auth, undefined);
     const revokedItems = asArray(revoked.items, "revoked items").map((i) =>
@@ -300,7 +300,7 @@ export async function assertOffline(
     );
     assertSmoke(
         revokedItems[0]?.revoked === true,
-        "Disabling offlineAllowLocal did not report revoked: true",
+        "Disabling offlineDownloadsEnabled did not report revoked: true",
     );
 }
 

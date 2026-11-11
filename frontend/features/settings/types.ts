@@ -83,14 +83,8 @@ export interface SystemSettings {
     ytMusicEnabled: boolean;
     ytMusicClientId: string;
     ytMusicClientSecret: string;
-    // Quality YouTube Music tracks are stored at for every user
-    ytMusicQuality: "LOW" | "MEDIUM" | "HIGH" | "LOSSLESS";
-    // Offline downloads allowed per source (admin policy)
-    offlineAllowLocal: boolean;
-    offlineAllowFederated: boolean;
-    offlineAllowTidal: boolean;
-    offlineAllowYtMusic: boolean;
-    offlineAllowYouTube: boolean;
+    // Offline downloads allowed for every source (admin policy)
+    offlineDownloadsEnabled: boolean;
     // UI
     showVersion: boolean;
 }

@@ -134,7 +134,7 @@ describe("resolveOfflineItems", () => {
         ).rejects.toMatchObject({ status: 400, code: "INVALID_PLAYBACK_ID" });
     });
 
-    it("returns a mixed-source album in order with remote items not downloadable", async () => {
+    it("returns a mixed-source album in order, every source downloadable", async () => {
         mockAlbumFindFirst.mockResolvedValue(mixedAlbum());
         const out = await resolveOfflineItems({
             userId: "u1",
@@ -150,27 +150,17 @@ describe("resolveOfflineItems", () => {
         for (const id of ["td.77", "ym.vid1"]) {
             expect(out.items.find((i) => i.playbackId === id)).toEqual({
                 playbackId: id,
-                downloadable: false,
-                reason: "SOURCE_UNAVAILABLE",
+                downloadable: true,
+                downloadUrl: `/api/playback/stream/${id}?quality=medium`,
+                expectedSize: SIZES[id],
+                quality: "medium",
+                contentType: "audio/mpeg",
             });
         }
-        expect(out.estimatedTotalBytes).toBe(1000 + 2000);
-        for (const id of ["td.77", "ym.vid1"]) {
-            expect(mockStreamInfo).not.toHaveBeenCalledWith(
-                expect.objectContaining({ playbackId: id }),
-            );
-            expect(mockResolvePlayback).not.toHaveBeenCalledWith(
-                "u1",
-                expect.objectContaining({
-                    parsed: expect.objectContaining({
-                        kind: id.split(".")[0],
-                    }),
-                }),
-            );
-        }
+        expect(out.estimatedTotalBytes).toBe(1000 + 2000 + 3000 + 4000);
     });
 
-    it("honours a disabled library source toggle", async () => {
+    it("honours a policy block for one item", async () => {
         mockAlbumFindFirst.mockResolvedValue(mixedAlbum());
         mockPolicy.mockImplementation(async (_u: string, parsed: any) =>
             parsed.trackId === "fed1"
@@ -189,23 +179,47 @@ describe("resolveOfflineItems", () => {
         });
     });
 
-    it("reports a remote track playbackId as not downloadable", async () => {
+    it("resolves a remote track playbackId like any other", async () => {
         const out = await resolveOfflineItems({
             userId: "u1",
             kind: "track",
-            id: "yt.aaaaaaaaaaa",
+            id: "yt.vid2",
         });
         expect(out).toEqual({
             items: [
                 {
-                    playbackId: "yt.aaaaaaaaaaa",
-                    downloadable: false,
-                    reason: "SOURCE_UNAVAILABLE",
+                    playbackId: "yt.vid2",
+                    downloadable: true,
+                    downloadUrl: "/api/playback/stream/yt.vid2?quality=medium",
+                    expectedSize: null,
+                    quality: "medium",
+                    contentType: "audio/mpeg",
                 },
             ],
             estimatedTotalBytes: 0,
         });
-        expect(mockPolicy).not.toHaveBeenCalled();
+        expect(mockPolicy).toHaveBeenCalledWith("u1", {
+            kind: "yt",
+            videoId: "vid2",
+        });
+    });
+
+    it("reports a source the user cannot stream as SOURCE_UNAVAILABLE", async () => {
+        mockResolvePlayback.mockRejectedValue(
+            new PlaybackResolutionError("SOURCE_UNAVAILABLE", "no TIDAL"),
+        );
+        const out = await resolveOfflineItems({
+            userId: "u1",
+            kind: "track",
+            id: "td.77",
+        });
+        expect(out.items).toEqual([
+            {
+                playbackId: "td.77",
+                downloadable: false,
+                reason: "SOURCE_UNAVAILABLE",
+            },
+        ]);
     });
 
     it("reports the effective library quality in the item and downloadUrl", async () => {
@@ -265,7 +279,7 @@ describe("resolveOfflineItems", () => {
             "t.local1",
             "ym.vid1",
         ]);
-        expect(out.estimatedTotalBytes).toBe(1000);
+        expect(out.estimatedTotalBytes).toBe(3000 + 1000 + 4000);
     });
 
     it("hides another user's private playlist as not found", async () => {

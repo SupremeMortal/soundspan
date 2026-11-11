@@ -1,6 +1,5 @@
-import { SettingsSection } from "../ui";
+import { SettingsRow, SettingsSection, SettingsToggle } from "../ui";
 import { SystemSettings } from "../../types";
-import { OfflineDownloadToggle } from "./OfflineDownloadToggle";
 
 interface OfflineDownloadsSectionProps {
     settings: SystemSettings;
@@ -8,9 +7,8 @@ interface OfflineDownloadsSectionProps {
 }
 
 /**
- * Admin offline-download switches for sources that have no provider block of
- * their own: the local library, peer libraries, and YouTube. TIDAL and
- * YouTube Music carry their switch inside their provider blocks.
+ * Admin switch for offline downloads. It applies to every track source alike:
+ * anything a user can stream, they can download while it is on.
  */
 export function OfflineDownloadsSection({
     settings,
@@ -20,29 +18,21 @@ export function OfflineDownloadsSection({
         <SettingsSection
             id="offline-downloads"
             title="Offline downloads"
-            description="Choose which sources users can download to their devices."
+            description="Let users download songs to their devices to play offline."
         >
-            <OfflineDownloadToggle
-                field="offlineAllowLocal"
-                id="offline-allow-local"
-                label="Allow offline downloads: Local library"
-                settings={settings}
-                onUpdate={onUpdate}
-            />
-            <OfflineDownloadToggle
-                field="offlineAllowFederated"
-                id="offline-allow-federated"
-                label="Allow offline downloads: Peer libraries"
-                settings={settings}
-                onUpdate={onUpdate}
-            />
-            <OfflineDownloadToggle
-                field="offlineAllowYouTube"
-                id="offline-allow-youtube"
-                label="Allow offline downloads: YouTube"
-                settings={settings}
-                onUpdate={onUpdate}
-            />
+            <SettingsRow
+                label="Allow offline downloads"
+                description="Turning this off stops new downloads and removes already-downloaded songs from devices the next time they sync."
+                htmlFor="offline-downloads-enabled"
+            >
+                <SettingsToggle
+                    id="offline-downloads-enabled"
+                    checked={settings.offlineDownloadsEnabled !== false}
+                    onChange={(checked) =>
+                        onUpdate({ offlineDownloadsEnabled: checked })
+                    }
+                />
+            </SettingsRow>
         </SettingsSection>
     );
 }

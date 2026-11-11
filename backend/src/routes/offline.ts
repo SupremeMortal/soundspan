@@ -120,7 +120,7 @@ const completeTrackSchema = z.object({
  *                       contentType: { type: string, nullable: true }
  *                       reason:
  *                         type: string
- *                         description: Remote tracks (TIDAL, YouTube Music, YouTube) are never downloadable and report SOURCE_UNAVAILABLE.
+ *                         description: SOURCE_DOWNLOADS_DISABLED when an admin turned offline downloads off; SOURCE_UNAVAILABLE when the track's source cannot be streamed by this user; TRACK_UNAVAILABLE when the track no longer exists.
  *                         enum: [SOURCE_DOWNLOADS_DISABLED, TRACK_UNAVAILABLE, SOURCE_UNAVAILABLE]
  *                 estimatedTotalBytes: { type: integer }
  *                 cacheLimitBytes: { type: integer }
@@ -319,7 +319,7 @@ router.post("/items/complete", async (req, res) => {
  *     summary: List what the server believes a device holds
  *     description: >
  *       Used to reconcile after a reinstall. `revoked` is true when an admin
- *       disabled the item's source or the track no longer exists; the client
+ *       turned offline downloads off or the track no longer exists; the client
  *       should remove such files.
  *     tags: [Offline]
  *     parameters:
@@ -445,7 +445,7 @@ router.get("/items", async (req, res) => {
  *       404:
  *         description: Album not found
  *       409:
- *         description: An admin disabled offline downloads for local tracks (code SOURCE_DOWNLOADS_DISABLED)
+ *         description: An admin disabled offline downloads (code SOURCE_DOWNLOADS_DISABLED)
  *       401:
  *         description: Not authenticated
  */
@@ -491,8 +491,8 @@ router.post("/albums/:id/download", async (req, res) => {
             return res.status(404).json({ error: "Album not found" });
         }
 
-        // Album tracks are local (LOCAL_TRACK_WHERE), so one policy check
-        // against the first track covers the whole job.
+        // The admin switch applies to every track alike, so one policy
+        // check against the first track covers the whole job.
         if (album.tracks.length > 0) {
             const policy = await resolveOfflinePolicy(userId, {
                 kind: "t",
@@ -500,7 +500,7 @@ router.post("/albums/:id/download", async (req, res) => {
             });
             if (!policy.downloadable) {
                 return res.status(409).json({
-                    error: "Downloads are disabled for this source",
+                    error: "Offline downloads are disabled",
                     code: policy.reason,
                 });
             }

@@ -36,15 +36,14 @@ Offline downloads are local-only:
 - **One identifier.** Every payload that contains a playable track carries an opaque `playbackId`; a client can do everything with that id alone.
 - **One stream surface.** `GET /api/playback/stream/:playbackId` and `GET /api/playback/stream-info/:playbackId` serve any source, with today's auth, Range, and quality behaviour.
 - **One input shape.** Every endpoint that takes a track accepts `playbackId`.
-- **Offline for library tracks.** Track, album, and playlist downloads (remote items are listed as not downloadable), with per-device accounting and a per-item, server-decided `downloadable` flag controlled by per-source admin toggles.
-- **Admin-controlled download quality.** Offline downloads of library tracks are served at one encoding per `(playbackId, effective quality)`. Remote sources (`td`, `ym`, `yt`) are not offline-downloadable through this API (see Non-Goals).
+- **Offline for every source.** Track, album, and playlist downloads for any source, with per-device accounting and a per-item, server-decided `downloadable` flag. Anything a user can stream by `playbackId`, they can download by `playbackId`, under one admin switch.
 - **Same credentials everywhere.** Realtime sockets accept API keys as well as JWTs, so device-linked clients get Listen Together and presence.
 - **Additive.** No existing route, field, or behaviour is removed or changed; the frontend needs no changes.
 
 ## Non-Goals
 
-- Changing how any provider is fetched, authenticated, or rate-limited. The new routes call the same code as the existing ones. Streaming is unchanged.
-- Offline downloads, variant pinning, and transcoding for remote sources (`td`, `ym`, `yt`). Remote sources are being retired in favour of play-to-download, which stores a played track as a library track, so the offline surface serves library tracks only. `POST /items` reports remote items as `downloadable: false` with reason `SOURCE_UNAVAILABLE`. Remote sources keep streaming through `/api/playback/stream` as before.
+- Changing how any provider is fetched, authenticated, transcoded, or rate-limited. The new routes call the same code as the existing ones. An offline download is the same stream a client plays.
+- Per-source offline policy or per-source download quality. Offline is one surface: the client never learns which source backs an item, and the admin controls it with one switch.
 - Migrating the Next.js frontend. It moves to `playbackId` in a planned follow-up (see Follow-Up), not in this project.
 - Deprecating per-source endpoints in this project. They are deprecated only after the frontend follow-up lands.
 - Unifying the `Track`, `TrackTidal`, and `TrackYtMusic` tables, or changing `TrackMapping` matching.
@@ -211,23 +210,23 @@ All under `/api/offline`, `requireAuth`. Existing album routes stay as they are.
 }
 ```
 
-- Album and playlist requests include every visible track of the album/playlist, in order. Remote tracks (`td`, `ym`, `yt`) are returned with `downloadable: false` and `SOURCE_UNAVAILABLE`. Library tracks the server will not allow offline are returned with `downloadable: false` and a reason (`SOURCE_DOWNLOADS_DISABLED`, `TRACK_UNAVAILABLE`, `SOURCE_UNAVAILABLE`), so the client can show them greyed out without knowing why in source terms.
+- Album and playlist requests include every visible track of the album/playlist, of any source, in order. Tracks the server will not allow offline are returned with `downloadable: false` and a reason (`SOURCE_DOWNLOADS_DISABLED` when the admin switch is off, `TRACK_UNAVAILABLE` when the track is gone, `SOURCE_UNAVAILABLE` when this user cannot stream it, e.g. TIDAL without a session), so the client can show them greyed out without knowing why in source terms.
 - The cache-limit check uses `UserSettings.maxCacheSizeMb` as today, but against reported sizes plus the new request's estimate, and returns 409 `CACHE_LIMIT_EXCEEDED` with the numbers rather than a 400.
 
 #### Download quality
 
-Download quality is decided once, when `POST /items` resolves an item, and is the same for every request that follows. Only library tracks are offline-downloadable (see Non-Goals).
+Download quality is decided when `POST /items` resolves an item and is carried in its `downloadUrl`.
 
-- **Effective quality** is the quality requested in `POST /items` (default: the user's saved playback quality), in the library vocabulary (`original | high | medium | low`). `resolveDownloadQuality(parsedId, requested)` computes it in one place and the item reports it as `quality`.
-- **Transcoding.** Library tracks are transcoded by the existing library transcode cache (`TranscodedFile`), keyed by `(trackId, quality)`, and `downloadUrl` serves the result.
-- Downloads are served with a strong ETag and `If-Range` support, so a resumed download never mixes encodings.
+- **Effective quality** is the quality requested in `POST /items` (default: the user's saved playback quality), in the library vocabulary (`original | high | medium | low`). The item reports it as `quality`, and `downloadUrl` is `/api/playback/stream/:playbackId?quality=<quality>`.
+- `resolvePlayback` maps it to each source the same way it does for streaming: library tracks use the transcode cache (`TranscodedFile`, keyed by `(trackId, quality)`), and remote sources use their provider tiers.
 
 #### Consistent, resumable downloads
 
-Resumable downloads require that every byte range of one download comes from the same encoding. For library files and the transcode cache (`TranscodedFile`) this holds, because each `(trackId, quality)` is one fixed file.
+Resumable downloads require that every byte range of one download comes from the same encoding. The client follows one rule for every source: resume with `Range` + `If-Range` set to the `ETag` it was given; a `206` continues the file, and a `200` means restart.
 
-- Stream responses for a library download carry a strong `ETag` derived from `(playbackId, variant, contentLength)`, as for normal library playback. Clients resume with `Range` + `If-Range`; on mismatch the server returns the full body and the client restarts.
-- No `variant` parameter, `Content-Length` materialization fallback, or 202 `Retry-After` path is needed, because no remote source is downloaded.
+- Library files and the transcode cache (`TranscodedFile`) are one fixed file per `(trackId, quality)`, so their stream responses carry a strong `ETag` derived from `(playbackId, variant, contentLength)` and honour `If-Range`.
+- Proxied sources can change encoding between requests (e.g. a different YouTube itag), so they carry no strong `ETag`. When a request for one has `If-Range`, the stream route drops the `Range` and sends the full body (RFC 9110), so a resumed file never splices two encodings.
+- `expectedSize` is `null` when a source cannot report a length in advance.
 
 #### Data Model
 
@@ -257,26 +256,17 @@ model CachedTrack {
 - Migration: add `deviceId` and `playbackId`, backfill `playbackId = 't.' || "trackId"`, relax `trackId` to nullable, replace the unique constraint. Existing album routes keep writing `trackId` and also set `playbackId`.
 - `deviceId` is generated by the client on first launch and stored with the server profile. It is not an authentication factor.
 - Rows written by the legacy album and track routes have a NULL `deviceId`. PostgreSQL treats NULLs as distinct in unique indexes, so the composite unique cannot dedupe them and Prisma cannot upsert on a null key; those routes find the row, then update or create it.
-- Rows for remote kinds have no foreign key; they are cleaned up by `DELETE /items` and by the existing user-deletion cascade.
+- Rows for remote kinds have a null `trackId` and no foreign key; they are cleaned up by `DELETE /items` and by the existing user-deletion cascade.
 
 #### Download Policy
 
 Whether a track can be downloaded is server policy, evaluated in one function (`resolveOfflinePolicy(userId, parsedId)`) and surfaced to clients only as `downloadable` + `reason`.
 
-- **Default: every source is downloadable.**
-- Admins get one toggle per source in system settings, stored on `SystemSettings` (DB-backed, no env var, so no deployment-surface changes):
-
-  | Field | Default | Applies to |
-  |---|---|---|
-  | `offlineAllowLocal` | `true` | `t.*` with `origin: LOCAL` |
-  | `offlineAllowFederated` | `true` | `t.*` with `origin: FEDERATED` |
-  | `offlineAllowTidal` | `true` | `td.*` |
-  | `offlineAllowYtMusic` | `true` | `ym.*` |
-  | `offlineAllowYouTube` | `true` | `yt.*` |
-
-- The toggles appear in the admin settings UI on the tab that holds the matching provider settings, with an "Offline downloads" group for local and federated.
-- A disabled source yields `downloadable: false, reason: "SOURCE_DOWNLOADS_DISABLED"` for new requests. Files already on devices are not remotely deleted; on the next `GET /items` reconciliation the server reports them as `revoked: true`, and the client removes them.
-- The existing album route (`POST /api/offline/albums/:id/download`) honours `offlineAllowLocal` too, so the policy has one source of truth. When the source is disabled it answers 409 with the policy reason as `code`.
+- **Default: downloads are allowed.**
+- Admins get one switch, `SystemSettings.offlineDownloadsEnabled` (default `true`; DB-backed, no env var, so no deployment-surface changes). It applies to every source alike, and appears as "Allow offline downloads" in the admin "Offline downloads" section.
+- The policy does not re-check provider availability. Whether this user can stream a remote source is decided by `resolvePlayback`, exactly as for playback, and reported as `SOURCE_UNAVAILABLE`.
+- With the switch off, new requests yield `downloadable: false, reason: "SOURCE_DOWNLOADS_DISABLED"`. Files already on devices are not remotely deleted; on the next `GET /items` reconciliation the server reports them as `revoked: true`, and the client removes them. A track that no longer exists is reported `revoked` too.
+- The existing album route (`POST /api/offline/albums/:id/download`) honours the switch too, so the policy has one source of truth. When it is off the route answers 409 with code `SOURCE_DOWNLOADS_DISABLED`.
 
 ### P5. API-Key Authentication for Realtime Sockets
 
@@ -296,9 +286,8 @@ Per `AGENTS.md`: TDD, behavioural assertions, no source-text contract tests.
 - Route tests for `/api/playback/stream` and `/stream-info`: auth via each credential type, Range passthrough, error codes, rate-limit and compression parity with the per-source routes.
 - Emission test: every track-returning route's sampled payload has a valid `playbackId` consistent with its legacy fields.
 - Write-path tests: each P3 endpoint gives identical results via legacy fields and via `playbackId` (+ metadata for not-yet-persisted remote tracks).
-- Download quality: library downloads at the requested quality share one transcode-cache file per `(trackId, quality)`; remote items are reported `downloadable: false`.
-- Offline: mixed-source album and playlist resolution, policy reasons, cache-limit math, per-device isolation, ETag/If-Range behaviour for library downloads, and the `CachedTrack` migration and backfill against real PostgreSQL.
-- Offline policy: each toggle off yields `SOURCE_DOWNLOADS_DISABLED` for that source only; reconciliation marks previously completed items `revoked`; the legacy album route honours `offlineAllowLocal`.
+- Offline: mixed-source album and playlist resolution with every source downloadable, policy reasons, cache-limit math, per-device isolation, ETag/If-Range behaviour for library downloads, `If-Range` yielding a full body for remote sources, and the `CachedTrack` and `offlineDownloadsEnabled` migrations against real PostgreSQL.
+- Offline policy: the switch off yields `SOURCE_DOWNLOADS_DISABLED` for every source; reconciliation marks previously completed items `revoked`; the legacy album route honours the switch.
 - Sockets: handshake with a valid, expired, revoked, or malformed API key; both credentials rejected; deleting a key disconnects its sockets and not the user's JWT sockets.
 - Regression: existing per-source route suites and frontend tests stay green untouched.
 
@@ -316,7 +305,7 @@ Each step is its own PR, mergeable and releasable alone:
 1. `playbackId` module, contract-package field, and emission in all builders (P1).
 2. Stream service extraction + `/api/playback/stream` and `/stream-info` (P2).
 3. `playbackId` on write endpoints, playback state, and Listen Together (P3).
-4. `CachedTrack` migration, offline item endpoints, library download ETags, offline policy toggles and admin UI (P4).
+4. `CachedTrack` migration, offline item endpoints, download ETags and `If-Range` handling, the offline switch and admin UI (P4).
 5. API-key socket handshake and key-scoped socket revocation (P5). Independent of steps 1–4; can land in any order.
 
 The release containing steps 1–5 is the Flutter client's `minServer`.

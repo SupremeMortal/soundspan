@@ -355,7 +355,7 @@ The full design, including endpoint shapes, data model, and tests, is in `docs/d
 - **P1:** an opaque `playbackId` on every playable track in every response. The client stores and sends only this id and never parses it.
 - **P2:** `GET /api/playback/stream/:playbackId` and `/stream-info/:playbackId` for every source, with the same auth, Range, and quality behaviour as today and one error shape.
 - **P3:** plays, playlists, likes, playback state, and Listen Together accept `{ playbackId, metadata? }`. The client always sends the display metadata it received with the track; the server uses it only when it must create a row.
-- **P4:** offline requests for a track, album, or playlist of any source (`/api/offline/items`), per-device accounting keyed by a client-generated `deviceId`, resumable downloads with pinned variants and `ETag`/`If-Range`, and per-source admin toggles that surface to the client only as `downloadable: false` with a reason. All sources are downloadable by default.
+- **P4:** offline requests for a track, album, or playlist of any source (`/api/offline/items`), per-device accounting keyed by a client-generated `deviceId`, resumable downloads with `ETag`/`If-Range` (a `200` instead of `206` means restart), and one admin switch that surfaces to the client only as `downloadable: false` with a reason. All sources are downloadable by default.
 - **P5:** the `/listen-together` socket handshake accepts `handshake.auth.apiKey` as well as `token`, so device-linked sessions get Listen Together and presence.
 
 ### Client Compatibility

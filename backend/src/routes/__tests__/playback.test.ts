@@ -274,6 +274,78 @@ describe("GET /api/playback/stream/:playbackId", () => {
         );
     });
 
+    it("drops Range when If-Range is sent for a remote source, so the client gets the full body", async () => {
+        mockResolvePlayback.mockResolvedValue({
+            kind: "td",
+            tidalId: 123,
+            quality: "LOSSLESS",
+            middleware: NO_MW,
+        });
+        mockStreamTidalTrack.mockImplementation(async ({ res }: any) => {
+            res.status(200).end("audio");
+        });
+        await request(makeApp())
+            .get("/api/playback/stream/td.123")
+            .set("Range", "bytes=10-")
+            .set("If-Range", '"some-etag"');
+        const { req } = mockStreamTidalTrack.mock.calls[0][0];
+        expect(req.headers.range).toBeUndefined();
+    });
+
+    it("drops Range on If-Range for a YouTube video too", async () => {
+        mockResolvePlayback.mockResolvedValue({
+            kind: "yt",
+            videoId: "dQw4w9WgXcQ",
+            quality: "HIGH",
+            middleware: NO_MW,
+        });
+        mockStreamYouTubeVideo.mockImplementation(async ({ res }: any) => {
+            res.status(200).end("audio");
+        });
+        await request(makeApp())
+            .get("/api/playback/stream/yt.dQw4w9WgXcQ")
+            .set("Range", "bytes=10-")
+            .set("If-Range", '"some-etag"');
+        expect(mockStreamYouTubeVideo).toHaveBeenCalledWith(
+            expect.objectContaining({ range: undefined }),
+        );
+    });
+
+    it("keeps Range with If-Range for library tracks, which validate their ETag", async () => {
+        mockResolvePlayback.mockResolvedValue({
+            kind: "t",
+            trackId: "abc",
+            quality: "high",
+            middleware: NO_MW,
+        });
+        mockStreamLibraryTrack.mockImplementation(async ({ res }: any) => {
+            res.status(200).end("audio");
+        });
+        await request(makeApp())
+            .get("/api/playback/stream/t.abc")
+            .set("Range", "bytes=10-")
+            .set("If-Range", '"some-etag"');
+        const { req } = mockStreamLibraryTrack.mock.calls[0][0];
+        expect(req.headers.range).toBe("bytes=10-");
+    });
+
+    it("keeps Range without If-Range for a remote source", async () => {
+        mockResolvePlayback.mockResolvedValue({
+            kind: "td",
+            tidalId: 123,
+            quality: "LOSSLESS",
+            middleware: NO_MW,
+        });
+        mockStreamTidalTrack.mockImplementation(async ({ res }: any) => {
+            res.status(200).end("audio");
+        });
+        await request(makeApp())
+            .get("/api/playback/stream/td.123")
+            .set("Range", "bytes=10-");
+        const { req } = mockStreamTidalTrack.mock.calls[0][0];
+        expect(req.headers.range).toBe("bytes=10-");
+    });
+
     it("passes a 206 with Content-Range from the stream service through", async () => {
         mockResolvePlayback.mockResolvedValue({
             kind: "t",
