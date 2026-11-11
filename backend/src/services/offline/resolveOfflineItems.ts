@@ -166,7 +166,8 @@ async function resolveItem(
 
     const info = captured.body as StreamInfoBody;
     const quality =
-        (info.quality as PlaybackQuality | undefined) ?? playback.libraryQuality;
+        (info.quality as PlaybackQuality | undefined) ??
+        playback.libraryQuality;
     return {
         playbackId,
         downloadable: true,
