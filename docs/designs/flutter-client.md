@@ -2,7 +2,9 @@
 
 Status: design phase.
 
-A first-party soundspan client built with Flutter that ships from one Dart codebase to **Android, iOS, Windows, macOS, Linux, and the web**. Every native target renders with Flutter's own engine — **no webview on any native platform**. It is a pure API consumer of the soundspan REST, streaming, and socket.io surfaces. It requires **one server prerequisite**: a source-agnostic playback and offline API (see Server Prerequisites), so the client never needs to know where a track comes from. Beyond that, it uses the existing API as is.
+The implementation plan (file layout, interfaces, schemas, algorithms, per-platform configuration, tests, and the PR-level work breakdown) is in [`flutter-client/`](flutter-client/README.md).
+
+A first-party soundspan client built with Flutter that ships from one Dart codebase to **Android, iOS, Windows, macOS, Linux, and the web**. Every native target renders with Flutter's own engine — **no webview on any native platform**. It is a pure API consumer of the soundspan REST, streaming, and socket.io surfaces. It requires a small set of **server prerequisites**: a source-agnostic playback and offline API plus three small additions (see Server Prerequisites), so the client never needs to know where a track comes from. Beyond that, it uses the existing API as is.
 
 ## Goals and Non-Goals
 
@@ -17,7 +19,7 @@ A first-party soundspan client built with Flutter that ships from one Dart codeb
 ### Non-Goals
 
 - Replacing the existing Next.js web frontend. It remains the primary web UI; the Flutter web build is a secondary target (see Platform Matrix).
-- Admin surfaces (system settings, backup/restore, federation admin, queue dashboard). They stay in the existing web UI; the client links out to them.
+- Admin surfaces (system settings, backup/restore, federation admin, queue dashboard) and acquisition actions. They stay in the web UI's admin page, which is expected to become the only remaining part of the web app; the client's only admin affordance is a link that opens that page.
 - Backend changes beyond the Server Prerequisites. Any other feature that cannot be built on the current API is deferred and listed in Open Questions.
 - Client-side knowledge of track sources. The client never branches on whether a track is local, federated, TIDAL, YouTube Music, or YouTube.
 - Subsonic `/rest` as the primary protocol. It loses soundspan-specific features (vibe, mixes, Listen Together, TIDAL/YT Music sources).
@@ -52,7 +54,7 @@ Rust remains an option for a future, isolated need (e.g. client-side DSP) behind
 | Capability | Android | iOS | Windows | macOS | Linux | Web |
 |---|---|---|---|---|---|---|
 | Rendering | Impeller | Impeller | Skia/Impeller | Impeller | Skia | CanvasKit / skwasm |
-| Audio backend | ExoPlayer (`just_audio`) | AVPlayer (`just_audio`) | libmpv (`just_audio_media_kit`) | AVPlayer (`just_audio`) | libmpv (`just_audio_media_kit`) | HTML audio (`just_audio`) |
+| Audio backend | ExoPlayer (`just_audio`) | AVPlayer (`just_audio`) | libmpv (`media_kit`) | AVPlayer (`just_audio`) | libmpv (`media_kit`) | HTML audio (`just_audio`) |
 | OS media controls | `audio_service` (MediaSession, notification) | `audio_service` (Now Playing, Control Center) | `smtc_windows` (SMTC) | `audio_service` (Now Playing) | `audio_service_mpris` (MPRIS) | `audio_service` (Media Session API) |
 | Background playback | Foreground service | `audio` background mode | Yes | Yes | Yes | Tab must stay open |
 | Car integration | Android Auto (`audio_service` browse tree) | CarPlay (M6) | — | — | — | — |
@@ -83,18 +85,18 @@ client/
 │   ├── features/            # One folder per domain: library, search, player, downloads, social, settings…
 │   │   └── <feature>/{data,domain,ui}/
 │   ├── core/
-│   │   ├── api/             # Generated OpenAPI client + transport, auth interceptor, errors
 │   │   ├── auth/            # Server profiles, sign-in flows, token refresh
-│   │   ├── playback/        # Queue model, audio handler, platform media-control adapters
+│   │   ├── playback/        # Queue model, player engines, platform media-control adapters
 │   │   ├── downloads/       # Download manager over background_downloader
 │   │   ├── storage/         # drift database, secure storage, file layout
 │   │   └── sync/            # Offline outbox, playback-state sync, play reporting
 │   └── platform/            # Conditional imports: io vs web implementations
 ├── packages/
-│   └── soundspan_api/       # Generated Dart client (openapi-generator, dart-dio)
+│   └── soundspan_api/       # Hand-written Dart API client: transport, auth interceptors, errors, models
 ├── android/ ios/ windows/ macos/ linux/ web/
 ├── integration_test/
-└── tool/                    # Codegen, release, and signing scripts
+├── contract_test/           # API package against a real server
+└── tool/                    # Code generation, checks, release scripts
 ```
 
 ### Layering
@@ -106,7 +108,7 @@ client/
 ├────────────── Data (repositories) ────────────────────────────────────┤
 │  soundspan_api (dio)   drift DB   secure storage   background_downloader│
 ├────────────── Platform plugins ───────────────────────────────────────┤
-│  just_audio · audio_service · media_kit · smtc_windows · mpris          │
+│  just_audio · media_kit · audio_service · smtc_windows · mpris          │
 └──────────── ExoPlayer · AVPlayer · libmpv · HTML audio ────────────────┘
 ```
 
@@ -118,11 +120,11 @@ Platform differences are isolated in `lib/platform/` with Dart conditional impor
 |---|---|
 | State / DI | `flutter_riverpod` |
 | Routing | `go_router` |
-| HTTP | `dio` (via the generated client) |
-| API client | `openapi-generator` (`dart-dio`) from `/api/docs.json` |
+| HTTP | `dio` |
+| API client | `soundspan_api` package: models and endpoint methods generated from the server's OpenAPI document (Server Prerequisite P9) with `swagger_parser`; hand-written `dio` transport |
 | Local DB / cache | `drift` (SQLite; WASM build on web) |
 | Secrets | `flutter_secure_storage` |
-| Playback | `just_audio`, `just_audio_media_kit` (Windows/Linux) |
+| Playback | `just_audio` (Android, iOS, macOS, web), `media_kit` (Windows, Linux), behind one app-owned `PlayerEngine` interface |
 | Media controls | `audio_service`, `audio_service_mpris`, `smtc_windows` |
 | Downloads | `background_downloader` |
 | Images | `cached_network_image` |
@@ -206,7 +208,7 @@ API keys expire a fixed 90 days after creation (`API_KEY_LIFETIME_MS` in `backen
 
 - shows a persistent banner and a local notification from 14 days before expiry, with a "Link again" action that walks through a new device-link code;
 - on a 401 from an expired key, switches the profile to a signed-out state that keeps its cache and downloads, so re-linking restores it without re-downloading;
-- revokes the previous key (`/api/api-keys`) after a successful re-link.
+- revokes the previous key after a successful re-link, using the key's own self-revoke endpoint (Server Prerequisite P6).
 
 ### CORS and the Web Target
 
@@ -215,7 +217,7 @@ API keys expire a fixed 90 days after creation (`API_KEY_LIFETIME_MS` in `backen
 
 ## API Client
 
-- **Codegen.** `openapi-generator` (`dart-dio`) generates `packages/soundspan_api` from `GET /api/docs.json`. The spec is pinned per server release in `tool/specs/<version>.json` and committed; CI regenerates and fails on drift. Where the OpenAPI schema is loose, hand-written `freezed` models wrap the generated ones.
+- **Generated client.** The models and endpoint methods in `packages/soundspan_api` are generated from the server's OpenAPI document. The server makes that document typed for the operations the client uses and checks its real responses against it (Server Prerequisite P9). The spec subset is committed beside the package, and CI fails when it or the generated code is out of date. Transport, error mapping, and stream and image URL builders are hand-written. A contract test suite runs the package against a real seeded server for behaviour a schema cannot express.
 - **Compatibility.** After sign-in the client reads the server version from `info.version` of `GET /api/docs.json` (resolved from the backend `package.json`; auth-gated in production unless `DOCS_PUBLIC=true`, so it is fetched with the session's credentials). `/api/health` is not used for this: its `version` comes from `npm_package_version`, which is `unknown` when the container starts `node dist/index.js` directly. The client compares the version to a supported range (`minServer`, `maxTestedServer`). Out-of-range servers show a warning; features are gated by version, not by probing for 404s.
 - **Errors.** Server `{ error, code }` bodies map to a sealed `ApiError` hierarchy (`AuthBackendUnavailable`, `RateLimited(retryAfter)`, `NotFound`, …). 429 honours `Retry-After` with jittered backoff.
 - **Caching.** Repositories read through the drift cache (stale-while-revalidate), giving fast cold start and offline browsing of previously loaded pages.
@@ -224,20 +226,21 @@ API keys expire a fixed 90 days after creation (`API_KEY_LIFETIME_MS` in `backen
 
 ### Model
 
-- One `SoundspanAudioHandler` (an `audio_service` `BaseAudioHandler`) owns the queue, shuffle, repeat, and the `just_audio` `AudioPlayer`. The UI talks only to the handler, on every platform.
-- Platform media controls are adapters around the handler: `audio_service` natively on Android/iOS/macOS/web, `audio_service_mpris` on Linux, and an `smtc_windows` bridge on Windows.
+- One `PlaybackController` owns the queue, shuffle, repeat, and a `PlayerEngine`. The UI talks only to the controller, on every platform.
+- `PlayerEngine` is an app-owned interface with two implementations: `just_audio` and `media_kit`.
+- Platform media controls are adapters around the controller: `audio_service` on Android/iOS/macOS/web, `audio_service_mpris` on Linux, and an `smtc_windows` bridge on Windows.
 - Queue logic is pure Dart with unit tests independent of any player.
 
 ### Engines
 
 - **Android:** `just_audio` → ExoPlayer, running inside `audio_service`'s foreground `MediaBrowserService`; notification controls, Bluetooth/headset buttons, and the Android Auto browse tree (Recent, Playlists, Albums, Downloads).
 - **iOS / macOS:** `just_audio` → AVQueuePlayer with `AVAudioSession` category `.playback` and the `audio` `UIBackgroundModes` entry on iOS.
-- **Windows / Linux:** `just_audio_media_kit` → libmpv. libmpv is bundled by `media_kit`'s native library packages, so users install nothing extra.
+- **Windows / Linux:** `media_kit` → libmpv. On Windows libmpv ships inside the app. On Linux each package format provides it (Flatpak module, AppImage bundle, `.deb` dependency), so users install nothing extra.
 - **Web:** `just_audio` → HTML audio with `?token=` stream URLs.
 
 ### Gapless and Transitions
 
-- The queue is loaded into the player as a playlist (`setAudioSources`) so the engine pre-buffers the next item: gapless on ExoPlayer, AVQueuePlayer, and mpv (`gapless-audio`). Web is best-effort.
+- The engine always holds the current item and the next item so it pre-buffers the transition: gapless on ExoPlayer, AVQueuePlayer, and mpv (`gapless-audio`). Web is best-effort.
 - Server-provided loudness metadata is applied as per-track volume where present (see `loudness-and-transitions.md`). Crossfade is out of scope for v1.
 
 ### Source-Agnostic Tracks
@@ -247,8 +250,8 @@ The client never distinguishes where a song comes from (local library, federated
 ### Server Integration
 
 - Stream: `GET /api/playback/stream/:playbackId` for every track (and the podcast/audiobook equivalents) with the same quality parameters the web UI uses.
-- Play reporting / scrobbling: `/api/plays` with `playbackId`, at the same thresholds as the web UI; queued in the outbox while offline.
-- Cross-device resume: `GET/POST /api/playback-state`, debounced (every 15 s while playing, on pause, on track change, on app background).
+- Play reporting / scrobbling: the client suppresses the server's implicit play logging on its stream requests (Server Prerequisite P7) and reports every play itself through `/api/plays` when the play ends, with `playbackId`, the time the play started, and the total time the track was heard (P8). A play heard for less than 5 seconds in total is not recorded, and seeking inside a track does not split or reset the play. Reports are queued in the outbox while offline.
+- Resume: `GET/POST /api/playback-state`, debounced (every 15 s while playing, on pause, on track change, on app background), restores this device's own queue and position. Continuing another device's queue is a separate design, [`cross-device-playback-handoff.md`](cross-device-playback-handoff.md).
 
 ## Offline and Downloads (native only)
 
@@ -266,9 +269,9 @@ The client never distinguishes where a song comes from (local library, federated
 
 ## UI
 
-- Material 3 with a custom soundspan theme whose colour and type tokens are derived from the web frontend's design tokens, so both clients look related. Light and dark themes.
+- Material 3 with a custom soundspan theme whose colour and type tokens are derived from the web frontend's design tokens, so both clients look related. Dark and light themes; the web frontend is dark only, so the light palette is defined in the implementation plan.
 - **Adaptive layouts:**
-  - Compact (< 600 dp): bottom navigation bar, mini player, full-screen now-playing sheet.
+  - Compact (< 600 dp): bottom navigation bar (Home, Search, Library, Podcasts), mini player, full-screen now-playing sheet.
   - Medium (600–1024 dp): navigation rail, side-by-side detail panes on tablets.
   - Expanded (> 1024 dp, desktop): sidebar, persistent player bar, queue side panel, keyboard shortcuts, hover states, right-click menus, drag-and-drop to playlists.
 - Long lists use `ListView.builder` / slivers with fixed extents; library pages follow the server's paginated endpoints (including the merged Library Songs page).
@@ -295,15 +298,12 @@ Budgets are measured in CI-adjacent manual runs each release and regressions blo
 - TLS through the platform stack only. Servers must present a certificate trusted by the OS (e.g. Let's Encrypt or a CA the user has installed system-wide); self-signed or untrusted certificates are not supported, since the audio engines (ExoPlayer, AVPlayer, libmpv) use their own HTTP stacks and could not honour an app-level exception. Plain `http://` is allowed only for LAN/private-range hosts, with a warning.
 - Android `network_security_config` and iOS ATS exceptions are limited to user-added LAN hosts.
 - No arbitrary URL loading: the HTTP layer only accepts paths relative to the active profile's base URL.
-- Sign-out revokes the API key (`/api/api-keys`) or calls `/api/auth/logout`, then wipes secrets, the profile's cache, and optionally its downloads.
+- Sign-out revokes the API key (self-revoke, Server Prerequisite P6) or calls `/api/auth/logout`, then wipes secrets, the profile's cache, and optionally its downloads.
 
 ## Crash Reporting and Telemetry
 
-- **Off by default.** No data leaves the device unless the user enables "Send crash reports" in Settings (asked once, non-blocking, after the first successful sign-in).
-- When enabled, crashes and unhandled errors go to a Sentry-protocol endpoint (`sentry_flutter`), which can be Sentry or a self-hosted GlitchTip. The DSN is a build-time setting for official builds and can be overridden in Settings.
-- Reports are scrubbed before sending: no server URLs, usernames, tokens, API keys, track/artist names, or file paths; breadcrumbs are limited to screen names and error codes.
-- **No usage analytics** of any kind.
-- Independently of crash reporting, Settings → About offers "Export logs", which writes a redacted rolling log file for users to attach to bug reports.
+- **None.** The client sends no crash reports and no usage analytics, and contains no reporting SDK.
+- Settings → About offers "Export logs", which writes a redacted rolling log file for users to attach to bug reports.
 
 ## Licensing
 
@@ -315,6 +315,8 @@ Budgets are measured in CI-adjacent manual runs each release and regressions blo
 - The exact exception wording should be reviewed by the project's copyright holders before the first store release.
 
 ## Build, CI, and Distribution
+
+The table is the intended distribution. Signing and store channels are set up once the software is ready for v1; until then releases are unsigned pre-release artifacts on GitHub and the web image.
 
 | Target | Artifact | Signing | Channel |
 |---|---|---|---|
@@ -334,7 +336,7 @@ Budgets are measured in CI-adjacent manual runs each release and regressions blo
 
 - **Unit tests** (`flutter test`): queue logic, token refresh single-flight, outbox replay, download state machine, URL allowlisting, error mapping.
 - **Widget and golden tests:** each screen at compact, medium, and expanded widths, light and dark.
-- **API contract tests:** run the generated client against a disposable soundspan server (the server repo's `docker-compose.yml`, seeded) in CI: login/refresh, device link, library paging, stream range requests, offline endpoints, playback state.
+- **API contract tests:** run the `soundspan_api` package against a disposable soundspan server (the server repo's `docker-compose.yml`, seeded, with response validation on) in CI: login/refresh, device link, library paging, stream range requests, offline endpoints, playback state, play reporting.
 - **Integration tests:** `integration_test` with Patrol on Android and iOS simulators (sign-in, play, background, notification controls, offline playback); `integration_test` on Windows, macOS, and Linux desktop runners.
 - **Manual playback matrix** each release: Bluetooth and headset buttons, Android Auto, interruptions/phone calls, sleep/wake, network handoff, tray playback, following the pattern in `docs/NATIVE_AUDIO_ENGINE.md`.
 
@@ -358,25 +360,28 @@ The full design, including endpoint shapes, data model, and tests, is in `docs/d
 - **P4:** offline requests for a track, album, or playlist of any source (`/api/offline/items`), per-device accounting keyed by a client-generated `deviceId`, resumable downloads with `ETag`/`If-Range` (a `200` instead of `206` means restart), and one admin switch that surfaces to the client only as `downloadable: false` with a reason. All sources are downloadable by default.
 - **P5:** the `/listen-together` socket handshake accepts `handshake.auth.apiKey` as well as `token`, so device-linked sessions get Listen Together and presence.
 
+Four further additive changes are specified in [`flutter-client/12-server-prerequisites-p6-p9.md`](flutter-client/12-server-prerequisites-p6-p9.md):
+
+- **P6:** an API key can revoke itself (`DELETE /api/api-keys/current`), so a device-linked client can clean up on sign-out and re-link.
+- **P7:** stream requests can opt out of the server's implicit play logging, and offline `downloadUrl`s always do, so downloads and gapless preloads are not counted as plays.
+- **P8:** `POST /api/plays` accepts a `playedAt` timestamp and a `listenedMs` duration, so plays made offline are recorded at the time of the listen and every play carries how long the track was heard; plays heard for under 5 seconds are not recorded.
+- **P9:** the operations the client uses are described in the OpenAPI document with operation ids and named request and response schemas, and the server validates its responses against them in its tests, so the client's API code can be generated.
+
 ### Client Compatibility
 
-`minServer` is the release that ships the Unified Playback API (P1–P5). Older servers are refused at sign-in with an "update your server" message (see Connecting to Any Self-Hosted Server). The client contains no fallback to the per-source endpoints.
+`minServer` is the release that ships the Unified Playback API (P1–P5) and P6–P9. Older servers are refused at sign-in with an "update your server" message (see Connecting to Any Self-Hosted Server). The client contains no fallback to the per-source endpoints.
 
 ## Milestones
 
-0. **S0, Server prerequisites** (server repo, before client M1): `unified-playback-api.md` design doc, then P1–P5 with backend tests against real PostgreSQL, OpenAPI annotations, and a server release that becomes the client's `minServer`. Client M0 can proceed in parallel.
-1. **M0, Foundations:** repository scaffold, FVM, codegen pipeline, server profiles, password login + refresh, library browse, adaptive shell. Runs on all six targets. Package maintenance review.
-2. **M1, Playback:** audio handler, `just_audio` on all targets, gapless queue, media controls (audio_service, MPRIS, SMTC), play reporting, playback-state sync.
-3. **M2, Mobile polish:** device-link sign-in, Android foreground service and Android Auto, iOS background audio, TestFlight and Play internal track.
+0. **S0 and S1, Server prerequisites** (before client M1): P1–P5 (`unified-playback-api.md`) and P6–P9, with backend tests against real PostgreSQL, OpenAPI annotations, and a server release that becomes the client's `minServer`. The first part of P9 is needed by client M0's API work; the rest of M0 proceeds in parallel.
+1. **M0, Foundations:** repository scaffold, FVM, generated API package and contract tests, server profiles, password login + refresh, library browse, adaptive shell. Runs on all six targets. Package maintenance review.
+2. **M1, Playback:** playback controller and both player engines, gapless queue, media controls (audio_service, MPRIS, SMTC), play reporting, playback-state sync.
+3. **M2, Mobile polish:** device-link sign-in, Android foreground service and Android Auto, iOS background audio, unsigned pre-release builds.
 4. **M3, Offline:** download manager, offline mode and outbox, storage management.
 5. **M4, Social & discovery:** Listen Together, presence, vibe/mixes/discovery, lyrics polish.
-6. **M5, Release:** accessibility pass, resource-budget verification, desktop updaters, App Store / Play / Flathub / winget submissions.
+6. **M5, Release:** accessibility pass, resource-budget verification, packaging for every target. Signing, store accounts, store submissions, and desktop auto-update follow once the software is ready for v1 and are not part of the tracked milestones.
 7. **M6, Extended surfaces** (after the core app ships, each independently releasable):
    - **CarPlay:** audio-app template (Recent, Playlists, Albums, Downloads) via a community plugin or a small native module; requires Apple's CarPlay audio entitlement.
    - **Android TV:** leanback launcher entry and a D-pad-first layout set (focus traversal, 10-foot type scale) in the same APK.
    - **Wear OS / watchOS:** control-only companions (play/pause, skip, volume, now-playing art) driving the phone's session; Wear OS through the Media3 session, watchOS through a native SwiftUI target using WatchConnectivity. No offline on watches.
    - **Home-screen widgets:** Now Playing widgets on Android (Glance) and iOS (WidgetKit) via `home_widget`, fed from the audio handler's state.
-
-## Open Questions
-
-None at present.
