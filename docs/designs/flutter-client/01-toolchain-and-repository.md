@@ -6,11 +6,11 @@ Status: design phase.
 
 | Tool | Pin | Where |
 |---|---|---|
-| Flutter | 3.50.x stable (Dart 3.14) | `client/.fvmrc`; CI reads the same file |
+| Flutter | 3.50.0 stable (Dart 3.14.0) | `client/.fvmrc`; CI reads the same file |
 | FVM | 3.x | Developer machines and CI (`subosito/flutter-action` with `flutter-version-file: client/.fvmrc`) |
 | Java | 17 (Temurin) | Android Gradle builds |
 | Android | compileSdk/targetSdk = Flutter default for the pinned SDK, minSdk 26 | `client/android/app/build.gradle.kts` |
-| Xcode | Latest stable on the `macos-latest` runner | iOS deployment target 15.0, macOS 11.0 |
+| Xcode | Latest stable on the `macos-latest` runner | iOS deployment target 15.0, macOS 12.0 (the pinned SDK's minimum) |
 | Visual Studio | 2022 Build Tools with "Desktop development with C++" | Windows |
 | Linux build deps | `clang cmake ninja-build pkg-config libgtk-3-dev libmpv-dev libsecret-1-dev libjsoncpp-dev` | Linux |
 
@@ -32,7 +32,7 @@ client/
 ├── assets/
 │   ├── fonts/Montserrat-VariableFont_wght.ttf
 │   ├── fonts/TurretRoad-ExtraBold.ttf  # Wordmark only
-│   ├── brand/                      # logo.svg, logo_mono.svg, tray icons
+│   ├── brand/                      # soundspan-mark.svg, soundspan-mark-mono.svg, tray icons
 │   └── licenses/                   # Notices for bundled native libraries (libmpv, ffmpeg)
 ├── lib/
 │   ├── main.dart                   # Calls bootstrap(); no logic
@@ -88,7 +88,7 @@ client/
 
 ## `pubspec.yaml`
 
-Version floors are the releases current when the plan was written. The lockfile is the real pin.
+Version floors are the releases current when the plan was written; every floor resolves on the pinned SDK. The lockfile is the real pin. Dependencies are listed alphabetically (`sort_pub_dependencies`). `material_ui` carries the Material widgets, which moved out of the Flutter SDK (`package:flutter/material.dart` is deprecated in the pinned release).
 
 ```yaml
 name: soundspan
@@ -101,70 +101,58 @@ environment:
   flutter: ^3.50.0
 
 dependencies:
-  flutter: { sdk: flutter }
-  flutter_localizations: { sdk: flutter }
-  intl: any
-
-  soundspan_api: { path: packages/soundspan_api }
-
-  # State, routing
-  flutter_riverpod: ^3.5.0
-  riverpod_annotation: ^4.0.0
-  go_router: ^18.1.0
-
-  # Data
-  drift: ^2.35.0
-  drift_flutter: ^0.3.0
-  flutter_secure_storage: ^11.2.0
-  path_provider: ^2.1.6
-  path: ^1.9.0
-  freezed_annotation: ^3.0.0
-  json_annotation: ^4.9.0
-  collection: ^1.19.0
-
-  # Playback
-  just_audio: ^0.10.6            # Android, iOS, macOS, web
-  media_kit: ^1.2.6              # Windows, Linux
-  media_kit_libs_windows_audio: any
-  media_kit_libs_linux: any
+  app_links: ^7.2.0
   audio_service: ^0.18.19
   audio_service_mpris: ^0.2.1
   audio_session: ^0.2.4
-  smtc_windows: ^1.1.0           # Subject to spike S4
-
-  # Network and realtime
-  socket_io_client: ^3.1.6
-  connectivity_plus: ^7.3.0
   background_downloader: ^9.6.0
-
-  # UI
   cached_network_image: ^4.0.0
-  flutter_cache_manager: any
+  collection: ^1.19.0
+  connectivity_plus: ^7.3.0
+  drift: ^2.35.0
+  drift_flutter: ^0.3.0
   dynamic_color: ^2.1.0          # Only to read the platform contrast setting; palette is fixed
-  mobile_scanner: ^7.5.0         # QR; Android, iOS, macOS, web
-
-  # Platform
-  app_links: ^7.2.0
-  window_manager: ^0.7.0
-  tray_manager: ^0.9.0
-  package_info_plus: ^10.2.0
+  flutter: { sdk: flutter }
+  flutter_cache_manager: any
   flutter_local_notifications: ^23.0.0
-  url_launcher: any
+  flutter_localizations: { sdk: flutter }
+  flutter_riverpod: ^3.5.0
+  flutter_secure_storage: ^11.2.0
+  freezed_annotation: ^3.0.0
+  go_router: ^18.1.0
+  intl: any
+  json_annotation: ^4.9.0
+  just_audio: ^0.10.6            # Android, iOS, macOS, web
   logging: ^1.3.0
+  material_ui: ^1.1.0            # Material widgets; moved out of the Flutter SDK
+  media_kit: ^1.2.6              # Windows, Linux
+  media_kit_libs_linux: any
+  media_kit_libs_windows_audio: any
+  mobile_scanner: ^7.5.0         # QR; Android, iOS, macOS, web
+  package_info_plus: ^10.2.0
+  path: ^1.9.0
+  path_provider: ^2.1.6
+  riverpod_annotation: ^4.0.0
+  smtc_windows: ^1.1.0           # Subject to spike S4
+  socket_io_client: ^3.1.6
+  soundspan_api: { path: packages/soundspan_api }
+  tray_manager: ^0.9.0
+  url_launcher: any
+  window_manager: ^0.7.0
 
 dev_dependencies:
-  flutter_test: { sdk: flutter }
-  integration_test: { sdk: flutter }
+  alchemist: ^0.14.0
   build_runner: any
   drift_dev: ^2.35.0
+  flutter_test: { sdk: flutter }
   freezed: ^4.0.0
+  http_mock_adapter: any
+  integration_test: { sdk: flutter }
   json_serializable: ^6.15.0
+  mocktail: ^1.0.5
+  patrol: ^4.11.0
   riverpod_generator: ^4.0.0
   very_good_analysis: ^11.0.0
-  mocktail: ^1.0.5
-  alchemist: ^0.14.0
-  patrol: ^4.11.0
-  http_mock_adapter: any
 
 flutter:
   uses-material-design: true
@@ -198,7 +186,7 @@ Every package in the design document's table was checked for release cadence and
 | `media_kit_libs_linux` | Uses the system libmpv | Packaging handles libmpv per format |
 | All others | Actively released | Adopted |
 
-`soundspan_api/pubspec.yaml` depends only on `dio`, `retrofit`, `freezed_annotation`, `json_annotation`, `meta`, and `collection` (dev: `swagger_parser`, `retrofit_generator`, `freezed`, `json_serializable`, `build_runner`), so it can be tested with plain `dart test` and reused by a future CLI or TV app.
+`soundspan_api/pubspec.yaml` depends only on `dio`, `retrofit`, `freezed_annotation`, `json_annotation`, `meta`, and `collection` (dev: `swagger_parser`, `retrofit_generator`, `freezed`, `json_serializable`, `build_runner`, plus `test` for its runner and `very_good_analysis` for the shared analysis options it includes), so it can be tested with plain `dart test` and reused by a future CLI or TV app.
 
 ## Static Analysis
 

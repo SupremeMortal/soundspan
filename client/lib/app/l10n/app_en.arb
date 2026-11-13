@@ -1,0 +1,7 @@
+{
+  "@@locale": "en",
+  "appTitle": "soundspan",
+  "@appTitle": {
+    "description": "The application name, shown as the window and task-switcher title and on the start screen."
+  }
+}

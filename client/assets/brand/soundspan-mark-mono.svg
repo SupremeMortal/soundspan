@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="soundspan">
+<g fill="currentColor">
+  <circle cx="47.5" cy="256" r="14"/>
+  <circle cx="464.5" cy="256" r="14"/>
+  <rect x="63" y="210" width="44" height="92" rx="22"/>
+  <rect x="120" y="186" width="44" height="140" rx="22"/>
+  <rect x="177" y="158.5" width="44" height="195" rx="22"/>
+  <rect x="234" y="133" width="44" height="246" rx="22"/>
+  <rect x="291" y="158.5" width="44" height="195" rx="22"/>
+  <rect x="348" y="186" width="44" height="140" rx="22"/>
+  <rect x="405" y="210" width="44" height="92" rx="22"/>
+</g>
+</svg>

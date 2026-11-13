@@ -71,7 +71,7 @@ root
 
 ## macOS
 
-**Deployment target 11.0. Universal binary. Hardened runtime.**
+**Deployment target 12.0** (the minimum of the pinned Flutter SDK). **Universal binary. Hardened runtime.**
 
 Entitlements (release):
 
