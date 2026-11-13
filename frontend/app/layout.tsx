@@ -30,10 +30,13 @@ const montserrat = localFont({
     variable: "--font-montserrat",
 });
 
-const polea = localFont({
-    src: "../assets/fonts/Polea Extra Bold DEMO.otf",
+// Wordmark font. License: assets/fonts/OFL-TurretRoad.txt.
+const wordmark = localFont({
+    src: "../assets/fonts/TurretRoad-ExtraBold.ttf",
+    weight: "800",
+    style: "normal",
     display: "swap",
-    variable: "--font-polea",
+    variable: "--font-wordmark",
 });
 
 // Viewport configuration - separate export for Next.js 14+
@@ -79,7 +82,7 @@ export default async function RootLayout({
     return (
         <html lang="en">
             <body
-                className={`${montserrat.variable} ${polea.variable} antialiased`}
+                className={`${montserrat.variable} ${wordmark.variable} antialiased`}
                 style={{ fontFamily: "var(--font-montserrat)" }}
             >
                 <Script src="/runtime-config" strategy="beforeInteractive" />
