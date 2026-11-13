@@ -127,6 +127,11 @@ Client gates (`client-quality.yml`). They run on pull requests that touch `clien
 | client-analyze | Enforcement | `npm run verify:client` (first half) | stale generated code (`tool/gen.sh` + `git diff`), `dart format`, `flutter analyze --fatal-infos`, and `dart analyze --fatal-infos` in `client/packages/soundspan_api` |
 | client-test | Enforcement | `npm run verify:client` (second half) | `dart test` in the API package and `flutter test --exclude-tags golden,contract,engine`, both with coverage, then the line-coverage floors in `client/tool/coverage_floor.json` (`client/tool/coverage_floor.dart`) |
 | client-golden | Enforcement | `flutter test --tags golden` in `client/` (Linux) | golden image mismatches; on failure the job uploads `client-golden-failures` and `client-golden-rendered` |
+| client-build-android | Enforcement | `flutter build apk --debug --dart-define-from-file=config/dev.json` in `client/` (Temurin 17) | Android native configuration and plugin builds |
+| client-build-linux | Enforcement | `flutter build linux --release --dart-define-from-file=config/dev.json`, then `tool/check_ldd.sh build/linux/x64/release/bundle` in `client/` | Linux build failures; any `ldd` line with `not found` for the executable or a bundled `.so` |
+| client-build-web | Enforcement | `flutter build web --release --dart-define-from-file=config/dev.json`, then `tool/web_bundle_report.sh build/web` in `client/` | web build failures; writes the gzip-compressed bundle size and the five largest files to the job summary (no threshold) |
+| client-build-windows | Enforcement | CI only | Windows build failures |
+| client-build-macos-ios | Enforcement when it runs | CI only | macOS release build and iOS release build without code signing; runs when `client/ios/**`, `client/macos/**`, `client/pubspec.lock`, `client/lib/platform/**`, `client-quality.yml` or the composite action changed against the base branch, and on every push to `main` |
 
 Notes:
 

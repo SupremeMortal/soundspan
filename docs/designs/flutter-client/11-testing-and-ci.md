@@ -87,7 +87,7 @@ on:
 
 Server-only PRs do not trigger it, except route and `backend/src/openapi/**` changes, which run the spec check and the contract job only.
 
-A first job, `changes`, diffs the pull request against the merge base with its base branch using plain `git diff --name-only` and sets three outputs: `client` (`client/**`, the client workflows, or the composite action changed), `apple` (`client/ios/**`, `client/macos/**`, `client/pubspec.lock`, `client/lib/platform/**`), and `api_surface` (`client/packages/soundspan_api/**`, `backend/src/routes/**`, `backend/src/openapi/**`). On `push` every output is true. Because the diff is against the base branch and not the previous push, a job that failed on an earlier push cannot be skipped on a later one. The analyze, test, and golden jobs run when `client` is true.
+A first job, `changes`, diffs the pull request against the merge base with its base branch using plain `git diff --name-only` and sets three outputs: `client` (`client/**`, the client workflows, or the composite action changed), `apple` (`client/ios/**`, `client/macos/**`, `client/pubspec.lock`, `client/lib/platform/**`, `client-quality.yml`, or the composite action), and `api_surface` (`client/packages/soundspan_api/**`, `backend/src/routes/**`, `backend/src/openapi/**`). On `push` every output is true. Because the diff is against the base branch and not the previous push, a job that failed on an earlier push cannot be skipped on a later one. The analyze, test, golden, Android, Linux, web, and Windows jobs run when `client` is true; the Apple job runs when `apple` is true.
 
 Every client job sets Flutter up with the composite action `.github/actions/client-flutter`: on Linux it installs the build packages of [01](01-toolchain-and-repository.md) (plugin native-asset hooks run during `flutter test` and need GTK and X11 headers), then it reads the version from `client/.fvmrc` with `jq`, installs it with `subosito/flutter-action`, caches Flutter on `.fvmrc` and pub on `.fvmrc` plus both `pubspec.lock` files, and runs `flutter pub get` in `client/` and `dart pub get` in the API package.
 
@@ -98,13 +98,15 @@ Every client job sets Flutter up with the composite action `.github/actions/clie
 | `client-golden` | ubuntu, directly on the runner with the pinned Flutter (no container) | Yes | `flutter test --tags golden`; on failure uploads `client/test/**/failures/**` as `client-golden-failures`, then reruns with `--update-goldens` and uploads every golden image as `client-golden-rendered`, with paths relative to `client/`, ready to commit |
 | `client-spec` | ubuntu | Yes when the API package, backend routes, or `backend/src/openapi/**` changed | `npm --prefix backend run openapi:emit-client` + `git diff --exit-code`; `dart run tool/spec_compat.dart` |
 | `client-contract` | ubuntu | Yes on the same paths | Build backend, `docker compose up` with response validation on, seed, `dart test --tags contract` |
-| `client-build-android` | ubuntu | Yes | `flutter build apk --debug` |
-| `client-build-linux` | ubuntu | Yes | `flutter build linux --release`; `ldd` check |
-| `client-build-web` | ubuntu | Yes | `flutter build web --release`; bundle-size report |
+| `client-build-android` | ubuntu | Yes | Temurin 17 (`actions/setup-java`); `flutter build apk --debug` |
+| `client-build-linux` | ubuntu | Yes | `flutter build linux --release`; `tool/check_ldd.sh` runs `ldd` on the executable and every `.so` in `build/linux/x64/release/bundle/lib/` and fails on any `not found` line |
+| `client-build-web` | ubuntu | Yes | `flutter build web --release`; `tool/web_bundle_report.sh` writes the gzip-compressed total of `build/web` and its five largest files to the job summary, with no threshold |
 | `client-build-windows` | windows | Yes | `flutter build windows --release` |
-| `client-build-macos-ios` | macos | Visibility on PRs, blocking on `main` | `flutter build macos --release`; `flutter build ios --release --no-codesign` |
+| `client-build-macos-ios` | macos | Yes whenever it runs | `flutter build macos --release`; `flutter build ios --release --no-codesign` |
 
-macOS minutes are the expensive ones, so on pull requests the Apple job runs only when `client/ios/**`, `client/macos/**`, `client/pubspec.lock`, or `client/lib/platform/**` changed, and always on `main`.
+Every build job passes `--dart-define-from-file=config/dev.json`.
+
+macOS minutes are the expensive ones, so on pull requests the Apple job runs only when the diff against the base branch touches `client/ios/**`, `client/macos/**`, `client/pubspec.lock`, `client/lib/platform/**`, `client-quality.yml`, or the composite action, and always on a push to `main`. Whenever it runs it is blocking, so a pull request cannot leave the Apple builds broken.
 
 Actions are pinned by commit SHA, as in the existing workflows. Flutter and pub caches are keyed on `.fvmrc` and `pubspec.lock`.
 
