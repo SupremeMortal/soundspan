@@ -18,7 +18,7 @@ Status: design phase.
 | Integration (desktop) | `client/integration_test/desktop` | `flutter test integration_test -d linux|windows|macos` | Shell, shortcuts, window state, media-control adapter smoke | Nightly |
 | Manual matrix | `docs/designs/flutter-client/` release checklist issue template | People | Bluetooth, Android Auto, calls, sleep/wake, network handoff, screen readers, resource budgets | Each release |
 
-Coverage: `flutter test --coverage` merged with the API package's; floor 80 % lines for `lib/core/**` and `packages/soundspan_api/lib/**`, 60 % overall, excluding generated files. The floor is a ratchet: it is raised when exceeded by 5 points, never lowered.
+Coverage: `flutter test --coverage` merged with the API package's; floor 80 % lines for `lib/core/**` and `packages/soundspan_api/lib/**`, 60 % overall, excluding `*.g.dart`, `*.freezed.dart`, and `generated/` directories. `tool/coverage_floor.dart` checks the floors in `tool/coverage_floor.json`. `tool/coverage_exclusions.txt` lists plugin-bound adapters that `flutter test` cannot run, one glob per line with a ` # reason`; an entry without a reason or one that matches no file fails the check. The floor is a ratchet: it is raised when exceeded by 5 points, never lowered. The check is advisory about the ratchet: it prints the new floor to commit and does not fail for it.
 
 ## Test Doubles
 
@@ -38,7 +38,7 @@ Coverage: `flutter test --coverage` merged with the API package's; floor 80 % li
 
 - Matrix per component or screen: widths 390, 800, 1440 × themes dark, light. Selected ones also at text scale 2.0, pseudo-locale, and RTL.
 - Rendered with the bundled Montserrat (loaded in `flutter_test_config.dart`) so text is real; goldens are generated and compared **only on the Linux CI image** (`alchemist` CI mode) to avoid cross-platform anti-aliasing diffs. Developers on other OSes run the platform-independent "blocked text" variant locally.
-- Updating: `flutter test --tags golden --update-goldens` inside the CI container (`tool/goldens.sh` runs it through Docker or Podman).
+- Updating: commit the images from the `client-golden-rendered` artifact of a failing `client-golden` run, or run `flutter test --tags golden --update-goldens` on Linux with the pinned Flutter (`tool/goldens.sh` runs it through Docker or Podman).
 - Network images are replaced by a deterministic placeholder provider.
 
 ## Contract Suite
@@ -74,7 +74,12 @@ Shapes are proven on the server: P9 validates every client-surface response agai
 ```yaml
 on:
   pull_request:
-    paths: ["client/**", "backend/src/routes/**", ".github/workflows/client-*.yml"]
+    paths:
+      - "client/**"
+      - "backend/src/routes/**"
+      - "backend/src/openapi/**"
+      - ".github/workflows/client-*.yml"
+      - ".github/actions/client-flutter/**"
   push:
     branches: [main]
     paths: ["client/**"]
@@ -82,11 +87,15 @@ on:
 
 Server-only PRs do not trigger it, except route and `backend/src/openapi/**` changes, which run the spec check and the contract job only.
 
+A first job, `changes`, diffs the pull request against the merge base with its base branch using plain `git diff --name-only` and sets three outputs: `client` (`client/**`, the client workflows, or the composite action changed), `apple` (`client/ios/**`, `client/macos/**`, `client/pubspec.lock`, `client/lib/platform/**`), and `api_surface` (`client/packages/soundspan_api/**`, `backend/src/routes/**`, `backend/src/openapi/**`). On `push` every output is true. Because the diff is against the base branch and not the previous push, a job that failed on an earlier push cannot be skipped on a later one. The analyze, test, and golden jobs run when `client` is true.
+
+Every client job sets Flutter up with the composite action `.github/actions/client-flutter`: it reads the version from `client/.fvmrc` with `jq`, installs it with `subosito/flutter-action`, caches Flutter on `.fvmrc` and pub on `.fvmrc` plus both `pubspec.lock` files, and runs `flutter pub get` in `client/` and `dart pub get` in the API package.
+
 | Job | Runner | Blocking | Steps |
 |---|---|---|---|
-| `client-analyze` | ubuntu | Yes | `flutter pub get`; `tool/gen.sh` + `git diff --exit-code`; `dart format --output=none --set-exit-if-changed .`; `flutter analyze --fatal-infos`; `dart run tool/check_imports.dart`; `dart run tool/check_l10n.dart`; `dart run tool/license_audit.dart` |
-| `client-test` | ubuntu | Yes | `dart test` in the API package; `flutter test --coverage --exclude-tags golden,contract,engine`; coverage floor |
-| `client-golden` | ubuntu (pinned container) | Yes | `flutter test --tags golden`; uploads failure diffs as artifacts |
+| `client-analyze` | ubuntu | Yes | `tool/gen.sh` + `git diff --exit-code`; `dart format --output=none --set-exit-if-changed .`; `flutter analyze --fatal-infos`; `dart analyze --fatal-infos` in the API package; `dart run tool/check_imports.dart`; `dart run tool/check_l10n.dart`; `dart run tool/license_audit.dart` |
+| `client-test` | ubuntu | Yes | `dart test --coverage-path=coverage/lcov.info` in the API package; `flutter test --coverage --exclude-tags golden,contract,engine`; `dart run tool/coverage_floor.dart` |
+| `client-golden` | ubuntu, directly on the runner with the pinned Flutter (no container) | Yes | `flutter test --tags golden`; on failure uploads `client/test/**/failures/**` as `client-golden-failures`, then reruns with `--update-goldens` and uploads every golden image as `client-golden-rendered`, with paths relative to `client/`, ready to commit |
 | `client-spec` | ubuntu | Yes when the API package, backend routes, or `backend/src/openapi/**` changed | `npm --prefix backend run openapi:emit-client` + `git diff --exit-code`; `dart run tool/spec_compat.dart` |
 | `client-contract` | ubuntu | Yes on the same paths | Build backend, `docker compose up` with response validation on, seed, `dart test --tags contract` |
 | `client-build-android` | ubuntu | Yes | `flutter build apk --debug` |

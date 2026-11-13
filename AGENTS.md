@@ -120,6 +120,14 @@ npm --prefix frontend install
 
 **Backend Tests + Coverage**, **Backend Typecheck**, **Frontend Typecheck**, **Python Quality**, **Enforcement Gates**, and **Enforcement Gates Build** do not use `continue-on-error`; a failure always fails the workflow run. The four Visibility jobs set `continue-on-error` unless the repo variable `CI_NON_BLOCKING_TEST_VISIBILITY` is `false`; with the variable unset or set to any other value, their failures do not fail the workflow run.
 
+Client gates (`client-quality.yml`). They run on pull requests that touch `client/**`, `backend/src/routes/**`, `backend/src/openapi/**`, the `client-*` workflows, or `.github/actions/client-flutter/**`, and on pushes to `main` that touch `client/**`; a `changes` job skips them when nothing under `client/` (or the client workflows) changed. `npm run verify` and `npm run verify:ci` do not include them; client work runs `npm run verify:client`, which needs the Flutter release pinned in `client/.fvmrc`.
+
+| CI job (`client-quality.yml`) | Blocking? | Local command | Catches |
+| --- | --- | --- | --- |
+| client-analyze | Enforcement | `npm run verify:client` (first half) | stale generated code (`tool/gen.sh` + `git diff`), `dart format`, `flutter analyze --fatal-infos`, and `dart analyze --fatal-infos` in `client/packages/soundspan_api` |
+| client-test | Enforcement | `npm run verify:client` (second half) | `dart test` in the API package and `flutter test --exclude-tags golden,contract,engine`, both with coverage, then the line-coverage floors in `client/tool/coverage_floor.json` (`client/tool/coverage_floor.dart`) |
+| client-golden | Enforcement | `flutter test --tags golden` in `client/` (Linux) | golden image mismatches; on failure the job uploads `client-golden-failures` and `client-golden-rendered` |
+
 Notes:
 
 - **The frontend has two type-check gates.** `next build` checks the Next build graph (`app/`, `lib/`, `components/`, `hooks/`, `features/`), while `npm run typecheck` checks the complete frontend TypeScript project, including standalone `tests/**` files, without reusing incremental state. `npm run lint` and the `node --test`/`tsx` runners transpile without type-checking.

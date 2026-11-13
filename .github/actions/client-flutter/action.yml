@@ -1,0 +1,33 @@
+name: Client Flutter setup
+description: >-
+  Installs the Flutter release pinned in client/.fvmrc, caches Flutter and pub
+  on client/.fvmrc and the pubspec.lock files, and resolves the client's and
+  the soundspan_api package's dependencies.
+
+runs:
+  using: composite
+  steps:
+    - name: Read the pinned Flutter version
+      id: pin
+      shell: bash
+      run: echo "version=$(jq -r .flutter client/.fvmrc)" >> "$GITHUB_OUTPUT"
+
+    - name: Install Flutter
+      uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+      with:
+        channel: stable
+        flutter-version: ${{ steps.pin.outputs.version }}
+        cache: true
+        cache-key: flutter-:os:-:channel:-:version:-:arch:-${{ hashFiles('client/.fvmrc') }}
+        pub-cache: true
+        pub-cache-key: flutter-pub-:os:-:channel:-:version:-:arch:-${{ hashFiles('client/.fvmrc', 'client/pubspec.lock', 'client/packages/soundspan_api/pubspec.lock') }}
+
+    - name: Resolve client dependencies
+      shell: bash
+      working-directory: client
+      run: flutter pub get
+
+    - name: Resolve soundspan_api dependencies
+      shell: bash
+      working-directory: client/packages/soundspan_api
+      run: dart pub get

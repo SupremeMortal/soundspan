@@ -1,0 +1,166 @@
+name: Client Quality
+
+on:
+  pull_request:
+    paths:
+      - "client/**"
+      - "backend/src/routes/**"
+      - "backend/src/openapi/**"
+      - ".github/workflows/client-*.yml"
+      - ".github/actions/client-flutter/**"
+  push:
+    branches: [main]
+    paths:
+      - "client/**"
+
+concurrency:
+  group: client-quality-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  changes:
+    name: Client changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      client: ${{ steps.diff.outputs.client }}
+      apple: ${{ steps.diff.outputs.apple }}
+      api_surface: ${{ steps.diff.outputs.api_surface }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Compute changed areas
+        id: diff
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          set -euo pipefail
+          if [[ "$EVENT_NAME" != "pull_request" ]]; then
+            {
+              echo "client=true"
+              echo "apple=true"
+              echo "api_surface=true"
+            } >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # Diff against the merge base with the base branch, not the previous
+          # push, so a job that failed earlier cannot be skipped later.
+          git fetch --no-tags origin "$BASE_REF"
+          base="$(git merge-base "origin/$BASE_REF" HEAD)"
+          changed="$(git diff --name-only "$base" HEAD)"
+          printf 'Changed files:\n%s\n' "$changed"
+          has() { grep -Eq "$1" <<< "$changed" && echo true || echo false; }
+          {
+            echo "client=$(has '^(client/|\.github/workflows/client-[^/]*\.yml$|\.github/actions/client-flutter/)')"
+            echo "apple=$(has '^(client/ios/|client/macos/|client/pubspec\.lock$|client/lib/platform/)')"
+            echo "api_surface=$(has '^(client/packages/soundspan_api/|backend/src/routes/|backend/src/openapi/)')"
+          } | tee -a "$GITHUB_OUTPUT"
+
+  client-analyze:
+    name: client-analyze
+    needs: changes
+    if: needs.changes.outputs.client == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Flutter
+        uses: ./.github/actions/client-flutter
+
+      - name: Generated code is current
+        working-directory: client
+        run: |
+          tool/gen.sh
+          git diff --exit-code -- .
+
+      - name: Format
+        working-directory: client
+        run: dart format --output=none --set-exit-if-changed .
+
+      - name: Analyze client
+        working-directory: client
+        run: flutter analyze --fatal-infos
+
+      - name: Analyze soundspan_api
+        working-directory: client/packages/soundspan_api
+        run: dart analyze --fatal-infos
+
+  client-test:
+    name: client-test
+    needs: changes
+    if: needs.changes.outputs.client == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Flutter
+        uses: ./.github/actions/client-flutter
+
+      - name: Test soundspan_api with coverage
+        working-directory: client/packages/soundspan_api
+        run: dart test --coverage-path=coverage/lcov.info
+
+      - name: Test client with coverage
+        working-directory: client
+        run: flutter test --coverage --exclude-tags golden,contract,engine
+
+      - name: Coverage floor
+        working-directory: client
+        run: dart run tool/coverage_floor.dart
+
+  client-golden:
+    name: client-golden
+    needs: changes
+    if: needs.changes.outputs.client == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Flutter
+        uses: ./.github/actions/client-flutter
+
+      - name: Golden tests
+        working-directory: client
+        run: flutter test --tags golden
+
+      - name: Upload golden failures
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: client-golden-failures
+          # pubspec.yaml anchors the common root at client/, so paths in the
+          # artifact stay relative to client/.
+          path: |
+            client/pubspec.yaml
+            client/test/**/failures/**
+          if-no-files-found: warn
+
+      - name: Render goldens on this runner
+        if: failure()
+        working-directory: client
+        run: flutter test --tags golden --update-goldens
+
+      - name: Upload rendered goldens
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: client-golden-rendered
+          path: |
+            client/pubspec.yaml
+            client/test/**/goldens/**/*.png
+            !client/test/**/failures/**
+          if-no-files-found: warn

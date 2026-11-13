@@ -160,6 +160,8 @@ Visibility jobs set `continue-on-error` unless the repository variable `CI_NON_B
 - Python Sidecar Tests: one job for each of the four sidecars
 - Helm Chart Visibility
 
+The **Client Quality** workflow (`.github/workflows/client-quality.yml`) runs the Flutter client's `client-analyze`, `client-test`, and `client-golden` jobs. It starts on pull requests that touch `client/**`, `backend/src/routes/**`, `backend/src/openapi/**`, `.github/workflows/client-*.yml`, or `.github/actions/client-flutter/**`, and on pushes to `main` that touch `client/**`. Its `changes` job diffs the pull request against its base branch and skips the client jobs when nothing under `client/` or the client workflow files changed. Run `npm run verify:client` to reproduce `client-analyze` and `client-test` locally.
+
 Branch protection, not this workflow, decides which checks must pass before a merge. `AGENTS.md` lists the local command for each job. `docs/TESTING.md` describes what each job checks.
 
 ### Backend coverage gate

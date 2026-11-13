@@ -1,0 +1,4 @@
+# Files left out of every coverage group, one path glob per line relative to
+# client/, each followed by " # <one-line reason>". Only for plugin-bound
+# adapters that `flutter test` cannot run. An entry without a reason, or one
+# that matches no file, fails tool/coverage_floor.dart.
