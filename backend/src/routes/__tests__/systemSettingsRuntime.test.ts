@@ -415,7 +415,9 @@ describe("systemSettings runtime routes", () => {
 
             expect(res.statusCode).toBe(200);
             const { update } = mockSystemSettingsUpsert.mock.calls[0][0];
-            expect(update.offlineDownloadsEnabled).toBe(offlineDownloadsEnabled);
+            expect(update.offlineDownloadsEnabled).toBe(
+                offlineDownloadsEnabled,
+            );
         },
     );
 
