@@ -142,6 +142,7 @@ dependencies:
 
 dev_dependencies:
   alchemist: ^0.14.0
+  analyzer: ^14.7.0              # tool/check_imports.dart
   build_runner: any
   drift_dev: ^2.35.0
   flutter_test: { sdk: flutter }
@@ -213,17 +214,21 @@ linter:
     lines_longer_than_80_chars: false   # dart format decides
 ```
 
-Rules the analyzer cannot express are enforced by `tool/check_imports.dart`, which parses import directives and fails CI on a violation:
+Rules the analyzer cannot express are enforced by `tool/check_imports.dart`. It parses files with `package:analyzer` (no resolution), prints `path:line: [rule] message` per violation, and fails CI on any. It runs in `client-analyze` after `flutter analyze` and in `tool/verify.sh`. It scans `lib/`, `test/`, `tool/`, `integration_test/`, `contract_test/`, and `packages/*/{lib,test}`; the import and code rules apply to `lib/` and `packages/*/lib/`, and `spdx` applies to all of them. Generated files (`*.g.dart`, `*.freezed.dart`, anything under a `generated/` directory) and `spikes/` are not checked. Relative and `package:soundspan/...` imports are resolved to a path under `lib/` before the path rules apply, and exports count as imports. There is no ignore comment and no baseline: a rule that needs an exception gets it in the tool, with a test.
 
-| Rule | Reason |
-|---|---|
-| `dart:io`, `dart:js_interop`, and `package:web` only under `lib/platform/**` and `packages/**` | Platform seams (design doc, Architecture) |
-| `package:just_audio` and `package:media_kit` only under `lib/core/playback/engines/**` | Playback packages stay behind `PlayerEngine` |
-| `package:dio` only under `packages/soundspan_api/**` and `lib/core/downloads/**` | Single HTTP boundary |
-| `features/<a>/**` never imports `features/<b>/**` except `features/<b>/<b>.dart` (its public barrel) | Feature isolation |
-| `**/domain/**` imports no Flutter, no drift, no dio | Pure domain |
-| `**/ui/**` imports no `data/` | UI talks to providers |
-| No file under `lib/` contains the identifiers `streamSource`, `tidalTrackId`, `youtubeVideoId`, or a string-prefix test on a `playbackId` | Source-agnostic rule (design doc, Source-Agnostic Tracks) |
+| Rule id | Fails when | Reason |
+|---|---|---|
+| `platform-imports` | `dart:io`, `dart:js_interop`, or `package:web` is imported under `lib/` outside `lib/platform/**` (`packages/**` is exempt) | Platform seams (design doc, Architecture) |
+| `playback-packages` | `package:just_audio` or `package:media_kit` is imported outside `lib/core/playback/engines/**` | Playback packages stay behind `PlayerEngine` |
+| `dio-boundary` | `package:dio` is imported outside `packages/soundspan_api/**` and `lib/core/downloads/**` | Single HTTP boundary |
+| `feature-isolation` | `lib/features/<a>/**` imports `lib/features/<b>/**` other than `lib/features/<b>/<b>.dart` (its public barrel) | Feature isolation |
+| `pure-domain` | a file under any `domain/` directory imports `package:flutter`, `dart:ui`, `package:drift`, or `package:dio` | Pure domain |
+| `ui-no-data` | a file under any `ui/` directory imports a file under a `data/` directory | UI talks to providers |
+| `core-direction` | `lib/core/<x>/` imports `lib/core/<y>/` against the order of [02](02-architecture.md) (`storage` ← `auth` ← `profile` ← `sync`, `downloads`, `realtime` ← `playback`), or anything under `lib/core/` imports `lib/features/`. Core directories outside that order (`logging`, `connectivity`) may be imported by any core directory and may themselves import only `storage` and each other | Core layering |
+| `source-agnostic` | under `lib/` or `packages/soundspan_api/lib/`, the identifier `streamSource`, `tidalTrackId`, or `youtubeVideoId` appears, or `startsWith`, `endsWith`, `contains`, `split`, `substring`, `indexOf`, `codeUnitAt`, `replaceFirst`, `replaceAll`, or an index is applied to an expression whose source mentions `playbackId` (any letter case). Comparing, hashing, interpolating, and passing a playback id are allowed | Source-agnostic rule (design doc, Source-Agnostic Tracks) |
+| `colour-literal` | under `lib/` outside `lib/app/theme/**`, a `Color(...)` or `Color.from...(...)` call or a `Colors.<name>` reference appears; `Colors.transparent` is allowed | Colours come from `SoundspanColors` ([09](09-ui-and-design-system.md)) |
+| `clock` | under `lib/` outside `lib/platform/**`, `DateTime.now()` is called | Time comes from the `Clock` seam, so tests use `FakeClock` ([11](11-testing-and-ci.md)) |
+| `spdx` | a hand-written Dart file does not start with the SPDX header (see the end of this document) | Client licence exception |
 
 ## Code Generation
 

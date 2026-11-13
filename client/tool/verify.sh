@@ -9,6 +9,7 @@ tool/gen.sh
 git diff --exit-code -- .
 dart format --output=none --set-exit-if-changed .
 flutter analyze --fatal-infos
+dart run tool/check_imports.dart
 (cd packages/soundspan_api && dart analyze --fatal-infos)
 
 echo "== client-test"

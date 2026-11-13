@@ -49,6 +49,7 @@ dependencies:
 
 dev_dependencies:
   alchemist: ^0.14.0
+  analyzer: ^14.7.0              # tool/check_imports.dart
   build_runner: any
   drift_dev: ^2.35.0
   flutter_test: { sdk: flutter }

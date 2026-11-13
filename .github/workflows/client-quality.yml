@@ -91,6 +91,10 @@ jobs:
         working-directory: client
         run: flutter analyze --fatal-infos
 
+      - name: Layering and platform imports
+        working-directory: client
+        run: dart run tool/check_imports.dart
+
       - name: Analyze soundspan_api
         working-directory: client/packages/soundspan_api
         run: dart analyze --fatal-infos

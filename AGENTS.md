@@ -124,7 +124,8 @@ Client gates (`client-quality.yml`). They run on pull requests that touch `clien
 
 | CI job (`client-quality.yml`) | Blocking? | Local command | Catches |
 | --- | --- | --- | --- |
-| client-analyze | Enforcement | `npm run verify:client` (first half) | stale generated code (`tool/gen.sh` + `git diff`), `dart format`, `flutter analyze --fatal-infos`, and `dart analyze --fatal-infos` in `client/packages/soundspan_api` |
+| client-analyze | Enforcement | `npm run verify:client` (first half) | stale generated code (`tool/gen.sh` + `git diff`), `dart format`, `flutter analyze --fatal-infos`, `tool/check_imports.dart`, and `dart analyze --fatal-infos` in `client/packages/soundspan_api` |
+| client-analyze: Layering and platform imports | Enforcement | `dart run tool/check_imports.dart` in `client/` (part of `npm run verify:client`) | the `platform-imports`, `playback-packages`, `dio-boundary`, `feature-isolation`, `pure-domain`, `ui-no-data`, `core-direction`, `source-agnostic`, `colour-literal`, `clock` and `spdx` rules of doc 01 (Static Analysis); no ignore comment, no baseline |
 | client-test | Enforcement | `npm run verify:client` (second half) | `dart test` in the API package and `flutter test --exclude-tags golden,contract,engine`, both with coverage, then the line-coverage floors in `client/tool/coverage_floor.json` (`client/tool/coverage_floor.dart`) |
 | client-golden | Enforcement | `flutter test --tags golden` in `client/` (Linux) | golden image mismatches; on failure the job uploads `client-golden-failures` and `client-golden-rendered` |
 | client-build-android | Enforcement | `flutter build apk --debug --dart-define-from-file=config/dev.json` in `client/` (Temurin 17) | Android native configuration and plugin builds |
