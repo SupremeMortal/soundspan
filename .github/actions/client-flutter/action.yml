@@ -1,12 +1,24 @@
 name: Client Flutter setup
 description: >-
-  Installs the Flutter release pinned in client/.fvmrc, caches Flutter and pub
+  Installs the Linux build packages (on Linux) and the Flutter release pinned
+  in client/.fvmrc, caches Flutter and pub
   on client/.fvmrc and the pubspec.lock files, and resolves the client's and
   the soundspan_api package's dependencies.
 
 runs:
   using: composite
   steps:
+    # Native-asset build hooks of plugin dependencies run during
+    # `flutter test` and need the Linux build packages of doc 01.
+    - name: Install Linux build packages
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends \
+          clang cmake ninja-build pkg-config libgtk-3-dev libx11-dev \
+          libxi-dev libmpv-dev libsecret-1-dev libjsoncpp-dev
+
     - name: Read the pinned Flutter version
       id: pin
       shell: bash

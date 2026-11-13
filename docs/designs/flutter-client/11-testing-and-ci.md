@@ -89,7 +89,7 @@ Server-only PRs do not trigger it, except route and `backend/src/openapi/**` cha
 
 A first job, `changes`, diffs the pull request against the merge base with its base branch using plain `git diff --name-only` and sets three outputs: `client` (`client/**`, the client workflows, or the composite action changed), `apple` (`client/ios/**`, `client/macos/**`, `client/pubspec.lock`, `client/lib/platform/**`), and `api_surface` (`client/packages/soundspan_api/**`, `backend/src/routes/**`, `backend/src/openapi/**`). On `push` every output is true. Because the diff is against the base branch and not the previous push, a job that failed on an earlier push cannot be skipped on a later one. The analyze, test, and golden jobs run when `client` is true.
 
-Every client job sets Flutter up with the composite action `.github/actions/client-flutter`: it reads the version from `client/.fvmrc` with `jq`, installs it with `subosito/flutter-action`, caches Flutter on `.fvmrc` and pub on `.fvmrc` plus both `pubspec.lock` files, and runs `flutter pub get` in `client/` and `dart pub get` in the API package.
+Every client job sets Flutter up with the composite action `.github/actions/client-flutter`: on Linux it installs the build packages of [01](01-toolchain-and-repository.md) (plugin native-asset hooks run during `flutter test` and need GTK and X11 headers), then it reads the version from `client/.fvmrc` with `jq`, installs it with `subosito/flutter-action`, caches Flutter on `.fvmrc` and pub on `.fvmrc` plus both `pubspec.lock` files, and runs `flutter pub get` in `client/` and `dart pub get` in the API package.
 
 | Job | Runner | Blocking | Steps |
 |---|---|---|---|
