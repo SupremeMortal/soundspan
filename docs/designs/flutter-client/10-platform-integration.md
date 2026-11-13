@@ -6,7 +6,7 @@ What each target needs beyond shared Dart code. Identifier everywhere: `io.sound
 
 ## Android
 
-**Gradle:** `minSdk 26`, `targetSdk` and `compileSdk` at the Flutter default for the pinned SDK, Java 17, R8 on in release, `abiFilters` arm64-v8a, armeabi-v7a, x86_64. Universal APK and AAB.
+**Gradle:** `minSdk 26`, `compileSdk 37` (required by `flutter_local_notifications` and `androidx.core`), `targetSdk` at the Flutter default for the pinned SDK, core library desugaring (`desugar_jdk_libs` 2.1.4, required by `flutter_local_notifications`), Java 17, R8 on in release, `abiFilters` arm64-v8a, armeabi-v7a, x86_64. Universal APK and AAB.
 
 **`AndroidManifest.xml`:**
 

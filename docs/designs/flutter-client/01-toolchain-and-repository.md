@@ -9,7 +9,7 @@ Status: design phase.
 | Flutter | 3.50.0 stable (Dart 3.14.0) | `client/.fvmrc`; CI reads the same file |
 | FVM | 3.x | Developer machines and CI (`subosito/flutter-action` with `flutter-version-file: client/.fvmrc`) |
 | Java | 17 (Temurin) | Android Gradle builds |
-| Android | compileSdk/targetSdk = Flutter default for the pinned SDK, minSdk 26 | `client/android/app/build.gradle.kts` |
+| Android | compileSdk 37 (`flutter_local_notifications` and `androidx.core` require it), targetSdk = Flutter default for the pinned SDK, minSdk 26, core library desugaring with `desugar_jdk_libs` 2.1.4 (required by `flutter_local_notifications`) | `client/android/app/build.gradle.kts` |
 | Xcode | Latest stable on the `macos-latest` runner | iOS deployment target 15.0, macOS 12.0 (the pinned SDK's minimum) |
 | Visual Studio | 2022 Build Tools with "Desktop development with C++" | Windows |
 | Linux build deps | `clang cmake ninja-build pkg-config libgtk-3-dev libmpv-dev libsecret-1-dev libjsoncpp-dev` | Linux |
