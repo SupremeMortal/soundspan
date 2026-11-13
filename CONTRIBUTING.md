@@ -72,6 +72,20 @@ npm run lint
 
 Follow existing code patterns and TypeScript conventions.
 
+## Client (Flutter)
+
+The first-party client lives in `client/`. Install the Flutter release pinned in `client/.fvmrc` (for example with [FVM](https://fvm.app/)), then from `client/`:
+
+```bash
+flutter pub get
+tool/gen.sh          # regenerate committed generated files after changing an input
+flutter test
+```
+
+Build and run commands per target are in [`client/README.md`](client/README.md). The design and implementation plan are in [`docs/designs/flutter-client/`](docs/designs/flutter-client/README.md).
+
+**Licence for client contributions.** Contributions under `client/` are accepted under GPL-3.0 with the additional permission under section 7 stated in [`client/LICENSE`](client/LICENSE), which allows distribution through application stores. Code from `backend/`, `frontend/`, or `packages/` must not be copied into `client/`: it is plain GPL-3.0 and does not carry that permission.
+
 ## Testing Frameworks and Structure
 
 Canonical testing guide:

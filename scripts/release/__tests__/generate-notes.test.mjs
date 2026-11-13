@@ -336,3 +336,25 @@ test("generates Removed bullets after the Changed section", () => {
         /## Changed\n\n- No behavior changes documented in this release\.\n\n## Deprecated\n\n- None documented in this release\.\n\n## Removed\n\n- Retired the legacy release control surface\.\n\n## Accessibility/,
     );
 });
+
+test("generates Client bullets after the Accessibility section", () => {
+    const result = runGenerator(`# Changelog
+
+## [9.9.9] - 2026-08-13
+
+### Added
+
+- Added a server feature.
+
+### Client
+
+- The client shows the localized app title.
+`);
+
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(
+        result.stdout,
+        /## Accessibility\n\n- No accessibility improvements documented in this release\.\n\n## Client\n\n- The client shows the localized app title\.\n\n## Admin\/Operations/,
+    );
+    assert.match(result.stdout, /## Added\n\n- Added a server feature\./);
+});

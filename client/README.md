@@ -14,6 +14,11 @@ Use the Flutter release pinned in [`.fvmrc`](.fvmrc), for example with
 flutter pub get
 ```
 
+## File names
+
+The repository's root `.gitignore` ignores `*.conf` and `*.seed` everywhere,
+so client files must not use those extensions.
+
 ## Code generation
 
 Generated files are committed. After changing an input of code generation

@@ -86,6 +86,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Native dropdown menus (sort, genre, and pagination on the Audiobooks and Podcasts pages, and other built-in selects) no longer render white text on a white popup; the app now declares its dark color scheme to the browser so native controls match the theme.
 - Audiobook listening progress and playback state are now tied to their audiobook at the database level: removing a book — scheduled prune, manual sync, or federation cleanup — atomically deletes its progress rows and nulls the active-audiobook reference in playback state, closing a race where progress saved mid-removal could linger as a phantom entry in Continue Listening; the upgrade migration also removes any orphaned progress rows left behind by earlier removals (#866).
 
+### Client
+
+- The repository contains the scaffold of a first-party Flutter client under `client/` for Android, iOS, Linux, macOS, Windows and the web. It is not released yet.
+
 ## [2.6.1] - 2026-08-26
 
 ### Added

@@ -3,11 +3,14 @@
 /**
  * Ratchets production source-file sizes without requiring a big-bang cleanup.
  * Scans backend/src; frontend app, components, features, hooks, and lib;
- * Python files recursively under services; and each package's src directory.
+ * Python files recursively under services; each package's src directory; and
+ * Dart files under client/lib and each client/packages/<name>/lib. Client
+ * roots that do not exist (a checkout without client/) are skipped.
  * It excludes __tests__, tests, *.test.*, *.spec.*, Python test-prefixed and
  * _test.py files, conftest.py, generated files/directories (including Prisma
- * clients), .next, node_modules, dist, lockfiles, documentation, and
- * non-source data/assets.
+ * clients, generated l10n, and the generated soundspan_api sources), Dart
+ * *.g.dart and *.freezed.dart files, .next, node_modules, dist, lockfiles,
+ * documentation, and non-source data/assets.
  *
  * Regenerate the ratchet entries after intentional splits (review the diff):
  * node --input-type=module -e 'import { collectFileSizes } from "./scripts/ci/check-file-size.mjs"; const sizes = collectFileSizes(process.cwd()); console.log(JSON.stringify(Object.fromEntries(Object.entries(sizes).filter(([, lines]) => lines > 1500)), null, 4));'
@@ -32,6 +35,7 @@ const CODE_EXTENSIONS = Object.freeze([
     ".tsx",
 ]);
 const PYTHON_EXTENSIONS = Object.freeze([".py"]);
+const DART_EXTENSIONS = Object.freeze([".dart"]);
 const EXCLUDED_DIRECTORIES = new Set([
     ".next",
     ".prisma",
@@ -88,8 +92,41 @@ function packageScanRoots(repoRoot) {
         .map((directory) => ({ directory, extensions: CODE_EXTENSIONS }));
 }
 
+function clientScanRoots(repoRoot) {
+    const clientLib = "client/lib";
+    const roots = fs.existsSync(path.join(repoRoot, clientLib))
+        ? [clientLib]
+        : [];
+    const clientPackages = path.join(repoRoot, "client/packages");
+    if (fs.existsSync(clientPackages)) {
+        const entries = fs.readdirSync(clientPackages, { withFileTypes: true });
+        if (entries.length > MAX_PACKAGES) {
+            throw new Error(
+                `File-size scan exceeded ${MAX_PACKAGES} client packages`,
+            );
+        }
+        roots.push(
+            ...entries
+                .filter((entry) => entry.isDirectory())
+                .map((entry) => `client/packages/${entry.name}/lib`)
+                .filter((directory) =>
+                    fs.existsSync(path.join(repoRoot, directory)),
+                )
+                .sort(),
+        );
+    }
+    return roots.map((directory) => ({
+        directory,
+        extensions: DART_EXTENSIONS,
+    }));
+}
+
 function scanRoots(repoRoot) {
-    return [...FIXED_SCAN_ROOTS, ...packageScanRoots(repoRoot)];
+    return [
+        ...FIXED_SCAN_ROOTS,
+        ...packageScanRoots(repoRoot),
+        ...clientScanRoots(repoRoot),
+    ];
 }
 
 function isExcludedFile(fileName) {
@@ -99,6 +136,8 @@ function isExcludedFile(fileName) {
         fileName.endsWith("_test.py") ||
         fileName.includes(".test.") ||
         fileName.includes(".spec.") ||
+        fileName.endsWith(".g.dart") ||
+        fileName.endsWith(".freezed.dart") ||
         /(?:^|[.-])generated\.(?:cjs|css|js|jsx|mjs|ts|tsx)$/.test(fileName)
     );
 }

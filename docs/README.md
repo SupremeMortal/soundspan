@@ -93,6 +93,8 @@ This index is the central navigation page for all project documentation under `d
 | [`designs/durable-track-identity.md`](designs/durable-track-identity.md)                                     | Shipped      | Durable local track identity, soft removal, revival, and retention purge design |
 | [`designs/federated-library-sharing.md`](designs/federated-library-sharing.md)                               | Shipped      | Federated library-sharing product and protocol design                           |
 | [`designs/federated-library-sharing-implementation.md`](designs/federated-library-sharing-implementation.md) | Implemented  | Delivery plan and implementation record for federated library sharing           |
+| [`designs/flutter-client.md`](designs/flutter-client.md)                                                     | Design phase | First-party Flutter client for Android, iOS, desktop, and web: product design   |
+| [`designs/flutter-client/README.md`](designs/flutter-client/README.md)                                       | Design phase | Implementation plan for the Flutter client                                      |
 
 ## Compatibility and Brand
 

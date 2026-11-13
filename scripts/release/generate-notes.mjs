@@ -33,6 +33,7 @@ const RELEASE_CATEGORY_ALIASES = {
     deprecated: ["Deprecated"],
     removed: ["Removed"],
     accessibility: ["Accessibility"],
+    client: ["Client"],
     admin: ["Admin/Operations", "Admin", "Operations", "Database Migrations"],
     breaking: ["Breaking Changes", "Breaking"],
     security: ["Security"],
@@ -317,6 +318,10 @@ function loadReleaseItemsFromChangelog(version) {
         bulletsByHeading,
         RELEASE_CATEGORY_ALIASES.accessibility,
     );
+    const client = pickBulletsByHeadingAliases(
+        bulletsByHeading,
+        RELEASE_CATEGORY_ALIASES.client,
+    );
     const admin = pickBulletsByHeadingAliases(
         bulletsByHeading,
         RELEASE_CATEGORY_ALIASES.admin,
@@ -335,6 +340,7 @@ function loadReleaseItemsFromChangelog(version) {
         deprecated,
         removed,
         accessibility,
+        client,
         admin,
         breaking,
     };
@@ -394,6 +400,10 @@ function buildCategoryReplacements(categorized) {
         "{{ACCESSIBILITY_ITEMS}}": formatBulletBlock(
             categorized.accessibility,
             "No accessibility improvements documented in this release.",
+        ),
+        "{{CLIENT_ITEMS}}": formatBulletBlock(
+            categorized.client,
+            "No client changes documented in this release.",
         ),
         "{{ADMIN_ITEMS}}": formatBulletBlock(
             categorized.admin,

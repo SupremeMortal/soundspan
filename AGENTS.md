@@ -20,6 +20,7 @@ Repository contract for soundspan.
 - All contributors and AI agents — including any tools they drive (e.g. codex) — must follow the handbook's language module for the code they touch:
     - `typescript/` for TS/JS (backend, frontend, packages)
     - `python/` for the `services/**` sidecars
+    - `dart/` for the Flutter client (`client/**`)
 - Precedence, so this composes with the rules below:
     1. This AGENTS.md and its repository-specific rules win.
     2. Then the coding-handbook language module.
@@ -41,6 +42,8 @@ Repository contract for soundspan.
 ## Repository-Specific Rules
 
 - **API boundary:** Use `frontend/lib/api.ts` as the frontend API boundary. No direct `fetch` calls from components.
+- **Client API boundary:** `client/packages/soundspan_api` is the Flutter client's only HTTP boundary. No HTTP requests are built elsewhere in `client/`.
+- **Client import rules:** the layer, platform, colour-literal, SPDX and source-agnostic import rules in [`docs/designs/flutter-client/01-toolchain-and-repository.md`](docs/designs/flutter-client/01-toolchain-and-repository.md#static-analysis) apply to `client/**` and are enforced by `client/tool/check_imports.dart`.
 - **Backend config:** Read env through `backend/src/config.ts`.
 - **Database access:** Prefer Prisma for all DB access. Raw SQL (`$queryRaw`/`$executeRaw`) is permitted **only** for the classes of query Prisma cannot express, namely:
     - **pgvector similarity / ANN** — ivfflat probe tuning and `<=>`/`<->` distance ordering over embedding columns (e.g. `backend/src/utils/annQuery.ts`, `backend/src/services/trackEmbeddings.ts`, `backend/src/services/hybridSimilarity.ts`).
@@ -55,9 +58,10 @@ Repository contract for soundspan.
     - frontend: `frontend/lib/logger.ts`
     - backend: `backend/src/utils/logger.ts`
     - python sidecars: `services/common/logging_utils.py`
+    - Flutter client: `client/lib/core/logging/app_logger.dart`
 - **Naming & placement conventions:** `camelCase` TypeScript source files; one route module per mounted prefix under `backend/src/routes/` (indexed in `backend/src/routes/README.md`); frontend domain modules live under `frontend/features/<domain>/` and are indexed in `frontend/features/README.md`; scheduled/background processors belong in `backend/src/workers/`. Known drift (colocated vs. tree tests, `components/vibe` placement) is documented in the relevant README rather than silently tolerated — follow the README when extending an area.
-- **File-size guardrail:** `scripts/ci/check-file-size.mjs` scans non-test production source under `backend/src`, the frontend `app`/`components`/`features`/`hooks`/`lib` trees, Python files under `services`, and each package's `src` tree. Files over 3,000 lines fail unconditionally. Files over 1,500 lines may not be added or grow beyond the frozen per-file baseline; lower or remove baseline entries as files are split. This root contract is the policy home because the gate spans backend, frontend, sidecars, and packages.
-- **Changelog:** Keep `CHANGELOG.md` updated for user-visible or behavior-changing work.
+- **File-size guardrail:** `scripts/ci/check-file-size.mjs` scans non-test production source under `backend/src`, the frontend `app`/`components`/`features`/`hooks`/`lib` trees, Python files under `services`, each package's `src` tree, and Dart files under `client/lib` and each `client/packages/*/lib` (excluding `*.g.dart`, `*.freezed.dart`, and `generated` directories). Files over 3,000 lines fail unconditionally. Files over 1,500 lines may not be added or grow beyond the frozen per-file baseline; lower or remove baseline entries as files are split. This root contract is the policy home because the gate spans backend, frontend, sidecars, and packages.
+- **Changelog:** Keep `CHANGELOG.md` updated for user-visible or behavior-changing work. Flutter client entries go under a `### Client` heading inside each release section, a sibling of `### Added`.
 - **Testing conventions:** Assert on **behavior**, not source text. The source-scraping `*Contract` suites that `readFileSync` a module and `.toContain(...)` a code snippet are **deprecated**: do not add new tests of that shape, and replace an existing one with a behavioral test whenever you touch the code it guards.
 - **Docs are timeless:** documentation describes released code as it exists now. No point-in-time framing — "since X.Y.Z", "new/recently", "now/no longer" change-voice, version-scoped or date-stamped headings, issue-number provenance in operator-facing prose. The only exceptions are `docs/UPGRADING*.md` and `docs/release-notes/`, which are inherently point-in-time. Fold new content into each document's timeless structure. Design docs under `docs/designs/` carry a `Status:` marker (`design phase` / `shipped` / `shipped (partial: ...)` / `superseded`) kept current as work lands.
 - **Env vars ship on every surface:** a new environment variable lands in one PR across the code default, `.env.example`, `docker-compose.yml` (every backend-code service), `docker-compose.aio.yml`, the Helm chart (values + workload templates + chart README; null default, emit-only-when-set), and `docs/ENVIRONMENT_VARIABLES.md` — plus `ENV_CATEGORIES` in `backend/src/utils/envWriter.ts` when AIO-settings-relevant. `scripts/ci/check-env-docs.mjs` enforces docs + deployment-surface parity as a ratchet: fix or baseline-justify, never ignore.
