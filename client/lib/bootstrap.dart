@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:soundspan/app/app.dart';
+import 'package:soundspan/app/shell/window_state_controller.dart';
 import 'package:soundspan/core/auth/active_profile.dart';
 import 'package:soundspan/core/logging/app_logger.dart';
 import 'package:soundspan/core/logging/console_log_sink.dart';
@@ -33,8 +34,8 @@ typedef PostFirstFrameTask = Future<void> Function(ProviderContainer root);
 final List<PostFirstFrameTask> postFirstFrameTasks = [];
 
 /// Starts the app (doc 02, Bootstrap Sequence): error hooks, paths,
-/// logging, `app.db`, the root container and the active profile, then
-/// `runApp` and the [postFirstFrameTasks].
+/// logging, `app.db`, the root container and the active profile, the
+/// desktop window, then `runApp` and the [postFirstFrameTasks].
 Future<void> bootstrap() async {
   await runZonedGuarded<Future<void>>(
     () async {
@@ -50,6 +51,7 @@ Future<void> bootstrap() async {
         releaseMode: kReleaseMode,
       );
       final root = await createRootContainer(paths: paths);
+      await restoreWindow(root);
       runApp(
         UncontrolledProviderScope(container: root, child: const SoundspanApp()),
       );
@@ -66,6 +68,17 @@ Future<void> bootstrap() async {
     (error, stackTrace) =>
         _log.severe('Uncaught error', const {}, error, stackTrace),
   );
+}
+
+/// Desktop only (doc 02, step 5): restores the window's bounds before the
+/// first frame and starts persisting them. A failure is logged; the window
+/// then opens at the runner's default size.
+Future<void> restoreWindow(ProviderContainer root) async {
+  try {
+    await root.read(windowStateControllerProvider).start();
+  } on Object catch (error, stackTrace) {
+    _log.severe('Could not restore the window', const {}, error, stackTrace);
+  }
 }
 
 /// Routes framework and uncaught platform errors to the logger. Nothing is

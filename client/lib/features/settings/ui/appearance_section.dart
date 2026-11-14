@@ -5,6 +5,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:soundspan/app/app.dart';
+import 'package:soundspan/app/l10n/app_locales.dart';
 import 'package:soundspan/app/l10n/generated/app_localizations.dart';
 import 'package:soundspan/app/theme/dimens.dart';
 import 'package:soundspan/app/theme/extensions.dart';
@@ -46,7 +47,7 @@ class AppearanceSection extends ConsumerWidget {
           selected: locale == null,
           onTap: () => unawaited(settings.write(AppSettingKeys.locale, null)),
         ),
-        for (final supported in AppLocalizations.supportedLocales)
+        for (final supported in ref.watch(appLocalesProvider))
           _Choice(
             label: lookupAppLocalizations(supported).settingsLanguageName,
             selected: locale?.toLanguageTag() == supported.toLanguageTag(),

@@ -82,7 +82,7 @@ client/
 │   ├── check_l10n.dart             # No hard-coded user-visible strings in ui/
 │   ├── license_audit.dart          # Dependency license allowlist and font-licence gate
 │   ├── license_overrides.yaml      # Justified exceptions for license_audit.dart
-│   ├── gen.sh                      # build_runner + gen-l10n
+│   ├── gen.sh                      # build_runner, pseudo-locale + gen-l10n
 │   ├── gen_icons.dart              # Icon sets from the vector logo master
 │   ├── specs/                      # Client-surface spec snapshot of the minServer release
 │   └── spec_compat.dart            # Fails when the current spec is not backward compatible with it
@@ -137,6 +137,7 @@ dependencies:
   path: ^1.9.0
   path_provider: ^2.1.6
   riverpod_annotation: ^4.0.0
+  screen_retriever: ^0.4.0       # Displays, for window-bounds restore
   smtc_windows: ^1.1.0           # Subject to spike S4
   socket_io_client: ^3.1.6
   soundspan_api: { path: packages/soundspan_api }
@@ -150,6 +151,7 @@ dev_dependencies:
   archive: ^4.7.1                # tool/gen_icons.dart (pure-Dart deflate)
   build_runner: any
   drift_dev: ^2.35.0
+  fake_async: ^1.3.3             # Timers in unit tests
   flutter_test: { sdk: flutter }
   freezed: ^4.0.0
   http_mock_adapter: any
@@ -254,6 +256,7 @@ dart run drift_dev schema dump lib/core/storage/app/app_database.dart drift_sche
 dart run drift_dev schema steps drift_schemas/app/ lib/core/storage/app/app_database.steps.g.dart
 mkdir -p test/core/storage/generated_migrations
 dart run drift_dev schema generate drift_schemas/app/ test/core/storage/generated_migrations/app/
+dart run tool/gen_pseudo_locale.dart
 flutter gen-l10n
 ```
 
@@ -264,6 +267,7 @@ flutter gen-l10n
 | `freezed` + `json_serializable` | Generated API models, domain value types | `*.freezed.dart`, `*.g.dart` |
 | `drift_dev` | `lib/core/storage/**/tables/*.dart`, `*.drift` | `*.g.dart`; schema dumps under `drift_schemas/`, `*.steps.g.dart` and migration test helpers under `test/core/storage/generated_migrations/` (the `drift_dev schema` commands) |
 | `riverpod_generator` | `@riverpod` functions and classes | `*.g.dart` |
+| `tool/gen_pseudo_locale.dart` | `lib/app/l10n/app_en.arb` | `lib/app/l10n/app_en_XA.arb` (the `en_XA` pseudo-locale) |
 | `gen-l10n` | `lib/app/l10n/app_*.arb` | `lib/app/l10n/generated/` |
 
 Generated files are **committed**. CI runs `tool/gen.sh` and fails if `git diff --exit-code` reports a change. This keeps `flutter analyze` usable without a build step and makes generated diffs reviewable.
