@@ -180,7 +180,7 @@ void main() {
               (replacement['gapMs']! as num) <= 20 &&
               (replacement['stateChanges']! as int) == 0 &&
               nextTag == 'c' &&
-              transition['pass'] == true,
+              (transition['indexChanges']! as List).join(',') == '0->1',
         });
       } on Object catch (e) {
         _emit('replace_next_while_playing', run, {'error': e.toString()});
@@ -280,6 +280,9 @@ class _Recorder {
 
   bool _started(_Sample s) => (s.index ?? 0) > 0 || s.positionUs > 0;
 
+  bool _stale(_Sample s) =>
+      (s.index ?? 0) > 0 && s.positionUs >= durationAUs - 100000;
+
   /// Largest `wallClockDelta - timelineDelta` (ms) between consecutive
   /// samples whose wall time lies in [fromUs, toUs], and the number of
   /// processing-state events in that window.
@@ -288,13 +291,30 @@ class _Recorder {
     final window = samples
         .where((s) => s.wallUs >= fromUs && s.wallUs <= toUs)
         .toList();
+    var rawGapUs = 0;
+    var stale = 0;
+    _Sample? a;
     for (var i = 1; i < window.length; i++) {
-      final a = window[i - 1];
+      final prev = window[i - 1];
       final b = window[i];
       // Before playback first advances and after completion, wall time
       // passes without timeline by design; every other stall counts.
-      if (!_started(a) || b.state == ProcessingState.completed) continue;
-      final d = (b.wallUs - a.wallUs) - (_timeline(b) - _timeline(a));
+      if (!_started(prev) || b.state == ProcessingState.completed) {
+        a = b;
+        continue;
+      }
+      final raw = (b.wallUs - prev.wallUs) - (_timeline(b) - _timeline(prev));
+      if (raw > rawGapUs) rawGapUs = raw;
+      // A sample that already reports the next index but still carries the
+      // previous item's end position is skipped: the plugin delivered the
+      // index change before the position reset.
+      if (_stale(b)) {
+        stale++;
+        continue;
+      }
+      final from = a ?? prev;
+      a = b;
+      final d = (b.wallUs - from.wallUs) - (_timeline(b) - _timeline(from));
       if (d > gapUs) gapUs = d;
     }
     final stateChanges = stateEvents
@@ -302,6 +322,8 @@ class _Recorder {
         .length;
     return {
       'gapMs': gapUs / 1000,
+      'rawGapMs': rawGapUs / 1000,
+      'staleSamples': stale,
       'stateChanges': stateChanges,
       'samples': window.length,
     };
@@ -325,7 +347,7 @@ class _Recorder {
         previous = e.$2;
       }
     }
-    final firstB = samples.indexWhere((s) => s.index == 1);
+    final firstB = samples.indexWhere((s) => s.index == 1 && !_stale(s));
     final played = samples.any((s) => s.positionUs > 0);
     if (firstB <= 0) {
       return {
@@ -335,7 +357,10 @@ class _Recorder {
         'pass': false,
       };
     }
-    final lastA = samples[firstB - 1];
+    final lastA = samples.lastWhere(
+      (s) => s.wallUs < samples[firstB].wallUs && (s.index ?? 0) == 0,
+      orElse: () => samples[firstB - 1],
+    );
     final firstBSample = samples[firstB];
     final notReadyBetween =
         lastA.state != ProcessingState.ready ||
@@ -355,6 +380,8 @@ class _Recorder {
       'played': played,
       'indexChanges': changes,
       'gapMs': gapMs,
+      'rawGapMs': window['rawGapMs'],
+      'staleSamples': window['staleSamples'],
       'leftReady': notReadyBetween,
       'durationAMs': durationAUs / 1000,
       'lastAPositionMs': lastA.positionUs / 1000,
