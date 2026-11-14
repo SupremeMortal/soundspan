@@ -18,4 +18,6 @@ dart run drift_dev schema generate drift_schemas/app/ test/core/storage/generate
 dart run drift_dev schema dump lib/core/storage/state/state_database.dart drift_schemas/state/
 dart run drift_dev schema steps drift_schemas/state/ lib/core/storage/state/state_database.steps.g.dart
 dart run drift_dev schema generate drift_schemas/state/ test/core/storage/generated_migrations/state/
+# cache.db is recreated, not migrated: only the dump, no migration helpers.
+dart run drift_dev schema dump lib/core/storage/cache/cache_database.dart drift_schemas/cache/
 flutter gen-l10n

@@ -153,7 +153,7 @@ Normalized entity tables plus an ordered-list table for pages.
 | `artists` | `id` | `json`, `name`, `fetchedAt`, `detailFetchedAt` |
 | `playlists` | `id` | `json`, `name`, `fetchedAt`, `detailFetchedAt` |
 | `podcasts`, `episodes` | `id` | `json`, `fetchedAt` |
-| `lists` | `listKey` | `total`, `fetchedAt`, `complete` |
+| `lists` | `listKey` | `total`, `fetchedAt`, `complete`, `lastReadAt` (when the list was last read; pruning uses it) |
 | `list_entries` | `(listKey, position)` | `entityKind`, `entityKey` |
 | `blobs` | `key` | `json`, `fetchedAt` — for one-off payloads: home shelves, lyrics, artist detail extras |
 
@@ -192,7 +192,7 @@ Offline, every cached value is shown regardless of age.
 
 ### Pruning
 
-Runs at start-up after the first frame and when `cache.db` exceeds 64 MB: delete `lists` not read for 30 days with their entries, then entities referenced by no list and no `blobs` row. The image store is capped at 500 MB and 30 days by the cache manager configuration.
+Runs at start-up after the first frame and when `cache.db` exceeds 64 MB (`(page_count − freelist_count) × page_size`): in one transaction, delete `lists` not read for 30 days with their entries and `blobs` not fetched for 30 days, then every entity row no `list_entries` row references. A blob never keeps an entity alive by itself; data that needs its entities kept stores them as a list. If `cache.db` is still above 64 MB, the least recently read lists are deleted 50 at a time, with the entities they leave unreferenced, until it is under the limit or no list is left. The image store is capped at 500 MB and 30 days by the cache manager configuration.
 
 ## Image Cache
 
