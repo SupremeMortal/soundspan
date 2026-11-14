@@ -133,7 +133,7 @@ Every resource method passes a path relative to the API root (`/library/albums`)
 ### 3. `RefreshInterceptor` (JWT sessions only)
 
 ```dart
-class RefreshInterceptor extends QueuedInterceptor {
+class RefreshInterceptor extends Interceptor {
   Future<JwtCredentials>? _inFlight;
 
   Future<JwtCredentials> _refresh(JwtCredentials stale) =>
@@ -141,21 +141,31 @@ class RefreshInterceptor extends QueuedInterceptor {
 }
 ```
 
-- **Proactive:** before sending, decode the access token's `exp` and `iat` claims (no signature check). If more than 80 % of the lifetime has elapsed, refresh first. With 24-hour tokens that is a refresh after about 19 hours of age.
-- **Reactive:** on 401 `AUTH_REQUIRED`, refresh once and replay the original request with the new token. A second 401 on the replay is final.
+It is a plain `Interceptor`, not a `QueuedInterceptor`: a replay is sent through the whole chain again, so it carries the current token and gets the retry policy, and a queued error handler would wait on itself when that replay fails with 401. The shared `_inFlight` future is what serializes renewals; a request that arrives while one is in flight waits for it and is sent with the new token.
+
+- **Proactive:** before sending, decode the access token's `exp` and `iat` claims (no signature check). If more than 80 % of the lifetime has elapsed, refresh first. With 24-hour tokens that is a refresh after about 19 hours of age. A token that cannot be decoded, or lacks either claim, is sent as is.
+- **Reactive:** on 401 whose `code` is `AUTH_REQUIRED` or absent, refresh once and replay the original request with the new token. A second 401 on the replay is final. A 401 with any other `code` is not refreshed.
+- **Refresh call:** `POST /auth/refresh` with `{ refreshToken }`, anonymous and never retried, on a separate bare `Dio` with the same configuration, guard and adapter but not this interceptor, so it cannot recurse. The answer is `{ token, refreshToken }`.
 - **Single flight:** all concurrent callers await the same `_inFlight` future. A request that was built with the stale token and fails with 401 after another request already refreshed compares its token with `current` and simply replays.
 - **Persistence order:** `onTokensRotated` is awaited before any request uses the new access token. Because server tokens are stateless, a crash between the server's response and the write leaves the old refresh token usable; nothing is lost.
 - **Failure:** refresh answers 401 (`Invalid refresh token`, `User not found`, `Token invalidated`) → `onUnauthenticated(sessionExpired)` and every waiter fails with `Unauthenticated`. Refresh answers 503 `AUTH_BACKEND_UNAVAILABLE` or fails on the network → waiters fail with `ServerError`/`Offline`; the session stays signed in and the next request tries again.
-- API-key sessions never refresh. A 401 with an API key → `onUnauthenticated(keyRejected)`.
+- API-key sessions never refresh. A 401 with an API key → `onUnauthenticated(keyRejected)`, once per key, and the request fails with `Unauthenticated`.
+- Anonymous requests and requests without a credential pass through untouched.
 
 ### 4. `RetryInterceptor`
 
 | Condition | Policy |
 |---|---|
-| 429 | Wait `Retry-After` seconds (cap 60 s) plus 0–20 % jitter, then retry. Up to 2 retries for idempotent methods, 1 for others. Longer waits surface `RateLimited(retryAfter)` to the caller. |
-| 502, 503, 504 on `GET` | Exponential backoff 0.5 s, 1 s, 2 s with jitter, 3 attempts |
-| Connection error or timeout on `GET` | Same backoff, 2 attempts, then `Offline` |
-| Any failure on a non-idempotent method | No automatic retry; the outbox owns retries for writes |
+| 429 | If `Retry-After` is at most 60 s: wait that long plus 0–20 % jitter, then retry; at most 2 retries for idempotent methods and 1 for others. If it is longer than 60 s, or the retries are used up: surface `RateLimited(retryAfter)` without waiting. A missing or unparseable header counts as 60 s. |
+| 502, 503, 504 on `GET` | Up to 3 retries, waiting 0.5 s, 1 s, 2 s, each plus 0–20 % jitter; then the error surfaces through the error mapper. |
+| Connection error or timeout on `GET` | Up to 2 retries, waiting 0.5 s and 1 s plus jitter; then `Offline`. |
+| Any other failure on a non-idempotent method | No retry; the outbox owns retries for writes |
+
+- Idempotent methods: `GET`, `HEAD`, `PUT`, `DELETE`, `OPTIONS`.
+- A request marked `extra: {noRetry: true}` is never retried; the refresh call uses it.
+- 401 is never retried here; it belongs to the refresh interceptor.
+- A retry is sent through the whole chain again, so it carries the current credential. Each kind of retry (429, gateway, network) counts its own attempts.
+- The clock, the backoff wait and the jitter's random source are constructor parameters of the interceptors and of `createDio`, so tests never sleep.
 
 ### 5. `ErrorMapper`
 

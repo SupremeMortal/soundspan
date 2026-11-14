@@ -80,7 +80,7 @@ ApiException mapResponse(Response<dynamic> response) {
 
   if (status == 429) {
     return RateLimited(
-      retryAfter: _retryAfter(response.headers),
+      retryAfter: retryAfterOf(response.headers),
       status: status,
       code: code,
       serverMessage: message,
@@ -151,7 +151,9 @@ Future<T> guardDecode<T>(Future<T> Function() call) async {
 
 bool _isNonEmptyText(Object? data) => data is String && data.trim().isNotEmpty;
 
-Duration _retryAfter(Headers headers) {
+/// The `Retry-After` of a 429, in seconds; 60 s when it is missing or
+/// unparseable.
+Duration retryAfterOf(Headers headers) {
   final seconds = int.tryParse(headers.value('retry-after')?.trim() ?? '');
   if (seconds == null || seconds < 0) return _defaultRetryAfter;
   return Duration(seconds: seconds);

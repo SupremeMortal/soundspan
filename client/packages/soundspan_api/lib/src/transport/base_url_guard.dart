@@ -7,6 +7,11 @@ import 'package:soundspan_api/src/config.dart';
 /// the API root, for the log interceptor.
 const apiPathExtra = 'soundspan.apiPath';
 
+/// The key under which [BaseUrlGuard] keeps the path the caller passed,
+/// query included, so an interceptor can replay the request through the
+/// whole chain.
+const requestPathExtra = 'soundspan.requestPath';
+
 /// Interceptor 1: resolves a path relative to the API root against
 /// `<baseUrl>/api` and refuses anything that would leave it.
 class BaseUrlGuard extends Interceptor {
@@ -63,6 +68,7 @@ class BaseUrlGuard extends Interceptor {
     final resolved = resolve(options.path);
     options
       ..extra[apiPathExtra] = options.path.split('?').first
+      ..extra[requestPathExtra] = options.path
       ..baseUrl = ''
       ..path = resolved.toString();
     handler.next(options);

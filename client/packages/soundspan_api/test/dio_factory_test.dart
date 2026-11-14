@@ -6,6 +6,8 @@ import 'package:soundspan_api/src/transport/base_url_guard.dart';
 import 'package:soundspan_api/src/transport/credential_interceptor.dart';
 import 'package:soundspan_api/src/transport/error_mapper.dart';
 import 'package:soundspan_api/src/transport/log_interceptor.dart';
+import 'package:soundspan_api/src/transport/refresh_interceptor.dart';
+import 'package:soundspan_api/src/transport/retry_interceptor.dart';
 import 'package:test/test.dart';
 
 import 'support/harness.dart';
@@ -26,6 +28,8 @@ void main() {
             (i) =>
                 i is BaseUrlGuard ||
                 i is CredentialInterceptor ||
+                i is RefreshInterceptor ||
+                i is RetryInterceptor ||
                 i is ErrorMapper ||
                 i is ApiLogInterceptor,
           )
@@ -34,6 +38,8 @@ void main() {
       expect(ours, [
         BaseUrlGuard,
         CredentialInterceptor,
+        RefreshInterceptor,
+        RetryInterceptor,
         ErrorMapper,
         ApiLogInterceptor,
       ]);

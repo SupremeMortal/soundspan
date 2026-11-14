@@ -37,7 +37,13 @@ class Harness {
          userAgent: 'soundspan-client/1.0.0 (test)',
          playbackDeviceId: playbackDeviceId,
        ) {
-    dio = createDio(config, credentials: credentials, log: log, now: now);
+    dio = createDio(
+      config,
+      credentials: credentials,
+      log: log,
+      now: now,
+      delay: (_) async {},
+    );
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {

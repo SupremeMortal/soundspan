@@ -270,7 +270,12 @@ void main() {
           (s) => s.throws(
             0,
             DioException(
-              requestOptions: RequestOptions(path: '/x'),
+              // noRetry: this group checks the mapping, and the retry
+              // interceptor would otherwise back off on a GET.
+              requestOptions: RequestOptions(
+                path: '/x',
+                extra: {'noRetry': true},
+              ),
               type: entry.value,
             ),
           ),
