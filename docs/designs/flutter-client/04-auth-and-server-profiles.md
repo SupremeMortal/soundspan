@@ -217,6 +217,6 @@ class ServerCapabilities {
 ## Multiple Profiles
 
 - `Settings → Servers` lists profiles ordered by `lastUsedAt`, with state, server version, and storage used.
-- Switching: `ProfileRuntime.switchTo(id)` pauses playback, awaits disposal of the old profile container (databases closed, socket closed, downloader tasks of the old profile left running in the OS and re-attached when that profile is active again), then creates the new container. The UI shows a 150 ms cross-fade; nothing from the old profile is readable during or after it.
+- Switching: `ProfileRuntime.switchTo(id)` pauses playback, awaits disposal of the old profile container (databases closed, socket closed, downloader tasks of the old profile left running in the OS and re-attached when that profile is active again), then creates the new container. The old profile's UI is removed when the switch starts and the new one fades in over 150 ms (no animation with reduced motion); nothing from the old profile is readable during or after it.
 - Downloads of an inactive profile continue in the OS scheduler on mobile; their completion callbacks are queued in `state.db` of that profile by a small root-scope handler that opens the database only long enough to record the result.
 - Deep links that name a server (`soundspan://link?server=`) match an existing profile by normalized base URL before offering to add a new one.

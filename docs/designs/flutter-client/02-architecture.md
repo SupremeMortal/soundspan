@@ -84,24 +84,41 @@ Two provider scopes.
 **Profile scope** (one per signed-in profile; rebuilt when the active profile changes):
 
 ```dart
-/// Throws if read outside a ProfileScope.
-@Riverpod(keepAlive: true, dependencies: [])
-ProfileContext profileContext(Ref ref) => throw UnimplementedError();
+/// Throws if read outside a profile scope. ProfileRuntime overrides it in
+/// each profile container.
+final profileContextProvider = Provider<ProfileContext>(
+  (ref) => throw StateError('read outside a profile scope'),
+  dependencies: const [],
+);
 
 class ProfileScope extends ConsumerWidget {
-  const ProfileScope({required this.profile, required this.child, super.key});
+  const ProfileScope({required this.child, super.key});
   @override
-  Widget build(BuildContext context, WidgetRef ref) => ProviderScope(
-        key: ValueKey(profile.id),               // new key ⇒ old container disposed
-        overrides: [profileContextProvider.overrideWithValue(ProfileContext(profile))],
-        child: child,
-      );
+  Widget build(BuildContext context, WidgetRef ref) {
+    final runtime = ref.watch(profileRuntimeProvider);
+    return ValueListenableBuilder(
+      valueListenable: runtime.state,
+      builder: (context, state, _) => AnimatedSwitcher(   // 150 ms fade-in; none with reduced motion
+        child: state is ProfileRuntimeActive
+            ? UncontrolledProviderScope(
+                key: ValueKey(state.profileId),
+                container: runtime.container!,          // the runtime's nested container
+                child: child,
+              )
+            : const SizedBox.shrink(),
+      ),
+    );
+  }
 }
 ```
 
-Everything that touches a server depends, directly or transitively, on `profileContextProvider`: the API client, both per-profile databases, the image cache manager, repositories, `PlaybackController`, `DownloadController`, `Outbox`, `SocketClient`. Changing the `ValueKey` disposes the whole graph, and each provider's `ref.onDispose` closes its resource (stop playback, close databases, disconnect the socket, cancel timers). This is what makes "switching servers swaps the whole data layer" true by construction instead of by discipline.
+Everything that touches a server depends, directly or transitively, on `profileContextProvider`: the API client, both per-profile databases, the image cache manager, repositories, `PlaybackController`, `DownloadController`, `Outbox`, `SocketClient`. `ProfileRuntime` owns one nested `ProviderContainer` per active profile (see Background Entry Points); switching profiles runs the old container's asynchronous closers, disposes it, and creates the next one, and each provider's `ref.onDispose` closes its resource (stop playback, close databases, disconnect the socket, cancel timers). This is what makes "switching servers swaps the whole data layer" true by construction instead of by discipline.
 
-Riverpod's scoped-provider rule applies: every provider that depends on a scoped provider declares it in `dependencies:`. The generator lint enforces this.
+`ref.onDispose` is synchronous, so a resource that closes asynchronously (a database, the socket, the engine, the downloader) also registers its close with the profile-scoped `ProfileDisposer`. `ProfileRuntime` awaits the registered closers in reverse registration order before it disposes the container; a closer that fails is logged and the others still run.
+
+`ProfileScope` shows only the active profile's subtree: when a switch starts, the old subtree is removed at once (nothing of it builds again), and the new one fades in.
+
+Riverpod's scoped-provider rule applies: every provider that depends on a scoped provider declares it in `dependencies:`. Profile-scoped providers are declared by hand with `dependencies:` listing every scoped provider they read.
 
 `ProfileContext` carries `profile` (id, base URL, user id, auth kind, device id), `paths` (the profile's directories), and nothing mutable.
 
