@@ -124,7 +124,7 @@ Inputs: `version` (required, for example `0.1.0`), `build-number` (required), `r
 | Job | Runner | Build | Artifact |
 |---|---|---|---|
 | `build-android` | ubuntu, Temurin 17 | `flutter build apk`: universal, signed with the template's debug key | `soundspan-<version>-android-unsigned.apk` |
-| `build-linux` | ubuntu, inside an `ubuntu:22.04` container pinned by digest with the build packages of [01](01-toolchain-and-repository.md), so the glibc floor is the Linux baseline of [10](10-platform-integration.md) | `flutter build linux`; `tool/check_ldd.sh` on the bundle | `soundspan-<version>-linux-x64-unsigned.tar.gz` (the `bundle/` directory) |
+| `build-linux` | ubuntu, inside an `ubuntu:22.04` container pinned by digest with the build packages of [01](01-toolchain-and-repository.md) plus `build-essential` and `libstdc++-12-dev` (the runner image has them, the bare container does not), so the glibc floor is the Linux baseline of [10](10-platform-integration.md) | `flutter build linux`; `tool/check_ldd.sh` on the bundle | `soundspan-<version>-linux-x64-unsigned.tar.gz` (the `bundle/` directory) |
 | `build-windows` | windows | `flutter build windows`; the x64 CRT DLLs of the newest MSVC redistributable copied next to the executable | `soundspan-<version>-windows-x64-unsigned.zip` (the `Release/` directory) |
 | `build-macos` | macos | `flutter build macos`: universal, ad-hoc signed by the toolchain | `soundspan-<version>-macos-universal-unsigned.zip` (`ditto -c -k --keepParent` of the `.app`) |
 | `build-web` | ubuntu | `flutter build web --base-href /app/` | `soundspan-<version>-web.tar.gz` (the `web/` directory) |
