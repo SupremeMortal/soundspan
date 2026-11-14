@@ -96,7 +96,7 @@ Distribution: `.app` in a `.dmg`, Developer ID signed and notarised (`notarytool
 | Item | Detail |
 |---|---|
 | Audio | `media_kit` with `media_kit_libs_windows_audio` (bundles libmpv DLLs) |
-| Media controls | SMTC through `SmtcControls`. Requires an app user model id (`SetCurrentProcessExplicitAppUserModelID("io.soundspan.app")` in `main.cpp`) so the flyout shows the app name and icon |
+| Media controls | SMTC through `SmtcControls` and the in-repo C++/WinRT plugin `client/packages/soundspan_smtc`. Requires an app user model id (`SetCurrentProcessExplicitAppUserModelID("io.soundspan.app")` in `main.cpp`) so the flyout shows the app name and icon |
 | Secrets | Credential Manager via `flutter_secure_storage` |
 | URL scheme | MSIX: `<uap:Protocol Name="soundspan">` in the manifest. Inno Setup installer: registry keys under `HKCU\Software\Classes\soundspan` |
 | Single instance | A named mutex in `main.cpp`; a second launch forwards its command line (deep link) to the first instance through `WM_COPYDATA` and exits |

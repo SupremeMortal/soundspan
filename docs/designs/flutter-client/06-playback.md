@@ -245,7 +245,7 @@ Artwork must be a file because OS media surfaces cannot send auth headers: when 
 | macOS | `audio_service` | Now Playing widget and media keys. |
 | Web | `audio_service` | Media Session API. |
 | Linux | `audio_service` with `audio_service_mpris` | MPRIS on the session bus as `org.mpris.MediaPlayer2.soundspan`. |
-| Windows | `smtc_windows` behind `SmtcControls` | System Media Transport Controls: buttons, metadata, timeline, thumbnail. Subject to spike S4. |
+| Windows | `client/packages/soundspan_smtc` behind `SmtcControls` | System Media Transport Controls through an in-repo C++/WinRT plugin of about 300 lines: buttons, metadata, timeline, thumbnail. The calls it exposes are listed under Spike S4 finding. |
 
 The handler holds no state of its own; it renders the controller's snapshot. This keeps one source of truth on every platform, including Windows where `audio_service` is absent.
 
@@ -361,3 +361,27 @@ The position gap across the 20 natural transitions was at most 6.7 ms on Linux a
 - Whether playback is audibly gapless through a real sound device on Windows and Linux cannot be measured on CI and is a human checklist row.
 
 Because question 2 is answered no on both platforms and the fallback also fails it, the `MediaKitEngine` design is not rewritten to the fallback. The choice between keeping prefetch on (shared credential headers, which the transport already guarantees) and turning it off (own headers per item) is made when `MediaKitEngine` is built, using this evidence.
+
+## Spike S4 finding
+
+A minimal Flutter Windows app (app user model id `io.soundspan.app` set in `main.cpp` as [10](10-platform-integration.md) describes) ran an integration test against `smtc_windows` on a `windows-latest` runner (Visual Studio 18 Build Tools). The test initialised the plugin, enabled play, pause, next and previous, set the playback status to playing, updated metadata (title, artist, album, album artist), the timeline (start 0, end 215 s, position 42 s, seek range 0–215 s, then a position update to 43 s) and a thumbnail given as a `file:///` URI of a local PNG, and subscribed to the button-event stream. A Windows PowerShell 5.1 script then read every session back through `Windows.Media.Control.GlobalSystemMediaTransportControlsSessionManager`.
+
+| Question | Answer | Evidence |
+|---|---|---|
+| 1. Builds with the pinned Flutter | Yes, with Rust present | `flutter build windows --release` exits 0 when the image's Rust toolchain is on `PATH`; the Rust crate compiles in about 37 s |
+| 2. No extra toolchain on CI | **No** | With `%USERPROFILE%\.cargo\bin` hidden the build fails: cargokit reports "Precompiled binaries are disabled" and then "rustup not found in PATH". The package ships no precompiled binaries, so every build compiles its Rust crate |
+| 3. Initialises and accepts metadata, timeline and thumbnail | **No** as the client resolves it; yes with `flutter_rust_bridge` pinned to 2.11.1 | With the client's resolution (`flutter_rust_bridge` 2.13.0) initialisation throws "smtc_windows's codegen version (2.11.1) should be the same as runtime version (2.13.0)". With `flutter_rust_bridge` 2.11.1 every call completes (initialise 328 ms, each update ≤ 4 ms) and the system reads back the session `io.soundspan.app` as current, with the title, artist and album that were set, status `Playing`, position 43 000 ms and end time 215 000 ms. The read-back reported no thumbnail for the `file:///` URI |
+| 4. Button events (media keys, flyout buttons) | Not answerable on CI | No hosted runner can press a system media button; the stream was subscribed and received nothing. Human checklist row |
+
+- Package versions: Flutter 3.50.0, `smtc_windows` 1.1.0 (`flutter_rust_bridge` codegen 2.11.1, cargokit build, no precompiled binaries).
+- The system session read-back works on a hosted Windows runner, so a smoke test of the adapter can compare what it set with what `GlobalSystemMediaTransportControlsSessionManager` reports.
+
+Because questions 2 and 3 are answered no, the fallback of [13](13-milestones-and-work-breakdown.md) applies: `smtc_windows` is not a dependency, and the Windows adapter is the in-repo C++/WinRT plugin `client/packages/soundspan_smtc`. It exposes the calls the harness exercised:
+
+- initialise for the process's app user model id, and dispose;
+- enable or disable the play, pause, next and previous buttons;
+- set the playback status (closed, changing, stopped, playing, paused);
+- update metadata as a music item: title, artist, album, album artist;
+- update the timeline: start, end, position, minimum and maximum seek time;
+- set the thumbnail from a local file (`StorageFile` through `RandomAccessStreamReference.CreateFromFile`, since the URI form left no thumbnail in the read-back);
+- a stream of button presses (play, pause, next, previous).

@@ -43,7 +43,6 @@ dependencies:
   path_provider: ^2.1.6
   riverpod_annotation: ^4.0.0
   screen_retriever: ^0.4.0       # Displays, for window-bounds restore
-  smtc_windows: ^1.1.0           # Subject to spike S4
   socket_io_client: ^3.1.6
   soundspan_api: { path: packages/soundspan_api }
   sqlite3: ^3.9.1                # WASM in-memory fallback of the web DatabaseOpener

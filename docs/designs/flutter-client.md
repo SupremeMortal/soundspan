@@ -55,7 +55,7 @@ Rust remains an option for a future, isolated need (e.g. client-side DSP) behind
 |---|---|---|---|---|---|---|
 | Rendering | Impeller | Impeller | Skia/Impeller | Impeller | Skia | CanvasKit / skwasm |
 | Audio backend | ExoPlayer (`just_audio`) | AVPlayer (`just_audio`) | libmpv (`media_kit`) | AVPlayer (`just_audio`) | libmpv (`media_kit`) | HTML audio (`just_audio`) |
-| OS media controls | `audio_service` (MediaSession, notification) | `audio_service` (Now Playing, Control Center) | `smtc_windows` (SMTC) | `audio_service` (Now Playing) | `audio_service_mpris` (MPRIS) | `audio_service` (Media Session API) |
+| OS media controls | `audio_service` (MediaSession, notification) | `audio_service` (Now Playing, Control Center) | `soundspan_smtc` (SMTC) | `audio_service` (Now Playing) | `audio_service_mpris` (MPRIS) | `audio_service` (Media Session API) |
 | Background playback | Foreground service | `audio` background mode | Yes | Yes | Yes | Tab must stay open |
 | Car integration | Android Auto (`audio_service` browse tree) | CarPlay (M6) | — | — | — | — |
 | Offline downloads | Yes | Yes | Yes | Yes | Yes | No |
@@ -108,7 +108,7 @@ client/
 ├────────────── Data (repositories) ────────────────────────────────────┤
 │  soundspan_api (dio)   drift DB   secure storage   background_downloader│
 ├────────────── Platform plugins ───────────────────────────────────────┤
-│  just_audio · media_kit · audio_service · smtc_windows · mpris          │
+│  just_audio · media_kit · audio_service · soundspan_smtc · mpris        │
 └──────────── ExoPlayer · AVPlayer · libmpv · HTML audio ────────────────┘
 ```
 
@@ -125,7 +125,7 @@ Platform differences are isolated in `lib/platform/` with Dart conditional impor
 | Local DB / cache | `drift` (SQLite; WASM build on web) |
 | Secrets | `flutter_secure_storage` |
 | Playback | `just_audio` (Android, iOS, macOS, web), `media_kit` (Windows, Linux), behind one app-owned `PlayerEngine` interface |
-| Media controls | `audio_service`, `audio_service_mpris`, `smtc_windows` |
+| Media controls | `audio_service`, `audio_service_mpris`, `soundspan_smtc` (in-repo C++/WinRT plugin) |
 | Downloads | `background_downloader` |
 | Images | `cached_network_image` |
 | Realtime | `socket_io_client` |
@@ -228,7 +228,7 @@ API keys expire a fixed 90 days after creation (`API_KEY_LIFETIME_MS` in `backen
 
 - One `PlaybackController` owns the queue, shuffle, repeat, and a `PlayerEngine`. The UI talks only to the controller, on every platform.
 - `PlayerEngine` is an app-owned interface with two implementations: `just_audio` and `media_kit`.
-- Platform media controls are adapters around the controller: `audio_service` on Android/iOS/macOS/web, `audio_service_mpris` on Linux, and an `smtc_windows` bridge on Windows.
+- Platform media controls are adapters around the controller: `audio_service` on Android/iOS/macOS/web, `audio_service_mpris` on Linux, and the in-repo `soundspan_smtc` plugin on Windows.
 - Queue logic is pure Dart with unit tests independent of any player.
 
 ### Engines
