@@ -72,8 +72,22 @@ final class CacheDatabaseTarget extends DatabaseTarget {
   String toString() => 'CacheDatabaseTarget($profileId)';
 }
 
+/// The database name of [target]: `app`, `p_<profileId>_state` or
+/// `p_<profileId>_cache` (doc 05). Native files keep their own paths; on web
+/// this is the name of the drift WASM database.
+String databaseNameOf(DatabaseTarget target) => switch (target) {
+  AppDatabaseTarget() => 'app',
+  StateDatabaseTarget(:final profileId) => 'p_${profileId}_state',
+  CacheDatabaseTarget(:final profileId) => 'p_${profileId}_cache',
+};
+
 /// Opens and deletes the app's databases.
 abstract interface class DatabaseOpener {
+  /// Whether an open fell back to an in-memory database because persistent
+  /// storage was unavailable (private browsing on web), so nothing will be
+  /// remembered. Always false on native targets.
+  bool get isVolatile;
+
   /// The executor of [target]; the database opens on first use.
   QueryExecutor open(DatabaseTarget target);
 

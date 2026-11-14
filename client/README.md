@@ -54,6 +54,17 @@ Release builds use `config/release.json`:
 | Windows | `flutter build windows --dart-define-from-file=config/release.json` |
 | Web | `flutter build web --dart-define-from-file=config/release.json` |
 
+## Web database files
+
+The web build runs its drift databases through two files in `web/`, taken
+from the releases that match the `sqlite3` and `drift` versions in
+`pubspec.lock`. Replace both when either package changes version.
+
+| File | Source | SHA-256 |
+|---|---|---|
+| `web/sqlite3.wasm` | <https://github.com/simolus3/sqlite3.dart/releases/download/sqlite3-3.9.1/sqlite3.wasm> | `e7451780e78c56ff864fe9317a0fbcd6aeb2e8de3beba7f5efd963202f7ec3d9` |
+| `web/drift_worker.js` | <https://github.com/simolus3/drift/releases/download/drift-2.35.4/drift_worker.js> | `48c950cd8e3bc3cddb34816c860e228be8832bef07a297c27e9907c057ff8162` |
+
 ## Tests and checks
 
 In `client/`:
@@ -62,6 +73,15 @@ In `client/`:
 dart format --output=none --set-exit-if-changed .
 flutter analyze --fatal-infos
 flutter test
+```
+
+The web storage integration test runs in Chrome with a `chromedriver` that
+matches the installed Chrome listening on port 4444:
+
+```bash
+flutter drive --driver=test_driver/integration_test.dart \
+  --target=integration_test/web/storage_web_test.dart \
+  -d web-server --browser-name=chrome --headless
 ```
 
 In `client/packages/soundspan_api/`:

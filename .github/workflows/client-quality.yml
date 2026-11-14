@@ -29,6 +29,7 @@ jobs:
       client: ${{ steps.diff.outputs.client }}
       apple: ${{ steps.diff.outputs.apple }}
       api_surface: ${{ steps.diff.outputs.api_surface }}
+      web_storage: ${{ steps.diff.outputs.web_storage }}
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -48,6 +49,7 @@ jobs:
               echo "client=true"
               echo "apple=true"
               echo "api_surface=true"
+              echo "web_storage=true"
             } >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -62,6 +64,7 @@ jobs:
             echo "client=$(has '^(client/|\.github/workflows/client-[^/]*\.yml$|\.github/actions/client-flutter/)')"
             echo "apple=$(has '^(client/ios/|client/macos/|client/pubspec\.lock$|client/lib/platform/|\.github/workflows/client-quality\.yml$|\.github/actions/client-flutter/)')"
             echo "api_surface=$(has '^(client/packages/soundspan_api/|backend/src/routes/|backend/src/openapi/)')"
+            echo "web_storage=$(has '^(client/lib/platform/|client/web/|client/integration_test/web/|client/pubspec\.lock$|\.github/workflows/client-quality\.yml$)')"
           } | tee -a "$GITHUB_OUTPUT"
 
   client-analyze:
@@ -239,9 +242,47 @@ jobs:
         working-directory: client
         run: flutter build web --release --dart-define-from-file=config/dev.json
 
+      - name: The bundle ships the drift WASM files
+        working-directory: client
+        run: |
+          test -s build/web/sqlite3.wasm
+          test -s build/web/drift_worker.js
+
       - name: Bundle-size report
         working-directory: client
         run: tool/web_bundle_report.sh build/web >> "$GITHUB_STEP_SUMMARY"
+
+  client-web-integration:
+    name: client-web-integration
+    needs: changes
+    if: needs.changes.outputs.web_storage == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Flutter
+        uses: ./.github/actions/client-flutter
+
+      # The runner image ships Google Chrome and the matching chromedriver.
+      - name: Start chromedriver
+        run: |
+          "$CHROMEWEBDRIVER/chromedriver" --port=4444 &
+          for _ in $(seq 1 30); do
+            curl -fsS http://localhost:4444/status > /dev/null && exit 0
+            sleep 1
+          done
+          echo "chromedriver did not start" >&2
+          exit 1
+
+      - name: Web storage integration test
+        working-directory: client
+        run: >-
+          flutter drive
+          --driver=test_driver/integration_test.dart
+          --target=integration_test/web/storage_web_test.dart
+          -d web-server --browser-name=chrome --headless
 
   client-build-windows:
     name: client-build-windows

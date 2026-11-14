@@ -44,8 +44,10 @@ dependencies:
   smtc_windows: ^1.1.0           # Subject to spike S4
   socket_io_client: ^3.1.6
   soundspan_api: { path: packages/soundspan_api }
+  sqlite3: ^3.9.1                # WASM in-memory fallback of the web DatabaseOpener
   tray_manager: ^0.9.0
   url_launcher: any
+  web: ^1.1.0                    # sessionStorage for the web SecretStore
   window_manager: ^0.7.0
 
 dev_dependencies:

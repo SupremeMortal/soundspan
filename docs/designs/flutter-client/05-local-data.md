@@ -216,7 +216,8 @@ Runs at start-up after the first frame and when `cache.db` exceeds 64 MB: delete
 
 - drift WASM: `web/sqlite3.wasm` and `web/drift_worker.js` are shipped with the build. drift chooses the best storage the browser offers. Without cross-origin isolation headers (which the design rules out because they break third-party artwork), that is OPFS through drift's shared worker in Firefox and IndexedDB through the shared worker in Chromium and Safari. Both persist across reloads and open the three databases of one profile in one tab (see Spike S6 finding).
 - `state.db` on web holds the queue snapshot, outbox, and settings. Download tables exist but stay empty.
-- Private browsing can make storage unavailable. `DatabaseOpener` falls back to an in-memory database and shows a one-time notice that nothing will be remembered.
+- Private browsing can make storage unavailable. When the WASM open throws or drift can only offer in-memory storage, `DatabaseOpener` falls back to an in-memory database and reports `isVolatile`, and the app shows a one-time notice that nothing will be remembered.
+- `DatabaseOpener.delete` on web removes the named database from whichever storage drift reports it in.
 
 ## Spike S6 finding
 

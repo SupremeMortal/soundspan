@@ -31,19 +31,15 @@ final class IoDatabaseOpener implements DatabaseOpener {
     CacheDatabaseTarget(:final profileId) => paths.profile(profileId).cacheDb,
   };
 
-  /// The drift name of [target]; the same names as the web databases.
-  static String _nameOf(DatabaseTarget target) => switch (target) {
-    AppDatabaseTarget() => 'app',
-    StateDatabaseTarget(:final profileId) => 'p_${profileId}_state',
-    CacheDatabaseTarget(:final profileId) => 'p_${profileId}_cache',
-  };
+  @override
+  bool get isVolatile => false;
 
   @override
   QueryExecutor open(DatabaseTarget target) {
     final file = fileOf(target);
     final cache = paths.appCache;
     return driftDatabase(
-      name: _nameOf(target),
+      name: databaseNameOf(target),
       native: DriftNativeOptions(
         databasePath: () async {
           await Directory(p.dirname(file)).create(recursive: true);
