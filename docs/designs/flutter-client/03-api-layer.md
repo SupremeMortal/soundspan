@@ -178,18 +178,33 @@ class CacheLimitExceeded extends Conflict { final int limitBytes, usedBytes, est
 class DownloadsDisabled extends Conflict {}         // code SOURCE_DOWNLOADS_DISABLED
 class InvalidRequest extends ApiException {}        // 400; `code` distinguishes METADATA_REQUIRED etc.
 class RateLimited extends ApiException { final Duration retryAfter; }
-class InvalidResponse extends ApiException {}      // 2xx body did not match the generated model
+class InvalidResponse extends ApiException {}       // 2xx JSON body that failed to decode into its model
 class Upstream extends ApiException {}              // 502/503/504 with code UPSTREAM_FAILED
 class ServerError extends ApiException {}           // other 5xx
-class NotSoundspan extends ApiException {}          // 2xx/4xx whose body is not the expected JSON
-class Unexpected extends ApiException {}            // decoding failure of a 2xx body
+class NotSoundspan extends ApiException {}          // 2xx body not JSON; 4xx (not 429) body not `{ error }`
+class Unexpected extends ApiException {}            // fits no other class: unclassifiable failure, 3xx
 ```
 
 Mapping is by status first, then `code`. Unknown `code` values keep the status-level class and carry the code through, so a newer server never crashes the mapper.
 
+Where the list above leaves a choice, the mapper decides:
+
+- `InvalidResponse` and `Unexpected` are not interchangeable. `InvalidResponse` is a 2xx JSON body that fails to decode into its generated model; the facade wraps each generated call in `guardDecode`, which turns the decoder's failure into it. `Unexpected` is anything no other class fits: a cancelled or otherwise unclassifiable `DioException`, or an unexpected status such as a 3xx.
+- `NotSoundspan` is a 2xx whose body is not JSON where JSON is expected (including a body that claims JSON and does not parse), or a 4xx whose body is HTML, plain text, or JSON without a string `error`. A plain-text 429 is `RateLimited`, not `NotSoundspan`.
+- A 4xx without a class of its own (405, 413, 422, …) with a JSON error body is `InvalidRequest` with its real `status`.
+- 502, 503 and 504 with code `UPSTREAM_FAILED` are `Upstream`; every other 5xx, including one with an HTML body, is `ServerError`.
+- `RateLimited.retryAfter` is the `Retry-After` header in seconds; a missing or unparseable header gives 60 s.
+- `Offline` is a connection error, a connect, send or receive timeout, or a bad certificate. A response-transform timeout is `Unexpected`.
+- `CacheLimitExceeded` reads `cacheLimitBytes`, `cacheUsedBytes` and `estimatedTotalBytes` from the body; a missing number reads as 0.
+- An `Error` (the guard's `ArgumentError`) is a programming error, not a server failure, and reaches the caller unchanged.
+
+The `Dio` built by `createDio` rethrows the `ApiException` a failed request carries, so callers, including the generated clients, never see a `DioException`.
+
 ### 6. `LogInterceptor`
 
 Logs method, path template, status, and duration at `fine`. Never logs headers, query values, or bodies.
+
+The package has no logging dependency: it reports one `ApiLogEntry` per finished request to an `ApiLogSink` callback the app forwards to its logger. The path template is the path relative to the API root with every segment that is not made only of lower-case letters and hyphens replaced by `:id` (`/library/albums/:id`).
 
 ### Platform HTTP Adapters
 
