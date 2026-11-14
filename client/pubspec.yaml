@@ -26,6 +26,7 @@ dependencies:
   flutter_riverpod: ^3.5.0
   flutter_secure_storage: ^11.2.0
   flutter_svg: ^2.4.0             # Logo mark and other SVG glyphs
+  flutter_web_plugins: { sdk: flutter }  # Path URL strategy on web
   freezed_annotation: ^3.0.0
   go_router: ^18.1.0
   intl: any
