@@ -129,6 +129,7 @@ import router, {
     refreshPodcastFeed,
     refreshAllPodcastFeeds,
 } from "../podcasts";
+import { withClientSurfaceValidation } from "./helpers/expectClientSurfaceResponse";
 
 function getHandler(path: string, method: "get" | "post" | "delete") {
     const layer = (router as any).stack.find(
@@ -159,10 +160,22 @@ function createRes() {
 describe("podcasts core runtime behavior", () => {
     const syncCoversHandler = getHandler("/sync-covers", "post");
     const peerListingsHandler = getHandler("/peers", "get");
-    const listHandler = getHandler("/", "get");
-    const byIdHandler = getHandler("/:id", "get");
-    const subscribeHandler = getHandler("/subscribe", "post");
-    const unsubscribeHandler = getHandler("/:id/unsubscribe", "delete");
+    const listHandler = withClientSurfaceValidation(
+        "listPodcasts",
+        getHandler("/", "get"),
+    );
+    const byIdHandler = withClientSurfaceValidation(
+        "getPodcast",
+        getHandler("/:id", "get"),
+    );
+    const subscribeHandler = withClientSurfaceValidation(
+        "subscribePodcast",
+        getHandler("/subscribe", "post"),
+    );
+    const unsubscribeHandler = withClientSurfaceValidation(
+        "unsubscribePodcast",
+        getHandler("/:id/unsubscribe", "delete"),
+    );
     const refreshHandler = getHandler("/:id/refresh", "get");
 
     beforeEach(() => {

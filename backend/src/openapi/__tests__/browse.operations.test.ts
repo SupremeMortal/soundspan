@@ -53,7 +53,17 @@ describe("playlist, search and home-shelf operations in the emitted client spec"
         ],
         ["search", ["search", "searchDiscover"]],
         ["discovery", ["listMixes"]],
-        ["podcasts", ["listTopPodcasts"]],
+        [
+            "podcasts",
+            [
+                "getPodcast",
+                "listPodcasts",
+                "listTopPodcasts",
+                "subscribePodcast",
+                "unsubscribePodcast",
+                "updateEpisodeProgress",
+            ],
+        ],
     ])("the %s tag holds exactly %j", (tag, operationIds) => {
         expect(operationIdsByTag(emitted(), tag)).toEqual(operationIds);
     });
