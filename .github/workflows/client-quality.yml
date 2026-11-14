@@ -31,6 +31,8 @@ jobs:
       api_surface: ${{ steps.diff.outputs.api_surface }}
       web_storage: ${{ steps.diff.outputs.web_storage }}
       desktop: ${{ steps.diff.outputs.desktop }}
+      release_build: ${{ steps.diff.outputs.release_build }}
+      version: ${{ steps.version.outputs.version }}
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -52,6 +54,7 @@ jobs:
               echo "api_surface=true"
               echo "web_storage=true"
               echo "desktop=true"
+              echo "release_build=true"
             } >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -68,7 +71,17 @@ jobs:
             echo "api_surface=$(has '^(client/packages/soundspan_api/|backend/src/routes/|backend/src/openapi/)')"
             echo "web_storage=$(has '^(client/lib/platform/|client/web/|client/integration_test/web/|client/pubspec\.lock$|\.github/workflows/client-quality\.yml$)')"
             echo "desktop=$(has '^(client/linux/|client/windows/|client/lib/platform/desktop_shell/|client/lib/app/shell/window_state_controller\.dart$|client/integration_test/desktop/|client/tool/ci/|\.github/workflows/client-quality\.yml$)')"
+            echo "release_build=$(has '^(\.github/workflows/client-(build|release)\.yml$|client/tool/release/|client/pubspec\.(yaml|lock)$|client/config/|client/(android|ios|linux|macos|windows|web)/)')"
           } | tee -a "$GITHUB_OUTPUT"
+
+      - name: Read the client version
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(sed -n 's/^version: *\([^+[:space:]]*\).*$/\1/p' client/pubspec.yaml)"
+          test -n "$version"
+          echo "version=$version" | tee -a "$GITHUB_OUTPUT"
 
   client-analyze:
     name: client-analyze
@@ -388,3 +401,15 @@ jobs:
       - name: Build iOS release without code signing
         working-directory: client
         run: flutter build ios --release --no-codesign --dart-define-from-file=config/dev.json
+
+  # Dry run of the reusable release build: every target in release mode,
+  # unsigned, plus SHA256SUMS. Nothing is published; artifacts expire
+  # after 7 days.
+  client-build-dry-run:
+    name: client-build-dry-run
+    needs: changes
+    if: needs.changes.outputs.release_build == 'true'
+    uses: ./.github/workflows/client-build.yml
+    with:
+      version: ${{ needs.changes.outputs.version }}
+      build-number: "${{ github.run_number }}"

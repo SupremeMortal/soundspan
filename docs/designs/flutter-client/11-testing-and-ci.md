@@ -89,7 +89,7 @@ on:
 
 Server-only PRs do not trigger it, except route and `backend/src/openapi/**` changes, which run the spec check and the contract job only.
 
-A first job, `changes`, diffs the pull request against the merge base with its base branch using plain `git diff --name-only` and sets five outputs: `client` (`client/**`, the client workflows, or the composite action changed), `apple` (`client/ios/**`, `client/macos/**`, `client/pubspec.lock`, `client/lib/platform/**`, `client-quality.yml`, or the composite action), `api_surface` (`client/packages/soundspan_api/**`, `backend/src/routes/**`, `backend/src/openapi/**`), `web_storage` (`client/lib/platform/**`, `client/web/**`, `client/integration_test/web/**`, `client/pubspec.lock`, or `client-quality.yml`), and `desktop` (`client/linux/**`, `client/windows/**`, `client/lib/platform/desktop_shell/**`, `client/lib/app/shell/window_state_controller.dart`, `client/integration_test/desktop/**`, `client/tool/ci/**`, or `client-quality.yml`). On `push` every output is true. Because the diff is against the base branch and not the previous push, a job that failed on an earlier push cannot be skipped on a later one. The analyze, test, golden, Android, Linux, web, and Windows jobs run when `client` is true; the Apple job runs when `apple` is true; the web integration job runs when `web_storage` is true; the desktop Linux job runs when `desktop` is true.
+A first job, `changes`, diffs the pull request against the merge base with its base branch using plain `git diff --name-only` and sets six outputs: `client` (`client/**`, the client workflows, or the composite action changed), `apple` (`client/ios/**`, `client/macos/**`, `client/pubspec.lock`, `client/lib/platform/**`, `client-quality.yml`, or the composite action), `api_surface` (`client/packages/soundspan_api/**`, `backend/src/routes/**`, `backend/src/openapi/**`), `web_storage` (`client/lib/platform/**`, `client/web/**`, `client/integration_test/web/**`, `client/pubspec.lock`, or `client-quality.yml`), and `desktop` (`client/linux/**`, `client/windows/**`, `client/lib/platform/desktop_shell/**`, `client/lib/app/shell/window_state_controller.dart`, `client/integration_test/desktop/**`, `client/tool/ci/**`, or `client-quality.yml`), and `release_build` (`client-build.yml`, `client-release.yml`, `client/tool/release/**`, `client/pubspec.yaml`, `client/pubspec.lock`, `client/config/**`, or any of `client/android/**`, `client/ios/**`, `client/linux/**`, `client/macos/**`, `client/windows/**`, `client/web/**`). It also outputs `version`, the `version` of `client/pubspec.yaml` without its build number. On `push` every output is true. Because the diff is against the base branch and not the previous push, a job that failed on an earlier push cannot be skipped on a later one. The analyze, test, golden, Android, Linux, web, and Windows jobs run when `client` is true; the Apple job runs when `apple` is true; the web integration job runs when `web_storage` is true; the desktop Linux job runs when `desktop` is true; `client-build-dry-run` runs when `release_build` is true.
 
 Every client job sets Flutter up with the composite action `.github/actions/client-flutter`: on Linux it installs the build packages of [01](01-toolchain-and-repository.md) (plugin native-asset hooks run during `flutter test` and need GTK and X11 headers), then it reads the version from `client/.fvmrc` with `jq`, installs it with `subosito/flutter-action`, caches Flutter on `.fvmrc` and pub on `.fvmrc` plus both `pubspec.lock` files, and runs `flutter pub get` in `client/` and `dart pub get` in the API package.
 
@@ -107,12 +107,34 @@ Every client job sets Flutter up with the composite action `.github/actions/clie
 | `client-build-windows` | windows | Yes | `flutter build windows --release`; `tool/ci/single_instance_windows.ps1` starts the app, starts it again with a `soundspan://link` argument, and fails unless the second process exits 0 within 10 s, one app process remains, and the first instance's log has the second-launch entry |
 | `client-desktop-linux` | ubuntu | Yes whenever it runs | Linux build packages plus `xvfb`, `openbox`, `dbus` and `xdotool`; starts a D-Bus session, Xvfb and `openbox`; `flutter test integration_test/desktop/window_test.dart -d linux` (minimum size, bounds persisted and restored by a new controller, shell navigation at the restored size); `flutter build linux --release`; `tool/ci/single_instance_linux.sh` starts the app with `XDG_DATA_HOME` and `XDG_CACHE_HOME` in a temporary directory, starts it again with a `soundspan://link` argument, and fails unless the second process exits 0 within 10 s, one app process and one top-level window remain, and the first instance's log has the second-launch entry |
 | `client-build-macos-ios` | macos | Yes whenever it runs | `flutter build macos --release`; `flutter build ios --release --no-codesign` |
+| `client-build-dry-run` | calls `client-build.yml` | Yes whenever it runs | `version` from `changes`, `build-number` the workflow run number; every release artifact and `SHA256SUMS`, kept 7 days, nothing published |
 
-Every build job passes `--dart-define-from-file=config/dev.json`.
+Every build job except the dry run passes `--dart-define-from-file=config/dev.json`.
 
 macOS minutes are the expensive ones, so on pull requests the Apple job runs only when the diff against the base branch touches `client/ios/**`, `client/macos/**`, `client/pubspec.lock`, `client/lib/platform/**`, `client-quality.yml`, or the composite action, and always on a push to `main`. Whenever it runs it is blocking, so a pull request cannot leave the Apple builds broken.
 
 Actions are pinned by commit SHA, as in the existing workflows. Flutter and pub caches are keyed on `.fvmrc` and `pubspec.lock`.
+
+### `client-build.yml`
+
+Reusable (`workflow_call` only), `permissions: contents: read`, actions pinned by commit SHA, Flutter from `client/.fvmrc` through the composite action. It builds and publishes nothing beyond workflow artifacts, which it keeps for 7 days.
+
+Inputs: `version` (required, for example `0.1.0`), `build-number` (required), `ref` (default: the calling ref). Every build runs with `--release --build-name <version> --build-number <build-number> --dart-define-from-file=config/release.json`.
+
+| Job | Runner | Build | Artifact |
+|---|---|---|---|
+| `build-android` | ubuntu, Temurin 17 | `flutter build apk`: universal, signed with the template's debug key | `soundspan-<version>-android-unsigned.apk` |
+| `build-linux` | ubuntu, inside an `ubuntu:22.04` container pinned by digest with the build packages of [01](01-toolchain-and-repository.md), so the glibc floor is the Linux baseline of [10](10-platform-integration.md) | `flutter build linux`; `tool/check_ldd.sh` on the bundle | `soundspan-<version>-linux-x64-unsigned.tar.gz` (the `bundle/` directory) |
+| `build-windows` | windows | `flutter build windows`; the x64 CRT DLLs of the newest MSVC redistributable copied next to the executable | `soundspan-<version>-windows-x64-unsigned.zip` (the `Release/` directory) |
+| `build-macos` | macos | `flutter build macos`: universal, ad-hoc signed by the toolchain | `soundspan-<version>-macos-universal-unsigned.zip` (`ditto -c -k --keepParent` of the `.app`) |
+| `build-web` | ubuntu | `flutter build web --base-href /app/` | `soundspan-<version>-web.tar.gz` (the `web/` directory) |
+| `checksums` | ubuntu, after all five | Downloads every artifact; `dart run tool/release/check_artifacts.dart --dir <dir> --version <version> --write-sums`; `sha256sum --check` | `client-release-files`: the five files and `SHA256SUMS` |
+
+There is no iOS artifact and no AAB (it needs the upload key); both wait for signing.
+
+`tool/release/check_artifacts.dart` holds the one list of expected artifact names. It fails when an expected file for the version is missing, an unexpected file is present (another version's file included), or a file is empty. With `--write-sums` it writes `SHA256SUMS` in `sha256sum` format, sorted by file name and not listing itself; without it, it verifies an existing `SHA256SUMS` against the files. Installers and packages add their names to the list.
+
+**Dry run.** A tag trigger cannot run from a pull request, so `client-quality.yml` calls `client-build.yml` as `client-build-dry-run` whenever `release_build` is true. Its green run is the proof that a release build works.
 
 ### `client-nightly.yml`
 
@@ -123,9 +145,9 @@ Engine conformance on Linux, Windows, macOS, and an Android emulator; Patrol on 
 Trigger: tag `client-v*`.
 
 1. Validate the tag against `pubspec.yaml` `version`.
-2. Build all targets in a matrix with `--dart-define-from-file=config/release.json` and `--build-number` from the run number.
-3. Mark artifacts `-unsigned`. Signing steps are added when signing is set up.
-4. Generate `SHA256SUMS` and build-provenance attestations.
+2. Build all targets by calling `client-build.yml` with the tag's version and the run number as the build number; it builds with `--dart-define-from-file=config/release.json`.
+3. The artifacts that call produces are marked `-unsigned`. Signing steps are added when signing is set up.
+4. The same call writes `SHA256SUMS`; this workflow adds build-provenance attestations.
 5. Create a **draft** GitHub release with artifacts and notes from the `### Client` changelog sections.
 6. Manual approval (environment protection) publishes the release as a **pre-release**, pushes the web image to GHCR as `ghcr.io/<repo>-client-web:<version>`, and updates desktop appcasts (M5).
 

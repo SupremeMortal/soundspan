@@ -120,7 +120,7 @@ Exit: a phone links to an SSO-only server with a code or QR, plays for an hour w
 | M2-09 | iOS: background audio, route picker, interruptions, privacy manifest, launch screen | M1-10 | Manual rows on a physical device |
 | M2-10 | Patrol suite on Android emulator: sign in, play, background, notification pause, resume | M2-07 | In nightly |
 | M2-11 | Compact and medium layout polish: gestures (swipe mini player, drag-down now playing), fast scroll, tablet two-pane | M1-12 | Goldens at 390 and 800 |
-| M2-12 | `client-release.yml` first version: unsigned artifacts, draft pre-release, checksums | M0-02 | A `client-v0.x` pre-release exists with every artifact except iOS |
+| M2-12 | Release workflow in two tasks. M2-12a: reusable `client-build.yml` (unsigned release artifacts for every target except iOS, `SHA256SUMS`, `tool/release/check_artifacts.dart`) and its pull-request dry run. M2-12b: `client-release.yml` (tag validation, draft pre-release, notes from the `### Client` changelog) calling it | M0-02 | M2-12a: `client-build-dry-run` is green on the pull request with every artifact and `SHA256SUMS`. M2-12b: the tag workflow validates and drafts a pre-release from those artifacts |
 
 ## M3. Offline
 
