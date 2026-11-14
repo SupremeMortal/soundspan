@@ -11,6 +11,9 @@ dependencies:
   flutter:
     sdk: flutter
   smtc_windows: 1.1.0
+  # Pinned to the codegen version of smtc_windows 1.1.0: the runtime refuses
+  # any other version, and the client resolves 2.13.0.
+  flutter_rust_bridge: 2.11.1
 
 dev_dependencies:
   flutter_test:
