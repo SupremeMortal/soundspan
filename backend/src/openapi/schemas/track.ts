@@ -171,3 +171,20 @@ export const LikedTracksQuery = z.object({
     cursorLikedAt: z.iso.datetime().optional(),
     cursorTrackId: z.string().optional(),
 });
+
+/** Query of `GET /api/library/tracks/shuffle`. */
+export const ShuffledTracksQuery = z.object({
+    limit: z
+        .number()
+        .int()
+        .optional()
+        .describe("Tracks to return; 100 when absent, capped by the server"),
+});
+
+/** A random sample of library tracks in random order. */
+export const ShuffledTracksResponse = z
+    .object({
+        tracks: z.array(TrackSummary),
+        total: z.number().int().describe("Library tracks to sample from"),
+    })
+    .meta({ id: "ShuffledTracksResponse" });

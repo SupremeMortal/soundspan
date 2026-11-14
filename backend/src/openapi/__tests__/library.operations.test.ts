@@ -41,7 +41,7 @@ function albumDetail(tracks: JsonObject[]): JsonObject {
 }
 
 describe("library operations in the emitted client spec", () => {
-    test("the JSON browse operations are emitted under the library tag", () => {
+    test("the JSON library operations are emitted under the library tag", () => {
         const library = Object.values(emitted().paths as JsonObject)
             .flatMap((item) => Object.values(item as JsonObject))
             .filter((operation: JsonObject) =>
@@ -58,7 +58,10 @@ describe("library operations in the emitted client spec", () => {
             "listLikedTracks",
             "listRecentlyAdded",
             "listRecentlyListened",
+            "listShuffledTracks",
             "listTracks",
+            "setAlbumPreference",
+            "setTrackPreference",
         ]);
     });
 

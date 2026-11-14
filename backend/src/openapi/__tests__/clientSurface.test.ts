@@ -37,6 +37,12 @@ jest.mock("../../services/playback/streamLibraryTrack", () => ({}));
 jest.mock("../../services/playback/streamTidalTrack", () => ({}));
 jest.mock("../../services/playback/streamYtMusicTrack", () => ({}));
 jest.mock("../../services/playback/streamYouTubeVideo", () => ({}));
+jest.mock("../../services/tidalStreaming", () => ({
+    tidalStreamingService: {},
+}));
+jest.mock("../../services/staleJobCleanup", () => ({
+    staleJobCleanupService: {},
+}));
 jest.mock("../../services/discoverMusicSearch", () => ({
     resolveUsableSearchProviders: jest.fn(),
     searchDiscoverMusic: jest.fn(),

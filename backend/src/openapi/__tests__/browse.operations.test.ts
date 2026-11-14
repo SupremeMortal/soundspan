@@ -38,7 +38,19 @@ function propertyNames(value: unknown, out = new Set<string>()): Set<string> {
 
 describe("playlist, search and home-shelf operations in the emitted client spec", () => {
     test.each([
-        ["playlists", ["getPlaylist", "listPlaylists"]],
+        [
+            "playlists",
+            [
+                "addPlaylistItem",
+                "createPlaylist",
+                "deletePlaylist",
+                "getPlaylist",
+                "listPlaylists",
+                "removePlaylistItem",
+                "reorderPlaylistItems",
+                "updatePlaylist",
+            ],
+        ],
         ["search", ["search", "searchDiscover"]],
         ["discovery", ["listMixes"]],
         ["podcasts", ["listTopPodcasts"]],

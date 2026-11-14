@@ -7,6 +7,8 @@ import { prisma } from "../utils/db";
 import { z } from "zod";
 import { staleJobCleanupService } from "../services/staleJobCleanup";
 import { tidalStreamingService } from "../services/tidalStreaming";
+import { PlaybackQuality } from "../openapi/schemas/playback";
+import { LoudnessMode } from "../openapi/schemas/settings";
 
 const upload = multer({
     storage: multer.memoryStorage(),
@@ -30,8 +32,8 @@ const displayNameSchema = z
     });
 
 const settingsSchema = z.object({
-    playbackQuality: z.enum(["original", "high", "medium", "low"]).optional(),
-    loudnessMode: z.enum(["off", "track", "album", "auto"]).optional(),
+    playbackQuality: PlaybackQuality.optional(),
+    loudnessMode: LoudnessMode.optional(),
     shareOnlinePresence: z.boolean().optional(),
     shareListeningStatus: z.boolean().optional(),
     wifiOnly: z.boolean().optional(),
@@ -47,20 +49,6 @@ const settingsSchema = z.object({
     displayName: displayNameSchema.nullable().optional(),
 });
 
-/**
- * @openapi
- * /api/settings:
- *   get:
- *     summary: Get the current user's settings
- *     tags: [User Settings]
- *     security:
- *       - apiKeyAuth: []
- *     responses:
- *       200:
- *         description: User settings including display name and profile picture status
- *       401:
- *         description: Not authenticated
- */
 // GET /settings
 router.get("/", async (req, res) => {
     try {
@@ -112,60 +100,6 @@ router.get("/", async (req, res) => {
     }
 });
 
-/**
- * @openapi
- * /api/settings:
- *   post:
- *     summary: Update the current user's settings
- *     tags: [User Settings]
- *     security:
- *       - apiKeyAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               playbackQuality:
- *                 type: string
- *                 enum: [original, high, medium, low]
- *               loudnessMode:
- *                 type: string
- *                 enum: [off, track, album, auto]
- *               shareOnlinePresence:
- *                 type: boolean
- *               shareListeningStatus:
- *                 type: boolean
- *               wifiOnly:
- *                 type: boolean
- *               offlineEnabled:
- *                 type: boolean
- *               maxCacheSizeMb:
- *                 type: integer
- *               showYtMusicExplore:
- *                 type: boolean
- *                 description: Show YouTube Music content on the Explore page
- *               showTidalExplore:
- *                 type: boolean
- *                 description: Show TIDAL content on the Explore page
- *               ytMusicQuality:
- *                 type: string
- *                 enum: [LOW, MEDIUM, HIGH, LOSSLESS]
- *               tidalStreamingQuality:
- *                 type: string
- *                 enum: [LOW, HIGH, LOSSLESS, HI_RES_LOSSLESS]
- *               displayName:
- *                 type: string
- *                 nullable: true
- *     responses:
- *       200:
- *         description: Settings updated successfully
- *       400:
- *         description: Invalid settings
- *       401:
- *         description: Not authenticated
- */
 // POST /settings
 router.post("/", async (req, res) => {
     try {

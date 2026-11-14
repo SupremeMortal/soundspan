@@ -635,38 +635,6 @@ export async function handleGetLikedTracks(req: Request, res: Response) {
 
 tracksBrowseRouter.get("/liked", asyncHandler(handleGetLikedTracks));
 
-/**
- * @openapi
- * /api/library/tracks/shuffle:
- *   get:
- *     summary: Get random tracks for shuffle play
- *     tags: [Library]
- *     security:
- *       - apiKeyAuth: []
- *     parameters:
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *           default: 100
- *         description: Number of random tracks to return
- *     responses:
- *       200:
- *         description: Shuffled tracks
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 tracks:
- *                   type: array
- *                   items:
- *                     type: object
- *                 total:
- *                   type: integer
- *       401:
- *         description: Not authenticated
- */
 // GET /library/tracks/shuffle?limit=100 - Get random tracks for shuffle play
 /**
  * Handles GET /api/library/tracks/shuffle.

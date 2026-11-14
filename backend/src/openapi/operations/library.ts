@@ -15,6 +15,13 @@ import {
 import { ApiError, standardErrors } from "../schemas/common";
 import { CoverArtQuery } from "../schemas/coverArt";
 import {
+    AlbumPreferenceParams,
+    AlbumPreferenceRequest,
+    AlbumPreferenceResponse,
+    TrackPreferenceRequest,
+    TrackPreferenceResponse,
+} from "../schemas/preference";
+import {
     RecentlyAddedResponse,
     RecentlyListenedResponse,
     RecentShelfQuery,
@@ -24,6 +31,8 @@ import {
     LibraryTrackListResponse,
     LikedTracksQuery,
     LikedTracksResponse,
+    ShuffledTracksQuery,
+    ShuffledTracksResponse,
 } from "../schemas/track";
 
 const IdParams = z.object({ id: z.string() });
@@ -164,5 +173,51 @@ export const libraryOperations = [
         params: IdParams,
         query: CoverArtQuery,
         responses: coverArtResponses,
+    }),
+    defineOperation({
+        method: "get",
+        path: "/api/library/tracks/shuffle",
+        operationId: "listShuffledTracks",
+        tag: "library",
+        summary: "A random sample of library tracks",
+        description:
+            "`limit` defaults to 100 and is capped at 10000. `total` is the number of library tracks sampled from; an empty library answers no tracks and `total` 0.",
+        query: ShuffledTracksQuery,
+        responses: { 200: ShuffledTracksResponse, ...standardErrors },
+    }),
+    defineOperation({
+        method: "post",
+        path: "/api/library/preferences",
+        operationId: "setTrackPreference",
+        tag: "library",
+        summary: "Like, dislike or clear the preference of any track",
+        description:
+            "`metadata` is required (400 `METADATA_REQUIRED`) only when a TIDAL or YouTube Music track row must be created. 400 for an invalid signal or `INVALID_PLAYBACK_ID`, 404 `TRACK_NOT_FOUND`, 409 `SOURCE_UNAVAILABLE` for a track no preference can be stored for. A dislike of a streaming track clears its like and answers `neutral`.",
+        body: TrackPreferenceRequest,
+        responses: {
+            200: TrackPreferenceResponse,
+            400: ApiError,
+            404: ApiError,
+            409: ApiError,
+            ...standardErrors,
+        },
+    }),
+    defineOperation({
+        method: "post",
+        path: "/api/library/albums/{id}/preference",
+        operationId: "setAlbumPreference",
+        tag: "library",
+        summary: "Like, dislike or clear every library track of an album",
+        description:
+            "400 for an invalid signal, 404 when there is no such album, 422 when the album has no library tracks.",
+        params: AlbumPreferenceParams,
+        body: AlbumPreferenceRequest,
+        responses: {
+            200: AlbumPreferenceResponse,
+            400: ApiError,
+            404: ApiError,
+            422: ApiError,
+            ...standardErrors,
+        },
     }),
 ];

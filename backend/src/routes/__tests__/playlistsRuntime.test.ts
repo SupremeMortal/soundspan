@@ -219,18 +219,36 @@ describe("playlists route runtime", () => {
         "listPlaylists",
         getHandler("/", "get"),
     );
-    const createPlaylist = getHandler("/", "post");
+    const createPlaylist = withClientSurfaceValidation(
+        "createPlaylist",
+        getHandler("/", "post"),
+    );
     const getPlaylist = withClientSurfaceValidation(
         "getPlaylist",
         getHandler("/:id", "get"),
     );
-    const updatePlaylist = getHandler("/:id", "put");
+    const updatePlaylist = withClientSurfaceValidation(
+        "updatePlaylist",
+        getHandler("/:id", "put"),
+    );
     const hidePlaylist = getHandler("/:id/hide", "post");
     const unhidePlaylist = getHandler("/:id/hide", "delete");
-    const deletePlaylist = getHandler("/:id", "delete");
-    const addItem = getHandler("/:id/items", "post");
-    const removeItem = getHandler("/:id/items/:trackId", "delete");
-    const reorderItems = getHandler("/:id/items/reorder", "put");
+    const deletePlaylist = withClientSurfaceValidation(
+        "deletePlaylist",
+        getHandler("/:id", "delete"),
+    );
+    const addItem = withClientSurfaceValidation(
+        "addPlaylistItem",
+        getHandler("/:id/items", "post"),
+    );
+    const removeItem = withClientSurfaceValidation(
+        "removePlaylistItem",
+        getHandler("/:id/items/:trackId", "delete"),
+    );
+    const reorderItems = withClientSurfaceValidation(
+        "reorderPlaylistItems",
+        getHandler("/:id/items/reorder", "put"),
+    );
     const getPending = getHandler("/:id/pending", "get");
     const deletePending = getHandler("/:id/pending/:trackId", "delete");
     const previewPending = getHandler("/:id/pending/:trackId/preview", "get");
@@ -250,6 +268,11 @@ describe("playlists route runtime", () => {
             userId: "u1",
             name: "New Playlist",
             isPublic: false,
+            mixId: null,
+            spotifyPlaylistId: null,
+            spotifyPlaylistUrl: null,
+            createdAt: new Date("2026-01-01T00:00:00.000Z"),
+            updatedAt: new Date("2026-01-02T00:00:00.000Z"),
         });
         prisma.playlist.findUnique.mockResolvedValue({
             id: "pl-1",
@@ -267,6 +290,11 @@ describe("playlists route runtime", () => {
             userId: "u1",
             name: "Updated Playlist",
             isPublic: true,
+            mixId: null,
+            spotifyPlaylistId: null,
+            spotifyPlaylistUrl: null,
+            createdAt: new Date("2026-01-01T00:00:00.000Z"),
+            updatedAt: new Date("2026-01-02T00:00:00.000Z"),
         });
         prisma.playlist.delete.mockResolvedValue({
             id: "pl-1",

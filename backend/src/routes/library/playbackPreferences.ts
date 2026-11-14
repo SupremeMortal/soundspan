@@ -17,56 +17,6 @@ import { handleSetRemoteTrackPreference } from "./remoteTracks";
 export const playbackPreferencesRouter = Router();
 
 /**
- * @openapi
- * /api/library/preferences:
- *   post:
- *     summary: Set preference (like/dislike/clear) for a track by playbackId
- *     description: >-
- *       Source-agnostic counterpart of the per-track and per-remote-track
- *       preference routes. It stores the same result as the matching legacy
- *       route. `metadata` is used only when a TIDAL or YouTube Music track
- *       row must be created.
- *     tags: [Library]
- *     security:
- *       - apiKeyAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required: [playbackId, signal]
- *             properties:
- *               playbackId:
- *                 type: string
- *                 minLength: 1
- *                 description: "Opaque track identifier. Do not parse."
- *               signal:
- *                 type: string
- *                 enum: [thumbs_up, thumbs_down, clear]
- *               metadata:
- *                 type: object
- *                 required: [title, artist, album, durationSec]
- *                 properties:
- *                   title: { type: string, minLength: 1 }
- *                   artist: { type: string, minLength: 1 }
- *                   album: { type: string, minLength: 1 }
- *                   durationSec: { type: integer, minimum: 0 }
- *                   artworkUrl: { type: string, minLength: 1 }
- *                   isrc: { type: string, minLength: 1 }
- *     responses:
- *       200:
- *         description: Updated preference, including the request's playbackId
- *       400:
- *         description: Invalid signal, or a coded error (INVALID_PLAYBACK_ID, METADATA_REQUIRED)
- *       404:
- *         description: Track not found (code TRACK_NOT_FOUND)
- *       409:
- *         description: Source unavailable (code SOURCE_UNAVAILABLE)
- *       401:
- *         description: Not authenticated
- */
-/**
  * Handles POST /api/library/preferences by translating the playbackId into
  * the legacy route's identifier and running that route's handler.
  */

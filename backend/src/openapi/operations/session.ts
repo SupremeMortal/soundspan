@@ -13,6 +13,7 @@ import {
     SessionTokens,
     SystemFeatures,
 } from "../schemas/session";
+import { UpdateSettingsRequest, UserSettings } from "../schemas/settings";
 
 /** Connection and session operations. */
 export const sessionOperations = [
@@ -110,5 +111,26 @@ export const sessionOperations = [
         tag: "session",
         summary: "Feature flags and detected capabilities",
         responses: { 200: SystemFeatures, ...standardErrors },
+    }),
+    defineOperation({
+        method: "get",
+        path: "/api/settings",
+        operationId: "getSettings",
+        tag: "session",
+        summary: "The current user's settings",
+        description:
+            "Settings are created with their defaults on the first read.",
+        responses: { 200: UserSettings, ...standardErrors },
+    }),
+    defineOperation({
+        method: "post",
+        path: "/api/settings",
+        operationId: "updateSettings",
+        tag: "session",
+        summary: "Update the current user's settings",
+        description:
+            "Omitted fields keep their stored value. The server accepts further settings for other consumers; a value it does not accept answers 400.",
+        body: UpdateSettingsRequest,
+        responses: { 200: UserSettings, 400: ApiError, ...standardErrors },
     }),
 ];

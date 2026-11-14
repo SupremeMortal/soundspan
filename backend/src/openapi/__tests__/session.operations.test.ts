@@ -60,7 +60,7 @@ describe("session operations in the merged document", () => {
 });
 
 describe("session operations in the emitted client spec", () => {
-    test("all nine operationIds are emitted under the session tag", () => {
+    test("every session operationId is emitted under the session tag", () => {
         const emitted = JSON.parse(
             renderClientSurfaceSpec(clientSurfaceOperations, "0.0.0-test"),
         ) as JsonObject;
@@ -78,10 +78,12 @@ describe("session operations in the emitted client spec", () => {
             "getCurrentUser",
             "getHealth",
             "getOnboardingStatus",
+            "getSettings",
             "getSystemFeatures",
             "login",
             "logout",
             "refreshSession",
+            "updateSettings",
         ]);
     });
 });

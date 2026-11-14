@@ -42,6 +42,10 @@ import {
     playbackTrackInputSchema,
     resolvePlaybackInput,
 } from "../services/playback/playbackInput";
+import {
+    CreatePlaylistRequest,
+    UpdatePlaylistRequest,
+} from "../openapi/schemas/playlist";
 
 const router = Router();
 
@@ -90,15 +94,9 @@ function isPrismaRecordNotFound(value: unknown): boolean {
 
 router.use(requireAuthOrToken);
 
-const createPlaylistSchema = z.object({
-    name: z.string().min(1).max(200),
-    isPublic: z.boolean().optional().default(false),
-});
+const createPlaylistSchema = CreatePlaylistRequest;
 
-const updatePlaylistSchema = z.object({
-    name: z.string().min(1).max(200).optional(),
-    isPublic: z.boolean().optional(),
-});
+const updatePlaylistSchema = UpdatePlaylistRequest;
 
 const playlistItemInclude = {
     track: {
@@ -698,38 +696,6 @@ router.get("/", async (req, res) => {
     }
 });
 
-/**
- * @openapi
- * /api/playlists:
- *   post:
- *     summary: Create a new playlist
- *     tags: [Playlists]
- *     security:
- *       - apiKeyAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - name
- *             properties:
- *               name:
- *                 type: string
- *                 minLength: 1
- *                 maxLength: 200
- *               isPublic:
- *                 type: boolean
- *                 default: false
- *     responses:
- *       200:
- *         description: Created playlist
- *       400:
- *         description: Invalid request
- *       401:
- *         description: Not authenticated
- */
 // POST /playlists
 router.post("/", async (req, res) => {
     try {
@@ -823,48 +789,6 @@ router.get("/:id", async (req, res) => {
     }
 });
 
-/**
- * @openapi
- * /api/playlists/{id}:
- *   put:
- *     summary: Update a playlist name and visibility
- *     tags: [Playlists]
- *     security:
- *       - apiKeyAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: Playlist ID
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - name
- *             properties:
- *               name:
- *                 type: string
- *                 minLength: 1
- *                 maxLength: 200
- *               isPublic:
- *                 type: boolean
- *     responses:
- *       200:
- *         description: Updated playlist
- *       400:
- *         description: Invalid request
- *       403:
- *         description: Access denied
- *       404:
- *         description: Playlist not found
- *       401:
- *         description: Not authenticated
- */
 // PUT /playlists/:id
 router.put("/:id", async (req, res) => {
     try {
@@ -1031,31 +955,6 @@ router.delete("/:id/hide", async (req, res) => {
     }
 });
 
-/**
- * @openapi
- * /api/playlists/{id}:
- *   delete:
- *     summary: Delete a playlist
- *     tags: [Playlists]
- *     security:
- *       - apiKeyAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: Playlist ID
- *     responses:
- *       200:
- *         description: Playlist deleted
- *       403:
- *         description: Access denied
- *       404:
- *         description: Playlist not found
- *       401:
- *         description: Not authenticated
- */
 // DELETE /playlists/:id
 router.delete("/:id", async (req, res) => {
     try {
@@ -1088,148 +987,6 @@ router.delete("/:id", async (req, res) => {
     }
 });
 
-/**
- * @openapi
- * /api/playlists/{id}/items:
- *   post:
- *     summary: Add a track to a playlist
- *     tags: [Playlists]
- *     security:
- *       - apiKeyAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: Playlist ID
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             oneOf:
- *               - type: object
- *                 required: [playbackId]
- *                 description: >-
- *                   Source-agnostic track reference. When present it wins and
- *                   any legacy identifier fields are ignored.
- *                 properties:
- *                   playbackId:
- *                     type: string
- *                     minLength: 1
- *                     description: "Opaque track identifier. Do not parse."
- *                   metadata:
- *                     type: object
- *                     description: >-
- *                       Display metadata, used only when a TIDAL or YouTube
- *                       Music track row must be created. Missing metadata in
- *                       that case answers 400 METADATA_REQUIRED.
- *                     required: [title, artist, album, durationSec]
- *                     properties:
- *                       title: { type: string, minLength: 1 }
- *                       artist: { type: string, minLength: 1 }
- *                       album: { type: string, minLength: 1 }
- *                       durationSec: { type: integer, minimum: 0 }
- *                       artworkUrl: { type: string, minLength: 1 }
- *                       isrc: { type: string, minLength: 1 }
- *               - type: object
- *                 required: [trackId]
- *                 not:
- *                   anyOf:
- *                     - required: [tidalTrackId]
- *                     - required: [youtubeVideoId]
- *                 properties:
- *                   trackId:
- *                     type: string
- *                     minLength: 1
- *                     description: Local library track ID
- *               - type: object
- *                 required: [tidalTrackId, title, artist, album, duration]
- *                 not:
- *                   anyOf:
- *                     - required: [trackId]
- *                     - required: [youtubeVideoId]
- *                 properties:
- *                   tidalTrackId:
- *                     type: integer
- *                     minimum: 1
- *                   title:
- *                     type: string
- *                     minLength: 1
- *                   artist:
- *                     type: string
- *                     minLength: 1
- *                   album:
- *                     type: string
- *                     minLength: 1
- *                   duration:
- *                     type: integer
- *                     minimum: 0
- *                     description: Track duration in seconds
- *                   isrc:
- *                     type: string
- *                     minLength: 1
- *                     maxLength: 64
- *                   quality:
- *                     type: string
- *                     minLength: 1
- *                     maxLength: 64
- *                   explicit:
- *                     type: boolean
- *                   thumbnailUrl:
- *                     type: string
- *                     minLength: 1
- *               - type: object
- *                 required: [youtubeVideoId, title, artist, album, duration]
- *                 not:
- *                   anyOf:
- *                     - required: [trackId]
- *                     - required: [tidalTrackId]
- *                 properties:
- *                   youtubeVideoId:
- *                     type: string
- *                     minLength: 1
- *                   title:
- *                     type: string
- *                     minLength: 1
- *                   artist:
- *                     type: string
- *                     minLength: 1
- *                   album:
- *                     type: string
- *                     minLength: 1
- *                   duration:
- *                     type: integer
- *                     minimum: 0
- *                     description: Track duration in seconds
- *                   isrc:
- *                     type: string
- *                     minLength: 1
- *                     maxLength: 64
- *                   quality:
- *                     type: string
- *                     minLength: 1
- *                     maxLength: 64
- *                   explicit:
- *                     type: boolean
- *                   thumbnailUrl:
- *                     type: string
- *                     minLength: 1
- *     responses:
- *       200:
- *         description: Track added to playlist (or already exists)
- *       400:
- *         description: Invalid request, or a coded playbackId error (INVALID_PLAYBACK_ID, METADATA_REQUIRED)
- *       403:
- *         description: Access denied
- *       404:
- *         description: Playlist or track not found (code TRACK_NOT_FOUND for a playbackId)
- *       409:
- *         description: Source unavailable (code SOURCE_UNAVAILABLE)
- *       401:
- *         description: Not authenticated
- */
 // POST /playlists/:id/items
 router.post("/:id/items", async (req, res) => {
     try {
@@ -1307,37 +1064,6 @@ router.post("/:id/items", async (req, res) => {
     }
 });
 
-/**
- * @openapi
- * /api/playlists/{id}/items/{trackId}:
- *   delete:
- *     summary: Remove a playlist item
- *     tags: [Playlists]
- *     security:
- *       - apiKeyAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: Playlist ID
- *       - in: path
- *         name: trackId
- *         required: true
- *         schema:
- *           type: string
- *         description: Playlist item ID (preferred), a playbackId, or local track ID (legacy fallback). A segment that parses as a playbackId removes the item holding that track.
- *     responses:
- *       200:
- *         description: Track removed from playlist
- *       403:
- *         description: Access denied
- *       404:
- *         description: Playlist not found
- *       401:
- *         description: Not authenticated
- */
 // DELETE /playlists/:id/items/:trackId
 router.delete("/:id/items/:trackId", async (req, res) => {
     try {
@@ -1397,62 +1123,6 @@ router.delete("/:id/items/:trackId", async (req, res) => {
     }
 });
 
-/**
- * @openapi
- * /api/playlists/{id}/items/reorder:
- *   put:
- *     summary: Reorder tracks in a playlist
- *     tags: [Playlists]
- *     security:
- *       - apiKeyAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: Playlist ID
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               playbackIds:
- *                 type: array
- *                 maxItems: 1000
- *                 items:
- *                   type: string
- *                 description: playbackIds in the desired order, one per playlist item, for playlists of any source mix. Wins over itemIds and trackIds. An unparseable id answers 400 INVALID_PLAYBACK_ID; an id not in the playlist answers 404 TRACK_NOT_FOUND.
- *               itemIds:
- *                 type: array
- *                 maxItems: 1000
- *                 items:
- *                   type: string
- *                 description: Playlist item IDs in the desired order. Use for remote or mixed-source playlists; preferred when both arrays are present.
- *               trackIds:
- *                 type: array
- *                 maxItems: 1000
- *                 items:
- *                   type: string
- *                 description: Legacy local-library track IDs in the desired order
- *             anyOf:
- *               - required: [playbackIds]
- *               - required: [itemIds]
- *               - required: [trackIds]
- *     responses:
- *       200:
- *         description: Playlist reordered
- *       400:
- *         description: playbackIds, itemIds or trackIds must be an array
- *       403:
- *         description: Access denied
- *       404:
- *         description: Playlist not found
- *       401:
- *         description: Not authenticated
- */
 // PUT /playlists/:id/items/reorder
 router.put("/:id/items/reorder", async (req, res) => {
     try {

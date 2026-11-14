@@ -19,6 +19,7 @@ export const CLIENT_SURFACE_MOUNTS: Record<string, () => Router> = {
     "/api/plays": () => require("../../../routes/plays").default,
     "/api/podcasts": () => require("../../../routes/podcasts").default,
     "/api/search": () => require("../../../routes/search").default,
+    "/api/settings": () => require("../../../routes/settings").default,
     "/api/system": () => require("../../../routes/system").default,
 };
 

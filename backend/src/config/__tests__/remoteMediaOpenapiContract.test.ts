@@ -1,186 +1,45 @@
 jest.mock("../../config", () => ({ config: { port: 3006 } }));
 
-type PropertySchema = {
-    type?: "array" | "boolean" | "integer" | "number" | "object" | "string";
-    minimum?: number;
-    minLength?: number;
-    maxLength?: number;
-    items?: PropertySchema;
-};
-
 type RequestSchema = {
     required?: string[];
-    properties?: Record<string, PropertySchema>;
-    oneOf?: RequestSchema[];
-    anyOf?: RequestSchema[];
-    not?: { anyOf?: RequestSchema[] };
+    properties?: Record<string, unknown>;
 };
 
-function hasRequiredFields(
-    schema: RequestSchema,
-    payload: Record<string, unknown>,
-): boolean {
-    return (schema.required ?? []).every(
-        (field) => payload[field] !== undefined,
-    );
-}
+type Operation = {
+    description?: string;
+    requestBody: {
+        content: { "application/json": { schema: { $ref?: string } } };
+    };
+};
 
-function matchesScalarProperty(
-    schema: PropertySchema,
-    value: unknown,
-): boolean {
-    if (schema.type === "integer") {
-        return (
-            typeof value === "number" &&
-            Number.isInteger(value) &&
-            (schema.minimum === undefined || value >= schema.minimum)
-        );
-    }
-    if (schema.type === "string") {
-        return (
-            typeof value === "string" &&
-            (schema.minLength === undefined ||
-                value.length >= schema.minLength) &&
-            (schema.maxLength === undefined || value.length <= schema.maxLength)
-        );
-    }
-    if (schema.type === "boolean") return typeof value === "boolean";
-    return true;
-}
-
-function matchesProperty(schema: PropertySchema, value: unknown): boolean {
-    if (schema.type !== "array") return matchesScalarProperty(schema, value);
-    if (!Array.isArray(value)) return false;
-    return value.every((entry) =>
-        schema.items ? matchesScalarProperty(schema.items, entry) : true,
-    );
-}
-
-function matchesVariant(
-    schema: RequestSchema,
-    payload: Record<string, unknown>,
-): boolean {
-    if (!hasRequiredFields(schema, payload)) return false;
-    if (
-        schema.not?.anyOf?.some((excluded) =>
-            hasRequiredFields(excluded, payload),
-        )
-    ) {
-        return false;
-    }
-    return Object.entries(payload).every(([field, value]) => {
-        const propertySchema = schema.properties?.[field];
-        return propertySchema ? matchesProperty(propertySchema, value) : true;
-    });
-}
-
-function acceptsOneOf(
-    schema: RequestSchema,
-    payload: Record<string, unknown>,
-): boolean {
-    return (
-        schema.oneOf?.filter((variant) => matchesVariant(variant, payload))
-            .length === 1
-    );
-}
-
-function acceptsAnyOf(
-    schema: RequestSchema,
-    payload: Record<string, unknown>,
-): boolean {
-    const matchesAlternative = schema.anyOf?.some((alternative) =>
-        hasRequiredFields(alternative, payload),
-    );
-    return Boolean(matchesAlternative && matchesVariant(schema, payload));
-}
-
-function requestSchema(path: string, method: "post" | "put"): RequestSchema {
+function mergedOperation(path: string, method: "post" | "put"): Operation {
     const { swaggerSpec } = require("../swagger");
-    const schema = swaggerSpec.paths?.[path]?.[method]?.requestBody?.content?.[
-        "application/json"
-    ]?.schema as RequestSchema | undefined;
+    const operation = swaggerSpec.paths?.[path]?.[method] as
+        | Operation
+        | undefined;
 
-    expect(schema).toBeDefined();
-    return schema as RequestSchema;
+    expect(operation).toBeDefined();
+    return operation as Operation;
 }
 
-function variantProperties(
-    schema: RequestSchema,
-    identifier: string,
-): string[] {
-    const variant = schema.oneOf?.find((candidate) =>
-        candidate.required?.includes(identifier),
-    );
-    expect(variant).toBeDefined();
-    return Object.keys(variant?.properties ?? {});
+/** The named component a request body references. */
+function bodyComponent(operation: Operation): RequestSchema {
+    const { swaggerSpec } = require("../swagger");
+    const ref = operation.requestBody.content["application/json"].schema.$ref;
+
+    expect(ref).toMatch(/^#\/components\/schemas\//);
+    const name = (ref as string).replace("#/components/schemas/", "");
+    return swaggerSpec.components.schemas[name] as RequestSchema;
 }
-
-const tidalRequest = {
-    tidalTrackId: 991,
-    title: "TIDAL Song",
-    artist: "TIDAL Artist",
-    album: "TIDAL Album",
-    duration: 245,
-};
-
-const youtubeRequest = {
-    youtubeVideoId: "video-7",
-    title: "YouTube Song",
-    artist: "YouTube Artist",
-    album: "YouTube Album",
-    duration: 199,
-    thumbnailUrl: "https://img.example/video-7.jpg",
-};
 
 describe("remote-media OpenAPI request contracts", () => {
-    test("playlist add exposes every supported remote-media field", () => {
-        const schema = requestSchema("/api/playlists/{id}/items", "post");
-        const remoteFields = [
-            "title",
-            "artist",
-            "album",
-            "duration",
-            "isrc",
-            "quality",
-            "explicit",
-            "thumbnailUrl",
-        ];
-
-        expect(variantProperties(schema, "tidalTrackId")).toEqual(
-            expect.arrayContaining(["tidalTrackId", ...remoteFields]),
-        );
-        expect(variantProperties(schema, "youtubeVideoId")).toEqual(
-            expect.arrayContaining(["youtubeVideoId", ...remoteFields]),
-        );
-    });
-
-    test.each([
-        ["local", { trackId: "track-1" }, true],
-        ["TIDAL", tidalRequest, true],
-        ["YouTube", youtubeRequest, true],
-        ["missing remote metadata", { tidalTrackId: 991 }, false],
-        ["no identifier", { title: "No ID" }, false],
-        [
-            "conflicting identifiers",
-            { trackId: "track-1", ...tidalRequest },
-            false,
-        ],
-    ])("playlist add documents the %s request", (_label, payload, accepted) => {
-        const schema = requestSchema("/api/playlists/{id}/items", "post");
-
-        expect(acceptsOneOf(schema, payload)).toBe(accepted);
-    });
-
     test("play logging documents the playbackId form and names the legacy forms", () => {
-        const { swaggerSpec } = require("../swagger");
-        const operation = swaggerSpec.paths["/api/plays"].post;
-        const body = operation.requestBody.content["application/json"].schema;
+        const operation = mergedOperation("/api/plays", "post");
+        const schema = bodyComponent(operation);
 
-        expect(body).toEqual({
-            $ref: "#/components/schemas/RecordPlayRequest",
-        });
-        const schema = swaggerSpec.components.schemas
-            .RecordPlayRequest as RequestSchema;
+        expect(
+            operation.requestBody.content["application/json"].schema,
+        ).toEqual({ $ref: "#/components/schemas/RecordPlayRequest" });
         expect(schema.required).toEqual(["playbackId"]);
         expect(Object.keys(schema.properties ?? {}).sort()).toEqual([
             "listenedMs",
@@ -192,22 +51,30 @@ describe("remote-media OpenAPI request contracts", () => {
         expect(operation.description).toContain("`youtubeVideoId`");
     });
 
-    test.each([
-        ["mixed-source item IDs", { itemIds: ["item-2", "item-1"] }, true],
-        ["legacy local track IDs", { trackIds: ["track-2", "track-1"] }, true],
-        [
-            "both arrays with item IDs preferred",
-            { itemIds: ["item-2"], trackIds: ["track-2"] },
-            true,
-        ],
-        ["neither array", {}, false],
-        ["invalid item IDs", { itemIds: "item-1" }, false],
-    ])("playlist reorder documents %s", (_label, payload, accepted) => {
-        const schema = requestSchema(
+    test("playlist add documents the playbackId form and names the legacy forms", () => {
+        const operation = mergedOperation("/api/playlists/{id}/items", "post");
+        const schema = bodyComponent(operation);
+
+        expect(schema.required).toEqual(["playbackId"]);
+        expect(Object.keys(schema.properties ?? {}).sort()).toEqual([
+            "metadata",
+            "playbackId",
+        ]);
+        expect(operation.description).toContain("`trackId`");
+        expect(operation.description).toContain("`tidalTrackId`");
+        expect(operation.description).toContain("`youtubeVideoId`");
+    });
+
+    test("playlist reorder documents playbackIds and names the legacy arrays", () => {
+        const operation = mergedOperation(
             "/api/playlists/{id}/items/reorder",
             "put",
         );
+        const schema = bodyComponent(operation);
 
-        expect(acceptsAnyOf(schema, payload)).toBe(accepted);
+        expect(schema.required).toEqual(["playbackIds"]);
+        expect(Object.keys(schema.properties ?? {})).toEqual(["playbackIds"]);
+        expect(operation.description).toContain("`itemIds`");
+        expect(operation.description).toContain("`trackIds`");
     });
 });

@@ -156,6 +156,7 @@ import {
     expectBoundedRandomQuery,
     expectNoUnboundedIdPoolFetch,
 } from "./libraryRuntime.helpers";
+import { withClientSurfaceValidation as validated } from "./helpers/expectClientSurfaceResponse";
 
 describe("library catalog list runtime coverage", () => {
     const recentlyListenedHandler = getHandler("get", "/recently-listened");
@@ -166,7 +167,10 @@ describe("library catalog list runtime coverage", () => {
     const albumByIdHandler = getHandler("get", "/albums/:id");
     const tracksHandler = getHandler("get", "/tracks");
     const likedPlaylistHandler = getHandler("get", "/liked");
-    const shuffleHandler = getHandler("get", "/tracks/shuffle");
+    const shuffleHandler = validated(
+        "listShuffledTracks",
+        getHandler("get", "/tracks/shuffle"),
+    );
     const coverArtHandler = getFinalHandler("get", "/cover-art{/:id}");
     const albumCoverHandler = getFinalHandler("get", "/album-cover/:mbid");
     const coverArtColorsHandler = getFinalHandler("get", "/cover-art-colors");
@@ -175,9 +179,9 @@ describe("library catalog list runtime coverage", () => {
         "post",
         "/tracks/:id/preference",
     );
-    const setAlbumPreferenceHandler = getHandler(
-        "post",
-        "/albums/:id/preference",
+    const setAlbumPreferenceHandler = validated(
+        "setAlbumPreference",
+        getHandler("post", "/albums/:id/preference"),
     );
     const trackByIdHandler = getHandler("get", "/tracks/:id");
     const audioInfoHandler = getHandler("get", "/tracks/:id/audio-info", 1);
@@ -417,11 +421,13 @@ describe("library catalog list runtime coverage", () => {
             {
                 id: "track-1",
                 title: "Track 1",
+                duration: 180,
                 album: { id: "album-1", title: "A1", coverUrl: "c1.jpg" },
             },
             {
                 id: "track-2",
                 title: "Track 2",
+                duration: 180,
                 album: { id: "album-2", title: "A2", coverUrl: "c2.jpg" },
             },
         ]);
@@ -441,6 +447,7 @@ describe("library catalog list runtime coverage", () => {
         const five = Array.from({ length: 5 }, (_, i) => ({
             id: `track-${i + 1}`,
             title: `Track ${i + 1}`,
+            duration: 180,
             album: {
                 id: `album-${i + 1}`,
                 title: `A${i + 1}`,
@@ -479,11 +486,13 @@ describe("library catalog list runtime coverage", () => {
                 {
                     id: "track-9",
                     title: "Track 9",
+                    duration: 180,
                     album: { id: "album-9", title: "A9", coverUrl: "c9.jpg" },
                 },
                 {
                     id: "track-8",
                     title: "Track 8",
+                    duration: 180,
                     album: { id: "album-8", title: "A8", coverUrl: "c8.jpg" },
                 },
             ]);
@@ -543,16 +552,19 @@ describe("library catalog list runtime coverage", () => {
                 {
                     id: "track-1",
                     title: "T1",
+                    duration: 180,
                     album: { id: "a1", title: "A1", coverUrl: "c1.jpg" },
                 },
                 {
                     id: "track-2",
                     title: "T2",
+                    duration: 180,
                     album: { id: "a2", title: "A2", coverUrl: "c2.jpg" },
                 },
                 {
                     id: "track-3",
                     title: "T3",
+                    duration: 180,
                     album: { id: "a3", title: "A3", coverUrl: "c3.jpg" },
                 },
             ]);
@@ -1039,6 +1051,24 @@ describe("library catalog list runtime coverage", () => {
                 entityId: { in: ["track-1", "track-2"] },
             },
         });
+    });
+
+    it("answers 404 for an unknown album preference target", async () => {
+        mockAlbumFindFirst.mockResolvedValue(null);
+        const res = createRes();
+
+        await setAlbumPreferenceHandler(
+            {
+                params: { id: "missing-album" },
+                user: { id: "user-1" },
+                body: { signal: "thumbs_up" },
+            } as any,
+            res,
+        );
+
+        expect(res.statusCode).toBe(404);
+        expect(res.body).toEqual({ error: "Album not found" });
+        expect(mockPrismaTransaction).not.toHaveBeenCalled();
     });
 
     it("rejects album preference updates when an album has no local tracks", async () => {

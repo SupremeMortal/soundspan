@@ -362,43 +362,6 @@ export async function handleGetAlbum(req: AlbumDetailRequest, res: Response) {
 
 albumsBrowseRouter.get("/albums/:id", asyncHandler(handleGetAlbum));
 
-/**
- * @openapi
- * /api/library/albums/{id}/preference:
- *   post:
- *     summary: Set preference (like/dislike) for all tracks in an album
- *     tags: [Library]
- *     security:
- *       - apiKeyAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: Album ID or release group MBID
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               signal:
- *                 type: string
- *                 enum: [thumbs_up, thumbs_down, clear]
- *     responses:
- *       200:
- *         description: Album preference set successfully
- *       400:
- *         description: Invalid preference signal
- *       404:
- *         description: Album not found
- *       422:
- *         description: Album contains no local tracks
- *       401:
- *         description: Not authenticated
- */
 // POST /library/albums/:id/preference
 async function findAlbumLocalTrackIds(
     requestedAlbumId: string,

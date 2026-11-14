@@ -1,6 +1,26 @@
 {
   "components": {
     "schemas": {
+      "AddPlaylistItemRequest": {
+        "properties": {
+          "metadata": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PlaybackMetadata"
+              }
+            ]
+          },
+          "playbackId": {
+            "description": "Opaque track identifier. Do not parse.",
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "playbackId"
+        ],
+        "type": "object"
+      },
       "AlbumDetail": {
         "additionalProperties": false,
         "properties": {
@@ -113,6 +133,72 @@
           "limit",
           "offset",
           "total"
+        ],
+        "type": "object"
+      },
+      "AlbumPreferenceRequest": {
+        "properties": {
+          "signal": {
+            "$ref": "#/components/schemas/PreferenceSignal"
+          }
+        },
+        "required": [
+          "signal"
+        ],
+        "type": "object"
+      },
+      "AlbumPreferenceResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "albumId": {
+            "type": "string"
+          },
+          "dislikedAt": {
+            "format": "date-time",
+            "nullable": true,
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+            "type": "string"
+          },
+          "likedAt": {
+            "format": "date-time",
+            "nullable": true,
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+            "type": "string"
+          },
+          "score": {
+            "description": "1 liked, -1 disliked, 0 neutral",
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "signal": {
+            "$ref": "#/components/schemas/PreferenceSignal"
+          },
+          "state": {
+            "$ref": "#/components/schemas/PreferenceState"
+          },
+          "trackCount": {
+            "description": "Library tracks the signal was applied to",
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "nullable": true,
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "albumId",
+          "dislikedAt",
+          "likedAt",
+          "score",
+          "signal",
+          "state",
+          "trackCount",
+          "updatedAt"
         ],
         "type": "object"
       },
@@ -600,6 +686,23 @@
         },
         "required": [
           "success"
+        ],
+        "type": "object"
+      },
+      "CreatePlaylistRequest": {
+        "properties": {
+          "isPublic": {
+            "default": false,
+            "type": "boolean"
+          },
+          "name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
         ],
         "type": "object"
       },
@@ -1222,6 +1325,15 @@
         ],
         "type": "object"
       },
+      "LoudnessMode": {
+        "enum": [
+          "off",
+          "track",
+          "album",
+          "auto"
+        ],
+        "type": "string"
+      },
       "Lyrics": {
         "additionalProperties": false,
         "properties": {
@@ -1772,6 +1884,29 @@
         ],
         "type": "object"
       },
+      "PlaylistItemDuplicate": {
+        "additionalProperties": false,
+        "properties": {
+          "duplicated": {
+            "enum": [
+              true
+            ],
+            "type": "boolean"
+          },
+          "item": {
+            "$ref": "#/components/schemas/PlaylistItem"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "duplicated",
+          "item",
+          "message"
+        ],
+        "type": "object"
+      },
       "PlaylistItemPlayback": {
         "additionalProperties": false,
         "properties": {
@@ -1803,6 +1938,57 @@
         },
         "required": [
           "username"
+        ],
+        "type": "object"
+      },
+      "PlaylistRecord": {
+        "additionalProperties": false,
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "isPublic": {
+            "type": "boolean"
+          },
+          "mixId": {
+            "nullable": true,
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "spotifyPlaylistId": {
+            "nullable": true,
+            "type": "string"
+          },
+          "spotifyPlaylistUrl": {
+            "nullable": true,
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+            "type": "string"
+          },
+          "userId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "createdAt",
+          "id",
+          "isPublic",
+          "mixId",
+          "name",
+          "spotifyPlaylistId",
+          "spotifyPlaylistUrl",
+          "updatedAt",
+          "userId"
         ],
         "type": "object"
       },
@@ -1872,6 +2058,18 @@
         ],
         "type": "object"
       },
+      "PlaylistWriteResult": {
+        "additionalProperties": false,
+        "properties": {
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "type": "object"
+      },
       "PodcastSummary": {
         "additionalProperties": false,
         "properties": {
@@ -1920,6 +2118,22 @@
           "title"
         ],
         "type": "object"
+      },
+      "PreferenceSignal": {
+        "enum": [
+          "thumbs_up",
+          "thumbs_down",
+          "clear"
+        ],
+        "type": "string"
+      },
+      "PreferenceState": {
+        "enum": [
+          "liked",
+          "disliked",
+          "neutral"
+        ],
+        "type": "string"
       },
       "RecentlyAddedArtist": {
         "additionalProperties": false,
@@ -2089,6 +2303,22 @@
           "youtube"
         ],
         "type": "string"
+      },
+      "ReorderPlaylistItemsRequest": {
+        "properties": {
+          "playbackIds": {
+            "description": "The playbackId of every item of the playlist, in the new order.",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 1000,
+            "type": "array"
+          }
+        },
+        "required": [
+          "playbackIds"
+        ],
+        "type": "object"
       },
       "SavePlaybackStateRequest": {
         "properties": {
@@ -2644,6 +2874,28 @@
         ],
         "type": "object"
       },
+      "ShuffledTracksResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "total": {
+            "description": "Library tracks to sample from",
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "tracks": {
+            "items": {
+              "$ref": "#/components/schemas/TrackSummary"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "total",
+          "tracks"
+        ],
+        "type": "object"
+      },
       "SimilarArtist": {
         "additionalProperties": false,
         "properties": {
@@ -2838,6 +3090,83 @@
         ],
         "type": "object"
       },
+      "TrackPreferenceRequest": {
+        "properties": {
+          "metadata": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PlaybackMetadata"
+              }
+            ]
+          },
+          "playbackId": {
+            "description": "Opaque track identifier. Do not parse.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "signal": {
+            "$ref": "#/components/schemas/PreferenceSignal"
+          }
+        },
+        "required": [
+          "playbackId",
+          "signal"
+        ],
+        "type": "object"
+      },
+      "TrackPreferenceResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "dislikedAt": {
+            "format": "date-time",
+            "nullable": true,
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+            "type": "string"
+          },
+          "likedAt": {
+            "format": "date-time",
+            "nullable": true,
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+            "type": "string"
+          },
+          "playbackId": {
+            "type": "string"
+          },
+          "score": {
+            "description": "1 liked, -1 disliked, 0 neutral",
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "signal": {
+            "$ref": "#/components/schemas/PreferenceSignal"
+          },
+          "state": {
+            "$ref": "#/components/schemas/PreferenceState"
+          },
+          "trackId": {
+            "description": "Legacy identifier of the track; clients use `playbackId`.",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "nullable": true,
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "dislikedAt",
+          "likedAt",
+          "playbackId",
+          "score",
+          "signal",
+          "state",
+          "trackId",
+          "updatedAt"
+        ],
+        "type": "object"
+      },
       "TrackSource": {
         "enum": [
           "local",
@@ -2916,6 +3245,109 @@
           "duration",
           "id",
           "title"
+        ],
+        "type": "object"
+      },
+      "UpdatePlaylistRequest": {
+        "properties": {
+          "isPublic": {
+            "type": "boolean"
+          },
+          "name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "UpdateSettingsRequest": {
+        "properties": {
+          "loudnessMode": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LoudnessMode"
+              }
+            ]
+          },
+          "maxCacheSizeMb": {
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "playbackQuality": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PlaybackQuality"
+              }
+            ]
+          }
+        },
+        "type": "object"
+      },
+      "UserSettings": {
+        "additionalProperties": false,
+        "properties": {
+          "displayName": {
+            "nullable": true,
+            "type": "string"
+          },
+          "hasProfilePicture": {
+            "type": "boolean"
+          },
+          "loudnessMode": {
+            "$ref": "#/components/schemas/LoudnessMode"
+          },
+          "maxCacheSizeMb": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "offlineEnabled": {
+            "type": "boolean"
+          },
+          "playbackQuality": {
+            "$ref": "#/components/schemas/PlaybackQuality"
+          },
+          "shareListeningStatus": {
+            "type": "boolean"
+          },
+          "shareOnlinePresence": {
+            "type": "boolean"
+          },
+          "showTidalExplore": {
+            "type": "boolean"
+          },
+          "showYtMusicExplore": {
+            "type": "boolean"
+          },
+          "tidalStreamingQuality": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "string"
+          },
+          "wifiOnly": {
+            "type": "boolean"
+          },
+          "ytMusicQuality": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "displayName",
+          "loudnessMode",
+          "maxCacheSizeMb",
+          "offlineEnabled",
+          "playbackQuality",
+          "shareListeningStatus",
+          "shareOnlinePresence",
+          "showTidalExplore",
+          "showYtMusicExplore",
+          "tidalStreamingQuality",
+          "userId",
+          "wifiOnly",
+          "ytMusicQuality"
         ],
         "type": "object"
       }
@@ -3509,6 +3941,109 @@
         ]
       }
     },
+    "/api/library/albums/{id}/preference": {
+      "post": {
+        "description": "400 for an invalid signal, 404 when there is no such album, 422 when the album has no library tracks.",
+        "operationId": "setAlbumPreference",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "description": "Album id or release-group MBID",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AlbumPreferenceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlbumPreferenceResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Like, dislike or clear every library track of an album",
+        "tags": [
+          "library"
+        ]
+      }
+    },
     "/api/library/artists": {
       "get": {
         "description": "Offset paging with `limit` and `offset`; pass `nextCursor` back as `cursor` to page by cursor instead. `sortBy=tracks` uses stored library track counts and does not include remote counts. 400 for an unknown `origin`.",
@@ -3838,6 +4373,98 @@
         ]
       }
     },
+    "/api/library/preferences": {
+      "post": {
+        "description": "`metadata` is required (400 `METADATA_REQUIRED`) only when a TIDAL or YouTube Music track row must be created. 400 for an invalid signal or `INVALID_PLAYBACK_ID`, 404 `TRACK_NOT_FOUND`, 409 `SOURCE_UNAVAILABLE` for a track no preference can be stored for. A dislike of a streaming track clears its like and answers `neutral`.",
+        "operationId": "setTrackPreference",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TrackPreferenceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrackPreferenceResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Like, dislike or clear the preference of any track",
+        "tags": [
+          "library"
+        ]
+      }
+    },
     "/api/library/recently-added": {
       "get": {
         "description": "`limit` defaults to 10; at most the 20 most recently added albums are considered.",
@@ -4079,6 +4706,71 @@
           }
         },
         "summary": "One page of library tracks (the Songs list)",
+        "tags": [
+          "library"
+        ]
+      }
+    },
+    "/api/library/tracks/shuffle": {
+      "get": {
+        "description": "`limit` defaults to 100 and is capped at 10000. `total` is the number of library tracks sampled from; an empty library answers no tracks and `total` 0.",
+        "operationId": "listShuffledTracks",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "description": "Tracks to return; 100 when absent, capped by the server",
+              "maximum": 9007199254740991,
+              "minimum": -9007199254740991,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShuffledTracksResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "A random sample of library tracks",
         "tags": [
           "library"
         ]
@@ -4695,9 +5387,160 @@
         "tags": [
           "playlists"
         ]
+      },
+      "post": {
+        "description": "`isPublic` defaults to false.",
+        "operationId": "createPlaylist",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePlaylistRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlaylistRecord"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Create a playlist",
+        "tags": [
+          "playlists"
+        ]
       }
     },
     "/api/playlists/{id}": {
+      "delete": {
+        "description": "403 for a playlist the user does not own.",
+        "operationId": "deletePlaylist",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "description": "Playlist id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlaylistWriteResult"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Delete a playlist",
+        "tags": [
+          "playlists"
+        ]
+      },
       "get": {
         "description": "403 for another user's private playlist; 404 when there is none. The server also sends pending (not yet imported) items for other consumers.",
         "operationId": "getPlaylist",
@@ -4774,6 +5617,422 @@
           }
         },
         "summary": "A playlist with its items",
+        "tags": [
+          "playlists"
+        ]
+      },
+      "put": {
+        "description": "Omitted fields keep their value. 403 for a playlist the user does not own.",
+        "operationId": "updatePlaylist",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "description": "Playlist id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePlaylistRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlaylistRecord"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Rename a playlist or change its visibility",
+        "tags": [
+          "playlists"
+        ]
+      }
+    },
+    "/api/playlists/{id}/items": {
+      "post": {
+        "description": "Answers the new item, or `duplicated: true` with the existing item when the track is already in the playlist. `metadata` is required (400 `METADATA_REQUIRED`) only when a TIDAL or YouTube Music track row must be created. 400 `INVALID_PLAYBACK_ID`, 404 `TRACK_NOT_FOUND`, 409 `SOURCE_UNAVAILABLE`; 403 for a playlist the user does not own. Legacy identifier fields (`trackId`, `tidalTrackId`, `youtubeVideoId` with display fields) exist for other consumers; a `playbackId` wins over them.",
+        "operationId": "addPlaylistItem",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "description": "Playlist id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddPlaylistItemRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/PlaylistItem"
+                    },
+                    {
+                      "$ref": "#/components/schemas/PlaylistItemDuplicate"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Add a track to the end of a playlist",
+        "tags": [
+          "playlists"
+        ]
+      }
+    },
+    "/api/playlists/{id}/items/reorder": {
+      "put": {
+        "description": "`playbackIds` must list every item of the playlist exactly once (400 otherwise). 400 `INVALID_PLAYBACK_ID` for an unparseable id, 404 `TRACK_NOT_FOUND` for one not in the playlist; 403 for a playlist the user does not own. `itemIds` and `trackIds` forms exist for other consumers; `playbackIds` wins over them.",
+        "operationId": "reorderPlaylistItems",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "description": "Playlist id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReorderPlaylistItemsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlaylistWriteResult"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Put the items of a playlist in a new order",
+        "tags": [
+          "playlists"
+        ]
+      }
+    },
+    "/api/playlists/{id}/items/{playbackId}": {
+      "delete": {
+        "description": "404 when the playlist does not exist or holds no item for the track; 403 for a playlist the user does not own.",
+        "operationId": "removePlaylistItem",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "description": "Playlist id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "playbackId",
+            "required": true,
+            "schema": {
+              "description": "Opaque track identifier of the item to remove. A playlist item id, or a library track id, is also accepted for other consumers.",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlaylistWriteResult"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Remove a track from a playlist",
         "tags": [
           "playlists"
         ]
@@ -5159,6 +6418,128 @@
         "summary": "Search catalogs outside the library for artists, tracks and podcasts",
         "tags": [
           "search"
+        ]
+      }
+    },
+    "/api/settings": {
+      "get": {
+        "description": "Settings are created with their defaults on the first read.",
+        "operationId": "getSettings",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserSettings"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "The current user's settings",
+        "tags": [
+          "session"
+        ]
+      },
+      "post": {
+        "description": "Omitted fields keep their stored value. The server accepts further settings for other consumers; a value it does not accept answers 400.",
+        "operationId": "updateSettings",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSettingsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserSettings"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Update the current user's settings",
+        "tags": [
+          "session"
         ]
       }
     },

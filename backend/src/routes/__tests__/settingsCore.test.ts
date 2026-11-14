@@ -187,6 +187,23 @@ const mockCleanupAll = staleJobCleanupService.cleanupAll as jest.Mock;
 const mockClearUserQualityCache =
     tidalStreamingService.clearUserQualityCache as jest.Mock;
 
+/** Every column of a `UserSettings` row at its Prisma default. */
+const settingsRowDefaults = {
+    playbackQuality: "original",
+    loudnessMode: "auto",
+    shareOnlinePresence: false,
+    shareListeningStatus: false,
+    wifiOnly: false,
+    offlineEnabled: false,
+    maxCacheSizeMb: 10240,
+    showYtMusicExplore: true,
+    showTidalExplore: true,
+    ytMusicOAuthJson: null,
+    ytMusicQuality: "HIGH",
+    tidalOAuthJson: null,
+    tidalStreamingQuality: "HIGH",
+};
+
 const existingSettings = {
     userId: "user-1",
     playbackQuality: "high",
@@ -210,13 +227,12 @@ describe("settings routes integration", () => {
 
         mockUserSettingsFindUnique.mockResolvedValue(existingSettings);
         mockUserSettingsCreate.mockImplementation(async ({ data }) => ({
-            id: "settings-created",
-            loudnessMode: "auto",
+            ...settingsRowDefaults,
             ...data,
         }));
         mockUserSettingsUpsert.mockImplementation(
             async ({ where, create, update }) => ({
-                id: "settings-upserted",
+                ...settingsRowDefaults,
                 ...(create ?? {}),
                 ...(update ?? {}),
                 userId: where.userId,
@@ -330,6 +346,17 @@ describe("settings routes integration", () => {
                 displayName: "Mary Jane",
             }),
         );
+    });
+
+    it("answers 400 with the ApiError envelope for an unsupported value", async () => {
+        const res = await request(app)
+            .post("/api/settings")
+            .set(AUTH_HEADER, AUTH_VALUE)
+            .send({ loudnessMode: "loud" });
+
+        expect(res.status).toBe(400);
+        expect(res.body.error).toBe("Invalid settings");
+        expect(mockUserSettingsUpsert).not.toHaveBeenCalled();
     });
 
     it("strips removed peer-sharing fields from old-client updates", async () => {
