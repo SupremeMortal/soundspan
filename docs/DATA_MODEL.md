@@ -255,7 +255,7 @@ password and no other linked identity.
 
 | Entity                          | Purpose                                                                                           |
 | ------------------------------- | ------------------------------------------------------------------------------------------------- |
-| `Play`                          | Play history — links to `Track?`, `TrackTidal?`, `TrackYtMusic?`, `ListenSource` enum             |
+| `Play`                          | Play history — links to `Track?`, `TrackTidal?`, `TrackYtMusic?`, `ListenSource` enum; `listenedMs` is the audible time a client reported, `NULL` when not measured |
 | `PlaybackState`                 | Per-user per-device queue/position state                                                          |
 | `SyncGroup` / `SyncGroupMember` | Listen Together sessions; `membershipFence` rejects commits from expired distributed lease holders |
 | `ListeningState`                | Resume position for audiobooks/podcasts                                                           |

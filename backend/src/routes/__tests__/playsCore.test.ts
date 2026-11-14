@@ -725,3 +725,176 @@ describe("POST /api/plays legacy forms with playedAt", () => {
         }
     });
 });
+
+describe("POST /api/plays legacy forms with listenedMs", () => {
+    const mockTrackFindUnique = prismaClient.track.findUnique as jest.Mock;
+    const mockPlayCreate = prismaClient.play.create as jest.Mock;
+    const mockPlayFindFirst = prismaClient.play.findFirst as jest.Mock;
+    const mockEnsureRemoteTrack =
+        trackMappingService.ensureRemoteTrack as jest.Mock;
+    const mockResolveMetadata =
+        resolveRemoteTrackMetadataForRequest as jest.Mock;
+    const REMOTE_FIELDS = {
+        title: "Song",
+        artist: "Artist",
+        album: "Album",
+        duration: 215,
+    };
+    const FORMS = [
+        [
+            "trackId",
+            { trackId: "track-1" },
+            { trackId: "track-1", source: "LIBRARY" },
+        ],
+        [
+            "tidalTrackId",
+            { tidalTrackId: 77, ...REMOTE_FIELDS },
+            { trackTidalId: "tt-1", source: "TIDAL" },
+        ],
+        [
+            "youtubeVideoId",
+            { youtubeVideoId: "dQw4w9WgXcQ", ...REMOTE_FIELDS },
+            { trackYtMusicId: "ym-1", source: "YOUTUBE_MUSIC" },
+        ],
+    ] as const;
+
+    beforeEach(() => {
+        jest.clearAllMocks();
+        mockTrackFindUnique.mockResolvedValue({ id: "track-1" });
+        mockPlayFindFirst.mockResolvedValue(null);
+        // Like Prisma, an undefined field is not written and reads back null.
+        mockPlayCreate.mockImplementation(async ({ data }: any) => ({
+            id: "play-1",
+            ...data,
+            listenedMs: data.listenedMs ?? null,
+        }));
+        mockResolveMetadata.mockImplementation(async (input: any) => ({
+            ...input.metadata,
+        }));
+        mockEnsureRemoteTrack.mockImplementation(async (input: any) => ({
+            id: input.provider === "tidal" ? "tt-1" : "ym-1",
+        }));
+    });
+
+    it.each(FORMS)(
+        "stores and returns listenedMs for a %s play",
+        async (_label, identifier, expected) => {
+            const res = await request(app)
+                .post("/api/plays")
+                .set(AUTH_HEADER, AUTH_VALUE)
+                .send({ ...identifier, listenedMs: 42_000 });
+
+            expect(res.status).toBe(200);
+            expect(res.body.listenedMs).toBe(42_000);
+            expect(mockPlayCreate).toHaveBeenCalledWith({
+                data: {
+                    userId: "user-1",
+                    ...expected,
+                    playedAt: expect.any(Date),
+                    listenedMs: 42_000,
+                },
+            });
+        },
+    );
+
+    it.each(FORMS)(
+        "stores null listenedMs for a %s play without the field",
+        async (_label, identifier) => {
+            const res = await request(app)
+                .post("/api/plays")
+                .set(AUTH_HEADER, AUTH_VALUE)
+                .send(identifier);
+
+            expect(res.status).toBe(200);
+            expect(res.body.listenedMs).toBeNull();
+            const [{ data }] = mockPlayCreate.mock.calls[0];
+            expect(data.listenedMs).toBeUndefined();
+        },
+    );
+
+    it("accepts a value larger than the track's duration", async () => {
+        const res = await request(app)
+            .post("/api/plays")
+            .set(AUTH_HEADER, AUTH_VALUE)
+            .send({ tidalTrackId: 77, ...REMOTE_FIELDS, listenedMs: 900_000 });
+
+        expect(res.status).toBe(200);
+        expect(res.body.listenedMs).toBe(900_000);
+    });
+
+    it.each([
+        ["a negative value", -1],
+        ["a fractional value", 1.5],
+        ["a value over the limit", 86_400_001],
+        ["null", null],
+    ])(
+        "answers INVALID_LISTENED_MS for %s before any lookup",
+        async (_label, listenedMs) => {
+            const res = await request(app)
+                .post("/api/plays")
+                .set(AUTH_HEADER, AUTH_VALUE)
+                .send({ tidalTrackId: 77, ...REMOTE_FIELDS, listenedMs });
+
+            expect(res.status).toBe(400);
+            expect(res.body).toEqual({
+                error: "Invalid listenedMs",
+                code: "INVALID_LISTENED_MS",
+            });
+            expect(mockResolveMetadata).not.toHaveBeenCalled();
+            expect(mockEnsureRemoteTrack).not.toHaveBeenCalled();
+            expect(mockPlayCreate).not.toHaveBeenCalled();
+        },
+    );
+
+    it.each(FORMS)(
+        "answers recorded false for a %s play below the minimum listen without any lookup or write",
+        async (_label, identifier) => {
+            const res = await request(app)
+                .post("/api/plays")
+                .set(AUTH_HEADER, AUTH_VALUE)
+                .send({ ...identifier, listenedMs: 4_999 });
+
+            expect(res.status).toBe(200);
+            expect(res.body).toEqual({ recorded: false });
+            expect(mockTrackFindUnique).not.toHaveBeenCalled();
+            expect(mockResolveMetadata).not.toHaveBeenCalled();
+            expect(mockEnsureRemoteTrack).not.toHaveBeenCalled();
+            expect(mockPlayFindFirst).not.toHaveBeenCalled();
+            expect(mockPlayCreate).not.toHaveBeenCalled();
+            expect(mockForwardTrackReferenceIsolated).not.toHaveBeenCalled();
+            expect(mockForwardScrobbleIsolated).not.toHaveBeenCalled();
+        },
+    );
+
+    it("records a play of exactly the minimum listen", async () => {
+        const res = await request(app)
+            .post("/api/plays")
+            .set(AUTH_HEADER, AUTH_VALUE)
+            .send({ trackId: "track-1", listenedMs: 5_000 });
+
+        expect(res.status).toBe(200);
+        expect(res.body.listenedMs).toBe(5_000);
+        expect(mockPlayCreate).toHaveBeenCalledTimes(1);
+        expect(mockForwardTrackReferenceIsolated).toHaveBeenCalledTimes(1);
+    });
+
+    it("answers 400 for a malformed request with a short listenedMs", async () => {
+        const res = await request(app)
+            .post("/api/plays")
+            .set(AUTH_HEADER, AUTH_VALUE)
+            .send({ tidalTrackId: 77, listenedMs: 100 });
+
+        expect(res.status).toBe(400);
+        expect(res.body.error).toBe("Invalid request");
+    });
+
+    it("answers INVALID_PLAYED_AT when a short listenedMs comes with an invalid playedAt", async () => {
+        const res = await request(app)
+            .post("/api/plays")
+            .set(AUTH_HEADER, AUTH_VALUE)
+            .send({ trackId: "track-1", listenedMs: 100, playedAt: "soon" });
+
+        expect(res.status).toBe(400);
+        expect(res.body.code).toBe("INVALID_PLAYED_AT");
+    });
+});

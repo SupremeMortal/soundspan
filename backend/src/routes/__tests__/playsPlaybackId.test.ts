@@ -390,3 +390,153 @@ describe("POST /api/plays with playedAt", () => {
         }
     });
 });
+
+describe("POST /api/plays with listenedMs", () => {
+    beforeEach(() => {
+        prisma.play.findFirst.mockResolvedValue(null);
+        prisma.track.findUnique.mockResolvedValue({ id: "track-1" });
+        prisma.trackTidal.findUnique.mockResolvedValue(TIDAL_ROW);
+        prisma.trackYtMusic.findUnique.mockResolvedValue(YT_ROW);
+    });
+
+    it.each([
+        ["library", "t.track-1", { trackId: "track-1", source: "LIBRARY" }],
+        ["TIDAL", "td.77", { trackTidalId: "tt-1", source: "TIDAL" }],
+        [
+            "YouTube Music",
+            "ym.dQw4w9WgXcQ",
+            { trackYtMusicId: "ym-1", source: "YOUTUBE_MUSIC" },
+        ],
+    ])(
+        "stores and returns listenedMs for a %s playbackId",
+        async (_label, playbackId, expected) => {
+            const res = await request(app)
+                .post("/api/plays")
+                .send({ playbackId, listenedMs: 42_000 });
+
+            expect(res.status).toBe(200);
+            expect(res.body.listenedMs).toBe(42_000);
+            expect(prisma.play.create).toHaveBeenCalledWith({
+                data: {
+                    userId: "user-1",
+                    ...expected,
+                    playedAt: expect.any(Date),
+                    listenedMs: 42_000,
+                },
+            });
+        },
+    );
+
+    it("accepts a value larger than the track's duration", async () => {
+        const res = await request(app)
+            .post("/api/plays")
+            .send({ playbackId: "td.77", listenedMs: 3 * 215 * 1000 });
+
+        expect(res.status).toBe(200);
+        expect(res.body.listenedMs).toBe(645_000);
+    });
+
+    it.each([
+        ["a negative value", -1],
+        ["a fractional value", 6_000.5],
+        ["a value over the limit", 86_400_001],
+        ["a numeric string", "42000"],
+    ])(
+        "answers INVALID_LISTENED_MS for %s and writes nothing",
+        async (_label, listenedMs) => {
+            const res = await request(app)
+                .post("/api/plays")
+                .send({ playbackId: "t.track-1", listenedMs });
+
+            expect(res.status).toBe(400);
+            expect(res.body).toEqual({
+                error: "Invalid listenedMs",
+                code: "INVALID_LISTENED_MS",
+            });
+            expect(prisma.track.findUnique).not.toHaveBeenCalled();
+            expect(prisma.play.create).not.toHaveBeenCalled();
+        },
+    );
+
+    it.each([
+        ["library", "t.track-1", {}],
+        ["TIDAL row to create", "td.77", { metadata: METADATA }],
+    ])(
+        "answers recorded false below the minimum listen for a %s without any lookup or write",
+        async (_label, playbackId, extra) => {
+            const res = await request(app)
+                .post("/api/plays")
+                .send({ playbackId, listenedMs: 4_999, ...extra });
+
+            expect(res.status).toBe(200);
+            expect(res.body).toEqual({ recorded: false });
+            expect(prisma.track.findUnique).not.toHaveBeenCalled();
+            expect(prisma.trackTidal.findUnique).not.toHaveBeenCalled();
+            expect(prisma.play.findFirst).not.toHaveBeenCalled();
+            expect(mockEnsureRemoteTrack).not.toHaveBeenCalled();
+            expect(prisma.play.create).not.toHaveBeenCalled();
+            expect(mockForwardTrackReferenceIsolated).not.toHaveBeenCalled();
+            expect(mockForwardScrobbleIsolated).not.toHaveBeenCalled();
+        },
+    );
+
+    it("records a play of exactly the minimum listen", async () => {
+        const res = await request(app)
+            .post("/api/plays")
+            .send({ playbackId: "t.track-1", listenedMs: 5_000 });
+
+        expect(res.status).toBe(200);
+        expect(res.body.listenedMs).toBe(5_000);
+        expect(prisma.play.create).toHaveBeenCalledTimes(1);
+        expect(mockForwardTrackReferenceIsolated).toHaveBeenCalledTimes(1);
+    });
+
+    it("answers INVALID_PLAYED_AT when a short listenedMs comes with an invalid playedAt", async () => {
+        const res = await request(app).post("/api/plays").send({
+            playbackId: "t.track-1",
+            listenedMs: 100,
+            playedAt: "yesterday",
+        });
+
+        expect(res.status).toBe(400);
+        expect(res.body.code).toBe("INVALID_PLAYED_AT");
+    });
+
+    it("answers INVALID_PLAYBACK_ID for a malformed request with a short listenedMs", async () => {
+        const res = await request(app)
+            .post("/api/plays")
+            .send({ playbackId: "bogus", listenedMs: 100 });
+
+        expect(res.status).toBe(400);
+        expect(res.body.code).toBe("INVALID_PLAYBACK_ID");
+    });
+
+    it("returns a repeated play as it is without updating listenedMs", async () => {
+        const playedAt = new Date(Date.now() - 60 * 60 * 1000);
+        const existing = {
+            id: "play-existing",
+            userId: "user-1",
+            trackId: "track-1",
+            playedAt,
+            listenedMs: 30_000,
+        };
+        prisma.play.findFirst.mockResolvedValue(existing);
+        const res = await request(app).post("/api/plays").send({
+            playbackId: "t.track-1",
+            playedAt: playedAt.toISOString(),
+            listenedMs: 90_000,
+        });
+
+        expect(res.status).toBe(200);
+        expect(res.body.id).toBe("play-existing");
+        expect(res.body.listenedMs).toBe(30_000);
+        expect(prisma.play.create).not.toHaveBeenCalled();
+    });
+
+    it("stores no listenedMs when the field is absent", async () => {
+        await request(app).post("/api/plays").send({ playbackId: "td.77" });
+
+        const [{ data }] = prisma.play.create.mock.calls[0];
+        expect(data.listenedMs).toBeUndefined();
+    });
+});
