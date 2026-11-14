@@ -15,4 +15,7 @@ dart run drift_dev schema dump lib/core/storage/app/app_database.dart drift_sche
 dart run drift_dev schema steps drift_schemas/app/ lib/core/storage/app/app_database.steps.g.dart
 mkdir -p test/core/storage/generated_migrations
 dart run drift_dev schema generate drift_schemas/app/ test/core/storage/generated_migrations/app/
+dart run drift_dev schema dump lib/core/storage/state/state_database.dart drift_schemas/state/
+dart run drift_dev schema steps drift_schemas/state/ lib/core/storage/state/state_database.steps.g.dart
+dart run drift_dev schema generate drift_schemas/state/ test/core/storage/generated_migrations/state/
 flutter gen-l10n

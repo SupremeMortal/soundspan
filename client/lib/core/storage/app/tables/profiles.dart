@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
+// Table definitions are read by drift_dev and never run.
+// coverage:ignore-file
 
 import 'package:drift/drift.dart';
 import 'package:soundspan/core/storage/app/profile_enums.dart';

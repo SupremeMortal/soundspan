@@ -91,6 +91,7 @@ class DownloadItems extends Table {
   TextColumn get metaJson => text()();             // TrackMeta / episode meta: enough to render and play offline
   TextColumn get quality => text().nullable()();   // As resolved by the server
   TextColumn get status => textEnum<DownloadStatus>()();
+  TextColumn get waitingFor => text().nullable()(); // Why a queued or paused item is not running: space, wifi
   TextColumn get taskId => text().nullable()();    // background_downloader task id
   TextColumn get downloadUrl => text().nullable()();
   TextColumn get etag => text().nullable()();
@@ -118,6 +119,24 @@ class Outbox extends Table {
   TextColumn get lastError => text().nullable()();
 }
 ```
+
+The other tables. `DateTime` columns are UTC ISO-8601 text. A column listed as "text (values …)" is plain `text()` holding those strings.
+
+| Table | Columns |
+|---|---|
+| `device_settings` | `key` text PK; `value` text not null (JSON-encoded) |
+| `queue_snapshot` | `position` integer PK (index in canonical order, from 0); `queueItemId` text not null unique; `kind` text (values `track`, `episode`); `itemJson` text not null (the serialized `QueueItem`: track or episode with everything needed to show and play it, including its queue context) |
+| `queue_meta` | `id` integer PK with `CHECK (id = 1)`; `currentQueueItemId` text null; `positionMs` integer default 0; `shuffleOrderJson` text null (JSON array of canonical indices, the whole shuffle permutation; null means shuffle off); `repeatMode` text default `off` (values `off`, `all`, `one`); `contextJson` text null (the `QueueContext`); `revision` integer default 0; `updatedAt` datetime not null |
+| `download_collections` | `kind` text (values `track`, `album`, `playlist`, `episode`); `refId` text (track: the `playbackId`; album and playlist: their id; episode: `<podcastId>:<episodeId>`); `title` text not null; `metaJson` text not null (subtitle, artwork ref: enough to render the row offline); `status` text not null (a plain state name such as `resolving`, `ready`, `blocked`, never a compound string); `blockedReason` text null (`serverQuota`, `disabledByServer`); `detailJson` text null (state detail, for example the three byte values of a server-quota refusal); `quality` text null; `requestedAt` datetime not null; `resolvedAt` datetime null. PK `(kind, refId)` |
+| `download_membership` | `kind` text; `refId` text; `itemKey` text; `position` integer not null (track order inside the collection). PK `(kind, refId, itemKey)`; FK `(kind, refId)` → `download_collections` on delete cascade; FK `itemKey` → `download_items(itemKey)` on delete cascade |
+| `play_sessions` | `sessionId` text PK (client UUID); `queueItemId` text not null; `playbackId` text not null; `metaJson` text not null (`TrackMeta`); `playedAt` datetime not null (instant the play started); `listenedMs` integer default 0; `updatedAt` datetime not null |
+| `search_history` | `query` text PK with `COLLATE NOCASE`; `lastUsedAt` datetime not null |
+
+- `MediaType` (`track`, `episode`) and `DownloadStatus` (`queued`, `running`, `verifying`, `completed`, `paused`, `failedRetryable`, `failedPermanent`, `unavailable`, `missing`, `revoked`) are defined by the storage layer. "Confirmed" is the `serverConfirmed` flag; "deleted" is the absence of a row.
+- `download_items.waitingFor` holds wait reasons only; `failureCode` holds only failure and unavailability codes (including the server's `reason`).
+- Indexes: `outbox(entityKey)`, `outbox(nextAttemptAt)`, `download_items(status)`, `download_membership(itemKey)`.
+- A `playbackId` is stored verbatim wherever it appears and is never parsed or prefixed beyond the `itemKey` format above.
+- The tables exist on web too; the download tables stay empty there.
 
 `device_settings` keys: `quality.wifi`, `quality.cellular`, `quality.download` (each `serverDefault|original|high|medium|low`), `downloads.wifiOnly`, `downloads.quotaBytes`, `downloads.autoCacheBytes`, `playback.volume`, `playback.speed.podcast`, `playback.skipSeconds`, `offline.forced`.
 
