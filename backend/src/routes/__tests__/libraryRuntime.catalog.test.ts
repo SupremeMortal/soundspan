@@ -158,6 +158,7 @@ import {
     expectBoundedRandomQuery,
     expectNoUnboundedIdPoolFetch,
 } from "./libraryRuntime.helpers";
+import { withClientSurfaceValidation as validated } from "./helpers/expectClientSurfaceResponse";
 
 function remoteTidalLikedEntry(input: {
     id: string;
@@ -251,6 +252,8 @@ function matchedArtistAlbum(input: {
 }) {
     return {
         ...input,
+        artistId: "artist-matched",
+        year: null,
         coverUrl: null,
         tracks: [],
         federationPeer: null,
@@ -306,6 +309,8 @@ function albumDetailRow(
 ) {
     return {
         id,
+        title: `Album ${id}`,
+        year: null,
         artistId: "artist-1",
         rgMbid: location === "REMOTE" ? `remote:${id}` : id,
         matchedRgMbid,
@@ -318,10 +323,19 @@ function albumDetailRow(
 describe("library catalog list runtime coverage", () => {
     const recentlyListenedHandler = getHandler("get", "/recently-listened");
     const recentlyAddedHandler = getHandler("get", "/recently-added");
-    const artistsHandler = getHandler("get", "/artists");
-    const artistByIdHandler = getHandler("get", "/artists/:id");
-    const albumsHandler = getHandler("get", "/albums");
-    const albumByIdHandler = getHandler("get", "/albums/:id");
+    const artistsHandler = validated(
+        "listArtists",
+        getHandler("get", "/artists"),
+    );
+    const artistByIdHandler = validated(
+        "getArtist",
+        getHandler("get", "/artists/:id"),
+    );
+    const albumsHandler = validated("listAlbums", getHandler("get", "/albums"));
+    const albumByIdHandler = validated(
+        "getAlbum",
+        getHandler("get", "/albums/:id"),
+    );
     const tracksHandler = getHandler("get", "/tracks");
     const likedPlaylistHandler = getHandler("get", "/liked");
     const shuffleHandler = getHandler("get", "/tracks/shuffle");
@@ -977,6 +991,7 @@ describe("library catalog list runtime coverage", () => {
             albums: [
                 {
                     id: "album-db-1",
+                    artistId: "artist-1",
                     title: "Owned Album",
                     rgMbid: "rg-db-same",
                     location: "LIBRARY",
@@ -986,6 +1001,9 @@ describe("library catalog list runtime coverage", () => {
                         {
                             id: "track-1",
                             title: "Song One",
+                            duration: 200,
+                            trackNo: 1,
+                            discNo: 1,
                             loudnessLufs: -16.7,
                             truePeakDb: -1.1,
                             album: {
@@ -1241,6 +1259,7 @@ describe("library catalog list runtime coverage", () => {
             ],
             albums: [
                 {
+                    artistId: "artist-1",
                     id: "album-owned",
                     title: "Owned Album",
                     rgMbid: "rg-owned",
@@ -1251,6 +1270,9 @@ describe("library catalog list runtime coverage", () => {
                         {
                             id: "track-owned",
                             title: "Owned Song",
+                            duration: 180,
+                            trackNo: 1,
+                            discNo: 1,
                             album: {
                                 id: "album-owned",
                                 title: "Owned Album",
@@ -1338,6 +1360,7 @@ describe("library catalog list runtime coverage", () => {
             ],
             albums: [
                 {
+                    artistId: "artist-1",
                     id: "album-flags",
                     title: "Flag Album",
                     rgMbid: "rg-flags",
@@ -1348,6 +1371,9 @@ describe("library catalog list runtime coverage", () => {
                         {
                             id: "track-flags",
                             title: "Flagged Track",
+                            duration: 180,
+                            trackNo: 1,
+                            discNo: 1,
                             album: {
                                 id: "album-flags",
                                 title: "Flag Album",
@@ -1408,6 +1434,8 @@ describe("library catalog list runtime coverage", () => {
             ownedAlbums: [],
             albums: [
                 {
+                    artistId: "artist-1",
+                    year: null,
                     id: "local-detail-album",
                     title: "Local Detail Album",
                     rgMbid: "rg-local-detail",
@@ -1462,6 +1490,7 @@ describe("library catalog list runtime coverage", () => {
                     albumId: "remote-detail-album",
                     artistEntity: null,
                     albumEntity: {
+                        year: null,
                         id: "remote-detail-album",
                         title: "Remote detail album",
                         rgMbid: "remote:detail",
@@ -1490,6 +1519,8 @@ describe("library catalog list runtime coverage", () => {
             ownedAlbums: [],
             albums: [
                 {
+                    artistId: "artist-1",
+                    year: null,
                     id: "remote-detail-album",
                     title: "Remote detail album",
                     rgMbid: "remote:detail",
@@ -1499,6 +1530,8 @@ describe("library catalog list runtime coverage", () => {
                     federationPeer: null,
                 },
                 {
+                    artistId: "artist-1",
+                    year: null,
                     id: "other-remote-album",
                     title: "Other remote album",
                     rgMbid: "remote:other",
@@ -1617,6 +1650,7 @@ describe("library catalog list runtime coverage", () => {
                     albumId: "remote-shared-title",
                     artistEntity: null,
                     albumEntity: {
+                        year: null,
                         id: "remote-shared-title",
                         title: "Shared Title",
                         rgMbid: "remote:shared-title",
@@ -1645,6 +1679,8 @@ describe("library catalog list runtime coverage", () => {
             ownedAlbums: [],
             albums: [
                 {
+                    artistId: "artist-1",
+                    year: null,
                     id: "remote-shared-title",
                     title: "Shared Title",
                     rgMbid: "remote:shared-title",
@@ -1654,6 +1690,8 @@ describe("library catalog list runtime coverage", () => {
                     federationPeer: null,
                 },
                 {
+                    artistId: "artist-1",
+                    year: null,
                     id: "library-title",
                     title: "Library Title",
                     rgMbid: "22222222-2222-4222-8222-222222222222",
@@ -1795,6 +1833,7 @@ describe("library catalog list runtime coverage", () => {
             ],
             albums: [
                 {
+                    artistId: "artist-1",
                     id: "album-cacheless",
                     title: "Owned Cache Album",
                     rgMbid: "rg-owned-cacheless",
@@ -1901,6 +1940,7 @@ describe("library catalog list runtime coverage", () => {
     it("returns albums with ownership-aware filtering", async () => {
         mockAlbumFindMany.mockResolvedValueOnce([
             {
+                year: null,
                 id: "album-1",
                 title: "Album One",
                 artistId: "artist-1",
@@ -1910,6 +1950,7 @@ describe("library catalog list runtime coverage", () => {
                 artist: { id: "artist-1", mbid: "mbid-1", name: "Artist One" },
             },
             {
+                year: null,
                 id: "album-catalog",
                 title: "Catalog Skeleton",
                 artistId: "artist-1",
@@ -2100,6 +2141,7 @@ describe("library catalog list runtime coverage", () => {
     it("supports discovery filter with optional artist scoping", async () => {
         mockAlbumFindMany.mockResolvedValueOnce([
             {
+                year: null,
                 id: "album-discovery",
                 title: "Discovered Album",
                 artistId: "artist-discovery",
@@ -2200,6 +2242,10 @@ describe("library catalog list runtime coverage", () => {
             .mockResolvedValueOnce(null)
             .mockResolvedValueOnce({
                 id: "album-2",
+                title: "Album album-2",
+                year: null,
+                location: "LIBRARY",
+                matchedRgMbid: null,
                 artistId: "artist-2",
                 rgMbid: "rg-2",
                 coverUrl: "cover-2.jpg",
@@ -2211,6 +2257,10 @@ describe("library catalog list runtime coverage", () => {
             })
             .mockResolvedValueOnce({
                 id: "album-3",
+                title: "Album album-3",
+                year: null,
+                location: "LIBRARY",
+                matchedRgMbid: null,
                 artistId: "artist-3",
                 rgMbid: "rg-3",
                 coverUrl: "cover-3.jpg",
@@ -2219,7 +2269,15 @@ describe("library catalog list runtime coverage", () => {
                     mbid: "mbid-3",
                     name: "Artist Three",
                 },
-                tracks: [{ id: "track-1", title: "Track One" }],
+                tracks: [
+                    {
+                        id: "track-1",
+                        title: "Track One",
+                        duration: 180,
+                        trackNo: 1,
+                        discNo: 1,
+                    },
+                ],
             });
         mockOwnedAlbumFindUnique
             .mockResolvedValueOnce(null)
@@ -2261,6 +2319,9 @@ describe("library catalog list runtime coverage", () => {
                         id: "track-1",
                         playbackId: "t.track-1",
                         title: "Track One",
+                        duration: 180,
+                        trackNo: 1,
+                        discNo: 1,
                     },
                 ],
                 owned: true,
@@ -2357,6 +2418,10 @@ describe("library catalog list runtime coverage", () => {
         mockAlbumFindFirst
             .mockResolvedValueOnce({
                 id: "album-string-true",
+                title: "Album album-string-true",
+                year: null,
+                location: "LIBRARY",
+                matchedRgMbid: null,
                 artistId: "artist-true",
                 rgMbid: "rg-string-true",
                 coverUrl: "cover-string.jpg",
@@ -2370,11 +2435,18 @@ describe("library catalog list runtime coverage", () => {
                         id: "track-true",
                         playbackId: "t.track-true",
                         title: "Track True",
+                        duration: 180,
+                        trackNo: 1,
+                        discNo: 1,
                     },
                 ],
             })
             .mockResolvedValueOnce({
                 id: "album-bool-true",
+                title: "Album album-bool-true",
+                year: null,
+                location: "LIBRARY",
+                matchedRgMbid: null,
                 artistId: "artist-bool",
                 rgMbid: "rg-bool-true",
                 coverUrl: "cover-bool.jpg",
@@ -2388,6 +2460,9 @@ describe("library catalog list runtime coverage", () => {
                         id: "track-bool",
                         playbackId: "t.track-bool",
                         title: "Track Bool",
+                        duration: 180,
+                        trackNo: 1,
+                        discNo: 1,
                     },
                 ],
             });
@@ -2413,6 +2488,9 @@ describe("library catalog list runtime coverage", () => {
                         id: "track-true",
                         playbackId: "t.track-true",
                         title: "Track True",
+                        duration: 180,
+                        trackNo: 1,
+                        discNo: 1,
                     },
                 ],
                 owned: false,
@@ -2434,6 +2512,9 @@ describe("library catalog list runtime coverage", () => {
                         id: "track-bool",
                         playbackId: "t.track-bool",
                         title: "Track Bool",
+                        duration: 180,
+                        trackNo: 1,
+                        discNo: 1,
                     },
                 ],
                 owned: true,
@@ -2761,6 +2842,7 @@ describe("library catalog list runtime coverage", () => {
                     albumId: "remote-album",
                     artistEntity: null,
                     albumEntity: {
+                        year: null,
                         id: "remote-album",
                         title: "Remote album",
                         rgMbid: "remote:album",
@@ -2846,6 +2928,7 @@ describe("library catalog list runtime coverage", () => {
                     albumId: "remote-album",
                     artistEntity: null,
                     albumEntity: {
+                        year: null,
                         id: "remote-album",
                         title: "Remote album",
                         rgMbid: "remote:album",
@@ -2864,6 +2947,8 @@ describe("library catalog list runtime coverage", () => {
         ]);
         mockAlbumFindMany.mockResolvedValueOnce([]).mockResolvedValueOnce([
             {
+                artistId: "artist-1",
+                year: null,
                 id: "remote-album",
                 title: "Remote album",
                 rgMbid: "remote:album",
@@ -2908,6 +2993,9 @@ describe("library catalog list runtime coverage", () => {
     it("keeps a REMOTE-location album local when local origin did not load it remotely", async () => {
         mockAlbumFindMany.mockResolvedValueOnce([
             {
+                artistId: "artist-1",
+                year: null,
+                rgMbid: null,
                 id: "downloaded-remote-album",
                 title: "Downloaded remote album",
                 location: "REMOTE",
@@ -3020,6 +3108,7 @@ describe("library catalog list runtime coverage", () => {
                     albumId: "library-album",
                     artistEntity: null,
                     albumEntity: {
+                        year: null,
                         id: "library-album",
                         title: "Library album",
                         rgMbid: "rg-library",
@@ -3037,6 +3126,9 @@ describe("library catalog list runtime coverage", () => {
         ]);
         mockAlbumFindMany.mockResolvedValueOnce([
             {
+                artistId: "artist-1",
+                year: null,
+                rgMbid: null,
                 id: "library-album",
                 title: "Library album",
                 location: "LIBRARY",

@@ -6,6 +6,7 @@ import {
     type ClientSurfaceOperation,
 } from "./defineOperation";
 import { buildClientSurfaceDocument } from "./document";
+import { libraryOperations } from "./operations/library";
 import { sessionOperations } from "./operations/session";
 
 export type { ClientSurfaceOperation } from "./defineOperation";
@@ -23,6 +24,7 @@ export function createClientSurface(
 /** Every registered operation: the arrays exported by `operations/*.ts`. */
 export const clientSurfaceOperations: ClientSurface = createClientSurface([
     ...sessionOperations,
+    ...libraryOperations,
 ]);
 
 /** The registered operation with `operationId`; throws when there is none. */

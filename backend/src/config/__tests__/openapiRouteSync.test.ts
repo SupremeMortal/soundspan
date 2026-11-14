@@ -168,13 +168,14 @@ describe("openapi route sync", () => {
 
     test("album detail documents matched library state", () => {
         const { swaggerSpec } = require("../swagger");
-        const albumSchema =
-            swaggerSpec.paths["/api/library/albums/{id}"].get.responses["200"]
-                .content["application/json"].schema;
+        const operation = swaggerSpec.paths["/api/library/albums/{id}"].get;
+        const ref =
+            operation.responses["200"].content["application/json"].schema.$ref;
 
-        expect(albumSchema.description).toBe(
-            "Album record with tracks, owned state, source, and cover; only streaming-match fields are listed below.",
-        );
+        expect(operation.operationId).toBe("getAlbum");
+        expect(ref).toBe("#/components/schemas/AlbumDetail");
+        const albumSchema =
+            swaggerSpec.components.schemas[ref.split("/").pop() as string];
         expect(albumSchema.properties).toEqual(
             expect.objectContaining({
                 matchedRgMbid: expect.objectContaining({
@@ -185,6 +186,9 @@ describe("openapi route sync", () => {
                     type: "boolean",
                 }),
             }),
+        );
+        expect(albumSchema.required).toEqual(
+            expect.arrayContaining(["matchedRgMbid", "matchedInLibrary"]),
         );
     });
 });

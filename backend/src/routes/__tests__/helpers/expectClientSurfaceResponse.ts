@@ -40,3 +40,24 @@ export function expectClientSurfaceResponse(
         );
     }
 }
+
+/** A handler as the route tests call it directly. */
+type DirectHandler = (req: any, res: any, next?: any) => unknown;
+
+/**
+ * Wraps a handler called directly so every JSON body it sends through a
+ * `createRes()`-style mock (`res.json` a `jest.fn`, `res.body` the payload) is
+ * checked against the schema of client-surface operation `operationId`.
+ */
+export function withClientSurfaceValidation(
+    operationId: string,
+    handler: DirectHandler,
+): DirectHandler {
+    return async (req, res, next) => {
+        const result = await handler(req, res, next ?? (() => undefined));
+        if ((res?.json?.mock?.calls?.length ?? 0) > 0) {
+            expectClientSurfaceResponse(operationId, res);
+        }
+        return result;
+    };
+}

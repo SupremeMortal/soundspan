@@ -1,6 +1,184 @@
 {
   "components": {
     "schemas": {
+      "AlbumDetail": {
+        "additionalProperties": false,
+        "properties": {
+          "artist": {
+            "$ref": "#/components/schemas/ArtistRef"
+          },
+          "artistId": {
+            "type": "string"
+          },
+          "coverArt": {
+            "nullable": true,
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "matchedInLibrary": {
+            "type": "boolean"
+          },
+          "matchedRgMbid": {
+            "nullable": true,
+            "type": "string"
+          },
+          "owned": {
+            "type": "boolean"
+          },
+          "peer": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PeerRef"
+              }
+            ]
+          },
+          "remoteSources": {
+            "items": {
+              "$ref": "#/components/schemas/RemoteProvider"
+            },
+            "type": "array"
+          },
+          "rgMbid": {
+            "nullable": true,
+            "type": "string"
+          },
+          "source": {
+            "enum": [
+              "local",
+              "federated",
+              "remote"
+            ],
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "tracks": {
+            "items": {
+              "$ref": "#/components/schemas/TrackSummary"
+            },
+            "type": "array"
+          },
+          "year": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "nullable": true,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "artist",
+          "artistId",
+          "coverArt",
+          "id",
+          "matchedInLibrary",
+          "matchedRgMbid",
+          "owned",
+          "rgMbid",
+          "source",
+          "title",
+          "year"
+        ],
+        "type": "object"
+      },
+      "AlbumListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "albums": {
+            "items": {
+              "$ref": "#/components/schemas/AlbumSummary"
+            },
+            "type": "array"
+          },
+          "limit": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "offset": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "total": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "albums",
+          "limit",
+          "offset",
+          "total"
+        ],
+        "type": "object"
+      },
+      "AlbumSummary": {
+        "additionalProperties": false,
+        "properties": {
+          "artist": {
+            "$ref": "#/components/schemas/ArtistRef"
+          },
+          "artistId": {
+            "type": "string"
+          },
+          "coverArt": {
+            "nullable": true,
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "peer": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PeerRef"
+              }
+            ]
+          },
+          "remoteSources": {
+            "items": {
+              "$ref": "#/components/schemas/RemoteProvider"
+            },
+            "type": "array"
+          },
+          "rgMbid": {
+            "nullable": true,
+            "type": "string"
+          },
+          "source": {
+            "enum": [
+              "local",
+              "federated",
+              "remote"
+            ],
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "year": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "nullable": true,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "artist",
+          "artistId",
+          "coverArt",
+          "id",
+          "rgMbid",
+          "source",
+          "title",
+          "year"
+        ],
+        "type": "object"
+      },
       "ApiDocumentInfo": {
         "additionalProperties": false,
         "properties": {
@@ -34,6 +212,362 @@
         },
         "required": [
           "error"
+        ],
+        "type": "object"
+      },
+      "ArtistAlbum": {
+        "additionalProperties": false,
+        "properties": {
+          "artistId": {
+            "type": "string"
+          },
+          "coverArt": {
+            "nullable": true,
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "owned": {
+            "type": "boolean"
+          },
+          "peer": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PeerRef"
+              }
+            ]
+          },
+          "provenanceSource": {
+            "enum": [
+              "local",
+              "federated",
+              "remote"
+            ],
+            "type": "string"
+          },
+          "remoteSources": {
+            "items": {
+              "$ref": "#/components/schemas/RemoteProvider"
+            },
+            "type": "array"
+          },
+          "rgMbid": {
+            "nullable": true,
+            "type": "string"
+          },
+          "source": {
+            "enum": [
+              "database",
+              "musicbrainz",
+              "remote"
+            ],
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "tracks": {
+            "items": {
+              "$ref": "#/components/schemas/TrackSummary"
+            },
+            "type": "array"
+          },
+          "year": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "nullable": true,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "artistId",
+          "coverArt",
+          "id",
+          "owned",
+          "rgMbid",
+          "source",
+          "title",
+          "tracks",
+          "year"
+        ],
+        "type": "object"
+      },
+      "ArtistDetail": {
+        "additionalProperties": false,
+        "properties": {
+          "albums": {
+            "items": {
+              "$ref": "#/components/schemas/ArtistAlbum"
+            },
+            "type": "array"
+          },
+          "bio": {
+            "nullable": true,
+            "type": "string"
+          },
+          "coverArt": {
+            "nullable": true,
+            "type": "string"
+          },
+          "discographyComplete": {
+            "type": "boolean"
+          },
+          "genres": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "id": {
+            "type": "string"
+          },
+          "mbid": {
+            "nullable": true,
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "peer": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PeerRef"
+              }
+            ]
+          },
+          "similarArtists": {
+            "items": {
+              "$ref": "#/components/schemas/SimilarArtist"
+            },
+            "type": "array"
+          },
+          "source": {
+            "enum": [
+              "local",
+              "federated"
+            ],
+            "type": "string"
+          },
+          "topTracks": {
+            "items": {
+              "$ref": "#/components/schemas/ArtistTopTrack"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "bio",
+          "coverArt",
+          "discographyComplete",
+          "genres",
+          "id",
+          "mbid",
+          "name",
+          "source"
+        ],
+        "type": "object"
+      },
+      "ArtistListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "artists": {
+            "items": {
+              "$ref": "#/components/schemas/ArtistSummary"
+            },
+            "type": "array"
+          },
+          "limit": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "nextCursor": {
+            "nullable": true,
+            "type": "string"
+          },
+          "offset": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "total": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "artists",
+          "limit",
+          "nextCursor",
+          "offset",
+          "total"
+        ],
+        "type": "object"
+      },
+      "ArtistRef": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "mbid": {
+            "nullable": true,
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ],
+        "type": "object"
+      },
+      "ArtistSummary": {
+        "additionalProperties": false,
+        "properties": {
+          "albumCount": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "coverArt": {
+            "nullable": true,
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "mbid": {
+            "nullable": true,
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "peer": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PeerRef"
+              }
+            ]
+          },
+          "remoteSources": {
+            "items": {
+              "$ref": "#/components/schemas/RemoteProvider"
+            },
+            "type": "array"
+          },
+          "source": {
+            "enum": [
+              "federated",
+              "remote"
+            ],
+            "type": "string"
+          },
+          "trackCount": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "albumCount",
+          "coverArt",
+          "id",
+          "mbid",
+          "name",
+          "trackCount"
+        ],
+        "type": "object"
+      },
+      "ArtistTopTrack": {
+        "additionalProperties": false,
+        "properties": {
+          "album": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TrackAlbumRef"
+              }
+            ]
+          },
+          "albumId": {
+            "type": "string"
+          },
+          "artist": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TrackArtistRef"
+              }
+            ]
+          },
+          "discNo": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "duration": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "id": {
+            "type": "string"
+          },
+          "isrc": {
+            "nullable": true,
+            "type": "string"
+          },
+          "listeners": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "loudnessLufs": {
+            "nullable": true,
+            "type": "number"
+          },
+          "peer": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PeerRef"
+              }
+            ]
+          },
+          "playCount": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "playbackId": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "trackNo": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "nullable": true,
+            "type": "integer"
+          },
+          "truePeakDb": {
+            "nullable": true,
+            "type": "number"
+          },
+          "userPlayCount": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "duration",
+          "id",
+          "title"
         ],
         "type": "object"
       },
@@ -213,6 +747,26 @@
         ],
         "type": "object"
       },
+      "PeerRef": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "online": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "online"
+        ],
+        "type": "object"
+      },
       "RefreshSessionRequest": {
         "properties": {
           "refreshToken": {
@@ -223,6 +777,13 @@
           "refreshToken"
         ],
         "type": "object"
+      },
+      "RemoteProvider": {
+        "enum": [
+          "tidal",
+          "youtube"
+        ],
+        "type": "string"
       },
       "SessionTokens": {
         "additionalProperties": false,
@@ -237,6 +798,52 @@
         "required": [
           "refreshToken",
           "token"
+        ],
+        "type": "object"
+      },
+      "SimilarArtist": {
+        "additionalProperties": false,
+        "properties": {
+          "albumCount": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "coverArt": {
+            "nullable": true,
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "inLibrary": {
+            "type": "boolean"
+          },
+          "mbid": {
+            "nullable": true,
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "ownedAlbumCount": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "weight": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "albumCount",
+          "coverArt",
+          "id",
+          "inLibrary",
+          "mbid",
+          "name",
+          "ownedAlbumCount",
+          "weight"
         ],
         "type": "object"
       },
@@ -269,6 +876,131 @@
           "federation",
           "loudnessTargetLufs",
           "vibeEmbeddings"
+        ],
+        "type": "object"
+      },
+      "TrackAlbumRef": {
+        "additionalProperties": false,
+        "properties": {
+          "albumLoudnessLufs": {
+            "nullable": true,
+            "type": "number"
+          },
+          "albumTruePeakDb": {
+            "nullable": true,
+            "type": "number"
+          },
+          "artist": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ArtistRef"
+              }
+            ]
+          },
+          "coverArt": {
+            "nullable": true,
+            "type": "string"
+          },
+          "coverUrl": {
+            "nullable": true,
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "title"
+        ],
+        "type": "object"
+      },
+      "TrackArtistRef": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "type": "object"
+      },
+      "TrackSummary": {
+        "additionalProperties": false,
+        "properties": {
+          "album": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TrackAlbumRef"
+              }
+            ]
+          },
+          "albumId": {
+            "type": "string"
+          },
+          "artist": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TrackArtistRef"
+              }
+            ]
+          },
+          "discNo": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "duration": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "id": {
+            "type": "string"
+          },
+          "isrc": {
+            "nullable": true,
+            "type": "string"
+          },
+          "loudnessLufs": {
+            "nullable": true,
+            "type": "number"
+          },
+          "peer": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PeerRef"
+              }
+            ]
+          },
+          "playbackId": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "trackNo": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "nullable": true,
+            "type": "integer"
+          },
+          "truePeakDb": {
+            "nullable": true,
+            "type": "number"
+          }
+        },
+        "required": [
+          "duration",
+          "id",
+          "title"
         ],
         "type": "object"
       }
@@ -647,6 +1379,455 @@
         "summary": "Server health; 503 with the same payload when not ready",
         "tags": [
           "session"
+        ]
+      }
+    },
+    "/api/library/albums": {
+      "get": {
+        "description": "400 for an unknown `origin`.",
+        "operationId": "listAlbums",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "artistId",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "maximum": 9007199254740991,
+              "minimum": -9007199254740991,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "maximum": 9007199254740991,
+              "minimum": -9007199254740991,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filter",
+            "required": false,
+            "schema": {
+              "enum": [
+                "owned",
+                "discovery",
+                "all"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sortBy",
+            "required": false,
+            "schema": {
+              "enum": [
+                "name",
+                "name-desc",
+                "recent"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "origin",
+            "required": false,
+            "schema": {
+              "enum": [
+                "all",
+                "local",
+                "peers",
+                "remote"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlbumListResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "One page of library albums",
+        "tags": [
+          "library"
+        ]
+      }
+    },
+    "/api/library/albums/{id}": {
+      "get": {
+        "description": "`id` is a library album id or a release-group MBID. `includeTracks` defaults to true; without it `tracks` is empty.",
+        "operationId": "getAlbum",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "includeTracks",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlbumDetail"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "An album with its tracks",
+        "tags": [
+          "library"
+        ]
+      }
+    },
+    "/api/library/artists": {
+      "get": {
+        "description": "Offset paging with `limit` and `offset`; pass `nextCursor` back as `cursor` to page by cursor instead. `sortBy=tracks` uses stored library track counts and does not include remote counts. 400 for an unknown `origin`.",
+        "operationId": "listArtists",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "maximum": 9007199254740991,
+              "minimum": -9007199254740991,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "maximum": 9007199254740991,
+              "minimum": -9007199254740991,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filter",
+            "required": false,
+            "schema": {
+              "enum": [
+                "owned",
+                "discovery",
+                "remote",
+                "all"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sortBy",
+            "required": false,
+            "schema": {
+              "enum": [
+                "name",
+                "name-desc",
+                "tracks"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "origin",
+            "required": false,
+            "schema": {
+              "enum": [
+                "all",
+                "local",
+                "peers",
+                "remote"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArtistListResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "One page of library artists",
+        "tags": [
+          "library"
+        ]
+      }
+    },
+    "/api/library/artists/{id}": {
+      "get": {
+        "description": "`id` is a library artist id, a MusicBrainz artist id, or an artist name (case-insensitive). Each `include*` flag defaults to true; with `includeDiscography` the albums include MusicBrainz release groups the library does not hold.",
+        "operationId": "getArtist",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "includeDiscography",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "includeTopTracks",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "includeSimilarArtists",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArtistDetail"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "An artist with its albums, top tracks and similar artists",
+        "tags": [
+          "library"
         ]
       }
     },

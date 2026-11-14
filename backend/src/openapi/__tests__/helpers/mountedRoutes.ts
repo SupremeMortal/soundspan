@@ -8,6 +8,7 @@ import { pathShape, toOpenApiPaths } from "../../expressPath";
  */
 export const CLIENT_SURFACE_MOUNTS: Record<string, () => Router> = {
     "/api/auth": () => require("../../../routes/auth").default,
+    "/api/library": () => require("../../../routes/library").default,
     "/api/onboarding": () => require("../../../routes/onboarding").default,
     "/api/system": () => require("../../../routes/system").default,
 };

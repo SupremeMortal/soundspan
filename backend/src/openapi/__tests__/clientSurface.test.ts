@@ -14,8 +14,20 @@ import { findDuplicateDescriptions } from "../document";
 import { ApiError, standardErrors } from "../schemas/common";
 import { isMounted, isMountedIn, routerServes } from "./helpers/mountedRoutes";
 
-jest.mock("../../config", () => ({ config: { port: 3006 } }));
+jest.mock("../../config", () => ({
+    config: { port: 3006, music: { musicPath: "/music" } },
+}));
 jest.mock("../../utils/db", () => ({ prisma: {} }));
+jest.mock("../../utils/redis", () => ({ redisClient: {} }));
+jest.mock("../../workers/queues", () => ({ scanQueue: {} }));
+jest.mock("../../services/lastfm", () => ({ lastFmService: {} }));
+jest.mock("../../utils/schedulerClaim", () => ({
+    acquireSchedulerClaim: jest.fn(),
+    releaseSchedulerClaim: jest.fn(),
+}));
+jest.mock("../../services/audioStreaming", () => ({
+    AudioStreamingService: jest.fn(),
+}));
 jest.mock("../../middleware/auth", () => {
     const pass = (_req: unknown, _res: unknown, next: () => void) => next();
     return new Proxy({}, { get: () => pass });

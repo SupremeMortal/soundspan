@@ -83,6 +83,8 @@ import playbackStateRouter from "../playbackState";
 import youtubeRouter from "../youtube";
 import { parsePlaybackId } from "../../services/playback/playbackId";
 import { youtubeDownloadService } from "../../services/youtubeDownload";
+import { encodePlaybackId } from "../../services/playback/playbackId";
+import { expectClientSurfaceResponse } from "./helpers/expectClientSurfaceResponse";
 
 type TrackItem = Record<string, any>;
 
@@ -207,4 +209,90 @@ describe("playbackId emission across track-returning routes", () => {
             }
         },
     );
+});
+
+describe("playbackId on album and artist detail tracks", () => {
+    const artistRef = { id: "artist-1", name: "Artist", mbid: null };
+
+    function detailTrack(playbackId?: string): TrackItem {
+        return {
+            id: "track-1",
+            title: "Track",
+            duration: 200,
+            trackNo: 1,
+            discNo: 1,
+            ...(playbackId ? { playbackId } : {}),
+            album: { id: "album-1", title: "Album", artist: artistRef },
+        };
+    }
+
+    function albumBody(track: TrackItem) {
+        return {
+            id: "album-1",
+            title: "Album",
+            year: null,
+            coverArt: null,
+            artistId: "artist-1",
+            rgMbid: null,
+            source: "local",
+            artist: artistRef,
+            owned: true,
+            matchedRgMbid: null,
+            matchedInLibrary: false,
+            tracks: [track],
+        };
+    }
+
+    function artistBody(track: TrackItem) {
+        return {
+            id: "artist-1",
+            mbid: null,
+            name: "Artist",
+            coverArt: null,
+            bio: null,
+            genres: [],
+            source: "local",
+            discographyComplete: true,
+            albums: [
+                {
+                    id: "album-1",
+                    title: "Album",
+                    year: null,
+                    coverArt: null,
+                    artistId: "artist-1",
+                    rgMbid: null,
+                    source: "database",
+                    owned: true,
+                    tracks: [track],
+                },
+            ],
+            topTracks: [{ ...track, artist: artistRef, userPlayCount: 0 }],
+        };
+    }
+
+    const playable = detailTrack(
+        encodePlaybackId({ kind: "t", trackId: "track-1" }),
+    );
+    const unplayable = detailTrack();
+
+    test.each([
+        ["getAlbum", "with", albumBody(playable)],
+        ["getAlbum", "without", albumBody(unplayable)],
+        ["getArtist", "with", artistBody(playable)],
+        ["getArtist", "without", artistBody(unplayable)],
+    ] as const)(
+        "%s validates a track %s a playbackId",
+        (operationId, _label, body) => {
+            expect(() =>
+                expectClientSurfaceResponse(operationId, 200, body),
+            ).not.toThrow();
+        },
+    );
+
+    test("the emitted playbackId decodes to the track id", () => {
+        expect(parsePlaybackId(playable.playbackId)).toEqual({
+            kind: "t",
+            trackId: "track-1",
+        });
+    });
 });

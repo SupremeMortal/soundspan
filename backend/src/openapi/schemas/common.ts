@@ -11,3 +11,23 @@ export const standardErrors = {
     500: ApiError,
     503: ApiError,
 } as const;
+
+/** The federation peer a federated artist, album or track comes from. */
+export const PeerRef = z
+    .object({
+        id: z.string(),
+        name: z.string(),
+        online: z.boolean(),
+    })
+    .meta({ id: "PeerRef" });
+
+/** Streaming providers a remote (liked TIDAL / YouTube Music) row comes from. */
+export const RemoteProvider = z
+    .enum(["tidal", "youtube"])
+    .meta({ id: "RemoteProvider" });
+
+/**
+ * The `origin` query filter of library lists: local files, federated peers,
+ * or liked TIDAL / YouTube Music tracks that are not in the library.
+ */
+export const LibraryOriginQuery = z.enum(["all", "local", "peers", "remote"]);

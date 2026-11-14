@@ -147,7 +147,9 @@ against the schema for its status and answers a mismatch with `500`
 switch and stays off in production. Route tests get the same check without the
 variable: `createRouteTestApp` always installs it and throws on a mismatch, and
 tests that call a handler directly with `createMockJsonResponse` assert the
-captured response with `expectClientSurfaceResponse(operationId, res)` (both in
+captured response with `expectClientSurfaceResponse(operationId, res)`, or wrap
+the handler with `withClientSurfaceValidation(operationId, handler)` so every
+response it sends is checked (all three in
 `backend/src/routes/__tests__/helpers/`).
 
 ### Frontend

@@ -339,6 +339,7 @@ import {
 import { AudioStreamingService } from "../../services/audioStreaming";
 import { parseFile } from "music-metadata";
 import { dataCacheService } from "../../services/dataCache";
+import { withClientSurfaceValidation } from "./helpers/expectClientSurfaceResponse";
 import {
     backfillRemoteArtistAlbumLinks,
     isRemoteBackfillInProgress,
@@ -471,7 +472,10 @@ describe("library branch coverage focus", () => {
             entry.route?.methods?.post,
     ).route.stack[0].handle;
     const audioInfoHandler = getGetHandler("/tracks/:id/audio-info", 1);
-    const artistsHandler = getGetHandler("/artists");
+    const artistsHandler = withClientSurfaceValidation(
+        "listArtists",
+        getGetHandler("/artists"),
+    );
     const remoteBackfillHandler = flattenLibraryRouteLayers(router).find(
         (entry: any) =>
             entry.route?.path === "/backfill-remote-artists" &&
