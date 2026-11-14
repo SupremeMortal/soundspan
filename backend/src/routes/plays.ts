@@ -23,6 +23,7 @@ import {
     playbackTrackInputSchema,
     resolvePlaybackInput,
 } from "../services/playback/playbackInput";
+import { parsePlayedAt } from "../services/playback/playReport";
 
 const router = Router();
 
@@ -71,9 +72,51 @@ const playSchema = z
         }
     });
 
+/** Options shared by every play insert path. */
+interface RecordPlayOptions {
+    /** Client-reported start of the play; absent means "now" and no repeat check. */
+    playedAt?: Date;
+}
+
+/** The single track column a play row references. */
+type PlayTrackReference =
+    | { trackId: string }
+    | { trackTidalId: string }
+    | { trackYtMusicId: string };
+
+/**
+ * With a client-supplied `playedAt`, returns the play already recorded for
+ * the same user, track and instant, so an outbox retry is not counted twice.
+ * Without one there is no repeat check.
+ */
+async function findRepeatedPlay(
+    userId: string,
+    reference: PlayTrackReference,
+    playedAt: Date | undefined,
+) {
+    if (!playedAt) {
+        return null;
+    }
+    return prisma.play.findFirst({
+        where: { userId, ...reference, playedAt },
+    });
+}
+
 /** Persists a library play and forwards the scrobble reference. */
-async function recordLibraryPlay(userId: string, trackId: string) {
-    const playedAt = new Date();
+async function recordLibraryPlay(
+    userId: string,
+    trackId: string,
+    options: RecordPlayOptions = {},
+) {
+    const repeated = await findRepeatedPlay(
+        userId,
+        { trackId },
+        options.playedAt,
+    );
+    if (repeated) {
+        return repeated;
+    }
+    const playedAt = options.playedAt ?? new Date();
     const play = await prisma.play.create({
         data: { userId, trackId, source: "LIBRARY", playedAt },
     });
@@ -91,6 +134,7 @@ async function recordLibraryPlay(userId: string, trackId: string) {
 async function recordRemotePlay(
     userId: string,
     ref: { trackTidalId: string | null; trackYtMusicId: string | null },
+    options: RecordPlayOptions = {},
 ) {
     const row = ref.trackTidalId
         ? await prisma.trackTidal.findUnique({
@@ -102,7 +146,17 @@ async function recordRemotePlay(
     if (!row) {
         throw new PlaybackInputError("TRACK_NOT_FOUND", "Track not found");
     }
-    const playedAt = new Date();
+    const repeated = await findRepeatedPlay(
+        userId,
+        ref.trackTidalId
+            ? { trackTidalId: ref.trackTidalId }
+            : { trackYtMusicId: ref.trackYtMusicId! },
+        options.playedAt,
+    );
+    if (repeated) {
+        return repeated;
+    }
+    const playedAt = options.playedAt ?? new Date();
     const play = await prisma.play.create({
         data: ref.trackTidalId
             ? {
@@ -297,6 +351,10 @@ router.delete("/history", async (req, res) => {
  * /api/plays:
  *   post:
  *     summary: Log a new play for a track
+ *     description: >-
+ *       Every form accepts an optional `playedAt`, the instant the play
+ *       began. A request that repeats the same user, track, and `playedAt`
+ *       answers 200 with the play already recorded and records nothing new.
  *     tags: [Plays]
  *     security:
  *       - apiKeyAuth: []
@@ -316,6 +374,13 @@ router.delete("/history", async (req, res) => {
  *                     type: string
  *                     minLength: 1
  *                     description: "Opaque track identifier. Do not parse."
+ *                   playedAt:
+ *                     type: string
+ *                     format: date-time
+ *                     description: >-
+ *                       ISO-8601 UTC instant (Z suffix) the play began,
+ *                       from 14 days ago to 5 minutes ahead of the server
+ *                       clock. Absent means the current time.
  *                   metadata:
  *                     type: object
  *                     description: >-
@@ -341,6 +406,13 @@ router.delete("/history", async (req, res) => {
  *                     type: string
  *                     minLength: 1
  *                     description: Local library track ID
+ *                   playedAt:
+ *                     type: string
+ *                     format: date-time
+ *                     description: >-
+ *                       ISO-8601 UTC instant (Z suffix) the play began,
+ *                       from 14 days ago to 5 minutes ahead of the server
+ *                       clock. Absent means the current time.
  *               - type: object
  *                 required: [tidalTrackId, title, artist, album, duration]
  *                 not:
@@ -367,6 +439,13 @@ router.delete("/history", async (req, res) => {
  *                   thumbnailUrl:
  *                     type: string
  *                     minLength: 1
+ *                   playedAt:
+ *                     type: string
+ *                     format: date-time
+ *                     description: >-
+ *                       ISO-8601 UTC instant (Z suffix) the play began,
+ *                       from 14 days ago to 5 minutes ahead of the server
+ *                       clock. Absent means the current time.
  *               - type: object
  *                 required: [youtubeVideoId, title, artist, album, duration]
  *                 not:
@@ -393,11 +472,18 @@ router.delete("/history", async (req, res) => {
  *                   thumbnailUrl:
  *                     type: string
  *                     minLength: 1
+ *                   playedAt:
+ *                     type: string
+ *                     format: date-time
+ *                     description: >-
+ *                       ISO-8601 UTC instant (Z suffix) the play began,
+ *                       from 14 days ago to 5 minutes ahead of the server
+ *                       clock. Absent means the current time.
  *     responses:
  *       200:
  *         description: Play logged successfully
  *       400:
- *         description: Invalid request body, or a coded playbackId error (INVALID_PLAYBACK_ID, METADATA_REQUIRED)
+ *         description: Invalid request body, a playedAt outside the accepted window (INVALID_PLAYED_AT), or a coded playbackId error (INVALID_PLAYBACK_ID, METADATA_REQUIRED)
  *       401:
  *         description: Not authenticated
  *       404:
@@ -409,6 +495,15 @@ router.delete("/history", async (req, res) => {
 router.post("/", async (req, res) => {
     try {
         const userId = req.user!.id;
+        const parsedPlayedAt = parsePlayedAt(req.body?.playedAt, new Date());
+        if (!parsedPlayedAt.ok) {
+            return sendRouteError(res, 400, "Invalid playedAt", {
+                code: "INVALID_PLAYED_AT",
+            });
+        }
+        const recordOptions: RecordPlayOptions = {
+            playedAt: parsedPlayedAt.playedAt,
+        };
 
         // A playbackId wins over every legacy identifier field.
         if (typeof req.body?.playbackId === "string") {
@@ -418,8 +513,8 @@ router.post("/", async (req, res) => {
             });
             const ref = await resolvePlaybackInput(userId, input);
             const play = ref.trackId
-                ? await recordLibraryPlay(userId, ref.trackId)
-                : await recordRemotePlay(userId, ref);
+                ? await recordLibraryPlay(userId, ref.trackId, recordOptions)
+                : await recordRemotePlay(userId, ref, recordOptions);
             return res.json(play);
         }
 
@@ -435,7 +530,11 @@ router.post("/", async (req, res) => {
                 return res.status(404).json({ error: "Track not found" });
             }
 
-            const play = await recordLibraryPlay(userId, payload.trackId);
+            const play = await recordLibraryPlay(
+                userId,
+                payload.trackId,
+                recordOptions,
+            );
 
             return res.json(play);
         }
@@ -464,7 +563,15 @@ router.post("/", async (req, res) => {
                 isrc: resolvedMetadata.isrc,
                 explicit: resolvedMetadata.explicit,
             });
-            const playedAt = new Date();
+            const repeated = await findRepeatedPlay(
+                userId,
+                { trackTidalId: ensured.id },
+                recordOptions.playedAt,
+            );
+            if (repeated) {
+                return res.json(repeated);
+            }
+            const playedAt = recordOptions.playedAt ?? new Date();
             const play = await prisma.play.create({
                 data: {
                     userId,
@@ -509,7 +616,15 @@ router.post("/", async (req, res) => {
             duration: resolvedMetadata.duration,
             thumbnailUrl: resolvedMetadata.thumbnailUrl,
         });
-        const playedAt = new Date();
+        const repeated = await findRepeatedPlay(
+            userId,
+            { trackYtMusicId: ensured.id },
+            recordOptions.playedAt,
+        );
+        if (repeated) {
+            return res.json(repeated);
+        }
+        const playedAt = recordOptions.playedAt ?? new Date();
         const play = await prisma.play.create({
             data: {
                 userId,

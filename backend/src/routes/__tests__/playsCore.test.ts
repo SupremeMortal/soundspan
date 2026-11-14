@@ -14,6 +14,7 @@ const prisma = {
     },
     play: {
         create: jest.fn(),
+        findFirst: jest.fn(),
         findMany: jest.fn(),
         count: jest.fn(),
         deleteMany: jest.fn(),
@@ -64,6 +65,8 @@ jest.mock("../../services/scrobbleForwarder", () => ({
 }));
 
 import { prisma as prismaClient } from "../../utils/db";
+import { trackMappingService } from "../../services/trackMappingService";
+import { resolveRemoteTrackMetadataForRequest } from "../../services/remoteTrackMetadataResolver";
 import router from "../plays";
 import { createRouteTestApp } from "./helpers/createRouteTestApp";
 
@@ -547,5 +550,178 @@ describe("plays routes integration", () => {
             error: "Failed to clear play history",
         });
         expect(mockLoggerError).toHaveBeenCalledTimes(4);
+    });
+});
+
+describe("POST /api/plays legacy forms with playedAt", () => {
+    const mockTrackFindUnique = prismaClient.track.findUnique as jest.Mock;
+    const mockPlayCreate = prismaClient.play.create as jest.Mock;
+    const mockPlayFindFirst = prismaClient.play.findFirst as jest.Mock;
+    const mockEnsureRemoteTrack =
+        trackMappingService.ensureRemoteTrack as jest.Mock;
+    const mockResolveMetadata =
+        resolveRemoteTrackMetadataForRequest as jest.Mock;
+    const REMOTE_FIELDS = {
+        title: "Song",
+        artist: "Artist",
+        album: "Album",
+        duration: 215,
+    };
+    const hourAgo = () => new Date(Date.now() - 60 * 60 * 1000);
+
+    beforeEach(() => {
+        jest.clearAllMocks();
+        mockTrackFindUnique.mockResolvedValue({ id: "track-1" });
+        mockPlayFindFirst.mockResolvedValue(null);
+        mockPlayCreate.mockImplementation(async ({ data }: any) => ({
+            id: "play-1",
+            ...data,
+        }));
+        mockResolveMetadata.mockImplementation(async (input: any) => ({
+            ...input.metadata,
+        }));
+        mockEnsureRemoteTrack.mockImplementation(async (input: any) => ({
+            id: input.provider === "tidal" ? "tt-1" : "ym-1",
+        }));
+    });
+
+    it("stores a trackId play at playedAt and scrobbles it at that time", async () => {
+        const playedAt = hourAgo();
+        const res = await request(app)
+            .post("/api/plays")
+            .set(AUTH_HEADER, AUTH_VALUE)
+            .send({ trackId: "track-1", playedAt: playedAt.toISOString() });
+
+        expect(res.status).toBe(200);
+        expect(mockPlayFindFirst).toHaveBeenCalledWith({
+            where: { userId: "user-1", trackId: "track-1", playedAt },
+        });
+        expect(mockPlayCreate).toHaveBeenCalledWith({
+            data: {
+                userId: "user-1",
+                trackId: "track-1",
+                source: "LIBRARY",
+                playedAt,
+            },
+        });
+        expect(mockForwardTrackReferenceIsolated).toHaveBeenCalledWith(
+            expect.objectContaining({ listenedAt: playedAt }),
+        );
+    });
+
+    it.each([
+        [
+            "tidalTrackId",
+            { tidalTrackId: 77 },
+            { trackTidalId: "tt-1", source: "TIDAL" },
+            { trackTidalId: "tt-1" },
+        ],
+        [
+            "youtubeVideoId",
+            { youtubeVideoId: "dQw4w9WgXcQ" },
+            { trackYtMusicId: "ym-1", source: "YOUTUBE_MUSIC" },
+            { trackYtMusicId: "ym-1" },
+        ],
+    ])(
+        "stores a %s play at playedAt and scrobbles it at that time",
+        async (_label, identifier, expected, reference) => {
+            const playedAt = hourAgo();
+            const res = await request(app)
+                .post("/api/plays")
+                .set(AUTH_HEADER, AUTH_VALUE)
+                .send({
+                    ...identifier,
+                    ...REMOTE_FIELDS,
+                    playedAt: playedAt.toISOString(),
+                });
+
+            expect(res.status).toBe(200);
+            expect(mockPlayFindFirst).toHaveBeenCalledWith({
+                where: { userId: "user-1", ...reference, playedAt },
+            });
+            expect(mockPlayCreate).toHaveBeenCalledWith({
+                data: { userId: "user-1", ...expected, playedAt },
+            });
+            expect(mockForwardScrobbleIsolated).toHaveBeenCalledWith(
+                expect.objectContaining({ listenedAt: playedAt }),
+            );
+        },
+    );
+
+    it.each([
+        ["trackId", { trackId: "track-1" }],
+        ["tidalTrackId", { tidalTrackId: 77, ...REMOTE_FIELDS }],
+        ["youtubeVideoId", { youtubeVideoId: "dQw4w9WgXcQ", ...REMOTE_FIELDS }],
+    ])(
+        "answers a repeated %s play with the existing row",
+        async (_label, identifier) => {
+            const existing = {
+                id: "play-existing",
+                userId: "user-1",
+                playedAt: hourAgo(),
+            };
+            mockPlayFindFirst.mockResolvedValue(existing);
+            const res = await request(app)
+                .post("/api/plays")
+                .set(AUTH_HEADER, AUTH_VALUE)
+                .send({
+                    ...identifier,
+                    playedAt: existing.playedAt.toISOString(),
+                });
+
+            expect(res.status).toBe(200);
+            expect(res.body.id).toBe("play-existing");
+            expect(mockPlayCreate).not.toHaveBeenCalled();
+            expect(mockForwardTrackReferenceIsolated).not.toHaveBeenCalled();
+            expect(mockForwardScrobbleIsolated).not.toHaveBeenCalled();
+        },
+    );
+
+    it.each([
+        ["in the future", () => new Date(Date.now() + 10 * 60 * 1000)],
+        ["too old", () => new Date(Date.now() - 15 * 24 * 60 * 60 * 1000)],
+        ["not a UTC string", () => "2026-01-01"],
+    ])(
+        "answers INVALID_PLAYED_AT for a value %s before any lookup",
+        async (_label, value) => {
+            const v = value();
+            const res = await request(app)
+                .post("/api/plays")
+                .set(AUTH_HEADER, AUTH_VALUE)
+                .send({
+                    tidalTrackId: 77,
+                    ...REMOTE_FIELDS,
+                    playedAt: v instanceof Date ? v.toISOString() : v,
+                });
+
+            expect(res.status).toBe(400);
+            expect(res.body).toEqual({
+                error: "Invalid playedAt",
+                code: "INVALID_PLAYED_AT",
+            });
+            expect(mockResolveMetadata).not.toHaveBeenCalled();
+            expect(mockEnsureRemoteTrack).not.toHaveBeenCalled();
+            expect(mockPlayCreate).not.toHaveBeenCalled();
+        },
+    );
+
+    it("records a trackId play without playedAt at the current time without a repeat check", async () => {
+        const before = Date.now();
+        await request(app)
+            .post("/api/plays")
+            .set(AUTH_HEADER, AUTH_VALUE)
+            .send({ trackId: "track-1" });
+        await request(app)
+            .post("/api/plays")
+            .set(AUTH_HEADER, AUTH_VALUE)
+            .send({ trackId: "track-1" });
+        const after = Date.now();
+
+        expect(mockPlayFindFirst).not.toHaveBeenCalled();
+        expect(mockPlayCreate).toHaveBeenCalledTimes(2);
+        for (const [{ data }] of mockPlayCreate.mock.calls) {
+            expect(data.playedAt.getTime()).toBeGreaterThanOrEqual(before);
+            expect(data.playedAt.getTime()).toBeLessThanOrEqual(after);
+        }
     });
 });
