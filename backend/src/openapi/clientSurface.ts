@@ -6,7 +6,11 @@ import {
     type ClientSurfaceOperation,
 } from "./defineOperation";
 import { buildClientSurfaceDocument } from "./document";
+import { discoveryOperations } from "./operations/discovery";
 import { libraryOperations } from "./operations/library";
+import { playlistOperations } from "./operations/playlists";
+import { podcastOperations } from "./operations/podcasts";
+import { searchOperations } from "./operations/search";
 import { sessionOperations } from "./operations/session";
 
 export type { ClientSurfaceOperation } from "./defineOperation";
@@ -25,6 +29,10 @@ export function createClientSurface(
 export const clientSurfaceOperations: ClientSurface = createClientSurface([
     ...sessionOperations,
     ...libraryOperations,
+    ...playlistOperations,
+    ...searchOperations,
+    ...discoveryOperations,
+    ...podcastOperations,
 ]);
 
 /** The registered operation with `operationId`; throws when there is none. */

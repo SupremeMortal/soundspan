@@ -82,6 +82,7 @@ import router from "../search";
 import { prisma } from "../../utils/db";
 import { redisClient } from "../../utils/redis";
 import { lastFmService } from "../../services/lastfm";
+import { withClientSurfaceValidation } from "./helpers/expectClientSurfaceResponse";
 
 const mockArtistFindMany = prisma.artist.findMany as jest.Mock;
 const mockRedisGet = redisClient.get as jest.Mock;
@@ -117,7 +118,10 @@ function createRes() {
 }
 
 describe("search discover compatibility", () => {
-    const discoverHandler = getGetHandler("/discover");
+    const discoverHandler = withClientSurfaceValidation(
+        "searchDiscover",
+        getGetHandler("/discover"),
+    );
 
     beforeEach(() => {
         jest.clearAllMocks();

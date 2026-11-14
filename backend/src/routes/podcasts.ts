@@ -476,28 +476,6 @@ router.get("/", async (req, res) => {
 });
 
 /**
- * @openapi
- * /api/podcasts/discover/top:
- *   get:
- *     summary: Get top podcasts from iTunes
- *     tags: [Podcasts]
- *     security:
- *       - apiKeyAuth: []
- *     parameters:
- *       - in: query
- *         name: limit
- *         required: false
- *         schema:
- *           type: integer
- *           default: 20
- *         description: Maximum number of podcasts to return (max 50)
- *     responses:
- *       200:
- *         description: List of top podcasts
- *       401:
- *         description: Not authenticated
- */
-/**
  * GET /podcasts/discover/top
  * Get top podcasts - just search iTunes like the search bar does
  */

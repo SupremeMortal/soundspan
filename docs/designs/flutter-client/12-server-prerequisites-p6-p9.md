@@ -129,7 +129,7 @@ export const AlbumSummary = z.object({
 }).meta({ id: "AlbumSummary" });
 ```
 
-`zod` 4 is already a backend dependency and converts schemas to OpenAPI 3.0 itself (`z.toJSONSchema(schema, { target: "openapi-3.0" })`), so no new runtime dependency is needed. Where a route already validates its input with a zod schema, that schema object is exported and registered; it is not rewritten. Rules that JSON Schema cannot express (`superRefine` cross-field checks) are stated in the operation's description.
+`zod` 4 is already a backend dependency and converts schemas to OpenAPI 3.0 itself (`z.toJSONSchema(schema, { target: "openapi-3.0" })`), so no new runtime dependency is needed. Where a route already validates its input with a zod schema, that schema object is exported and registered; it is not rewritten. Rules that JSON Schema cannot express (`superRefine` cross-field checks) are stated in the operation's description. A query schema that coerces or preprocesses its values (`z.coerce`, `z.preprocess`, as for `GET /api/search`) has no typed input form, so the operation declares a plain query schema with the accepted values and the route keeps its own parser.
 
 **2. Operations are declared in a registry.** `backend/src/openapi/clientSurface.ts`:
 

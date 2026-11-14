@@ -587,51 +587,6 @@ function formatPendingPlaylistItems(
     }));
 }
 
-/**
- * @openapi
- * /api/playlists:
- *   get:
- *     summary: Get all playlists for the current user (owned and public)
- *     tags: [Playlists]
- *     security:
- *       - apiKeyAuth: []
- *     parameters:
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *           default: 500
- *           maximum: 1000
- *         description: Maximum number of playlists to return (clamped to 1000)
- *       - in: query
- *         name: offset
- *         schema:
- *           type: integer
- *           default: 0
- *         description: Number of playlists to skip
- *     responses:
- *       200:
- *         description: List of playlists with authoritative track counts, ownership info, and bounded cover-art item previews
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 type: object
- *                 properties:
- *                   trackCount:
- *                     type: integer
- *                     description: Authoritative count of all items in the playlist
- *                   unplayableCount:
- *                     type: integer
- *                     description: Count of removed local tracks; omitted when zero
- *                   items:
- *                     type: array
- *                     maxItems: 12
- *                     description: Bounded cover-art preview; use the playlist detail endpoint for the full item list
- *       401:
- *         description: Not authenticated
- */
 // GET /playlists
 router.get("/", async (req, res) => {
     try {
@@ -804,57 +759,6 @@ router.post("/", async (req, res) => {
     }
 });
 
-/**
- * @openapi
- * /api/playlists/{id}:
- *   get:
- *     summary: Get a single playlist with tracks and pending tracks
- *     tags: [Playlists]
- *     security:
- *       - apiKeyAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: Playlist ID
- *     responses:
- *       200:
- *         description: Playlist details with merged items capped at 1000 combined track and pending items
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 totalItemCount:
- *                   type: integer
- *                   description: Total number of track and pending items in the playlist before response truncation
- *                 unplayableCount:
- *                   type: integer
- *                   description: Count of removed local tracks; omitted when zero
- *                 truncated:
- *                   type: boolean
- *                   description: True when the playlist contains more than 1000 combined items and this response was capped
- *                 items:
- *                   type: array
- *                   maxItems: 1000
- *                   description: Resolved track items included in the bounded detail response
- *                 pendingTracks:
- *                   type: array
- *                   maxItems: 1000
- *                   description: Pending items included in the bounded detail response
- *                 mergedItems:
- *                   type: array
- *                   maxItems: 1000
- *                   description: The first 1000 combined track and pending items in playlist sort order
- *       403:
- *         description: Access denied
- *       404:
- *         description: Playlist not found
- *       401:
- *         description: Not authenticated
- */
 // GET /playlists/:id
 router.get("/:id", async (req, res) => {
     try {

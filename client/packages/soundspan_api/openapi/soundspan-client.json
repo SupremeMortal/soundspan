@@ -591,6 +591,145 @@
         ],
         "type": "object"
       },
+      "DiscoverAliasInfo": {
+        "additionalProperties": false,
+        "properties": {
+          "canonical": {
+            "type": "string"
+          },
+          "mbid": {
+            "type": "string"
+          },
+          "original": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "canonical",
+          "original"
+        ],
+        "type": "object"
+      },
+      "DiscoverResult": {
+        "additionalProperties": false,
+        "properties": {
+          "album": {
+            "nullable": true,
+            "type": "string"
+          },
+          "artist": {
+            "type": "string"
+          },
+          "bio": {
+            "nullable": true,
+            "type": "string"
+          },
+          "coverUrl": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "durationSec": {
+            "nullable": true,
+            "type": "number"
+          },
+          "feedUrl": {
+            "type": "string"
+          },
+          "genres": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              }
+            ]
+          },
+          "image": {
+            "nullable": true,
+            "type": "string"
+          },
+          "listeners": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "mbid": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "playbackId": {
+            "type": "string"
+          },
+          "previewUrl": {
+            "nullable": true,
+            "type": "string"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "trackCount": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "type": {
+            "enum": [
+              "music",
+              "track",
+              "podcast"
+            ],
+            "type": "string"
+          },
+          "url": {
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "type"
+        ],
+        "type": "object"
+      },
+      "DiscoverSearchResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "aliasInfo": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DiscoverAliasInfo"
+              }
+            ],
+            "nullable": true
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/DiscoverResult"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "aliasInfo",
+          "results"
+        ],
+        "type": "object"
+      },
       "HealthStatus": {
         "additionalProperties": false,
         "properties": {
@@ -1083,6 +1222,54 @@
         ],
         "type": "object"
       },
+      "MixSummary": {
+        "additionalProperties": false,
+        "properties": {
+          "color": {
+            "type": "string"
+          },
+          "coverUrls": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "description": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "trackCount": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "trackIds": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "color",
+          "coverUrls",
+          "description",
+          "id",
+          "name",
+          "trackCount",
+          "trackIds",
+          "type"
+        ],
+        "type": "object"
+      },
       "OnboardingStatus": {
         "additionalProperties": false,
         "properties": {
@@ -1116,6 +1303,318 @@
           "id",
           "name",
           "online"
+        ],
+        "type": "object"
+      },
+      "PlaylistCoverAlbum": {
+        "additionalProperties": false,
+        "properties": {
+          "coverArt": {
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "required": [
+          "coverArt"
+        ],
+        "type": "object"
+      },
+      "PlaylistCoverItem": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "track": {
+            "additionalProperties": false,
+            "nullable": true,
+            "properties": {
+              "album": {
+                "$ref": "#/components/schemas/PlaylistCoverAlbum"
+              }
+            },
+            "required": [
+              "album"
+            ],
+            "type": "object"
+          }
+        },
+        "required": [
+          "id",
+          "track"
+        ],
+        "type": "object"
+      },
+      "PlaylistDetail": {
+        "additionalProperties": false,
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "isHidden": {
+            "type": "boolean"
+          },
+          "isOwner": {
+            "type": "boolean"
+          },
+          "isPublic": {
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PlaylistItem"
+            },
+            "type": "array"
+          },
+          "name": {
+            "type": "string"
+          },
+          "pendingCount": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "totalItemCount": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "trackCount": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "truncated": {
+            "type": "boolean"
+          },
+          "unplayableCount": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+            "type": "string"
+          },
+          "user": {
+            "$ref": "#/components/schemas/PlaylistOwner"
+          },
+          "userId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "createdAt",
+          "id",
+          "isHidden",
+          "isOwner",
+          "isPublic",
+          "items",
+          "name",
+          "pendingCount",
+          "totalItemCount",
+          "trackCount",
+          "truncated",
+          "updatedAt",
+          "user",
+          "userId"
+        ],
+        "type": "object"
+      },
+      "PlaylistItem": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "playback": {
+            "$ref": "#/components/schemas/PlaylistItemPlayback"
+          },
+          "playlistId": {
+            "type": "string"
+          },
+          "sort": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "track": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LibraryTrack"
+              }
+            ],
+            "nullable": true
+          },
+          "type": {
+            "enum": [
+              "track"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "playback",
+          "playlistId",
+          "sort",
+          "track",
+          "type"
+        ],
+        "type": "object"
+      },
+      "PlaylistItemPlayback": {
+        "additionalProperties": false,
+        "properties": {
+          "isPlayable": {
+            "type": "boolean"
+          },
+          "message": {
+            "nullable": true,
+            "type": "string"
+          },
+          "reason": {
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "required": [
+          "isPlayable",
+          "message",
+          "reason"
+        ],
+        "type": "object"
+      },
+      "PlaylistOwner": {
+        "additionalProperties": false,
+        "properties": {
+          "username": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "username"
+        ],
+        "type": "object"
+      },
+      "PlaylistSummary": {
+        "additionalProperties": false,
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "isHidden": {
+            "type": "boolean"
+          },
+          "isOwner": {
+            "type": "boolean"
+          },
+          "isPublic": {
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PlaylistCoverItem"
+            },
+            "type": "array"
+          },
+          "name": {
+            "type": "string"
+          },
+          "trackCount": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "unplayableCount": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+            "type": "string"
+          },
+          "user": {
+            "$ref": "#/components/schemas/PlaylistOwner"
+          },
+          "userId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "createdAt",
+          "id",
+          "isHidden",
+          "isOwner",
+          "isPublic",
+          "items",
+          "name",
+          "trackCount",
+          "updatedAt",
+          "user",
+          "userId"
+        ],
+        "type": "object"
+      },
+      "PodcastSummary": {
+        "additionalProperties": false,
+        "properties": {
+          "author": {
+            "type": "string"
+          },
+          "coverUrl": {
+            "type": "string"
+          },
+          "episodeCount": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "feedUrl": {
+            "type": "string"
+          },
+          "genres": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "id": {
+            "type": "string"
+          },
+          "isExternal": {
+            "type": "boolean"
+          },
+          "itunesId": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "author",
+          "episodeCount",
+          "genres",
+          "id",
+          "isExternal",
+          "itunesId",
+          "title"
         ],
         "type": "object"
       },
@@ -1255,6 +1754,460 @@
           "youtube"
         ],
         "type": "string"
+      },
+      "SearchAlbum": {
+        "additionalProperties": false,
+        "properties": {
+          "artist": {
+            "$ref": "#/components/schemas/ArtistRef"
+          },
+          "artistId": {
+            "type": "string"
+          },
+          "coverUrl": {
+            "nullable": true,
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "peer": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PeerRef"
+              }
+            ],
+            "nullable": true
+          },
+          "source": {
+            "enum": [
+              "local",
+              "federated"
+            ],
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "year": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "nullable": true,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "artist",
+          "artistId",
+          "coverUrl",
+          "id",
+          "title",
+          "year"
+        ],
+        "type": "object"
+      },
+      "SearchArtist": {
+        "additionalProperties": false,
+        "properties": {
+          "heroUrl": {
+            "nullable": true,
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "mbid": {
+            "nullable": true,
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "peer": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PeerRef"
+              }
+            ],
+            "nullable": true
+          },
+          "rank": {
+            "type": "number"
+          },
+          "source": {
+            "enum": [
+              "local",
+              "federated"
+            ],
+            "type": "string"
+          },
+          "summary": {
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "required": [
+          "heroUrl",
+          "id",
+          "mbid",
+          "name",
+          "rank"
+        ],
+        "type": "object"
+      },
+      "SearchEpisode": {
+        "additionalProperties": false,
+        "properties": {
+          "audioUrl": {
+            "type": "string"
+          },
+          "description": {
+            "nullable": true,
+            "type": "string"
+          },
+          "duration": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "id": {
+            "type": "string"
+          },
+          "podcastId": {
+            "type": "string"
+          },
+          "podcastTitle": {
+            "type": "string"
+          },
+          "publishedAt": {
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+            "type": "string"
+          },
+          "rank": {
+            "type": "number"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "audioUrl",
+          "description",
+          "duration",
+          "id",
+          "podcastId",
+          "podcastTitle",
+          "publishedAt",
+          "rank",
+          "title"
+        ],
+        "type": "object"
+      },
+      "SearchPodcast": {
+        "additionalProperties": false,
+        "properties": {
+          "author": {
+            "nullable": true,
+            "type": "string"
+          },
+          "description": {
+            "nullable": true,
+            "type": "string"
+          },
+          "episodeCount": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "id": {
+            "type": "string"
+          },
+          "imageUrl": {
+            "nullable": true,
+            "type": "string"
+          },
+          "rank": {
+            "type": "number"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "author",
+          "description",
+          "episodeCount",
+          "id",
+          "imageUrl",
+          "title"
+        ],
+        "type": "object"
+      },
+      "SearchRemoteAlbum": {
+        "additionalProperties": false,
+        "properties": {
+          "artist": {
+            "$ref": "#/components/schemas/ArtistRef"
+          },
+          "artistId": {
+            "type": "string"
+          },
+          "coverUrl": {
+            "nullable": true,
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "remoteSources": {
+            "items": {
+              "$ref": "#/components/schemas/RemoteProvider"
+            },
+            "type": "array"
+          },
+          "source": {
+            "enum": [
+              "remote"
+            ],
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "year": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "nullable": true,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "artist",
+          "artistId",
+          "coverUrl",
+          "id",
+          "remoteSources",
+          "source",
+          "title",
+          "year"
+        ],
+        "type": "object"
+      },
+      "SearchRemoteTrack": {
+        "additionalProperties": false,
+        "properties": {
+          "album": {
+            "$ref": "#/components/schemas/LibraryTrackAlbum"
+          },
+          "albumId": {
+            "nullable": true,
+            "type": "string"
+          },
+          "artist": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LibraryTrackArtist"
+              }
+            ]
+          },
+          "artistId": {
+            "nullable": true,
+            "type": "string"
+          },
+          "discNo": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "duration": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "id": {
+            "type": "string"
+          },
+          "isrc": {
+            "nullable": true,
+            "type": "string"
+          },
+          "loudnessLufs": {
+            "nullable": true,
+            "type": "number"
+          },
+          "peer": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PeerRef"
+              }
+            ]
+          },
+          "playbackId": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "trackNo": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "nullable": true,
+            "type": "integer"
+          },
+          "truePeakDb": {
+            "nullable": true,
+            "type": "number"
+          }
+        },
+        "required": [
+          "album",
+          "albumId",
+          "artistId",
+          "duration",
+          "id",
+          "title",
+          "trackNo"
+        ],
+        "type": "object"
+      },
+      "SearchResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "albums": {
+            "items": {
+              "$ref": "#/components/schemas/SearchAlbum"
+            },
+            "type": "array"
+          },
+          "artists": {
+            "items": {
+              "$ref": "#/components/schemas/SearchArtist"
+            },
+            "type": "array"
+          },
+          "episodes": {
+            "items": {
+              "$ref": "#/components/schemas/SearchEpisode"
+            },
+            "type": "array"
+          },
+          "podcasts": {
+            "items": {
+              "$ref": "#/components/schemas/SearchPodcast"
+            },
+            "type": "array"
+          },
+          "remoteAlbums": {
+            "items": {
+              "$ref": "#/components/schemas/SearchRemoteAlbum"
+            },
+            "type": "array"
+          },
+          "remoteTracks": {
+            "items": {
+              "$ref": "#/components/schemas/SearchRemoteTrack"
+            },
+            "type": "array"
+          },
+          "tracks": {
+            "items": {
+              "$ref": "#/components/schemas/SearchTrack"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "albums",
+          "artists",
+          "episodes",
+          "podcasts",
+          "remoteAlbums",
+          "remoteTracks",
+          "tracks"
+        ],
+        "type": "object"
+      },
+      "SearchTrack": {
+        "additionalProperties": false,
+        "properties": {
+          "album": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TrackAlbumRef"
+              }
+            ]
+          },
+          "albumId": {
+            "type": "string"
+          },
+          "artist": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TrackArtistRef"
+              }
+            ]
+          },
+          "discNo": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "duration": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "id": {
+            "type": "string"
+          },
+          "isrc": {
+            "nullable": true,
+            "type": "string"
+          },
+          "loudnessLufs": {
+            "nullable": true,
+            "type": "number"
+          },
+          "peer": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PeerRef"
+              }
+            ],
+            "nullable": true
+          },
+          "playbackId": {
+            "type": "string"
+          },
+          "source": {
+            "enum": [
+              "local",
+              "federated"
+            ],
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "trackNo": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "truePeakDb": {
+            "nullable": true,
+            "type": "number"
+          }
+        },
+        "required": [
+          "albumId",
+          "duration",
+          "id",
+          "title",
+          "trackNo"
+        ],
+        "type": "object"
       },
       "SessionTokens": {
         "additionalProperties": false,
@@ -2649,6 +3602,71 @@
         ]
       }
     },
+    "/api/mixes": {
+      "get": {
+        "description": "Cached for an hour per user. 404 with code `FEATURE_DISABLED` when automatic playlists are turned off.",
+        "operationId": "listMixes",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/MixSummary"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "The user's generated mixes",
+        "tags": [
+          "discovery"
+        ]
+      }
+    },
     "/api/onboarding/status": {
       "get": {
         "operationId": "getOnboardingStatus",
@@ -2688,6 +3706,449 @@
         "summary": "Whether the server or the signed-in user needs onboarding",
         "tags": [
           "session"
+        ]
+      }
+    },
+    "/api/playlists": {
+      "get": {
+        "description": "Newest first, without hidden-station rows. `limit` defaults to 500 and is clamped to 1000; `offset` defaults to 0. `isHidden` marks playlists the user hid.",
+        "operationId": "listPlaylists",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "maximum": 9007199254740991,
+              "minimum": -9007199254740991,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "maximum": 9007199254740991,
+              "minimum": -9007199254740991,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PlaylistSummary"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "The user's playlists and the public playlists of others",
+        "tags": [
+          "playlists"
+        ]
+      }
+    },
+    "/api/playlists/{id}": {
+      "get": {
+        "description": "403 for another user's private playlist; 404 when there is none. The server also sends pending (not yet imported) items for other consumers.",
+        "operationId": "getPlaylist",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlaylistDetail"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "A playlist with its items",
+        "tags": [
+          "playlists"
+        ]
+      }
+    },
+    "/api/podcasts/discover/top": {
+      "get": {
+        "description": "`limit` defaults to 20 and is capped at 50. An empty list when the directory cannot be reached.",
+        "operationId": "listTopPodcasts",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "maximum": 9007199254740991,
+              "minimum": -9007199254740991,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PodcastSummary"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Popular podcasts from the iTunes directory",
+        "tags": [
+          "podcasts"
+        ]
+      }
+    },
+    "/api/search": {
+      "get": {
+        "description": "A blank `q` returns every group empty. `type` defaults to `all`, which ignores `offset`; `limit` defaults to 20 and is clamped to 1 to 100 per group. `source` limits library results to local files or federated peers. `remoteTracks` and `remoteAlbums` (liked streaming tracks and albums that are not in the library) are loaded per user, are not cached, and are filled only for `source=all` without `genre`: `type=all` returns up to 5 remote tracks and 6 remote albums, and the first page of `type=tracks` or `type=albums` returns its own group. 400 for an unknown `type` or `source`, or a `q` over 500 characters.",
+        "operationId": "search",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "maxLength": 500,
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "type",
+            "required": false,
+            "schema": {
+              "enum": [
+                "all",
+                "artists",
+                "albums",
+                "tracks",
+                "audiobooks",
+                "podcasts",
+                "episodes"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "genre",
+            "required": false,
+            "schema": {
+              "maxLength": 120,
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "maximum": 9007199254740991,
+              "minimum": -9007199254740991,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "maximum": 10000,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "source",
+            "required": false,
+            "schema": {
+              "enum": [
+                "all",
+                "local",
+                "peers"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Search the library and the user's liked streaming tracks",
+        "tags": [
+          "search"
+        ]
+      }
+    },
+    "/api/search/discover": {
+      "get": {
+        "description": "`type` defaults to `music`; `limit` defaults to 20 and is clamped to 1 to 50. A blank `q` returns no results. Artists already in the library are left out. Results are cached for 15 minutes.",
+        "operationId": "searchDiscover",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "type",
+            "required": false,
+            "schema": {
+              "enum": [
+                "music",
+                "podcasts",
+                "all"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "maximum": 9007199254740991,
+              "minimum": -9007199254740991,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscoverSearchResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Search catalogs outside the library for artists, tracks and podcasts",
+        "tags": [
+          "search"
         ]
       }
     },

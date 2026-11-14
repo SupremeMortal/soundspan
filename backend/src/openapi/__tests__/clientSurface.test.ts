@@ -28,6 +28,10 @@ jest.mock("../../utils/schedulerClaim", () => ({
 jest.mock("../../services/audioStreaming", () => ({
     AudioStreamingService: jest.fn(),
 }));
+jest.mock("../../services/discoverMusicSearch", () => ({
+    resolveUsableSearchProviders: jest.fn(),
+    searchDiscoverMusic: jest.fn(),
+}));
 jest.mock("../../middleware/auth", () => {
     const pass = (_req: unknown, _res: unknown, next: () => void) => next();
     return new Proxy({}, { get: () => pass });
