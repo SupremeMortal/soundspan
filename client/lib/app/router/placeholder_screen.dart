@@ -2,6 +2,8 @@
 
 import 'package:material_ui/material_ui.dart';
 import 'package:soundspan/app/l10n/generated/app_localizations.dart';
+import 'package:soundspan/app/shell/avatar_menu.dart';
+import 'package:soundspan/app/shell/window_class.dart';
 
 /// Sets the window or tab title to `<screen> · soundspan` while its route is
 /// the visible one.
@@ -34,16 +36,31 @@ class RouteTitle extends StatelessWidget {
 
 /// A screen that only shows its centred, localized name until the issue that
 /// builds it lands.
+///
+/// A [branchRoot] screen on a compact window has an app bar with the
+/// [AvatarButton], as every branch root does there.
 class PlaceholderScreen extends StatelessWidget {
   /// Creates a placeholder titled [name].
-  const new(this.name, {super.key});
+  const new(this.name, {this.branchRoot = false, super.key});
 
   /// The localized screen name.
   final String name;
 
+  /// Whether the screen is the root of a shell branch.
+  final bool branchRoot;
+
   @override
-  Widget build(BuildContext context) => RouteTitle(
-    screen: name,
-    child: Scaffold(body: Center(child: Text(name))),
-  );
+  Widget build(BuildContext context) {
+    final compactRoot =
+        branchRoot && WindowClass.of(context) == WindowClass.compact;
+    return RouteTitle(
+      screen: name,
+      child: Scaffold(
+        appBar: compactRoot
+            ? AppBar(title: Text(name), actions: const [AvatarButton()])
+            : null,
+        body: Center(child: Text(name)),
+      ),
+    );
+  }
 }

@@ -7,7 +7,9 @@ import 'package:soundspan/app/l10n/generated/app_localizations.dart';
 import 'package:soundspan/app/router/guards.dart';
 import 'package:soundspan/app/router/placeholder_screen.dart';
 import 'package:soundspan/app/router/shell_route.dart';
+import 'package:soundspan/app/shell/shell_history.dart';
 import 'package:soundspan/core/profile/profile_runtime.dart';
+import 'package:soundspan/features/settings/settings.dart';
 
 /// The fixed paths of the router (doc 02, Routing).
 abstract final class RoutePaths {
@@ -34,6 +36,12 @@ abstract final class RoutePaths {
 
   /// Settings, on the root navigator.
   static const settings = '/settings';
+
+  /// The Servers settings.
+  static const settingsServers = '/settings/servers';
+
+  /// The Appearance settings.
+  static const settingsAppearance = '/settings/appearance';
 }
 
 /// The tabs of `/library/:tab`.
@@ -157,6 +165,7 @@ GoRouter createRouter(
   String initialLocation = RoutePaths.home,
 }) {
   final location = ShellLocation();
+  final history = ShellHistory();
   return GoRouter(
     initialLocation: initialLocation,
     refreshListenable: gate,
@@ -198,15 +207,17 @@ GoRouter createRouter(
         ),
       GoRoute(
         path: RoutePaths.settings,
-        builder: (context, _) =>
-            PlaceholderScreen(AppLocalizations.of(context).screenSettings),
+        builder: (context, _) => const SettingsScreen(),
         routes: [
+          for (final section in SettingsSection.values)
+            GoRoute(
+              path: section.name,
+              builder: (context, _) => SettingsScreen(section: section),
+            ),
           for (final (path, title)
               in <(String, String Function(AppLocalizations))>[
-                ('servers', (l10n) => l10n.screenSettingsServers),
                 ('playback', (l10n) => l10n.screenSettingsPlayback),
                 ('storage', (l10n) => l10n.screenSettingsStorage),
-                ('appearance', (l10n) => l10n.screenSettingsAppearance),
                 ('about', (l10n) => l10n.screenSettingsAbout),
               ])
             GoRoute(
@@ -216,7 +227,7 @@ GoRouter createRouter(
             ),
         ],
       ),
-      buildShellRoute(location),
+      buildShellRoute(location, history),
     ],
   );
 }

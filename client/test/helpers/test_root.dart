@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 
+import 'dart:async';
+
 import 'package:drift/native.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:soundspan/app/app.dart';
+import 'package:soundspan/app/router/routes.dart';
 import 'package:soundspan/bootstrap.dart';
 import 'package:soundspan/core/auth/profile.dart';
 import 'package:soundspan/core/auth/profile_repository.dart';
@@ -34,33 +37,55 @@ enum StoredProfile {
 
 /// A root container built by [createRootContainer] over in-memory storage.
 class TestRoot {
-  new _(this.container, this.database, this.profileId);
+  new _(
+    this.container,
+    this.database,
+    this.profileId,
+    this.otherIds, {
+    required this._ownsDatabase,
+  });
+
+  final bool _ownsDatabase;
+  bool _disposed = false;
 
   /// Builds the root container with [stored] as the active profile. Call it
   /// outside fake async (in `tester.runAsync` within widget tests).
+  ///
+  /// [database] reuses an `app.db` (its profile and settings stay as they
+  /// are; [stored] must then be [StoredProfile.none]); [opener] replaces
+  /// the [InMemoryDatabaseOpener]; [role] is the stored profile's role.
+  /// Each name in [others] adds a signed-in profile of user `<name>` on
+  /// `https://<name>.example.com`, each used one minute after the one
+  /// before; their ids are in [otherIds].
   static Future<TestRoot> create({
     StoredProfile stored = StoredProfile.none,
     List<Override> overrides = const [],
+    AppDatabase? database,
+    InMemoryDatabaseOpener? opener,
+    String role = 'user',
+    List<String> others = const [],
   }) async {
-    final database = AppDatabase(NativeDatabase.memory());
+    final reused = database != null;
+    database ??= AppDatabase(NativeDatabase.memory());
     final secrets = InMemorySecretStore();
-    final opener = InMemoryDatabaseOpener();
+    opener ??= InMemoryDatabaseOpener();
     final paths = RecordingAppPaths();
     final clock = FakeClock();
     String? profileId;
+    final otherIds = <String, String>{};
+    final repository = ProfileRepository(
+      database,
+      secrets,
+      paths,
+      opener,
+      clock,
+    );
     if (stored != StoredProfile.none) {
-      final repository = ProfileRepository(
-        database,
-        secrets,
-        paths,
-        opener,
-        clock,
-      );
       final profile = await repository.upsertSignedIn(
         baseUrl: Uri.parse('https://music.example.com'),
         userId: 'user-1',
         username: 'ada',
-        role: 'user',
+        role: role,
         authKind: AuthKind.password,
         credentials: const JwtCredentials(
           accessToken: 'access',
@@ -75,6 +100,23 @@ class TestRoot {
       await AppSettingsStore(database)
           .write(AppSettingKeys.activeProfileId, profile.id);
     }
+    for (final name in others) {
+      clock.advance(const Duration(minutes: 1));
+      final other = await repository.upsertSignedIn(
+        baseUrl: Uri.parse('https://$name.example.com'),
+        userId: 'user-$name',
+        username: name,
+        role: 'user',
+        authKind: AuthKind.password,
+        credentials: JwtCredentials(
+          accessToken: '$name-access',
+          refreshToken: '$name-refresh',
+        ),
+        credentialCreatedAt: clock.now(),
+      );
+      otherIds[name] = other.id;
+    }
+    clock.advance(const Duration(minutes: 1));
     final container = await createRootContainer(
       paths: paths,
       databaseOpener: opener,
@@ -83,7 +125,13 @@ class TestRoot {
       userAgent: 'soundspan-client/test (test)',
       overrides: [clockProvider.overrideWithValue(clock), ...overrides],
     );
-    return TestRoot._(container, database, profileId);
+    return TestRoot._(
+      container,
+      database,
+      profileId,
+      otherIds,
+      ownsDatabase: !reused,
+    );
   }
 
   /// The root container.
@@ -95,11 +143,18 @@ class TestRoot {
   /// The stored profile's id, or null with [StoredProfile.none].
   final String? profileId;
 
-  /// Disposes the runtime, the container and the database.
+  /// The ids of the profiles named in `others`, by name.
+  final Map<String, String> otherIds;
+
+  /// Disposes the runtime and the container, and closes the database
+  /// unless it was passed in.
+  /// Calling it again does nothing.
   Future<void> dispose() async {
+    if (_disposed) return;
+    _disposed = true;
     await container.read(profileRuntimeProvider).dispose();
     container.dispose();
-    await database.close();
+    if (_ownsDatabase) await database.close();
   }
 }
 
@@ -107,15 +162,32 @@ class TestRoot {
 extension PumpSoundspanApp on WidgetTester {
   /// Builds a [TestRoot] with [stored] and pumps [SoundspanApp] on it at
   /// [size]; everything is released when the test ends.
+  ///
+  /// [overrides], [database], [opener], [role] and [others] are passed to
+  /// [TestRoot.create].
   Future<TestRoot> pumpSoundspanApp({
     StoredProfile stored = StoredProfile.none,
     Size size = const Size(390, 844),
+    List<Override> overrides = const [],
+    AppDatabase? database,
+    InMemoryDatabaseOpener? opener,
+    String role = 'user',
+    List<String> others = const [],
   }) async {
     view
       ..physicalSize = size
       ..devicePixelRatio = 1.0;
     addTearDown(view.reset);
-    final root = (await runAsync(() => TestRoot.create(stored: stored)))!;
+    final root = (await runAsync(
+      () => TestRoot.create(
+        stored: stored,
+        overrides: overrides,
+        database: database,
+        opener: opener,
+        role: role,
+        others: others,
+      ),
+    ))!;
     addTearDown(() async {
       await pumpWidget(const SizedBox.shrink());
       await runAsync(root.dispose);
@@ -130,3 +202,48 @@ extension PumpSoundspanApp on WidgetTester {
     return root;
   }
 }
+
+/// A [ProfileRuntime] that records the ids passed to [switchTo] and
+/// [resetLocalState], then does what the real one does while [delegate] is
+/// true.
+class RecordingProfileRuntime extends ProfileRuntime {
+  /// Creates the runtime under the root container.
+  new(super._root);
+
+  /// Whether calls go on to the real runtime after being recorded.
+  bool delegate = true;
+
+  /// The ids passed to [switchTo], in call order.
+  final List<String?> switched = [];
+
+  /// The ids passed to [resetLocalState], in call order.
+  final List<String> reset = [];
+
+  @override
+  Future<void> switchTo(String? profileId) {
+    switched.add(profileId);
+    return delegate ? super.switchTo(profileId) : Future<void>.value();
+  }
+
+  @override
+  Future<void> resetLocalState(String profileId) {
+    reset.add(profileId);
+    return delegate ? super.resetLocalState(profileId) : Future<void>.value();
+  }
+}
+
+/// Overrides `profileRuntimeProvider` with a [RecordingProfileRuntime],
+/// which [onCreate] receives.
+Override recordingRuntimeOverride(
+  void Function(RecordingProfileRuntime runtime) onCreate,
+) => profileRuntimeProvider.overrideWith((ref) {
+  final runtime = RecordingProfileRuntime(ref.container);
+  onCreate(runtime);
+  ref.onDispose(() => unawaited(runtime.dispose()));
+  return runtime;
+});
+
+/// The location of the top-most route in [root], including routes pushed
+/// with `GoRouter.push`.
+String locationOf(TestRoot root) =>
+    root.container.read(routerProvider).state.uri.toString();

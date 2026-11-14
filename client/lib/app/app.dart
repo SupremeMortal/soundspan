@@ -5,6 +5,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:soundspan/app/l10n/generated/app_localizations.dart';
 import 'package:soundspan/app/router/routes.dart';
 import 'package:soundspan/app/theme/theme.dart';
+import 'package:soundspan/app/volatile_storage_notice.dart';
 import 'package:soundspan/core/storage/app/app_settings_store.dart';
 import 'package:soundspan/core/storage/providers.dart';
 
@@ -56,6 +57,8 @@ class SoundspanApp extends ConsumerWidget {
     return MaterialApp.router(
       routerConfig: ref.watch(routerProvider),
       debugShowCheckedModeBanner: false,
+      builder: (context, child) =>
+          VolatileStorageNotice(child: child ?? const SizedBox.shrink()),
       onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,

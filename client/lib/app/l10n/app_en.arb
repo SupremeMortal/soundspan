@@ -81,5 +81,165 @@
   "screenPlaylist": "Playlist",
   "@screenPlaylist": {
     "description": "Screen name: the detail screen of one playlist."
+  },
+  "shellBack": "Back",
+  "@shellBack": {
+    "description": "Top bar button: go back in the current navigation destination."
+  },
+  "shellForward": "Forward",
+  "@shellForward": {
+    "description": "Top bar button: re-open the screen most recently left with Back."
+  },
+  "shellSearchHint": "Search",
+  "@shellSearchHint": {
+    "description": "Placeholder and accessibility label of the search field in the top bar."
+  },
+  "shellAccountMenu": "Account and servers",
+  "@shellAccountMenu": {
+    "description": "Tooltip and accessibility label of the avatar button that opens the account menu with the server switcher."
+  },
+  "shellMenuServers": "Servers",
+  "@shellMenuServers": {
+    "description": "Heading of the server list in the account menu."
+  },
+  "shellMenuCurrentServer": "Current server",
+  "@shellMenuCurrentServer": {
+    "description": "Accessibility label of the mark next to the server the app is showing, in the account menu and in the Servers settings."
+  },
+  "shellMenuAddServer": "Add server",
+  "@shellMenuAddServer": {
+    "description": "Account menu entry: add another server."
+  },
+  "shellMenuSettings": "Settings",
+  "@shellMenuSettings": {
+    "description": "Account menu entry: open the settings."
+  },
+  "settingsThemeTitle": "Theme",
+  "@settingsThemeTitle": {
+    "description": "Heading of the theme choice in the Appearance settings."
+  },
+  "settingsThemeSystem": "System",
+  "@settingsThemeSystem": {
+    "description": "Theme choice: follow the device’s light or dark setting."
+  },
+  "settingsThemeDark": "Dark",
+  "@settingsThemeDark": {
+    "description": "Theme choice: always dark."
+  },
+  "settingsThemeLight": "Light",
+  "@settingsThemeLight": {
+    "description": "Theme choice: always light."
+  },
+  "settingsLanguageTitle": "Language",
+  "@settingsLanguageTitle": {
+    "description": "Heading of the language choice in the Appearance settings."
+  },
+  "settingsLanguageSystem": "System default",
+  "@settingsLanguageSystem": {
+    "description": "Language choice: use the device’s language."
+  },
+  "settingsLanguageName": "English",
+  "@settingsLanguageName": {
+    "description": "The name of this language written in this language, shown in the language choice."
+  },
+  "settingsServersAdd": "Add server",
+  "@settingsServersAdd": {
+    "description": "Servers settings action: add another server."
+  },
+  "settingsServersSwitch": "Switch",
+  "@settingsServersSwitch": {
+    "description": "Servers settings action: make this server the one the app shows."
+  },
+  "settingsServersRename": "Rename",
+  "@settingsServersRename": {
+    "description": "Servers settings action: change the name shown for this server."
+  },
+  "settingsServersOpenAdmin": "Open server admin",
+  "@settingsServersOpenAdmin": {
+    "description": "Servers settings action, shown to administrators: open the server’s administration page in the browser."
+  },
+  "settingsServersStateActive": "Active",
+  "@settingsServersStateActive": {
+    "description": "State of a server profile: signed in."
+  },
+  "settingsServersStateSignedOut": "Signed out",
+  "@settingsServersStateSignedOut": {
+    "description": "State of a server profile: signed out; its data is kept."
+  },
+  "settingsServersAccount": "{username} on {host}",
+  "@settingsServersAccount": {
+    "description": "The user name and server host of a server profile.",
+    "placeholders": {
+      "username": {
+        "type": "String",
+        "example": "ada"
+      },
+      "host": {
+        "type": "String",
+        "example": "music.example.com"
+      }
+    }
+  },
+  "settingsServersVersion": "Server version {version}",
+  "@settingsServersVersion": {
+    "description": "The server version seen when the app last checked.",
+    "placeholders": {
+      "version": {
+        "type": "String",
+        "example": "1.4.0"
+      }
+    }
+  },
+  "settingsServersVersionUnknown": "Server version not known yet",
+  "@settingsServersVersionUnknown": {
+    "description": "Shown instead of the server version before the app has checked it."
+  },
+  "settingsServersRenameTitle": "Rename server",
+  "@settingsServersRenameTitle": {
+    "description": "Title of the dialog that renames a server."
+  },
+  "settingsServersRenameLabel": "Name",
+  "@settingsServersRenameLabel": {
+    "description": "Label of the name field in the rename dialog."
+  },
+  "settingsServersRenameSave": "Save",
+  "@settingsServersRenameSave": {
+    "description": "Rename dialog button: store the new name."
+  },
+  "commonCancel": "Cancel",
+  "@commonCancel": {
+    "description": "Dialog button: close without changing anything."
+  },
+  "localDataTooNewTitle": "This data was written by a newer version of the app",
+  "@localDataTooNewTitle": {
+    "description": "Title of the screen shown when this server’s data on the device was written by a newer app version."
+  },
+  "localDataTooNewBody": "Update the app to keep using this data, reset this server’s local data, or switch to another server.",
+  "@localDataTooNewBody": {
+    "description": "Explanation on the screen shown when this server’s data on the device was written by a newer app version."
+  },
+  "localDataTooNewReset": "Reset this server’s local data",
+  "@localDataTooNewReset": {
+    "description": "Button: delete this server’s data on the device and start fresh, after a confirmation."
+  },
+  "localDataTooNewSwitch": "Switch server",
+  "@localDataTooNewSwitch": {
+    "description": "Button: open the server list to show another server."
+  },
+  "localDataTooNewConfirmTitle": "Reset local data?",
+  "@localDataTooNewConfirmTitle": {
+    "description": "Title of the confirmation before this server’s data on the device is deleted."
+  },
+  "localDataTooNewConfirmBody": "The queue, pending changes and downloads of this server are deleted from this device. Your library on the server is not changed.",
+  "@localDataTooNewConfirmBody": {
+    "description": "Body of the confirmation before this server’s data on the device is deleted."
+  },
+  "localDataTooNewConfirmReset": "Reset",
+  "@localDataTooNewConfirmReset": {
+    "description": "Confirmation button: delete this server’s data on the device."
+  },
+  "storageVolatileNotice": "This browser is not keeping data, so nothing will be remembered after this page is closed.",
+  "@storageVolatileNotice": {
+    "description": "One-time notice on the web when the browser offers no lasting storage, for example in private browsing."
   }
 }
