@@ -28,6 +28,8 @@ const scopedLogger = {
 scopedLogger.child.mockReturnValue(scopedLogger);
 jest.mock("../../utils/logger", () => ({ logger: scopedLogger }));
 
+import express from "express";
+import request from "supertest";
 import router from "../apiKeys";
 
 function createRes() {
@@ -139,5 +141,43 @@ describe("API key management interactive authentication", () => {
 
         expect(res.statusCode).toBe(200);
         expect(res.body).toEqual({ message: "API key revoked successfully" });
+    });
+
+    describe("routing through the mounted router", () => {
+        function createApp() {
+            const app = express();
+            app.use((req, _res, next) => {
+                req.user = { id: "u1", username: "alice", role: "user" };
+                if (req.headers["x-api-key"] !== undefined) {
+                    req.apiKeyId = "self-key";
+                }
+                next();
+            });
+            app.use("/api/api-keys", router);
+            return app;
+        }
+
+        it("routes DELETE /current with X-API-Key to the self-revoke handler", async () => {
+            const res = await request(createApp())
+                .delete("/api/api-keys/current")
+                .set("X-API-Key", "device-key");
+
+            expect(res.status).toBe(200);
+            expect(res.body).toEqual({
+                message: "API key revoked successfully",
+            });
+            expect(prisma.apiKey.deleteMany).toHaveBeenCalledWith({
+                where: { id: "self-key", userId: "u1" },
+            });
+        });
+
+        it("keeps rejecting DELETE /:id with X-API-Key", async () => {
+            const res = await request(createApp())
+                .delete("/api/api-keys/key-1")
+                .set("X-API-Key", "device-key");
+
+            expect(res.status).toBe(403);
+            expect(prisma.apiKey.deleteMany).not.toHaveBeenCalled();
+        });
     });
 });

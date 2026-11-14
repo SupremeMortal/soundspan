@@ -43,6 +43,8 @@ declare global {
                 username: string;
                 role: string;
             };
+            /** Id of the API key that authenticated this request, when one did. */
+            apiKeyId?: string;
         }
     }
 }
@@ -297,6 +299,7 @@ async function authenticateRequest(
                         logger.debug("Failed to update API key lastUsed", err);
                     });
 
+                req.apiKeyId = apiKeyRecord.id;
                 return apiKeyRecord.user;
             }
         } catch (cause) {
