@@ -37,3 +37,35 @@ export function parsePlayedAt(value: unknown, now: Date): ParsedPlayedAt {
     }
     return { ok: true, playedAt };
 }
+
+/** A play heard for less than this many milliseconds is not recorded. */
+export const MIN_LISTENED_MS = 5_000;
+
+/** The largest accepted `listenedMs`: 24 hours. */
+export const MAX_LISTENED_MS = 86_400_000;
+
+/** Result of {@link parseListenedMs}: `listenedMs` is `undefined` when the field was absent. */
+export type ParsedListenedMs =
+    | { ok: true; listenedMs: number | undefined }
+    | { ok: false };
+
+/**
+ * Validates the optional `listenedMs` of a play report: a JSON number that is
+ * an integer from 0 to {@link MAX_LISTENED_MS} inclusive. An absent value is
+ * valid and yields `undefined`. A value larger than the track's duration is
+ * valid, because a passage may have been replayed.
+ */
+export function parseListenedMs(value: unknown): ParsedListenedMs {
+    if (value === undefined) {
+        return { ok: true, listenedMs: undefined };
+    }
+    if (
+        typeof value !== "number" ||
+        !Number.isInteger(value) ||
+        value < 0 ||
+        value > MAX_LISTENED_MS
+    ) {
+        return { ok: false };
+    }
+    return { ok: true, listenedMs: value };
+}

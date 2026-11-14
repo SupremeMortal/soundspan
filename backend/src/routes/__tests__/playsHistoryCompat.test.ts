@@ -571,6 +571,55 @@ describe("plays history compatibility", () => {
         expect(tracks[2].youtubeVideoId).toBe("vidXYZ");
     });
 
+    it("returns listenedMs on each entry, null when not measured", async () => {
+        const track = {
+            id: "ckLocal1",
+            title: "Local",
+            duration: 100,
+            trackNo: 1,
+            filePath: "/music/a.flac",
+            removedAt: null,
+            album: {
+                id: "album-1",
+                title: "Album",
+                artist: { id: "artist-1", name: "Artist", mbid: null },
+            },
+        };
+        mockPlayFindMany.mockResolvedValueOnce([
+            {
+                id: "play-measured",
+                playedAt: new Date("2026-03-01T10:00:00.000Z"),
+                source: "LIBRARY",
+                listenedMs: 42_000,
+                track,
+                trackTidal: null,
+                trackYtMusic: null,
+            },
+            {
+                id: "play-unmeasured",
+                playedAt: new Date("2026-03-01T09:00:00.000Z"),
+                source: "LIBRARY",
+                listenedMs: null,
+                track,
+                trackTidal: null,
+                trackYtMusic: null,
+            },
+        ]);
+        const res = createRes();
+
+        await listPlaysHandler(
+            { user: { id: "user-1" }, query: {} } as any,
+            res,
+        );
+
+        expect(res.body.map((play: any) => [play.id, play.listenedMs])).toEqual(
+            [
+                ["play-measured", 42_000],
+                ["play-unmeasured", null],
+            ],
+        );
+    });
+
     it("keeps removed tracks in history and marks them unplayable", async () => {
         mockPlayFindMany.mockResolvedValueOnce([
             {

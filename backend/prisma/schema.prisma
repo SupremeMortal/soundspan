@@ -690,6 +690,7 @@ model Play {
   trackYtMusicId String?
   playedAt       DateTime      @default(now())
   source         ListenSource  @default(LIBRARY)
+  listenedMs     Int?
   track          Track?        @relation(fields: [trackId], references: [id], onDelete: SetNull)
   trackTidal     TrackTidal?   @relation(fields: [trackTidalId], references: [id], onDelete: SetNull)
   trackYtMusic   TrackYtMusic? @relation(fields: [trackYtMusicId], references: [id], onDelete: SetNull)

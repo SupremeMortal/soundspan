@@ -1,6 +1,9 @@
 import {
+    MAX_LISTENED_MS,
+    MIN_LISTENED_MS,
     PLAYED_AT_MAX_AGE_MS,
     PLAYED_AT_MAX_FUTURE_MS,
+    parseListenedMs,
     parsePlayedAt,
 } from "../playReport";
 
@@ -54,5 +57,35 @@ describe("parsePlayedAt", () => {
         ["an object", {}],
     ])("rejects %s", (_label, value) => {
         expect(parsePlayedAt(value, NOW)).toEqual({ ok: false });
+    });
+});
+
+describe("parseListenedMs", () => {
+    it("uses a 5 second minimum listen and a 24 hour maximum", () => {
+        expect(MIN_LISTENED_MS).toBe(5_000);
+        expect(MAX_LISTENED_MS).toBe(86_400_000);
+    });
+
+    it("accepts an absent value as not measured", () => {
+        expect(parseListenedMs(undefined)).toEqual({
+            ok: true,
+            listenedMs: undefined,
+        });
+    });
+
+    it.each([0, 4_999, 5_000, 86_400_000])("accepts %p", (value) => {
+        expect(parseListenedMs(value)).toEqual({ ok: true, listenedMs: value });
+    });
+
+    it.each([
+        ["a negative value", -1],
+        ["a fraction", 1.5],
+        ["a value over 24 hours", 86_400_001],
+        ["a numeric string", "5000"],
+        ["null", null],
+        ["NaN", Number.NaN],
+        ["Infinity", Number.POSITIVE_INFINITY],
+    ])("rejects %s", (_label, value) => {
+        expect(parseListenedMs(value)).toEqual({ ok: false });
     });
 });

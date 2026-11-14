@@ -5,7 +5,10 @@ import { prisma } from "../utils/db";
 import { getApiKeyExpiresAt, hashApiKey } from "../utils/apiKeyHash";
 import crypto from "crypto";
 import { revokeApiKeySockets } from "../services/listenTogetherSocketRevocation";
-import { sendRouteError } from "../utils/routeErrorResponse";
+import {
+    sendInternalRouteError,
+    sendRouteError,
+} from "../utils/routeErrorResponse";
 
 const router = Router();
 const routeLogger = logger.child("ApiKeys");
@@ -170,6 +173,77 @@ router.get("/", async (req, res) => {
     } catch (error) {
         routeLogger.error("List API keys error", { error });
         res.status(500).json({ error: "Failed to list API keys" });
+    }
+});
+
+/**
+ * @openapi
+ * /api/api-keys/current:
+ *   delete:
+ *     summary: Revoke the API key that authenticates this request
+ *     description: >-
+ *       Deletes the API key sent in `X-API-Key` and disconnects sockets
+ *       authenticated with it. A request authenticated any other way is
+ *       answered 400 with code `NOT_API_KEY_SESSION`.
+ *     tags: [API Keys]
+ *     security:
+ *       - apiKeyAuth: []
+ *     responses:
+ *       200:
+ *         description: API key revoked successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "API key revoked successfully"
+ *       400:
+ *         description: The request is not authenticated with an API key (code NOT_API_KEY_SESSION)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         description: Not authenticated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+router.delete("/current", async (req, res) => {
+    const keyId = req.apiKeyId;
+    const userId = req.user?.id;
+    if (!keyId || !userId) {
+        return sendRouteError(
+            res,
+            400,
+            "This request is not authenticated with an API key",
+            { code: "NOT_API_KEY_SESSION" },
+        );
+    }
+
+    try {
+        // The key may already be gone (removed between authentication and
+        // this handler); the requested end state holds either way.
+        await prisma.apiKey.deleteMany({ where: { id: keyId, userId } });
+
+        try {
+            await revokeApiKeySockets(keyId);
+        } catch (revokeError) {
+            routeLogger.error("API key socket revocation failed", {
+                keyId,
+                error: revokeError,
+            });
+        }
+
+        routeLogger.debug("API key revoked itself", { keyId, userId });
+
+        res.json({ message: "API key revoked successfully" });
+    } catch (error) {
+        routeLogger.error("Revoke current API key error", { error });
+        sendInternalRouteError(res, "Failed to revoke API key");
     }
 });
 
