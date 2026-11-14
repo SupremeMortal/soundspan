@@ -26,4 +26,14 @@ void main() {
       expect(text, contains('SIL Open Font License'));
     });
   }
+
+  for (final n in [16, 22, 24, 32]) {
+    for (final variant in ['light', 'dark']) {
+      final icon = 'assets/brand/tray/tray_${variant}_$n.png';
+      test('$icon is bundled', () async {
+        final data = await rootBundle.load(icon);
+        expect(data.lengthInBytes, greaterThan(0));
+      });
+    }
+  }
 }

@@ -12,6 +12,7 @@ flutter analyze --fatal-infos
 dart run tool/check_imports.dart
 dart run tool/check_l10n.dart
 dart run tool/license_audit.dart
+dart run tool/gen_icons.dart --check
 (cd packages/soundspan_api && dart analyze --fatal-infos)
 
 echo "== client-test"

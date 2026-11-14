@@ -106,6 +106,10 @@ jobs:
         working-directory: client
         run: dart run tool/license_audit.dart
 
+      - name: Icons are current
+        working-directory: client
+        run: dart run tool/gen_icons.dart --check
+
       - name: Analyze soundspan_api
         working-directory: client/packages/soundspan_api
         run: dart analyze --fatal-infos
@@ -203,6 +207,10 @@ jobs:
         working-directory: client
         run: flutter build apk --debug --dart-define-from-file=config/dev.json
 
+      - name: The APK has the adaptive launcher icon
+        working-directory: client
+        run: unzip -l build/app/outputs/flutter-apk/app-debug.apk | grep -q ' res/mipmap-anydpi-v26/ic_launcher.xml$'
+
   client-build-linux:
     name: client-build-linux
     needs: changes
@@ -247,6 +255,13 @@ jobs:
         run: |
           test -s build/web/sqlite3.wasm
           test -s build/web/drift_worker.js
+
+      - name: The bundle ships the committed icons
+        working-directory: client
+        run: |
+          for icon in favicon.png icons/Icon-192.png icons/Icon-512.png icons/Icon-maskable-192.png icons/Icon-maskable-512.png; do
+            cmp "web/$icon" "build/web/$icon"
+          done
 
       - name: Bundle-size report
         working-directory: client
