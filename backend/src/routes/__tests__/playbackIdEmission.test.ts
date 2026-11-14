@@ -85,6 +85,12 @@ import { parsePlaybackId } from "../../services/playback/playbackId";
 import { youtubeDownloadService } from "../../services/youtubeDownload";
 import { encodePlaybackId } from "../../services/playback/playbackId";
 import { expectClientSurfaceResponse } from "./helpers/expectClientSurfaceResponse";
+import { toLibraryRemoteTrack } from "../../services/remoteLibrary/responseRow";
+import { toLikedResponseTrack } from "../../services/libraryTrackPreferences";
+import {
+    normalizeTidalTrack,
+    normalizeYtMusicTrack,
+} from "../../services/unifiedTrackResponse";
 
 type TrackItem = Record<string, any>;
 
@@ -294,5 +300,100 @@ describe("playbackId on album and artist detail tracks", () => {
             kind: "t",
             trackId: "track-1",
         });
+    });
+});
+
+describe("playbackId on library list tracks", () => {
+    const likedAt = new Date("2026-01-01T00:00:00.000Z");
+
+    function remoteSongsRow(tidalId: number) {
+        return toLibraryRemoteTrack({
+            provider: "tidal",
+            providerRowId: "tt-1",
+            title: "Remote",
+            artistId: null,
+            albumId: null,
+            albumLocation: null,
+            albumArtistId: null,
+            albumMatchedRgMbid: null,
+            albumMatchedInLibrary: false,
+            likedAt,
+            mappings: [],
+            track: {
+                id: "tt-1",
+                tidalId,
+                title: "Remote",
+                artist: "Artist",
+                album: "Album",
+                duration: 180,
+                artistId: null,
+                albumId: null,
+                artistEntity: null,
+                albumEntity: null,
+            },
+        });
+    }
+
+    function songsPage(track: TrackItem) {
+        return { tracks: [track], total: 1, offset: 0, limit: 100 };
+    }
+
+    function likedRow(videoId: string) {
+        return toLikedResponseTrack(
+            normalizeYtMusicTrack({
+                id: "yt-1",
+                videoId,
+                title: "Liked",
+                artist: "Artist",
+                album: "Album",
+                duration: 200,
+            }),
+            likedAt,
+        );
+    }
+
+    function likedPage(track: TrackItem) {
+        return {
+            playlist: { id: "my-liked", name: "My Liked", description: "" },
+            tracks: [track],
+            total: 1,
+            pagination: { limit: 100, hasMore: false, nextCursor: null },
+        };
+    }
+
+    const cases = [
+        ["listTracks", "with", songsPage(remoteSongsRow(42))],
+        ["listTracks", "without", songsPage(remoteSongsRow(0))],
+        ["listLikedTracks", "with", likedPage(likedRow("vid1"))],
+        ["listLikedTracks", "without", likedPage(likedRow(""))],
+    ] as const;
+
+    test.each(cases)(
+        "%s validates a streaming row %s a playbackId",
+        (operationId, label, body) => {
+            expect("playbackId" in body.tracks[0]).toBe(label === "with");
+            expect(() =>
+                expectClientSurfaceResponse(operationId, 200, body),
+            ).not.toThrow();
+        },
+    );
+
+    test("a liked TIDAL row validates although the schema declares no provider field", () => {
+        const row = toLikedResponseTrack(
+            normalizeTidalTrack({
+                id: "tt-2",
+                tidalId: 7,
+                title: "Liked",
+                artist: "Artist",
+                album: "Album",
+                duration: 200,
+            }),
+            likedAt,
+        );
+
+        expect(row).toMatchObject({ streamSource: "tidal", tidalTrackId: 7 });
+        expect(() =>
+            expectClientSurfaceResponse("listLikedTracks", 200, likedPage(row)),
+        ).not.toThrow();
     });
 });

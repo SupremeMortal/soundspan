@@ -41,7 +41,7 @@ function albumDetail(tracks: JsonObject[]): JsonObject {
 }
 
 describe("library operations in the emitted client spec", () => {
-    test("the four browse operations are emitted under the library tag", () => {
+    test("the JSON browse operations are emitted under the library tag", () => {
         const library = Object.values(emitted().paths as JsonObject)
             .flatMap((item) => Object.values(item as JsonObject))
             .filter((operation: JsonObject) =>
@@ -55,7 +55,18 @@ describe("library operations in the emitted client spec", () => {
             "getArtist",
             "listAlbums",
             "listArtists",
+            "listLikedTracks",
+            "listRecentlyAdded",
+            "listRecentlyListened",
+            "listTracks",
         ]);
+    });
+
+    test("the cover-art operations stay out of the emitted file", () => {
+        const paths = Object.keys(emitted().paths as JsonObject);
+
+        expect(paths).not.toContain("/api/library/cover-art");
+        expect(paths).not.toContain("/api/library/cover-art/{id}");
     });
 
     test("the summary components are named", () => {
@@ -70,6 +81,12 @@ describe("library operations in the emitted client spec", () => {
                 "AlbumDetail",
                 "AlbumListResponse",
                 "TrackSummary",
+                "LibraryTrack",
+                "LibraryTrackListResponse",
+                "LikedTrack",
+                "LikedTracksResponse",
+                "RecentlyListenedItem",
+                "RecentlyAddedArtist",
             ]),
         );
     });
@@ -91,17 +108,77 @@ describe("library operations in the emitted client spec", () => {
         );
     });
 
-    test("track shapes never declare provider-specific fields", () => {
-        const track = emitted().components.schemas.TrackSummary;
+    test.each(["TrackSummary", "LibraryTrack", "LikedTrack"])(
+        "%s never declares provider-specific fields",
+        (component) => {
+            const track = emitted().components.schemas[component];
 
-        for (const field of [
-            "streamSource",
-            "tidalTrackId",
-            "youtubeVideoId",
-        ]) {
-            expect(track.properties).not.toHaveProperty(field);
+            for (const field of [
+                "streamSource",
+                "tidalTrackId",
+                "youtubeVideoId",
+                "provider",
+            ]) {
+                expect(track.properties).not.toHaveProperty(field);
+            }
+            expect(track.required).not.toContain("playbackId");
+        },
+    );
+
+    test.each([
+        [
+            "/api/library/tracks",
+            ["albumId", "limit", "offset", "origin", "sortBy"],
+        ],
+        ["/api/library/liked", ["cursorLikedAt", "cursorTrackId", "limit"]],
+        ["/api/library/recently-listened", ["limit"]],
+        ["/api/library/recently-added", ["limit"]],
+    ])("%s declares exactly the inventory query parameters", (path, names) => {
+        const parameters = emitted().paths[path].get.parameters as JsonObject[];
+
+        expect(parameters.map((p) => p.name).sort()).toEqual(names);
+    });
+});
+
+describe("cover-art operations in the served document", () => {
+    test("both paths answer an image and declare their JSON errors", () => {
+        for (const operationId of ["getCoverArt", "getCoverArtByUrl"]) {
+            const operation = getOperation(operationId);
+
+            expect(operation.responses[200]).toEqual({ binary: "image/*" });
+            expect(
+                checkClientSurfaceResponse(operation, 404, {
+                    error: "Cover art not found",
+                }),
+            ).toEqual({ ok: true });
+            expect(
+                checkClientSurfaceResponse(operation, 200, Buffer.from("img")),
+            ).toEqual({ ok: true });
         }
-        expect(track.required).not.toContain("playbackId");
+    });
+});
+
+describe("liked tracks validation", () => {
+    test("a next cursor without its track id fails", () => {
+        const check = checkClientSurfaceResponse(
+            getOperation("listLikedTracks"),
+            200,
+            {
+                playlist: { id: "my-liked", name: "My Liked", description: "" },
+                tracks: [],
+                total: 0,
+                pagination: {
+                    limit: 1,
+                    hasMore: true,
+                    nextCursor: { likedAt: "2026-01-01T00:00:00.000Z" },
+                },
+            },
+        );
+
+        expect(check).toMatchObject({
+            ok: false,
+            path: "$.pagination.nextCursor.trackId",
+        });
     });
 });
 

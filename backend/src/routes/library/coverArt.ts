@@ -137,53 +137,6 @@ async function resolveCoverId(raw: string) {
  * Router segment for coverArt routes registered at this position.
  */
 export const coverArtRouter = Router();
-/**
- * @openapi
- * /api/library/cover-art/{id}:
- *   get:
- *     summary: Proxy and cache album cover art images
- *     tags: [Library]
- *     security:
- *       - apiKeyAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: false
- *         schema:
- *           type: string
- *         description: Album ID, cover URL, native cover path, or audiobook cover path
- *       - in: query
- *         name: url
- *         schema:
- *           type: string
- *         description: Full cover art URL (alternative to path parameter)
- *       - in: query
- *         name: size
- *         schema:
- *           type: string
- *         description: >
- *           Requested image size in pixels. Snapped to the allowlist
- *           (64, 128, 192, 320, 512, 768); images are downscaled
- *           server-side (never upscaled) and served as webp when the
- *           Accept header includes image/webp. Omit to receive the
- *           original image.
- *     responses:
- *       200:
- *         description: Cover art image binary
- *         content:
- *           image/jpeg:
- *             schema:
- *               type: string
- *               format: binary
- *       304:
- *         description: Not modified (client cache is current)
- *       400:
- *         description: Invalid cover art URL
- *       404:
- *         description: Cover art not found
- *       401:
- *         description: Not authenticated
- */
 // GET /library/cover-art/:id?size= or GET /library/cover-art?url=&size=
 // Apply lenient image limiter (500 req/min) instead of general API limiter (100 req/15min)
 // Express 5 (path-to-regexp v8) replaced the ":id?" optional-param syntax with

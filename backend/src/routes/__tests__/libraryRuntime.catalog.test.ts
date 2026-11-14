@@ -321,8 +321,14 @@ function albumDetailRow(
 }
 
 describe("library catalog list runtime coverage", () => {
-    const recentlyListenedHandler = getHandler("get", "/recently-listened");
-    const recentlyAddedHandler = getHandler("get", "/recently-added");
+    const recentlyListenedHandler = validated(
+        "listRecentlyListened",
+        getHandler("get", "/recently-listened"),
+    );
+    const recentlyAddedHandler = validated(
+        "listRecentlyAdded",
+        getHandler("get", "/recently-added"),
+    );
     const artistsHandler = validated(
         "listArtists",
         getHandler("get", "/artists"),
@@ -336,8 +342,11 @@ describe("library catalog list runtime coverage", () => {
         "getAlbum",
         getHandler("get", "/albums/:id"),
     );
-    const tracksHandler = getHandler("get", "/tracks");
-    const likedPlaylistHandler = getHandler("get", "/liked");
+    const tracksHandler = validated("listTracks", getHandler("get", "/tracks"));
+    const likedPlaylistHandler = validated(
+        "listLikedTracks",
+        getHandler("get", "/liked"),
+    );
     const shuffleHandler = getHandler("get", "/tracks/shuffle");
     const coverArtHandler = getFinalHandler("get", "/cover-art{/:id}");
     const albumCoverHandler = getFinalHandler("get", "/album-cover/:mbid");
@@ -2527,6 +2536,9 @@ describe("library catalog list runtime coverage", () => {
             {
                 id: "track-10",
                 title: "Track 10",
+                duration: 200,
+                trackNo: 1,
+                discNo: 1,
                 albumId: "album-10",
                 album: {
                     id: "album-10",
@@ -2783,6 +2795,9 @@ describe("library catalog list runtime coverage", () => {
             {
                 id: "local-zero-likes",
                 title: "Local zero likes",
+                duration: 200,
+                trackNo: 1,
+                discNo: 1,
                 origin: "LOCAL",
                 federationPeer: null,
                 album: {
@@ -3262,6 +3277,9 @@ describe("library catalog list runtime coverage", () => {
             {
                 id: "local-all-row",
                 title: "Zulu local",
+                duration: 200,
+                trackNo: 1,
+                discNo: 1,
                 origin: "LOCAL",
                 federationPeer: null,
                 album: {
@@ -3421,6 +3439,28 @@ describe("library catalog list runtime coverage", () => {
         expect(res.body).toEqual({
             error: "Authentication required for liked playlist",
         });
+        expect(mockLikedTrackFindMany).not.toHaveBeenCalled();
+    });
+
+    it.each([
+        [
+            { cursorLikedAt: "2026-01-01T00:00:00.000Z" },
+            "cursorLikedAt and cursorTrackId must be provided together",
+        ],
+        [
+            { cursorLikedAt: "not-a-date", cursorTrackId: "track-1" },
+            "Invalid cursorLikedAt timestamp",
+        ],
+    ])("rejects a malformed liked cursor %o", async (query, error) => {
+        const res = createRes();
+
+        await likedPlaylistHandler(
+            { query, user: { id: "user-1" } } as any,
+            res,
+        );
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body).toEqual({ error });
         expect(mockLikedTrackFindMany).not.toHaveBeenCalled();
     });
 

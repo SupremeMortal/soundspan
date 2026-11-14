@@ -240,6 +240,9 @@ jest.mock("../../services/metadata/catalogPersistence", () => ({
 import router from "../library";
 import { flattenLibraryRouteLayers } from "./libraryRouteTestUtils";
 import { errorHandler } from "../../middleware/errorHandler";
+import request from "supertest";
+import { createRouteTestApp } from "./helpers/createRouteTestApp";
+import { expectClientSurfaceResponse } from "./helpers/expectClientSurfaceResponse";
 import { redisClient } from "../../utils/redis";
 import { fetchExternalImage } from "../../services/imageProxy";
 import { MAX_EXTERNAL_IMAGE_BYTES } from "../../services/imageProxy";
@@ -409,6 +412,7 @@ describe("library cover-art proxy compatibility", () => {
         expect(res.statusCode).toBe(400);
         expect(res.body).toEqual({ error: "Invalid cover art URL" });
         expect(mockFetchExternalImage).not.toHaveBeenCalled();
+        expectClientSurfaceResponse("getCoverArtByUrl", res);
     });
 
     it("serves cached not-found cover-art response without refetching", async () => {
@@ -425,6 +429,7 @@ describe("library cover-art proxy compatibility", () => {
         expect(res.statusCode).toBe(404);
         expect(res.body).toEqual({ error: "Cover art not found" });
         expect(mockFetchExternalImage).not.toHaveBeenCalled();
+        expectClientSurfaceResponse("getCoverArtByUrl", res);
     });
 
     it("negative-caches cover-art 404 responses", async () => {
@@ -1088,8 +1093,46 @@ describe("library cover-art proxy compatibility", () => {
 
         expect(res.statusCode).toBe(404);
         expect(res.body).toEqual({ error: "Cover art not found" });
+        expectClientSurfaceResponse("getCoverArt", res);
 
         existsSpy.mockRestore();
+    });
+
+    it("passes an image answer through response validation unchanged", async () => {
+        const bytes = Buffer.from([0xff, 0xd8, 0xff, 0x00, 0x01, 0x02]);
+        mockFetchExternalImage.mockResolvedValue({
+            ok: true,
+            buffer: bytes,
+            contentType: "image/jpeg",
+            etag: "etag-bytes",
+            url: "https://example.com/cover.jpg",
+        });
+        const app = createRouteTestApp("/api/library", router);
+
+        const res = await request(app)
+            .get("/api/library/cover-art")
+            .query({ url: "https://example.com/cover.jpg" })
+            .buffer(true)
+            .parse((response, done) => {
+                const chunks: Buffer[] = [];
+                response.on("data", (chunk: Buffer) => chunks.push(chunk));
+                response.on("end", () => done(null, Buffer.concat(chunks)));
+            });
+
+        expect(res.status).toBe(200);
+        expect(Buffer.compare(res.body as Buffer, bytes)).toBe(0);
+    });
+
+    it("validates a JSON error answer of the id path as ApiError", async () => {
+        mockAlbumFindUnique.mockResolvedValueOnce(null);
+        const app = createRouteTestApp("/api/library", router);
+
+        const res = await request(app).get(
+            "/api/library/cover-art/unknown-album-id",
+        );
+
+        expect(res.status).toBe(404);
+        expect(res.body).toEqual({ error: "Album not found" });
     });
 
     it("blocks invalid/private color extraction URLs", async () => {
