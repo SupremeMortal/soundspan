@@ -146,7 +146,7 @@ Flathub builds must work offline from declared sources. The manifest takes the p
 | Headers | The static host must send `Cache-Control: no-cache` for `index.html`, `flutter_bootstrap.js`, and long-lived caching for hashed assets. No COOP/COEP |
 | CSP (recommended in the container's nginx config) | `default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; connect-src *; img-src * blob: data:; media-src *; style-src 'self' 'unsafe-inline'; worker-src 'self' blob:` — `connect-src *` because the server address is chosen at run time |
 | Container | `nginx:alpine`-based image serving the bundle, running as an arbitrary UID in group 0 like the other images |
-| OIDC | Web offers password sign-in only. The server's OIDC code exchange is bound to a browser cookie set by its own login redirect; whether a same-origin Flutter build can complete that flow is evaluated in spike S6 and added only if it works without server changes |
+| OIDC | Web offers password sign-in only. The server's OIDC callback always hands its one-time exchange code to the web UI's `/login` page (`OIDC_WEB_BASE_URL` + `/login?ssoCode=…`), which redeems it at once, and `/api/auth/oidc/exchange` also requires the `httpOnly` flow-binding cookie. A Flutter build on the same origin never receives the code, so it cannot obtain its own tokens through existing endpoints |
 
 ## Deep Links Summary
 

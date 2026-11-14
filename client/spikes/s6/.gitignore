@@ -1,7 +1,0 @@
-.dart_tool/
-build/
-web/sqlite3.wasm
-web/drift_worker.js
-node_modules/
-results/
-.flutter-plugins-dependencies

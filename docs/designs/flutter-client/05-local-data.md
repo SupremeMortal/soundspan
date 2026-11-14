@@ -194,6 +194,22 @@ Runs at start-up after the first frame and when `cache.db` exceeds 64 MB: delete
 
 ## Web Storage
 
-- drift WASM: `web/sqlite3.wasm` and `web/drift_worker.js` are shipped with the build. drift chooses the best storage the browser offers. Without cross-origin isolation headers (which the design rules out because they break third-party artwork), that is the OPFS dedicated-worker mode where available and IndexedDB otherwise. Both satisfy the client's needs; verify in spike S6.
+- drift WASM: `web/sqlite3.wasm` and `web/drift_worker.js` are shipped with the build. drift chooses the best storage the browser offers. Without cross-origin isolation headers (which the design rules out because they break third-party artwork), that is OPFS through drift's shared worker in Firefox and IndexedDB through the shared worker in Chromium and Safari. Both persist across reloads and open the three databases of one profile in one tab (see Spike S6 finding).
 - `state.db` on web holds the queue snapshot, outbox, and settings. Download tables exist but stay empty.
 - Private browsing can make storage unavailable. `DatabaseOpener` falls back to an in-memory database and shows a one-time notice that nothing will be remembered.
+
+## Spike S6 finding
+
+A minimal Flutter web build opened three drift WASM databases named `app`, `p_spike_state` and `p_spike_cache` in one tab through `driftDatabase(name:, web: DriftWebOptions(...))`, served by a static server that sends no `Cross-Origin-Opener-Policy` or `Cross-Origin-Embedder-Policy` header. Each database incremented a counter row; the page was then reloaded and the counters read again.
+
+| Browser | Answer | Storage drift chose (all three databases) | Missing features reported | `crossOriginIsolated` | Counters after reload |
+|---|---|---|---|---|---|
+| Chromium 153.0.8010.12 (headless, Linux) | Yes | `sharedIndexedDb` | `dedicatedWorkersInSharedWorkers`, `sharedArrayBuffers` | false | 2, 2, 2 |
+| Firefox 155.0 (headless, Linux) | Yes | `opfsShared` | `sharedArrayBuffers` | false | 2, 2, 2 |
+| Safari 27.2 (macOS 26, through `safaridriver`) | Yes | `sharedIndexedDb` | `dedicatedWorkersInSharedWorkers`, `sharedArrayBuffers` | false | 2, 2, 2 |
+
+Package versions: Flutter 3.50.0 (Dart 3.14.0), `drift` 2.35.4, `drift_flutter` 0.3.1, `sqlite3` 3.9.1 (`sqlite3.wasm` from the `sqlite3-3.9.1` release), `drift_worker.js` from the `drift-2.35.4` release.
+
+None of the browsers fell back to `inMemory` or `unsafeIndexedDb`, so the design stands: the web `DatabaseOpener` lets drift choose, and the IndexedDB-only fallback is not needed. `opfsLocks` is never chosen without cross-origin isolation because it needs `SharedArrayBuffer`.
+
+**OIDC on the same-origin web build: no.** `redirectForResolution` in `backend/src/routes/auth/oidc.ts` sends every successful callback to `loginRedirect("ssoCode", …)`, which `webRedirectTarget` fixes to the web UI's `/login` page; `returnTo` only chooses where that page navigates afterwards. The web UI's `useOidcCodeExchange` (`frontend/app/login/page.tsx`) redeems the code at once, and `oidcExchangeHandler` takes it with a one-time `takeOnce` and requires the `httpOnly` flow-binding cookie (`hasMatchingFlowBinding`). A Flutter build on the same origin therefore never receives a code it could exchange, and the only tokens it could reach are the web UI's own entries in `localStorage`, which are not an endpoint. Web offers password sign-in only.

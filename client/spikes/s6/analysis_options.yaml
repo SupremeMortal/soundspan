@@ -1,5 +1,0 @@
-# The spike stands alone; it does not inherit the client's lint set.
-analyzer:
-  exclude:
-    - build/**
-    - web/**
