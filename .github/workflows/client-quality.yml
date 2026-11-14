@@ -95,6 +95,10 @@ jobs:
         working-directory: client
         run: dart run tool/check_imports.dart
 
+      - name: No hard-coded UI strings
+        working-directory: client
+        run: dart run tool/check_l10n.dart
+
       - name: Analyze soundspan_api
         working-directory: client/packages/soundspan_api
         run: dart analyze --fatal-infos
