@@ -845,6 +845,32 @@
         ],
         "type": "object"
       },
+      "EpisodeProgress": {
+        "additionalProperties": false,
+        "properties": {
+          "currentTime": {
+            "type": "number"
+          },
+          "isFinished": {
+            "type": "boolean"
+          },
+          "lastPlayedAt": {
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+            "type": "string"
+          },
+          "progress": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "currentTime",
+          "isFinished",
+          "lastPlayedAt",
+          "progress"
+        ],
+        "type": "object"
+      },
       "HealthStatus": {
         "additionalProperties": false,
         "properties": {
@@ -2070,6 +2096,128 @@
         ],
         "type": "object"
       },
+      "PodcastDetail": {
+        "additionalProperties": false,
+        "properties": {
+          "author": {
+            "nullable": true,
+            "type": "string"
+          },
+          "autoDownloadEpisodes": {
+            "type": "boolean"
+          },
+          "coverUrl": {
+            "nullable": true,
+            "type": "string"
+          },
+          "description": {
+            "nullable": true,
+            "type": "string"
+          },
+          "episodes": {
+            "items": {
+              "$ref": "#/components/schemas/PodcastEpisode"
+            },
+            "type": "array"
+          },
+          "feedUrl": {
+            "type": "string"
+          },
+          "genres": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "id": {
+            "type": "string"
+          },
+          "isSubscribed": {
+            "type": "boolean"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "author",
+          "autoDownloadEpisodes",
+          "coverUrl",
+          "description",
+          "episodes",
+          "feedUrl",
+          "genres",
+          "id",
+          "isSubscribed",
+          "title"
+        ],
+        "type": "object"
+      },
+      "PodcastEpisode": {
+        "additionalProperties": false,
+        "properties": {
+          "description": {
+            "nullable": true,
+            "type": "string"
+          },
+          "duration": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "episodeNumber": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "nullable": true,
+            "type": "integer"
+          },
+          "id": {
+            "type": "string"
+          },
+          "imageUrl": {
+            "nullable": true,
+            "type": "string"
+          },
+          "isDownloaded": {
+            "type": "boolean"
+          },
+          "progress": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EpisodeProgress"
+              }
+            ],
+            "nullable": true
+          },
+          "publishedAt": {
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+            "type": "string"
+          },
+          "season": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "nullable": true,
+            "type": "integer"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "description",
+          "duration",
+          "episodeNumber",
+          "id",
+          "imageUrl",
+          "isDownloaded",
+          "progress",
+          "publishedAt",
+          "season",
+          "title"
+        ],
+        "type": "object"
+      },
       "PodcastSummary": {
         "additionalProperties": false,
         "properties": {
@@ -2401,6 +2549,26 @@
         },
         "required": [
           "playbackType"
+        ],
+        "type": "object"
+      },
+      "SavedEpisodeProgress": {
+        "additionalProperties": false,
+        "properties": {
+          "currentTime": {
+            "type": "number"
+          },
+          "isFinished": {
+            "type": "boolean"
+          },
+          "progress": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "currentTime",
+          "isFinished",
+          "progress"
         ],
         "type": "object"
       },
@@ -3005,6 +3173,150 @@
         ],
         "type": "object"
       },
+      "SubscribePodcastRequest": {
+        "properties": {
+          "feedUrl": {
+            "format": "uri",
+            "type": "string"
+          },
+          "itunesId": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "SubscribePodcastResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "message": {
+            "type": "string"
+          },
+          "podcast": {
+            "$ref": "#/components/schemas/SubscribedPodcastRef"
+          },
+          "success": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "message",
+          "podcast",
+          "success"
+        ],
+        "type": "object"
+      },
+      "SubscribedPodcast": {
+        "additionalProperties": false,
+        "properties": {
+          "author": {
+            "nullable": true,
+            "type": "string"
+          },
+          "autoDownloadEpisodes": {
+            "type": "boolean"
+          },
+          "coverUrl": {
+            "nullable": true,
+            "type": "string"
+          },
+          "description": {
+            "nullable": true,
+            "type": "string"
+          },
+          "episodeCount": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "episodes": {
+            "items": {
+              "$ref": "#/components/schemas/SubscribedPodcastEpisode"
+            },
+            "type": "array"
+          },
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "author",
+          "autoDownloadEpisodes",
+          "coverUrl",
+          "description",
+          "episodeCount",
+          "episodes",
+          "id",
+          "title"
+        ],
+        "type": "object"
+      },
+      "SubscribedPodcastEpisode": {
+        "additionalProperties": false,
+        "properties": {
+          "coverUrl": {
+            "nullable": true,
+            "type": "string"
+          },
+          "description": {
+            "nullable": true,
+            "type": "string"
+          },
+          "duration": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "id": {
+            "type": "string"
+          },
+          "progress": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EpisodeProgress"
+              }
+            ],
+            "nullable": true
+          },
+          "publishedAt": {
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "coverUrl",
+          "description",
+          "duration",
+          "id",
+          "progress",
+          "publishedAt",
+          "title"
+        ],
+        "type": "object"
+      },
+      "SubscribedPodcastRef": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title"
+        ],
+        "type": "object"
+      },
       "SystemFeatures": {
         "additionalProperties": false,
         "properties": {
@@ -3245,6 +3557,56 @@
           "duration",
           "id",
           "title"
+        ],
+        "type": "object"
+      },
+      "UnsubscribePodcastResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "message": {
+            "type": "string"
+          },
+          "success": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "message",
+          "success"
+        ],
+        "type": "object"
+      },
+      "UpdateEpisodeProgressRequest": {
+        "properties": {
+          "currentTime": {
+            "type": "number"
+          },
+          "duration": {
+            "type": "number"
+          },
+          "isFinished": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "currentTime",
+          "duration"
+        ],
+        "type": "object"
+      },
+      "UpdateEpisodeProgressResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "progress": {
+            "$ref": "#/components/schemas/SavedEpisodeProgress"
+          },
+          "success": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "progress",
+          "success"
         ],
         "type": "object"
       },
@@ -6137,6 +6499,61 @@
         ]
       }
     },
+    "/api/podcasts": {
+      "get": {
+        "description": "Most recently subscribed first, each with its five latest episodes and the user's progress on them.",
+        "operationId": "listPodcasts",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SubscribedPodcast"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Podcasts the user is subscribed to",
+        "tags": [
+          "podcasts"
+        ]
+      }
+    },
     "/api/podcasts/discover/top": {
       "get": {
         "description": "`limit` defaults to 20 and is capped at 50. An empty list when the directory cannot be reached.",
@@ -6199,6 +6616,312 @@
           }
         },
         "summary": "Popular podcasts from the iTunes directory",
+        "tags": [
+          "podcasts"
+        ]
+      }
+    },
+    "/api/podcasts/subscribe": {
+      "post": {
+        "description": "One of `feedUrl` and `itunesId` is required (400 otherwise); `feedUrl` wins when both are sent. An `itunesId` the iTunes directory does not know, or knows without a feed URL, answers 404. A private or unsafe feed URL answers 400. Subscribing again answers 200 with `message` `Already subscribed`.",
+        "operationId": "subscribePodcast",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubscribePodcastRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubscribePodcastResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Subscribe to a podcast by RSS feed URL or iTunes id",
+        "tags": [
+          "podcasts"
+        ]
+      }
+    },
+    "/api/podcasts/{id}": {
+      "get": {
+        "description": "Episodes are newest first, with the user's progress and download state. A podcast the user is not subscribed to answers 404.",
+        "operationId": "getPodcast",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PodcastDetail"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "A subscribed podcast with its episodes",
+        "tags": [
+          "podcasts"
+        ]
+      }
+    },
+    "/api/podcasts/{id}/unsubscribe": {
+      "delete": {
+        "description": "Also removes the user's progress and downloads of the podcast's episodes. A podcast the user is not subscribed to answers 404.",
+        "operationId": "unsubscribePodcast",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnsubscribePodcastResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Unsubscribe from a podcast",
+        "tags": [
+          "podcasts"
+        ]
+      }
+    },
+    "/api/podcasts/{podcastId}/episodes/{episodeId}/progress": {
+      "post": {
+        "description": "`currentTime` and `duration` are in seconds; `isFinished` defaults to false. `progress` in the answer is the percentage of `duration` played.",
+        "operationId": "updateEpisodeProgress",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "podcastId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "episodeId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateEpisodeProgressRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateEpisodeProgressResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Save playback progress of a podcast episode",
         "tags": [
           "podcasts"
         ]

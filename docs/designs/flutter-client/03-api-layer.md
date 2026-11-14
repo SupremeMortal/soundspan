@@ -342,7 +342,7 @@ The complete set of server operations the client calls. This list is the **clien
 | `GET /podcasts/:podcastId/episodes/:episodeId/stream` | `Range` | audio bytes | M1 |
 | `POST /podcasts/:podcastId/episodes/:episodeId/progress` | `currentTime`, `duration`, `isFinished` | | M1 |
 | `GET /podcasts/discover/top` | `limit` | array | M1 |
-| `POST /podcasts/subscribe`, `POST /podcasts/:id/unsubscribe` | | | M1 |
+| `POST /podcasts/subscribe`, `DELETE /podcasts/:id/unsubscribe` | | | M1 |
 
 ### Home, discovery, social (M4 unless noted)
 
