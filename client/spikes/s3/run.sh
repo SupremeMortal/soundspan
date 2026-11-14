@@ -52,6 +52,10 @@ playing_now() { # mark, pid: the last tick of pid says playing=true
   ticks "$1" "$2" | tail -1 | grep -q ' true '
 }
 
+paused_now() { # mark, pid: the last tick of pid since mark says playing=false
+  ticks "$1" "$2" | tail -1 | grep -q ' false '
+}
+
 dispatch() { # play|pause, through the media session service then a key event
   local key=MEDIA_PLAY
   [ "$1" = pause ] && key=MEDIA_PAUSE
@@ -178,8 +182,12 @@ for attempt in 1 2 3; do
     wait_for 30 some_app; pid=$(app_pid)
     dispatch play; sleep 3
   fi
-  dispatch pause
+  # Pause exactly once (a second pause key can toggle playback back on) and
+  # confirm the app reports playing=false before the kill.
   m=$(mark)
+  playing_now 0 "$pid" && dispatch pause
+  paused=false
+  wait_for 10 paused_now "$m" "$pid" && paused=true
   wait_for 10 not_foreground
   fg=false; is_foreground && fg=true
   sh kill -9 "$pid"
@@ -204,11 +212,12 @@ for attempt in 1 2 3; do
     if [ -n "$ok" ]; then result=pass; break; fi
     [ -n "$new_pid" ] && break
   done
+  sleep 4
   entry=$(since "$m" | grep "pid=${new_pid:-x} " | grep 'event=tick' | field entry | grep -v pending | head -1)
+  [ "$paused" = true ] || result="$result-notpaused"
   [ "$result" = pass ] && passes=$((passes + 1))
-  details="$details run$attempt=$result(via=$via,oldPid=$pid,newPid=${new_pid:-none},entry=${entry:-none},foregroundAfterPause=$fg,selfRestart=${self_restart:-none})"
+  details="$details run$attempt=$result(via=$via,oldPid=$pid,newPid=${new_pid:-none},entry=${entry:-none},pausedBeforeKill=$paused,foregroundAfterPause=$fg,selfRestart=${self_restart:-none})"
   say "  attempt $attempt: $result"
-  sh input keyevent KEYCODE_MEDIA_PAUSE
   sleep 3
 done
 q2=no
