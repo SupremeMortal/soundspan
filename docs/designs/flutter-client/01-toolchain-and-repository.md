@@ -71,7 +71,7 @@ client/
 │   └── shared/                     # Widgets and utilities used by 2+ features
 ├── packages/
 │   ├── soundspan_api/              # Pure Dart. Transport plus models and clients generated from the server spec.
-│   └── soundspan_smtc/             # Only if spike S4 rejects smtc_windows: C++/WinRT plugin
+│   └── soundspan_smtc/             # C++/WinRT plugin for the System Media Transport Controls (spike S4)
 ├── test/                           # Mirrors lib/
 │   ├── goldens/
 │   └── helpers/                    # pumpApp, fakes, fixture loader
@@ -138,7 +138,6 @@ dependencies:
   path_provider: ^2.1.6
   riverpod_annotation: ^4.0.0
   screen_retriever: ^0.4.0       # Displays, for window-bounds restore
-  smtc_windows: ^1.1.0           # Subject to spike S4
   socket_io_client: ^3.1.6
   soundspan_api: { path: packages/soundspan_api }
   tray_manager: ^0.9.0
@@ -191,7 +190,7 @@ Every package in the design document's table was checked for release cadence and
 | Package | Finding | Action |
 |---|---|---|
 | `just_audio_media_kit` | Low release cadence; sits between the app and mpv | Dropped |
-| `smtc_windows` | Low release cadence; wraps WinRT through generated bindings | Spike S4 decides between it and an in-repo C++/WinRT plugin (`soundspan_smtc`) |
+| `smtc_windows` | Low release cadence; wraps WinRT through generated bindings | Rejected (spike S4): it builds its Rust library from source on every build (no precompiled binaries), so Windows builds need a Rust toolchain, and its `flutter_rust_bridge` runtime must equal its codegen version exactly ([06](06-playback.md#spike-s4-finding)). Replaced by the in-repo C++/WinRT plugin `soundspan_smtc` |
 | `auto_updater` | Low release cadence; wraps Sparkle and WinSparkle | Spike S7 in M5; fallback is a version check that opens the release page |
 | `sqlite3_flutter_libs` | End of life | Not referenced. `drift_flutter` brings the supported SQLite integration |
 | `openapi_generator` | Wraps the Java OpenAPI Generator, so CI and every developer machine would need a JDK | Replaced by `swagger_parser` (pure Dart), which spike S8 confirmed against the client-surface spec ([03](03-api-layer.md#spike-s8-finding)) |
