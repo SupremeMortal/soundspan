@@ -460,6 +460,21 @@ void main() {
       expect(await _subjects(), isEmpty);
     });
 
+    test('a non-font file beside the fonts needs no licence text', () async {
+      _writeFont('TurretRoad-ExtraBold.ttf', licence: 'SIL Open Font License');
+      File(p.join(_root.path, 'assets', 'fonts', 'README.md'))
+        ..createSync(recursive: true)
+        ..writeAsStringSync('# Bundled fonts');
+      expect(await _subjects(), isEmpty);
+    });
+
+    test('every font file extension is audited', () async {
+      for (final ext in ['otf', 'ttc', 'woff', 'woff2', 'TTF']) {
+        _writeFont('Family$ext-Regular.$ext');
+      }
+      expect(await _subjects(), hasLength(5));
+    });
+
     test('no assets/fonts/ passes', () async {
       expect(await _subjects(), isEmpty);
     });

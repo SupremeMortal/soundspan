@@ -32,8 +32,10 @@ client/
 ├── assets/
 │   ├── fonts/Montserrat-VariableFont_wght.ttf
 │   ├── fonts/TurretRoad-ExtraBold.ttf  # Wordmark only
+│   ├── fonts/README.md             # Source, commit and SHA-256 of each font
 │   ├── brand/                      # soundspan-mark.svg, soundspan-mark-mono.svg, tray icons
-│   └── licenses/                   # Notices for bundled native libraries (libmpv, ffmpeg)
+│   ├── licenses/                   # Notices for bundled native libraries (libmpv, ffmpeg)
+│   └── licenses/fonts/             # Montserrat.txt, TurretRoad.txt (SIL Open Font License)
 ├── lib/
 │   ├── main.dart                   # Calls bootstrap(); no logic
 │   ├── bootstrap.dart              # Zone, error hooks, logging, ProviderScope
@@ -119,6 +121,7 @@ dependencies:
   flutter_localizations: { sdk: flutter }
   flutter_riverpod: ^3.5.0
   flutter_secure_storage: ^11.2.0
+  flutter_svg: ^2.4.0             # Logo mark and other SVG glyphs
   freezed_annotation: ^3.0.0
   go_router: ^18.1.0
   intl: any
@@ -163,6 +166,7 @@ flutter:
   assets:
     - assets/brand/
     - assets/licenses/
+    - assets/licenses/fonts/
   fonts:
     - family: Montserrat
       fonts:

@@ -73,6 +73,10 @@ Montserrat variable font (SIL Open Font License), bundled as an asset; no runtim
 | `overline` | 11 / 14 | 700, +0.08 em, upper case | "NOW PLAYING", column headers |
 | `mono` | 22 / 28 | 700, platform monospace | Device-link code cells |
 
+Styles are a `ThemeExtension<SoundspanTypography>` read as `context.typography.body`, and carry no colour. Because Montserrat is a variable font, each style sets both `fontWeight` and the matching `wght` font variation. `mono` uses the family `monospace` with the fallbacks Menlo, Consolas, Roboto Mono and DejaVu Sans Mono. `TextStyle.tabular` adds tabular figures.
+
+Material `TextTheme` mapping: `displaySmall = display`, `headlineMedium = headline`, `titleLarge = title`, `titleMedium = subtitle`, `bodyLarge = body`, `bodyMedium = body`, `bodySmall = bodySmall`, `labelLarge = body` at weight 600, `labelMedium = caption`, `labelSmall = overline`. The theme's default family is Montserrat, so the roles the mapping does not name use it too.
+
 - Text scaling follows the OS setting up to 2.0×. Row heights are min-heights, grids reflow, and the player bar wraps its metadata to two lines before truncating.
 - **Wordmark:** the logo mark plus "soundspan" in Turret Road ExtraBold, lower case, as in the web UI. `Wordmark` is the only widget that uses the Turret Road family.
 - Locales whose script Montserrat lacks fall back to the platform font through `fontFamilyFallback`.

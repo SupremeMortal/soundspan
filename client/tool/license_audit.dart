@@ -322,15 +322,26 @@ _readOverrides(Directory clientRoot) {
   return (overrides: overrides, findings: findings);
 }
 
-/// Every file under `assets/fonts/` needs a non-empty
+/// Extensions of the font files the font gate audits.
+const _fontExtensions = {'.ttf', '.otf', '.ttc', '.woff', '.woff2'};
+
+/// Every font file under `assets/fonts/` needs a non-empty
 /// `assets/licenses/fonts/<Family>.txt`, where the family is the file name up
-/// to its first `-` (or its extension).
+/// to its first `-` (or its extension). Other files there, such as the
+/// README that records each font's source, are not fonts.
 List<LicenseFinding> _auditFonts(Directory clientRoot) {
   final fonts = Directory(p.join(clientRoot.path, 'assets', 'fonts'));
   if (!fonts.existsSync()) return const [];
   final findings = <LicenseFinding>[];
-  final files = fonts.listSync(recursive: true).whereType<File>().toList()
-    ..sort((a, b) => a.path.compareTo(b.path));
+  final files =
+      fonts
+          .listSync(recursive: true)
+          .whereType<File>()
+          .where(
+            (f) => _fontExtensions.contains(p.extension(f.path).toLowerCase()),
+          )
+          .toList()
+        ..sort((a, b) => a.path.compareTo(b.path));
   for (final font in files) {
     final family = p.basenameWithoutExtension(font.path).split('-').first;
     final licence = File(
