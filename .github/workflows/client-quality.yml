@@ -30,6 +30,7 @@ jobs:
       apple: ${{ steps.diff.outputs.apple }}
       api_surface: ${{ steps.diff.outputs.api_surface }}
       web_storage: ${{ steps.diff.outputs.web_storage }}
+      desktop: ${{ steps.diff.outputs.desktop }}
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -50,6 +51,7 @@ jobs:
               echo "apple=true"
               echo "api_surface=true"
               echo "web_storage=true"
+              echo "desktop=true"
             } >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -65,6 +67,7 @@ jobs:
             echo "apple=$(has '^(client/ios/|client/macos/|client/pubspec\.lock$|client/lib/platform/|\.github/workflows/client-quality\.yml$|\.github/actions/client-flutter/)')"
             echo "api_surface=$(has '^(client/packages/soundspan_api/|backend/src/routes/|backend/src/openapi/)')"
             echo "web_storage=$(has '^(client/lib/platform/|client/web/|client/integration_test/web/|client/pubspec\.lock$|\.github/workflows/client-quality\.yml$)')"
+            echo "desktop=$(has '^(client/linux/|client/windows/|client/lib/platform/desktop_shell/|client/lib/app/shell/window_state_controller\.dart$|client/integration_test/desktop/|client/tool/ci/|\.github/workflows/client-quality\.yml$)')"
           } | tee -a "$GITHUB_OUTPUT"
 
   client-analyze:
@@ -315,6 +318,55 @@ jobs:
       - name: Build Windows release
         working-directory: client
         run: flutter build windows --release --dart-define-from-file=config/dev.json
+
+      - name: Single instance
+        working-directory: client
+        shell: pwsh
+        run: tool/ci/single_instance_windows.ps1
+
+  client-desktop-linux:
+    name: client-desktop-linux
+    needs: changes
+    if: needs.changes.outputs.desktop == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # The composite action apt-installs the Linux build packages of doc 01.
+      - name: Set up Flutter
+        uses: ./.github/actions/client-flutter
+
+      - name: Install the display, window manager and D-Bus
+        run: |
+          sudo apt-get install -y --no-install-recommends \
+            xvfb openbox dbus dbus-x11 x11-utils xdotool
+
+      - name: Start a D-Bus session, Xvfb and openbox
+        run: |
+          eval "$(dbus-launch --sh-syntax)"
+          echo "DBUS_SESSION_BUS_ADDRESS=$DBUS_SESSION_BUS_ADDRESS" >> "$GITHUB_ENV"
+          Xvfb :99 -screen 0 1920x1080x24 > /tmp/xvfb.log 2>&1 &
+          echo "DISPLAY=:99" >> "$GITHUB_ENV"
+          for _ in $(seq 1 30); do
+            xdpyinfo -display :99 > /dev/null 2>&1 && break
+            sleep 1
+          done
+          DISPLAY=:99 openbox > /tmp/openbox.log 2>&1 &
+          sleep 2
+
+      - name: Desktop integration test
+        working-directory: client
+        run: flutter test integration_test/desktop/window_test.dart -d linux
+
+      - name: Build Linux release
+        working-directory: client
+        run: flutter build linux --release --dart-define-from-file=config/dev.json
+
+      - name: Single instance
+        working-directory: client
+        run: tool/ci/single_instance_linux.sh
 
   client-build-macos-ios:
     name: client-build-macos-ios
