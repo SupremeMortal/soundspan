@@ -1,8 +1,13 @@
 #include "flutter_window.h"
 
+#include <flutter/standard_method_codec.h>
+
 #include <optional>
+#include <string>
+#include <vector>
 
 #include "flutter/generated_plugin_registrant.h"
+#include "single_instance.h"
 
 FlutterWindow::FlutterWindow(const flutter::DartProject& project)
     : project_(project) {}
@@ -27,6 +32,11 @@ bool FlutterWindow::OnCreate() {
   RegisterPlugins(flutter_controller_->engine());
   SetChildContent(flutter_controller_->view()->GetNativeWindow());
 
+  single_instance_channel_ =
+      std::make_unique<flutter::MethodChannel<flutter::EncodableValue>>(
+          flutter_controller_->engine()->messenger(), kSingleInstanceChannel,
+          &flutter::StandardMethodCodec::GetInstance());
+
   flutter_controller_->engine()->SetNextFrameCallback([&]() {
     this->Show();
   });
@@ -40,6 +50,7 @@ bool FlutterWindow::OnCreate() {
 }
 
 void FlutterWindow::OnDestroy() {
+  single_instance_channel_ = nullptr;
   if (flutter_controller_) {
     flutter_controller_ = nullptr;
   }
@@ -65,6 +76,30 @@ FlutterWindow::MessageHandler(HWND hwnd, UINT const message,
     case WM_FONTCHANGE:
       flutter_controller_->engine()->ReloadSystemFonts();
       break;
+    case WM_COPYDATA: {
+      // A second instance forwarded its command line (main.cpp).
+      const auto* data = reinterpret_cast<const COPYDATASTRUCT*>(lparam);
+      if (data == nullptr || data->dwData != kSingleInstanceCopyDataId) {
+        break;
+      }
+      std::vector<std::string> args = DecodeArguments(
+          static_cast<const char*>(data->lpData), data->cbData);
+      if (::IsIconic(hwnd)) {
+        ::ShowWindow(hwnd, SW_RESTORE);
+      }
+      ::ShowWindow(hwnd, SW_SHOW);
+      ::SetForegroundWindow(hwnd);
+      if (single_instance_channel_) {
+        flutter::EncodableList list;
+        for (const std::string& arg : args) {
+          list.push_back(flutter::EncodableValue(arg));
+        }
+        single_instance_channel_->InvokeMethod(
+            kSecondInstanceMethod,
+            std::make_unique<flutter::EncodableValue>(list));
+      }
+      return TRUE;
+    }
   }
 
   return Win32Window::MessageHandler(hwnd, message, wparam, lparam);

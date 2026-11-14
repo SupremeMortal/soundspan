@@ -137,6 +137,7 @@ dependencies:
   path: ^1.9.0
   path_provider: ^2.1.6
   riverpod_annotation: ^4.0.0
+  screen_retriever: ^0.4.0       # Displays, for window-bounds restore
   smtc_windows: ^1.1.0           # Subject to spike S4
   socket_io_client: ^3.1.6
   soundspan_api: { path: packages/soundspan_api }
@@ -150,6 +151,7 @@ dev_dependencies:
   archive: ^4.7.1                # tool/gen_icons.dart (pure-Dart deflate)
   build_runner: any
   drift_dev: ^2.35.0
+  fake_async: ^1.3.3             # Timers in unit tests
   flutter_test: { sdk: flutter }
   freezed: ^4.0.0
   http_mock_adapter: any

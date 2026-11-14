@@ -108,11 +108,12 @@ The two-slot contract is the smallest surface that still gives gapless playback.
 ### `JustAudioEngine` (Android, iOS, macOS, web)
 
 - One `AudioPlayer`. `load` calls `setAudioSources([current, next?], initialIndex: 0, initialPosition: startAt)`.
-- `setNext` removes index 1 if present and adds the new source, using the player's playlist mutation calls. The current item is never touched.
+- `setNext` on Android, iOS and web removes index 1 if present and adds the new source, using the player's playlist mutation calls. The current item is never touched.
+- `setNext` on macOS reloads the playlist instead: one `setAudioSources([current, next?], initialIndex: 0, initialPosition: <current position>)` call that keeps the play intent (full-playlist loading, see Spike S1 finding). The `PlayerEngine` interface is the same on every platform.
 - Sources: `AudioSource.uri(uri, headers: headers, tag: queueItemId)` for streams and `AudioSource.file(path, tag: …)` for downloads.
 - Events: a `currentIndexStream` change from 0 to 1 with `ProcessingState.ready` is `AdvancedToNext`. The engine then removes the played item so the new current is index 0 again and waits for the controller's next `setNext`. `ProcessingState.completed` is `Completed`. `playbackEventStream` errors and `errorStream` map to `Failed`; `PlayerException.code` and the HTTP status (when available) set `kind`.
-- Gapless: ExoPlayer and AVQueuePlayer both transition between adjacent playlist items without a gap when the next item is buffered. Web is best-effort.
-- Headers on iOS and macOS are delivered by `just_audio` through a loopback proxy inside the app. The iOS `Info.plist` therefore allows local networking (`NSAllowsLocalNetworking`), which does not weaken transport security for remote hosts. Verify in spike S1.
+- Gapless: ExoPlayer (Android) and AVQueuePlayer (iOS) transition between adjacent playlist items without a gap when the next item is buffered. On macOS the transition between the two loaded items is not reliably gapless (Spike S1 finding), so the adapter keeps both items in one full-playlist load and gapless playback on a Mac is confirmed on real hardware. Web is best-effort.
+- Headers are delivered by `just_audio` through a loopback proxy inside the app (`useProxyForRequestHeaders` left at its default). Every request the player makes, range requests included, carries them (Spike S1 finding). The iOS and macOS `Info.plist` therefore allow local networking (`NSAllowsLocalNetworking`), which does not weaken transport security for remote hosts, and the macOS sandbox has `network.client` and `network.server` ([10](10-platform-integration.md)).
 - Android: `AndroidLoadControl` buffer of 30 s min, 120 s max; `androidApplyAudioAttributes: true`; `handleInterruptions: false` (the controller handles focus itself, see Audio Focus).
 
 ### `MediaKitEngine` (Windows, Linux)
@@ -318,3 +319,24 @@ The handler holds no state of its own; it renders the controller's snapshot. Thi
 ## Listen Together Hook
 
 `PlaybackController` exposes a `RemoteDriver` attachment point used by [08](08-realtime.md). While a driver is attached, queue and transport commands from the UI are routed to the driver (which sends them to the server) instead of mutating local state, and the controller applies server state as it arrives. Play reporting and playback-state sync continue unchanged.
+
+## Spike S1 finding
+
+A minimal Flutter app played a two-item playlist `[A, B]` through one `AudioPlayer` configured as above (`setAudioSources`, `AudioSource.uri` with an `X-API-Key` header). A and B are 3-second FLAC files (44.1 kHz) cut at a sample boundary from one continuous 440 Hz tone; C is a 3-second 880 Hz tone. An `HttpServer` inside the test process on `127.0.0.1` served them with Range support, rejected requests without the right key with 401 and recorded every request. Position and index were polled every 5 ms against a `Stopwatch`; the timeline is `index × duration(A) + position`, and the gap is the largest `wallClockDelta − timelineDelta` between consecutive samples within 500 ms of the index change. Each question ran five times per platform.
+
+| Platform (CI device) | 1. Gapless `[A, B]` | 2. Header on every request; wrong key fails | 3. Replace item 1 while item 0 plays |
+|---|---|---|---|
+| Android (emulator, API 34, x86_64, `google_apis`) | Yes, 5/5: gap 0.0, 5.1, 4.7, 5.1, 6.7 ms | Yes, 5/5: 2 of 2 requests per run carried the key; wrong key fails with `PlayerException` code 0 ("Source error") | Yes, 5/5: gap at the replacement ≤ 0.02 ms, no state change, C played next, one index change |
+| iOS (simulator, iPhone 16e, macOS 26 arm64 runner) | Yes, 5/5: gap 8.7, 6.7, 6.8, 6.4, 7.6 ms | Yes, 5/5: 4 of 4 requests per run (all range requests) carried the key; wrong key fails with `PlayerException` code −1013 (`NSURLErrorUserAuthenticationRequired`) | Yes, 5/5: gap at the replacement ≤ 0.08 ms, no state change, C played next, one index change |
+| macOS (macOS 26 arm64 runner) | **No**, 3/5: gap 7.8, 6.7, 113.5, 21.4, 6.4 ms | Yes, 5/5: 4 of 4 requests per run (all range requests) carried the key; wrong key fails with `PlayerException` code −1013 | Yes, 5/5: gap at the replacement ≤ 0.04 ms, no state change, C played next, one index change |
+
+In every run on every platform the processing state stayed `ready` across the transition and there was exactly one index change, 0 → 1.
+
+- The darwin implementation can deliver the index change before the position reset: the first sample with index 1 still reports the end position of A. The harness skips such a sample when measuring the gap (one sample in macOS run 4; the consecutive-sample value including it is 2871 ms). An engine reading `currentIndexStream` together with `position` must expect this ordering.
+- AVPlayer reports the duration of the 3.000-second FLAC files as 3.030 s on iOS and macOS; ExoPlayer reports 3.000 s.
+- On Android the HTTP status of a failed request is not in the `PlayerException` (code 0); on iOS and macOS the `NSURLError` code is.
+- Package versions: Flutter 3.50.0 (Dart 3.14.0), `just_audio` 0.10.6, `just_audio_platform_interface` 4.6.0, `audio_session` 0.2.4.
+- Native settings required: Android `usesCleartextTraffic` for the loopback proxy (covered by the global cleartext policy of [10](10-platform-integration.md)); iOS and macOS `NSAllowsLocalNetworking`; macOS `com.apple.security.network.client` and `com.apple.security.network.server`.
+- Whether playback is audibly gapless on a real Android device, iPhone and Mac cannot be measured on CI and is a human checklist row.
+
+Because question 1 is answered no on macOS, macOS takes the full-playlist fallback for `setNext` in `JustAudioEngine`; Android and iOS keep the playlist mutation calls.

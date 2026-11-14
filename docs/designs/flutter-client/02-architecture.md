@@ -134,7 +134,7 @@ Riverpod's scoped-provider rule applies: every provider that depends on a scoped
 2. Install error hooks: `FlutterError.onError`, `PlatformDispatcher.instance.onError`, and a guarded zone. All route to `AppLogger`. Nothing is sent off the device.
 3. Resolve `AppPaths` (`getApplicationSupportDirectory`, `getApplicationCacheDirectory`); on web this is a no-op.
 4. Open `AppDatabase` and read `AppSettings` and the active profile id.
-5. Desktop only: `windowManager.ensureInitialized()`, restore window bounds, register the tray.
+5. Desktop only: `WindowStateController.start()` attaches `DesktopShell` to the window, sets the minimum size, restores the window bounds and maximized state, and shows the window; register the tray.
 6. Create the root `ProviderContainer` with the opened database and paths as overrides.
 7. `runApp`. The router's redirect sends the user to `/connect` if there is no active profile, otherwise to the shell.
 8. After the first frame, in parallel and without blocking UI:

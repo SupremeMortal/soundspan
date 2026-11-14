@@ -7,11 +7,15 @@ import 'package:soundspan/bootstrap.dart';
 import 'package:soundspan/core/logging/app_logger.dart';
 import 'package:soundspan/core/profile/profile_providers.dart';
 import 'package:soundspan/core/profile/profile_runtime.dart';
+import 'package:soundspan/core/storage/app/app_settings_store.dart';
 import 'package:soundspan/core/storage/providers.dart';
+import 'package:soundspan/platform/capabilities/capabilities.dart';
 import 'package:soundspan/platform/database_opener/database_opener.dart';
+import 'package:soundspan/platform/desktop_shell/desktop_shell.dart';
 
 import 'core/logging/recording_sink.dart';
 import 'core/profile/profile_harness.dart' show RecordingAppPaths;
+import 'helpers/fake_desktop_shell.dart';
 import 'helpers/in_memory_database_opener.dart';
 import 'helpers/in_memory_secret_store.dart';
 import 'helpers/test_root.dart';
@@ -98,4 +102,52 @@ void main() {
     addTearDown(() => debugDefaultTargetPlatformOverride = null);
     expect(currentOsName(), 'ios');
   });
+
+  test('restoreWindow restores the saved bounds on a desktop', () async {
+    final shell = FakeDesktopShell();
+    final root = await TestRoot.create(
+      overrides: [
+        desktopShellProvider.overrideWithValue(shell),
+        platformCapabilitiesProvider.overrideWithValue(
+          PlatformCapabilities.windowsAndLinux,
+        ),
+      ],
+    );
+    addTearDown(root.dispose);
+    const saved = WindowBounds(left: 10, top: 20, width: 900, height: 700);
+    await AppSettingsStore(root.container.read(appDatabaseProvider))
+        .write(AppSettingKeys.windowBounds, saved);
+
+    await restoreWindow(root.container);
+
+    expect(shell.bounds, saved);
+    expect(shell.shown, isTrue);
+  });
+
+  test('a window that cannot be restored is logged, not thrown', () async {
+    final sink = RecordingSink();
+    AppLogging.configure(sinks: [sink], releaseMode: false);
+    addTearDown(AppLogging.reset);
+    final root = await TestRoot.create(
+      overrides: [
+        desktopShellProvider.overrideWithValue(_FailingShell()),
+        platformCapabilitiesProvider.overrideWithValue(
+          PlatformCapabilities.windowsAndLinux,
+        ),
+      ],
+    );
+    addTearDown(root.dispose);
+
+    await restoreWindow(root.container);
+
+    expect(
+      sink.entries.map((e) => (e.level, e.message)),
+      contains(('severe', 'Could not restore the window')),
+    );
+  });
+}
+
+class _FailingShell extends FakeDesktopShell {
+  @override
+  Future<void> init() async => throw StateError('no window');
 }
