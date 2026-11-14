@@ -1,0 +1,11 @@
+# Justified exceptions for tool/license_audit.dart, as a list of entries:
+#
+#   - package: <name>
+#     license: <allowed id>   # an unrecognised licence text or a missing file
+#     reason: <where the licence is stated>
+#   - package: <name>
+#     linking: dynamic        # an LGPL package whose library is linked dynamically
+#     reason: <how it is linked>
+#
+# GPL and AGPL cannot be overridden. An entry for a package that is no longer a
+# shipped dependency fails the audit.

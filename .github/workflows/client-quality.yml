@@ -99,6 +99,10 @@ jobs:
         working-directory: client
         run: dart run tool/check_l10n.dart
 
+      - name: Dependency and font licences
+        working-directory: client
+        run: dart run tool/license_audit.dart
+
       - name: Analyze soundspan_api
         working-directory: client/packages/soundspan_api
         run: dart analyze --fatal-infos

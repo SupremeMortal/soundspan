@@ -139,7 +139,7 @@ Trigger: tag `client-v*`.
 | No hard-coded UI strings | `tool/check_l10n.dart` | A literal reaches a text widget |
 | Token contrast | Unit test | A text/surface pair is under its ratio |
 | Spec is current and compatible | `client-spec` job | The committed spec differs from the backend's, or breaks compatibility with the `minServer` snapshot |
-| Dependency licences | `tool/license_audit.dart` | A dependency's licence is not on the allowlist (MIT, BSD-2/3, Apache-2.0, MPL-2.0, ISC, Zlib, LGPL for dynamically linked native libraries); GPL-only fails. Also fails when a file under `assets/fonts/` has no licence text beside it in `assets/licenses/` |
+| Dependency licences | `tool/license_audit.dart` | A dependency's licence is not on the allowlist (MIT, BSD-2/3, Apache-2.0, MPL-2.0, ISC, Zlib, LGPL for dynamically linked native libraries); GPL-only fails. The audited set is the transitive closure of the non-dev dependencies of the app and of `soundspan_api`, without Flutter SDK packages. LGPL needs a `linking: dynamic` entry in `tool/license_overrides.yaml`; an unrecognised or missing licence text needs an entry naming an allowed licence; an entry for a package outside the audited set fails. Also fails when a file under `assets/fonts/` has no non-empty licence text at `assets/licenses/fonts/<Family>.txt`, where the family is the file name up to its first `-` |
 | File size | `scripts/ci/check-file-size.mjs` | Existing thresholds, extended to Dart |
 | ARB completeness | `flutter gen-l10n` with `--required-resource-attributes` | A message lacks a description |
 

@@ -78,7 +78,8 @@ client/
 ├── tool/
 │   ├── check_imports.dart          # Layer and platform import rules
 │   ├── check_l10n.dart             # No hard-coded user-visible strings in ui/
-│   ├── license_audit.dart          # Dependency license allowlist
+│   ├── license_audit.dart          # Dependency license allowlist and font-licence gate
+│   ├── license_overrides.yaml      # Justified exceptions for license_audit.dart
 │   ├── gen.sh                      # build_runner + gen-l10n
 │   ├── gen_icons.dart              # Icon sets from the vector logo master
 │   ├── specs/                      # Client-surface spec snapshot of the minServer release
@@ -154,6 +155,7 @@ dev_dependencies:
   patrol: ^4.11.0
   riverpod_generator: ^4.0.0
   very_good_analysis: ^11.0.0
+  yaml: ^3.1.0                   # tool/license_audit.dart
 
 flutter:
   uses-material-design: true
