@@ -229,6 +229,16 @@ stays rate limited (`apiLimiter`) and returns
 - `FEDERATION_ENABLED`: `/api/federation/v1`, `/api/federation/admin`, consumer sync/health jobs, and federated playback/cover branches
 - `FEATURE_REQUESTS`: `/api/requests` (Helm value: `config.features.requests`)
 
+## Client Surface Registry
+
+The operations the Flutter client calls are described by a typed registry under `backend/src/openapi/` instead of `@openapi` comments:
+
+- Schemas are zod objects in `backend/src/openapi/schemas/` (one module per resource; `common.ts` holds `ApiError` and `standardErrors`). A schema with `.meta({ id })` becomes a named component.
+- Operations are declared with `defineOperation` in `backend/src/openapi/operations/<tag>.ts`, one module per tag, and collected by `backend/src/openapi/clientSurface.ts`.
+- `backend/src/config/swagger.ts` merges the registry over the comment-derived document served at `/api/docs.json`.
+- A registered operation has no `@openapi` comment; `backend/src/openapi/__tests__/clientSurface.test.ts` fails when one does, and when a registered operation is not mounted.
+- Nothing under `backend/src/openapi/` imports routes, services, `config.ts` or the database client, so the registry loads with an empty environment.
+
 ## Conventions
 
 - **One module per mounted prefix.** Each file here owns a single `/api/*` (or `/rest`) prefix listed above; add a new prefix as a new `camelCase` module and register it in `backend/src/index.ts` and in the table above.

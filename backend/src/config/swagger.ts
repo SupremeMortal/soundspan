@@ -7,6 +7,8 @@ import {
     BRAND_SITE_URL,
 } from "./brand";
 import { resolveAppVersion } from "./appVersion";
+import { clientSurfaceOperations } from "../openapi/clientSurface";
+import { mergeClientSurface } from "../openapi/document";
 
 const ANONYMOUS_OPERATIONS = [
     ["/api/auth/login", "post"],
@@ -220,5 +222,11 @@ function applyAnonymousSecurity(document: object): void {
     }
 }
 
-export const swaggerSpec = swaggerJsdoc(options);
+/** The document described by `@openapi` comments alone, before the registry merge. */
+export const commentDocument = swaggerJsdoc(options);
+
+export const swaggerSpec = mergeClientSurface(
+    commentDocument,
+    clientSurfaceOperations,
+);
 applyAnonymousSecurity(swaggerSpec);
