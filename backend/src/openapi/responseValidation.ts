@@ -118,7 +118,9 @@ function createResolver(operations: readonly ClientSurfaceOperation[]) {
         const routePath: unknown = req.route?.path;
         if (req.route) {
             if (typeof routePath !== "string") return undefined;
-            for (const path of toOpenApiPaths(req.baseUrl + routePath)) {
+            // A router's "/" route serves its mount path without the slash.
+            const mounted = (req.baseUrl + routePath).replace(/(.)\/$/, "$1");
+            for (const path of toOpenApiPaths(mounted)) {
                 const match = byShape.get(`${method} ${pathShape(path)}`);
                 if (match) return match;
             }

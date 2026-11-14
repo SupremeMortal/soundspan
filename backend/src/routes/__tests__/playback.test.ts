@@ -1,4 +1,3 @@
-import express from "express";
 import request from "supertest";
 
 jest.mock("../../utils/logger", () => ({
@@ -65,15 +64,29 @@ jest.mock("../../services/playback/playbackStreamInfo", () => ({
 }));
 
 import router from "../playback";
+import { createRouteTestApp } from "./helpers/createRouteTestApp";
 import { PlaybackResolutionError } from "../../services/playback/resolvePlayback";
 
 const NO_MW = { ytMusicStreamLimiter: false, ytMusicEnabledCheck: false };
 const YM_MW = { ytMusicStreamLimiter: true, ytMusicEnabledCheck: true };
 
+/** A complete stream-info body for library track `t.abc` at high quality. */
+function libraryStreamInfo() {
+    return {
+        playbackId: "t.abc",
+        contentType: "audio/mpeg",
+        codec: "mp3",
+        bitrate: 320,
+        sampleRate: 44100,
+        bitDepth: null,
+        durationMs: 215000,
+        contentLength: 8600000,
+        quality: "high",
+    };
+}
+
 function makeApp() {
-    const app = express();
-    app.use("/api/playback", router);
-    return app;
+    return createRouteTestApp("/api/playback", router);
 }
 
 beforeEach(() => {
@@ -413,6 +426,29 @@ describe("GET /api/playback/stream/:playbackId", () => {
         }
     });
 
+    it("sends a successful stream body unchanged under response validation", async () => {
+        mockResolvePlayback.mockResolvedValue({
+            kind: "t",
+            trackId: "abc",
+            quality: "original",
+            middleware: NO_MW,
+        });
+        mockStreamLibraryTrack.mockImplementation(async ({ res }: any) => {
+            res.status(200).type("audio/flac").send(Buffer.from("fLaC-bytes"));
+        });
+        const res = await request(makeApp())
+            .get("/api/playback/stream/t.abc")
+            .buffer(true)
+            .parse((stream, done) => {
+                const chunks: Buffer[] = [];
+                stream.on("data", (chunk: Buffer) => chunks.push(chunk));
+                stream.on("end", () => done(null, Buffer.concat(chunks)));
+            });
+        expect(res.status).toBe(200);
+        expect(res.headers["content-type"]).toBe("audio/flac");
+        expect((res.body as Buffer).toString()).toBe("fLaC-bytes");
+    });
+
     it("answers 502 UPSTREAM_FAILED when a stream service throws", async () => {
         mockResolvePlayback.mockResolvedValue({
             kind: "t",
@@ -658,12 +694,13 @@ describe("GET /api/playback/stream-info/:playbackId", () => {
             middleware: NO_MW,
         };
         mockResolvePlayback.mockResolvedValue(playback);
+        const info = libraryStreamInfo();
         mockGetPlaybackStreamInfo.mockImplementation(async ({ res }: any) => {
-            res.json({ playbackId: "t.abc", quality: "high" });
+            res.json(info);
         });
         const res = await request(makeApp()).get(`${url}/t.abc?quality=high`);
         expect(res.status).toBe(200);
-        expect(res.body).toEqual({ playbackId: "t.abc", quality: "high" });
+        expect(res.body).toEqual(info);
         expect(mockResolvePlayback).toHaveBeenCalledWith("user-1", {
             parsed: { kind: "t", trackId: "abc" },
             quality: "high",
@@ -687,13 +724,14 @@ describe("GET /api/playback/stream-info/:playbackId", () => {
         };
         mockResolvePlayback.mockResolvedValue(playback);
         mockGetPlaybackStreamInfo.mockImplementation(async ({ res }: any) => {
-            res.json({ playbackId: "t.abc", quality: "high" });
+            res.json(libraryStreamInfo());
         });
         const app = makeApp();
         const plain = await request(app).get(`${url}/t.abc?quality=high`);
         const unreported = await request(app).get(
             `${url}/t.abc?quality=high&report=0`,
         );
+        expect(plain.status).toBe(200);
         expect(unreported.status).toBe(plain.status);
         expect(unreported.body).toEqual(plain.body);
         expect(mockResolvePlayback.mock.calls[1]).toEqual(

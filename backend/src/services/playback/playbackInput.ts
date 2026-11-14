@@ -2,22 +2,13 @@ import { z } from "zod";
 import { prisma } from "../../utils/db";
 import { TRACK_VISIBLE_WHERE } from "../../utils/librarySorting";
 import { trackMappingService } from "../trackMappingService";
+import { PlaybackMetadata } from "../../openapi/schemas/play";
 import { parsePlaybackId } from "./playbackId";
-
-/** Display metadata a client sends with a track that may not be persisted yet. */
-const playbackMetadataSchema = z.object({
-    title: z.string().trim().min(1),
-    artist: z.string().trim().min(1),
-    album: z.string().trim().min(1),
-    durationSec: z.number().int().nonnegative(),
-    artworkUrl: z.string().trim().min(1).optional(),
-    isrc: z.string().trim().min(1).optional(),
-});
 
 /** Request shape every write endpoint accepts: `{ playbackId, metadata? }`. */
 export const playbackTrackInputSchema = z.object({
     playbackId: z.string().min(1),
-    metadata: playbackMetadataSchema.optional(),
+    metadata: PlaybackMetadata.optional(),
 });
 
 /** A validated `{ playbackId, metadata? }` request value. */
