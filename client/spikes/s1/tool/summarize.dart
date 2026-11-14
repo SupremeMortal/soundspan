@@ -60,7 +60,9 @@ void main(List<String> args) {
     ..writeln(
       '| 1. Gapless two-item playlist | ${answer(q1)} | '
       '${passes('gapless_two_items')}/${gapless.length} | gap ms: '
-      '${gaps(gapless, 'gapMs')}; index changes: '
+      '${gaps(gapless, 'gapMs')} (raw consecutive-sample ms: '
+      '${gaps(gapless, 'rawGapMs')}; stale index samples: '
+      '${gaps(gapless, 'staleSamples')}); index changes: '
       '${gaps(gapless, 'indexChanges')}; left ready: '
       '${gaps(gapless, 'leftReady')} |',
     )
@@ -76,7 +78,8 @@ void main(List<String> args) {
       '${passes('replace_next_while_playing')}/${replace.length} | replacement gap ms: '
       '${gaps(replace, 'replacementGapMs')}; state changes: '
       '${gaps(replace, 'replacementStateChanges')}; next tag: '
-      '${gaps(replace, 'nextTag')}; transition gap ms: '
+      '${gaps(replace, 'nextTag')}; index changes: '
+      '${gaps(replace, 'indexChanges', 'transition')}; transition gap ms: '
       '${gaps(replace, 'gapMs', 'transition')} |',
     )
     ..writeln()

@@ -184,3 +184,185 @@ class AppLocalizationsEn extends AppLocalizations {
   String get storageVolatileNotice =>
       'This browser is not keeping data, so nothing will be remembered after this page is closed.';
 }
+
+/// The translations for English (`en_XA`).
+class AppLocalizationsEnXa extends AppLocalizationsEn {
+  AppLocalizationsEnXa() : super('en_XA');
+
+  @override
+  String get appTitle => '[šöûñðšþåñ one]';
+
+  @override
+  String windowTitle(String screen) {
+    return '[$screen · šöûñðšþåñ one two]';
+  }
+
+  @override
+  String get navHome => '[Ĥömé one]';
+
+  @override
+  String get navSearch => '[Šéåŕçĥ one]';
+
+  @override
+  String get navLibrary => '[Ļîbŕåŕý one]';
+
+  @override
+  String get navPodcasts => '[Þöðçåšţš one]';
+
+  @override
+  String get navMainLabel => '[Måîñ ñåvîĝåţîöñ one two]';
+
+  @override
+  String get screenConnect => '[Åðð šéŕvéŕ one]';
+
+  @override
+  String get screenConnectProbe => '[Çĥéçķîñĝ šéŕvéŕ one two]';
+
+  @override
+  String get screenSignIn => '[Šîĝñ îñ one]';
+
+  @override
+  String get screenSettings => '[Šéţţîñĝš one]';
+
+  @override
+  String get screenSettingsServers => '[Šéŕvéŕš one]';
+
+  @override
+  String get screenSettingsPlayback => '[Þļåýbåçķ one]';
+
+  @override
+  String get screenSettingsStorage => '[Šţöŕåĝé one]';
+
+  @override
+  String get screenSettingsAppearance => '[Åþþéåŕåñçé one]';
+
+  @override
+  String get screenSettingsAbout => '[Åböûţ one]';
+
+  @override
+  String get screenAlbum => '[Åļbûm one]';
+
+  @override
+  String get screenArtist => '[Åŕţîšţ one]';
+
+  @override
+  String get screenPlaylist => '[Þļåýļîšţ one]';
+
+  @override
+  String get shellBack => '[Båçķ one]';
+
+  @override
+  String get shellForward => '[Föŕŵåŕð one]';
+
+  @override
+  String get shellSearchHint => '[Šéåŕçĥ one]';
+
+  @override
+  String get shellAccountMenu => '[Åççöûñţ åñð šéŕvéŕš one two]';
+
+  @override
+  String get shellMenuServers => '[Šéŕvéŕš one]';
+
+  @override
+  String get shellMenuCurrentServer => '[Çûŕŕéñţ šéŕvéŕ one two]';
+
+  @override
+  String get shellMenuAddServer => '[Åðð šéŕvéŕ one]';
+
+  @override
+  String get shellMenuSettings => '[Šéţţîñĝš one]';
+
+  @override
+  String get settingsThemeTitle => '[Ţĥémé one]';
+
+  @override
+  String get settingsThemeSystem => '[Šýšţém one]';
+
+  @override
+  String get settingsThemeDark => '[Ðåŕķ one]';
+
+  @override
+  String get settingsThemeLight => '[Ļîĝĥţ one]';
+
+  @override
+  String get settingsLanguageTitle => '[Ļåñĝûåĝé one]';
+
+  @override
+  String get settingsLanguageSystem => '[Šýšţém ðéfåûļţ one two]';
+
+  @override
+  String get settingsLanguageName => '[Éñĝļîšĥ one]';
+
+  @override
+  String get settingsServersAdd => '[Åðð šéŕvéŕ one]';
+
+  @override
+  String get settingsServersSwitch => '[Šŵîţçĥ one]';
+
+  @override
+  String get settingsServersRename => '[Ŕéñåmé one]';
+
+  @override
+  String get settingsServersOpenAdmin => '[Öþéñ šéŕvéŕ åðmîñ one two]';
+
+  @override
+  String get settingsServersStateActive => '[Åçţîvé one]';
+
+  @override
+  String get settingsServersStateSignedOut => '[Šîĝñéð öûţ one]';
+
+  @override
+  String settingsServersAccount(String username, String host) {
+    return '[$username öñ $host one]';
+  }
+
+  @override
+  String settingsServersVersion(String version) {
+    return '[Šéŕvéŕ véŕšîöñ $version one two]';
+  }
+
+  @override
+  String get settingsServersVersionUnknown =>
+      '[Šéŕvéŕ véŕšîöñ ñöţ ķñöŵñ ýéţ one two three]';
+
+  @override
+  String get settingsServersRenameTitle => '[Ŕéñåmé šéŕvéŕ one two]';
+
+  @override
+  String get settingsServersRenameLabel => '[Ñåmé one]';
+
+  @override
+  String get settingsServersRenameSave => '[Šåvé one]';
+
+  @override
+  String get commonCancel => '[Çåñçéļ one]';
+
+  @override
+  String get localDataTooNewTitle =>
+      '[Ţĥîš ðåţå ŵåš ŵŕîţţéñ bý å ñéŵéŕ véŕšîöñ öf ţĥé åþþ one two three four five]';
+
+  @override
+  String get localDataTooNewBody =>
+      '[Ûþðåţé ţĥé åþþ ţö ķééþ ûšîñĝ ţĥîš ðåţå, ŕéšéţ ţĥîš šéŕvéŕ’š ļöçåļ ðåţå, öŕ šŵîţçĥ ţö åñöţĥéŕ šéŕvéŕ. one two three four five six seven eight]';
+
+  @override
+  String get localDataTooNewReset =>
+      '[Ŕéšéţ ţĥîš šéŕvéŕ’š ļöçåļ ðåţå one two three]';
+
+  @override
+  String get localDataTooNewSwitch => '[Šŵîţçĥ šéŕvéŕ one two]';
+
+  @override
+  String get localDataTooNewConfirmTitle => '[Ŕéšéţ ļöçåļ ðåţå? one two]';
+
+  @override
+  String get localDataTooNewConfirmBody =>
+      '[Ţĥé qûéûé, þéñðîñĝ çĥåñĝéš åñð ðöŵñļöåðš öf ţĥîš šéŕvéŕ åŕé ðéļéţéð fŕöm ţĥîš ðévîçé. Ýöûŕ ļîbŕåŕý öñ ţĥé šéŕvéŕ îš ñöţ çĥåñĝéð. one two three four five six seven eight nine ten one]';
+
+  @override
+  String get localDataTooNewConfirmReset => '[Ŕéšéţ one]';
+
+  @override
+  String get storageVolatileNotice =>
+      '[Ţĥîš bŕöŵšéŕ îš ñöţ ķééþîñĝ ðåţå, šö ñöţĥîñĝ ŵîļļ bé ŕémémbéŕéð åfţéŕ ţĥîš þåĝé îš çļöšéð. one two three four five six seven eight]';
+}

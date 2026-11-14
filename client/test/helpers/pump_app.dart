@@ -39,6 +39,11 @@ extension PumpApp on WidgetTester {
   /// [InMemoryDatabaseOpener] and the secret store an [InMemorySecretStore];
   /// [overrides] are applied after the defaults and
   /// win over them.
+  ///
+  /// [locale] picks the app's messages when the app has them (`en`,
+  /// `en_XA`). For a locale it has none for, such as `ar`, the framework's
+  /// own localizations and text direction are that locale's and the app's
+  /// messages fall back to English: pass `Locale('ar')` for right to left.
   Future<ProviderContainer> pumpApp(
     Widget child, {
     Size size = TestSizes.compact,
@@ -75,6 +80,7 @@ extension PumpApp on WidgetTester {
     );
     addTearDown(container.dispose);
 
+    final appHasLocale = AppLocalizations.delegate.isSupported(locale);
     await pumpWidget(
       UncontrolledProviderScope(
         container: container,
@@ -86,12 +92,35 @@ extension PumpApp on WidgetTester {
           highContrastDarkTheme: SoundspanTheme.darkHighContrast,
           themeMode: theme,
           locale: locale,
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: appHasLocale
+              ? AppLocalizations.localizationsDelegates
+              : [
+                  const _EnglishMessagesDelegate(),
+                  ...GlobalMaterialLocalizations.delegates,
+                ],
+          supportedLocales: [
+            ...AppLocalizations.supportedLocales,
+            if (!appHasLocale) locale,
+          ],
           home: child,
         ),
       ),
     );
     return container;
   }
+}
+
+/// Loads the English app messages for any locale.
+class _EnglishMessagesDelegate extends LocalizationsDelegate<AppLocalizations> {
+  const new();
+
+  @override
+  bool isSupported(Locale locale) => true;
+
+  @override
+  Future<AppLocalizations> load(Locale locale) =>
+      AppLocalizations.delegate.load(const Locale('en'));
+
+  @override
+  bool shouldReload(_EnglishMessagesDelegate old) => false;
 }
