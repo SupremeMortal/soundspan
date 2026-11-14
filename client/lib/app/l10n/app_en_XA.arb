@@ -1,0 +1,245 @@
+{
+  "@@locale": "en_XA",
+  "appTitle": "[šöûñðšþåñ one]",
+  "@appTitle": {
+    "description": "The application name, shown as the window and task-switcher title and on the start screen."
+  },
+  "windowTitle": "[{screen} · šöûñðšþåñ one two]",
+  "@windowTitle": {
+    "description": "The window or browser tab title: the current screen's name followed by the application name.",
+    "placeholders": {
+      "screen": {
+        "type": "String",
+        "example": "Home"
+      }
+    }
+  },
+  "navHome": "[Ĥömé one]",
+  "@navHome": {
+    "description": "Navigation destination and screen name: the home screen."
+  },
+  "navSearch": "[Šéåŕçĥ one]",
+  "@navSearch": {
+    "description": "Navigation destination and screen name: the search screen."
+  },
+  "navLibrary": "[Ļîbŕåŕý one]",
+  "@navLibrary": {
+    "description": "Navigation destination and screen name: the user's library."
+  },
+  "navPodcasts": "[Þöðçåšţš one]",
+  "@navPodcasts": {
+    "description": "Navigation destination and screen name: podcasts."
+  },
+  "navMainLabel": "[Måîñ ñåvîĝåţîöñ one two]",
+  "@navMainLabel": {
+    "description": "Accessibility label of the group holding the main navigation destinations."
+  },
+  "screenConnect": "[Åðð šéŕvéŕ one]",
+  "@screenConnect": {
+    "description": "Screen name: entering the address of a server to add."
+  },
+  "screenConnectProbe": "[Çĥéçķîñĝ šéŕvéŕ one two]",
+  "@screenConnectProbe": {
+    "description": "Screen name: the app is contacting the server the user entered."
+  },
+  "screenSignIn": "[Šîĝñ îñ one]",
+  "@screenSignIn": {
+    "description": "Screen name: signing in to a server."
+  },
+  "screenSettings": "[Šéţţîñĝš one]",
+  "@screenSettings": {
+    "description": "Screen name: the settings screen."
+  },
+  "screenSettingsServers": "[Šéŕvéŕš one]",
+  "@screenSettingsServers": {
+    "description": "Screen name: the settings page listing the user's servers."
+  },
+  "screenSettingsPlayback": "[Þļåýbåçķ one]",
+  "@screenSettingsPlayback": {
+    "description": "Screen name: the playback settings page."
+  },
+  "screenSettingsStorage": "[Šţöŕåĝé one]",
+  "@screenSettingsStorage": {
+    "description": "Screen name: the storage settings page."
+  },
+  "screenSettingsAppearance": "[Åþþéåŕåñçé one]",
+  "@screenSettingsAppearance": {
+    "description": "Screen name: the appearance settings page."
+  },
+  "screenSettingsAbout": "[Åböûţ one]",
+  "@screenSettingsAbout": {
+    "description": "Screen name: the about page."
+  },
+  "screenAlbum": "[Åļbûm one]",
+  "@screenAlbum": {
+    "description": "Screen name: the detail screen of one album."
+  },
+  "screenArtist": "[Åŕţîšţ one]",
+  "@screenArtist": {
+    "description": "Screen name: the detail screen of one artist."
+  },
+  "screenPlaylist": "[Þļåýļîšţ one]",
+  "@screenPlaylist": {
+    "description": "Screen name: the detail screen of one playlist."
+  },
+  "shellBack": "[Båçķ one]",
+  "@shellBack": {
+    "description": "Top bar button: go back in the current navigation destination."
+  },
+  "shellForward": "[Föŕŵåŕð one]",
+  "@shellForward": {
+    "description": "Top bar button: re-open the screen most recently left with Back."
+  },
+  "shellSearchHint": "[Šéåŕçĥ one]",
+  "@shellSearchHint": {
+    "description": "Placeholder and accessibility label of the search field in the top bar."
+  },
+  "shellAccountMenu": "[Åççöûñţ åñð šéŕvéŕš one two]",
+  "@shellAccountMenu": {
+    "description": "Tooltip and accessibility label of the avatar button that opens the account menu with the server switcher."
+  },
+  "shellMenuServers": "[Šéŕvéŕš one]",
+  "@shellMenuServers": {
+    "description": "Heading of the server list in the account menu."
+  },
+  "shellMenuCurrentServer": "[Çûŕŕéñţ šéŕvéŕ one two]",
+  "@shellMenuCurrentServer": {
+    "description": "Accessibility label of the mark next to the server the app is showing, in the account menu and in the Servers settings."
+  },
+  "shellMenuAddServer": "[Åðð šéŕvéŕ one]",
+  "@shellMenuAddServer": {
+    "description": "Account menu entry: add another server."
+  },
+  "shellMenuSettings": "[Šéţţîñĝš one]",
+  "@shellMenuSettings": {
+    "description": "Account menu entry: open the settings."
+  },
+  "settingsThemeTitle": "[Ţĥémé one]",
+  "@settingsThemeTitle": {
+    "description": "Heading of the theme choice in the Appearance settings."
+  },
+  "settingsThemeSystem": "[Šýšţém one]",
+  "@settingsThemeSystem": {
+    "description": "Theme choice: follow the device’s light or dark setting."
+  },
+  "settingsThemeDark": "[Ðåŕķ one]",
+  "@settingsThemeDark": {
+    "description": "Theme choice: always dark."
+  },
+  "settingsThemeLight": "[Ļîĝĥţ one]",
+  "@settingsThemeLight": {
+    "description": "Theme choice: always light."
+  },
+  "settingsLanguageTitle": "[Ļåñĝûåĝé one]",
+  "@settingsLanguageTitle": {
+    "description": "Heading of the language choice in the Appearance settings."
+  },
+  "settingsLanguageSystem": "[Šýšţém ðéfåûļţ one two]",
+  "@settingsLanguageSystem": {
+    "description": "Language choice: use the device’s language."
+  },
+  "settingsLanguageName": "[Éñĝļîšĥ one]",
+  "@settingsLanguageName": {
+    "description": "The name of this language written in this language, shown in the language choice."
+  },
+  "settingsServersAdd": "[Åðð šéŕvéŕ one]",
+  "@settingsServersAdd": {
+    "description": "Servers settings action: add another server."
+  },
+  "settingsServersSwitch": "[Šŵîţçĥ one]",
+  "@settingsServersSwitch": {
+    "description": "Servers settings action: make this server the one the app shows."
+  },
+  "settingsServersRename": "[Ŕéñåmé one]",
+  "@settingsServersRename": {
+    "description": "Servers settings action: change the name shown for this server."
+  },
+  "settingsServersOpenAdmin": "[Öþéñ šéŕvéŕ åðmîñ one two]",
+  "@settingsServersOpenAdmin": {
+    "description": "Servers settings action, shown to administrators: open the server’s administration page in the browser."
+  },
+  "settingsServersStateActive": "[Åçţîvé one]",
+  "@settingsServersStateActive": {
+    "description": "State of a server profile: signed in."
+  },
+  "settingsServersStateSignedOut": "[Šîĝñéð öûţ one]",
+  "@settingsServersStateSignedOut": {
+    "description": "State of a server profile: signed out; its data is kept."
+  },
+  "settingsServersAccount": "[{username} öñ {host} one]",
+  "@settingsServersAccount": {
+    "description": "The user name and server host of a server profile.",
+    "placeholders": {
+      "username": {
+        "type": "String",
+        "example": "ada"
+      },
+      "host": {
+        "type": "String",
+        "example": "music.example.com"
+      }
+    }
+  },
+  "settingsServersVersion": "[Šéŕvéŕ véŕšîöñ {version} one two]",
+  "@settingsServersVersion": {
+    "description": "The server version seen when the app last checked.",
+    "placeholders": {
+      "version": {
+        "type": "String",
+        "example": "1.4.0"
+      }
+    }
+  },
+  "settingsServersVersionUnknown": "[Šéŕvéŕ véŕšîöñ ñöţ ķñöŵñ ýéţ one two three]",
+  "@settingsServersVersionUnknown": {
+    "description": "Shown instead of the server version before the app has checked it."
+  },
+  "settingsServersRenameTitle": "[Ŕéñåmé šéŕvéŕ one two]",
+  "@settingsServersRenameTitle": {
+    "description": "Title of the dialog that renames a server."
+  },
+  "settingsServersRenameLabel": "[Ñåmé one]",
+  "@settingsServersRenameLabel": {
+    "description": "Label of the name field in the rename dialog."
+  },
+  "settingsServersRenameSave": "[Šåvé one]",
+  "@settingsServersRenameSave": {
+    "description": "Rename dialog button: store the new name."
+  },
+  "commonCancel": "[Çåñçéļ one]",
+  "@commonCancel": {
+    "description": "Dialog button: close without changing anything."
+  },
+  "localDataTooNewTitle": "[Ţĥîš ðåţå ŵåš ŵŕîţţéñ bý å ñéŵéŕ véŕšîöñ öf ţĥé åþþ one two three four five]",
+  "@localDataTooNewTitle": {
+    "description": "Title of the screen shown when this server’s data on the device was written by a newer app version."
+  },
+  "localDataTooNewBody": "[Ûþðåţé ţĥé åþþ ţö ķééþ ûšîñĝ ţĥîš ðåţå, ŕéšéţ ţĥîš šéŕvéŕ’š ļöçåļ ðåţå, öŕ šŵîţçĥ ţö åñöţĥéŕ šéŕvéŕ. one two three four five six seven eight]",
+  "@localDataTooNewBody": {
+    "description": "Explanation on the screen shown when this server’s data on the device was written by a newer app version."
+  },
+  "localDataTooNewReset": "[Ŕéšéţ ţĥîš šéŕvéŕ’š ļöçåļ ðåţå one two three]",
+  "@localDataTooNewReset": {
+    "description": "Button: delete this server’s data on the device and start fresh, after a confirmation."
+  },
+  "localDataTooNewSwitch": "[Šŵîţçĥ šéŕvéŕ one two]",
+  "@localDataTooNewSwitch": {
+    "description": "Button: open the server list to show another server."
+  },
+  "localDataTooNewConfirmTitle": "[Ŕéšéţ ļöçåļ ðåţå? one two]",
+  "@localDataTooNewConfirmTitle": {
+    "description": "Title of the confirmation before this server’s data on the device is deleted."
+  },
+  "localDataTooNewConfirmBody": "[Ţĥé qûéûé, þéñðîñĝ çĥåñĝéš åñð ðöŵñļöåðš öf ţĥîš šéŕvéŕ åŕé ðéļéţéð fŕöm ţĥîš ðévîçé. Ýöûŕ ļîbŕåŕý öñ ţĥé šéŕvéŕ îš ñöţ çĥåñĝéð. one two three four five six seven eight nine ten one]",
+  "@localDataTooNewConfirmBody": {
+    "description": "Body of the confirmation before this server’s data on the device is deleted."
+  },
+  "localDataTooNewConfirmReset": "[Ŕéšéţ one]",
+  "@localDataTooNewConfirmReset": {
+    "description": "Confirmation button: delete this server’s data on the device."
+  },
+  "storageVolatileNotice": "[Ţĥîš bŕöŵšéŕ îš ñöţ ķééþîñĝ ðåţå, šö ñöţĥîñĝ ŵîļļ bé ŕémémbéŕéð åfţéŕ ţĥîš þåĝé îš çļöšéð. one two three four five six seven eight]",
+  "@storageVolatileNotice": {
+    "description": "One-time notice on the web when the browser offers no lasting storage, for example in private browsing."
+  }
+}

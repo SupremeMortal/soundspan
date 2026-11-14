@@ -2,6 +2,7 @@
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:soundspan/app/l10n/app_locales.dart';
 import 'package:soundspan/app/l10n/generated/app_localizations.dart';
 import 'package:soundspan/app/router/routes.dart';
 import 'package:soundspan/app/theme/theme.dart';
@@ -61,7 +62,7 @@ class SoundspanApp extends ConsumerWidget {
           VolatileStorageNotice(child: child ?? const SizedBox.shrink()),
       onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
+      supportedLocales: ref.watch(appLocalesProvider),
       locale: ref.watch(localeSettingProvider).value,
       theme: SoundspanTheme.light,
       darkTheme: SoundspanTheme.dark,

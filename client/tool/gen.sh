@@ -20,4 +20,6 @@ dart run drift_dev schema steps drift_schemas/state/ lib/core/storage/state/stat
 dart run drift_dev schema generate drift_schemas/state/ test/core/storage/generated_migrations/state/
 # cache.db is recreated, not migrated: only the dump, no migration helpers.
 dart run drift_dev schema dump lib/core/storage/cache/cache_database.dart drift_schemas/cache/
+# The en_XA pseudo-locale ARB is generated from the English template.
+dart run tool/gen_pseudo_locale.dart
 flutter gen-l10n
