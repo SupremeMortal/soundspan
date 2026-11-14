@@ -54,6 +54,28 @@ Release builds use `config/release.json`:
 | Windows | `flutter build windows --dart-define-from-file=config/release.json` |
 | Web | `flutter build web --dart-define-from-file=config/release.json` |
 
+The release artifacts are built by the reusable workflow
+`.github/workflows/client-build.yml` with these commands, run in `client/`
+with `VERSION` (for example `0.1.0`) and `BUILD_NUMBER` set:
+
+```bash
+args=(--release --build-name "$VERSION" --build-number "$BUILD_NUMBER" --dart-define-from-file=config/release.json)
+flutter build apk "${args[@]}"                      # universal, debug-key signed
+flutter build linux "${args[@]}"                    # on Ubuntu 22.04
+flutter build windows "${args[@]}"
+flutter build macos "${args[@]}"                    # universal, ad-hoc signed
+flutter build web --base-href /app/ "${args[@]}"
+```
+
+Each output is packed as `soundspan-<version>-<target>` (see the workflow).
+To check a directory of release files and write `SHA256SUMS`:
+
+```bash
+dart run tool/release/check_artifacts.dart --dir <dir> --version "$VERSION" --write-sums
+```
+
+Without `--write-sums` it verifies the existing `SHA256SUMS`.
+
 ## Web database files
 
 The web build runs its drift databases through two files in `web/`, taken
