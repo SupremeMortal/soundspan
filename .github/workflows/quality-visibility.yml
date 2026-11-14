@@ -570,6 +570,9 @@ jobs:
       - name: Check OpenAPI route sync
         run: npm --prefix backend test -- --maxWorkers=2 src/config/__tests__/openapiRouteSync.test.ts
 
+      - name: Client-surface spec is current
+        run: npm run check:client-spec
+
       - name: Install frontend dependencies
         working-directory: frontend
         run: npm ci

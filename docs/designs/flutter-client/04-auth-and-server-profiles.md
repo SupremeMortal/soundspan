@@ -48,7 +48,7 @@ Uniqueness: `(baseUrl, userId)`. Adding the same pair again updates the existing
 | `p/<profileId>/access` | Access JWT (stored so a cold start does not need a refresh round-trip) |
 | `p/<profileId>/apikey` | API key |
 
-`flutter_secure_storage` options: Android `encryptedSharedPreferences: true`; iOS and macOS `accessibility: first_unlock_this_device` (background playback after a reboot needs the key before the first foreground, and it must not migrate to another device); Linux libsecret; Windows Credential Manager. On web the implementation keeps tokens in memory and mirrors them to `sessionStorage` so a reload keeps the session; nothing is written to `localStorage`.
+`flutter_secure_storage` options: Android uses the plugin's default storage (AES-GCM with an RSA-OAEP key wrapped in the Android Keystore; the plugin removed `encryptedSharedPreferences` in its version 11 and migrates any data stored that way); iOS and macOS `accessibility: first_unlock_this_device` (background playback after a reboot needs the key before the first foreground, and it must not migrate to another device); Linux libsecret; Windows Credential Manager. A `PlatformException` from the plugin surfaces as `SecretStoreUnavailable`. On web the implementation keeps tokens in memory and mirrors them to `sessionStorage` so a reload keeps the session; nothing is written to `localStorage`. A new web store loads the `sessionStorage` entries whose key starts with `p/`, and when `sessionStorage` throws the store keeps working from memory.
 
 Deleting a profile deletes its three keys, its directory tree, and its row, in that order.
 
@@ -217,6 +217,6 @@ class ServerCapabilities {
 ## Multiple Profiles
 
 - `Settings → Servers` lists profiles ordered by `lastUsedAt`, with state, server version, and storage used.
-- Switching: `ProfileRuntime.switchTo(id)` pauses playback, awaits disposal of the old profile container (databases closed, socket closed, downloader tasks of the old profile left running in the OS and re-attached when that profile is active again), then creates the new container. The UI shows a 150 ms cross-fade; nothing from the old profile is readable during or after it.
+- Switching: `ProfileRuntime.switchTo(id)` pauses playback, awaits disposal of the old profile container (databases closed, socket closed, downloader tasks of the old profile left running in the OS and re-attached when that profile is active again), then creates the new container. The old profile's UI is removed when the switch starts and the new one fades in over 150 ms (no animation with reduced motion); nothing from the old profile is readable during or after it.
 - Downloads of an inactive profile continue in the OS scheduler on mobile; their completion callbacks are queued in `state.db` of that profile by a small root-scope handler that opens the database only long enough to record the result.
 - Deep links that name a server (`soundspan://link?server=`) match an existing profile by normalized base URL before offering to add a new one.

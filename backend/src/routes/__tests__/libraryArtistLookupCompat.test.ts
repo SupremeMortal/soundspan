@@ -177,6 +177,7 @@ import { resolveAlbumCover } from "../../services/metadata/albumCoverResolver";
 import { dataCacheService } from "../../services/dataCache";
 import { musicBrainzService } from "../../services/musicbrainz";
 import { redisClient } from "../../utils/redis";
+import { withClientSurfaceValidation } from "./helpers/expectClientSurfaceResponse";
 
 const mockArtistFindFirst = prisma.artist.findFirst as jest.Mock;
 const mockPlayGroupBy = prisma.play.groupBy as jest.Mock;
@@ -230,7 +231,10 @@ function createMockArtist(name = "AC/DC") {
 }
 
 describe("library artist lookup compatibility", () => {
-    const artistHandler = getGetHandler("/artists/:id");
+    const artistHandler = withClientSurfaceValidation(
+        "getArtist",
+        getGetHandler("/artists/:id"),
+    );
 
     beforeEach(() => {
         jest.clearAllMocks();
@@ -458,6 +462,9 @@ describe("library artist lookup compatibility", () => {
                         {
                             id: "track-1",
                             title: "Owned Track",
+                            duration: 245,
+                            trackNo: 1,
+                            discNo: 1,
                             album: {
                                 id: "album-1",
                                 title: "Owned Album",
@@ -531,6 +538,9 @@ describe("library artist lookup compatibility", () => {
                             {
                                 id: "track-remaster",
                                 title: libraryTitle,
+                                duration: 245,
+                                trackNo: 1,
+                                discNo: 1,
                                 album: {
                                     id: "album-1",
                                     title: "Owned Album",
@@ -589,7 +599,9 @@ describe("library artist lookup compatibility", () => {
             albums: [
                 {
                     id: "album-deluxe",
+                    artistId: "artist-1",
                     title: "Album (Deluxe Edition)",
+                    year: 2011,
                     rgMbid: "rg-owned-deluxe",
                     coverUrl: "owned-cover.jpg",
                     location: "LIBRARY",

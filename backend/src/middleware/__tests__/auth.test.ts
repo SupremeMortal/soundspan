@@ -57,6 +57,7 @@ type TestRequest = {
     headers: Record<string, unknown>;
     query: Record<string, unknown>;
     user?: { id: string; username: string; role: string };
+    apiKeyId?: string;
 };
 
 function createReq(overrides: Record<string, unknown> = {}) {
@@ -290,6 +291,101 @@ describe("auth middleware", () => {
             expect(next).toHaveBeenCalledTimes(1);
         });
 
+        it("exposes the authenticating API key id on the request", async () => {
+            mockApiKeyFindUnique.mockResolvedValue({
+                id: "key-self",
+                createdAt: new Date(),
+                user: { id: "u2", username: "api-user", role: "user" },
+            });
+
+            const req = createReq({ headers: { "x-api-key": "abc123" } });
+            const next = jest.fn();
+
+            await requireAuth(
+                asRequest(req),
+                asResponse(createRes()),
+                asNext(next),
+            );
+
+            expect(next).toHaveBeenCalledTimes(1);
+            expect(req.apiKeyId).toBe("key-self");
+        });
+
+        it("leaves the API key id unset for bearer authentication", async () => {
+            mockJwtVerify.mockReturnValue({ userId: "u3", tokenVersion: 2 });
+            mockUserFindUnique.mockResolvedValue({
+                id: "u3",
+                username: "jwt-user",
+                role: "user",
+                tokenVersion: 2,
+            });
+
+            const req = createReq({
+                headers: { authorization: "Bearer access-token" },
+            });
+            const next = jest.fn();
+
+            await requireAuth(
+                asRequest(req),
+                asResponse(createRes()),
+                asNext(next),
+            );
+
+            expect(next).toHaveBeenCalledTimes(1);
+            expect(req.apiKeyId).toBeUndefined();
+        });
+
+        it("leaves the API key id unset when an unknown key falls back to a valid bearer token", async () => {
+            mockApiKeyFindUnique.mockResolvedValue(null);
+            mockJwtVerify.mockReturnValue({ userId: "u3", tokenVersion: 2 });
+            mockUserFindUnique.mockResolvedValue({
+                id: "u3",
+                username: "jwt-user",
+                role: "user",
+                tokenVersion: 2,
+            });
+
+            const req = createReq({
+                headers: {
+                    "x-api-key": "unknown-key",
+                    authorization: "Bearer access-token",
+                },
+            });
+            const next = jest.fn();
+
+            await requireAuth(
+                asRequest(req),
+                asResponse(createRes()),
+                asNext(next),
+            );
+
+            expect(next).toHaveBeenCalledTimes(1);
+            expect(req.user).toEqual({
+                id: "u3",
+                username: "jwt-user",
+                role: "user",
+            });
+            expect(req.apiKeyId).toBeUndefined();
+        });
+
+        it("answers 401 for an API key whose record no longer exists", async () => {
+            mockApiKeyFindUnique.mockResolvedValue(null);
+
+            const req = createReq({ headers: { "x-api-key": "revoked-key" } });
+            const res = createRes();
+            const next = jest.fn();
+
+            await requireAuth(asRequest(req), asResponse(res), asNext(next));
+
+            expect(next).not.toHaveBeenCalled();
+            expect(req.apiKeyId).toBeUndefined();
+            expect(res.statusCode).toBe(401);
+            expect(res.body).toEqual({
+                error: "Not authenticated",
+                code: "AUTH_REQUIRED",
+            });
+        });
+
         it("rejects an API key after its bounded lifetime", async () => {
             mockApiKeyFindUnique.mockResolvedValue({
                 id: "expired-key",
@@ -443,6 +539,26 @@ describe("auth middleware", () => {
             });
         });
 
+        it("exposes the authenticating API key id on the request", async () => {
+            mockApiKeyFindUnique.mockResolvedValue({
+                id: "stream-key",
+                createdAt: new Date(),
+                user: { id: "u2", username: "api-user", role: "user" },
+            });
+
+            const req = createReq({ headers: { "x-api-key": "abc123" } });
+            const next = jest.fn();
+
+            await requireAuthOrToken(
+                asRequest(req),
+                asResponse(createRes()),
+                asNext(next),
+            );
+
+            expect(next).toHaveBeenCalledTimes(1);
+            expect(req.apiKeyId).toBe("stream-key");
+        });
+
         it("accepts query param tokens for streaming routes", async () => {
             mockJwtVerify.mockReturnValue({
                 userId: "stream-user",
@@ -478,6 +594,7 @@ describe("auth middleware", () => {
                 role: "user",
             });
             expect(next).toHaveBeenCalledTimes(1);
+            expect(req.apiKeyId).toBeUndefined();
         });
 
         it("rejects stale query tokens after tokenVersion changes", async () => {

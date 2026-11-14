@@ -79,29 +79,46 @@ Two provider scopes.
 | `activeProfileIdProvider` | `Notifier<String?>` | Persisted in app settings |
 | `appSettingsProvider` | `AppSettings` | Theme mode, locale |
 | `reachabilityProvider` | `ReachabilityController` | See [07](07-offline-and-downloads.md) |
-| `appLoggerProvider` | `AppLogger` | |
+| `appLoggerProvider` | `AppLogger` | `Provider.family` keyed by scope: `ref.read(appLoggerProvider('Downloads'))` |
 
 **Profile scope** (one per signed-in profile; rebuilt when the active profile changes):
 
 ```dart
-/// Throws if read outside a ProfileScope.
-@Riverpod(keepAlive: true, dependencies: [])
-ProfileContext profileContext(Ref ref) => throw UnimplementedError();
+/// Throws if read outside a profile scope. ProfileRuntime overrides it in
+/// each profile container.
+final profileContextProvider = Provider<ProfileContext>(
+  (ref) => throw StateError('read outside a profile scope'),
+  dependencies: const [],
+);
 
 class ProfileScope extends ConsumerWidget {
-  const ProfileScope({required this.profile, required this.child, super.key});
+  const ProfileScope({required this.child, super.key});
   @override
-  Widget build(BuildContext context, WidgetRef ref) => ProviderScope(
-        key: ValueKey(profile.id),               // new key ⇒ old container disposed
-        overrides: [profileContextProvider.overrideWithValue(ProfileContext(profile))],
-        child: child,
-      );
+  Widget build(BuildContext context, WidgetRef ref) {
+    final runtime = ref.watch(profileRuntimeProvider);
+    return ValueListenableBuilder(
+      valueListenable: runtime.state,
+      builder: (context, state, _) => AnimatedSwitcher(   // 150 ms fade-in; none with reduced motion
+        child: state is ProfileRuntimeActive
+            ? UncontrolledProviderScope(
+                key: ValueKey(state.profileId),
+                container: runtime.container!,          // the runtime's nested container
+                child: child,
+              )
+            : const SizedBox.shrink(),
+      ),
+    );
+  }
 }
 ```
 
-Everything that touches a server depends, directly or transitively, on `profileContextProvider`: the API client, both per-profile databases, the image cache manager, repositories, `PlaybackController`, `DownloadController`, `Outbox`, `SocketClient`. Changing the `ValueKey` disposes the whole graph, and each provider's `ref.onDispose` closes its resource (stop playback, close databases, disconnect the socket, cancel timers). This is what makes "switching servers swaps the whole data layer" true by construction instead of by discipline.
+Everything that touches a server depends, directly or transitively, on `profileContextProvider`: the API client, both per-profile databases, the image cache manager, repositories, `PlaybackController`, `DownloadController`, `Outbox`, `SocketClient`. `ProfileRuntime` owns one nested `ProviderContainer` per active profile (see Background Entry Points); switching profiles runs the old container's asynchronous closers, disposes it, and creates the next one, and each provider's `ref.onDispose` closes its resource (stop playback, close databases, disconnect the socket, cancel timers). This is what makes "switching servers swaps the whole data layer" true by construction instead of by discipline.
 
-Riverpod's scoped-provider rule applies: every provider that depends on a scoped provider declares it in `dependencies:`. The generator lint enforces this.
+`ref.onDispose` is synchronous, so a resource that closes asynchronously (a database, the socket, the engine, the downloader) also registers its close with the profile-scoped `ProfileDisposer`. `ProfileRuntime` awaits the registered closers in reverse registration order before it disposes the container; a closer that fails is logged and the others still run.
+
+`ProfileScope` shows only the active profile's subtree: when a switch starts, the old subtree is removed at once (nothing of it builds again), and the new one fades in.
+
+Riverpod's scoped-provider rule applies: every provider that depends on a scoped provider declares it in `dependencies:`. Profile-scoped providers are declared by hand with `dependencies:` listing every scoped provider they read.
 
 `ProfileContext` carries `profile` (id, base URL, user id, auth kind, device id), `paths` (the profile's directories), and nothing mutable.
 
@@ -159,8 +176,9 @@ Playback restore (showing the last queue, paused) reads only `state.db`, so the 
 └── /settings/about
 ```
 
-- Detail routes (`/album/…`) are declared once and attached to every branch, so opening an album from Search keeps the Search tab selected.
-- Guards (`redirect`): no active profile → `/connect`; profile in `signedOut` state → `/connect/sign-in` with the server prefilled; server below `minServer` → `/connect/probe` showing the update message.
+- Detail routes (`album/:albumId`, `artist/:artistId`, `playlist/:playlistId`) are declared once, in a function, and attached as children of every branch root, so opening an album from Search keeps the Search tab selected. go_router cannot match one path in four branches, so their real locations are `/<branch root>/album/:albumId` and so on: `/home/album/42`, `/search/album/42?q=…`, `/library/<tab>/album/42`, `/podcasts/album/42`. The top-level `/album/:albumId`, `/artist/:artistId` and `/playlist/:playlistId` (the form deep links use) redirect into the currently selected branch, or Home when none was shown yet. Screens open details through `DetailNavigation` (`openAlbum(context, id)`, `openArtist`, `openPlaylist`) and never build these paths themselves.
+- `/` redirects to `/home`; `/library` and an unknown tab redirect to `/library/playlists`. Selecting the current destination again pops its branch to the root.
+- Guards (`redirect`): no active profile → `/connect`; profile in `signedOut` state → `/connect/sign-in?profile=<id>` with the server prefilled; server below `minServer` → `/connect/probe` showing the update message. `/connect/**` is always reachable, so a second server can be added. The router re-runs the guards when `ProfileRuntime.state` changes and when the active profile's `SessionController` signs out.
 - Deep links: `soundspan://link?code=…&server=…` maps to `/connect/probe` with the code carried as an extra. `soundspan://album/<id>`, `artist/<id>`, `playlist/<id>` open the matching route in the active profile.
 - On desktop and web the route is reflected in the window title and, on web, the URL (path strategy).
 
@@ -218,6 +236,7 @@ _log.info('task finished', {'bytes': size});
 - Sinks: debug console in debug builds; a rolling file (`<appSupport>/logs/app.<n>.log`, 5 files × 1 MB) on native targets; an in-memory ring (500 entries) on web.
 - Redaction happens in the logger, before any sink: values of keys named `token`, `refreshToken`, `apiKey`, `password`, `authorization`, `x-api-key`; any `?token=` query value; the host and path prefix of the active profile's base URL (replaced with `<server>`).
 - `Settings → About → Export logs` zips the rolling files through the platform share or save dialog.
+- A sink that throws does not reach the caller: the logger reports the first failure of each sink through `dart:developer` and keeps delivering to the other sinks.
 - Levels: `fine` for per-request detail (off in release), `info` for lifecycle, `warning` for recovered failures, `severe` for unrecovered ones.
 
 ## Platform Seams
@@ -238,5 +257,16 @@ Each seam is an abstract class in `lib/platform/<name>/<name>.dart` with `_io.da
 | Deep links | `DeepLinks` | `app_links` | URL on load |
 | Notifications | `LocalNotifications` | `flutter_local_notifications` | No-op |
 | Capabilities | `PlatformCapabilities` | Constants per OS | Constants |
+| Persistent log sink | `createPersistentLogSink` (returns a `LogSink`) | `RollingFileLogSink` | `RingLogSink` |
 
-`PlatformCapabilities` is the only place UI asks "can this platform do X": `canDownload`, `canScanQr`, `hasTray`, `hasBackgroundPlayback`, `supportsApiKeyStreaming`. Screens hide features by capability, never by `Platform.isX`.
+`PlatformCapabilities` is the only place UI asks "can this platform do X": `canDownload`, `canScanQr`, `hasTray`, `hasBackgroundPlayback`, `supportsApiKeyStreaming`, `isDesktop`, and `allowsPublicCleartextHttp` (false on iOS and macOS, where App Transport Security blocks a public `http://` server). Screens hide features by capability, never by `Platform.isX`.
+
+| | Android | iOS | macOS | Windows, Linux | Web |
+|---|---|---|---|---|---|
+| `canDownload` | yes | yes | yes | yes | no |
+| `canScanQr` | yes | yes | yes | no | yes |
+| `hasTray` | no | no | no (the Dock keeps the app) | yes | no |
+| `hasBackgroundPlayback` | yes | yes | yes | yes | no |
+| `supportsApiKeyStreaming` | yes | yes | yes | yes | no |
+| `isDesktop` | no | no | yes | yes | no |
+| `allowsPublicCleartextHttp` | yes | no | no | yes | yes |

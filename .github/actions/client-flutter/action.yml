@@ -1,0 +1,45 @@
+name: Client Flutter setup
+description: >-
+  Installs the Linux build packages (on Linux) and the Flutter release pinned
+  in client/.fvmrc, caches Flutter and pub
+  on client/.fvmrc and the pubspec.lock files, and resolves the client's and
+  the soundspan_api package's dependencies.
+
+runs:
+  using: composite
+  steps:
+    # Native-asset build hooks of plugin dependencies run during
+    # `flutter test` and need the Linux build packages of doc 01.
+    - name: Install Linux build packages
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends \
+          clang cmake ninja-build pkg-config libgtk-3-dev libx11-dev \
+          libxi-dev libmpv-dev libsecret-1-dev libjsoncpp-dev
+
+    - name: Read the pinned Flutter version
+      id: pin
+      shell: bash
+      run: echo "version=$(jq -r .flutter client/.fvmrc)" >> "$GITHUB_OUTPUT"
+
+    - name: Install Flutter
+      uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+      with:
+        channel: stable
+        flutter-version: ${{ steps.pin.outputs.version }}
+        cache: true
+        cache-key: flutter-:os:-:channel:-:version:-:arch:-${{ hashFiles('client/.fvmrc') }}
+        pub-cache: true
+        pub-cache-key: flutter-pub-:os:-:channel:-:version:-:arch:-${{ hashFiles('client/.fvmrc', 'client/pubspec.lock', 'client/packages/soundspan_api/pubspec.lock') }}
+
+    - name: Resolve client dependencies
+      shell: bash
+      working-directory: client
+      run: flutter pub get
+
+    - name: Resolve soundspan_api dependencies
+      shell: bash
+      working-directory: client/packages/soundspan_api
+      run: dart pub get

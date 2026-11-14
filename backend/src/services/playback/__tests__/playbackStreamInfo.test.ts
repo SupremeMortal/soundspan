@@ -303,6 +303,7 @@ describe("getPlaybackStreamInfo", () => {
             kind: "t",
             trackId: "trk1",
             quality,
+            recordPlay: true,
             libraryQuality: quality,
             middleware: MW,
         });

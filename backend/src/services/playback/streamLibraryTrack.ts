@@ -24,6 +24,8 @@ export interface StreamLibraryTrackInput {
     res: Response;
     /** Set by the unified stream route; enables ETag and If-Range handling. */
     playbackId?: string;
+    /** False streams without recording a play (`report=0`); defaults to true. */
+    recordPlay?: boolean;
 }
 
 /**
@@ -33,7 +35,15 @@ export interface StreamLibraryTrackInput {
 export async function streamLibraryTrack(
     input: StreamLibraryTrackInput,
 ): Promise<void> {
-    const { userId, trackId, quality, req, res, playbackId } = input;
+    const {
+        userId,
+        trackId,
+        quality,
+        req,
+        res,
+        playbackId,
+        recordPlay = true,
+    } = input;
     try {
         let track = await prisma.track.findUnique({
             where: { id: trackId, ...TRACK_VISIBLE_WHERE },
@@ -64,7 +74,9 @@ export async function streamLibraryTrack(
             track = fallbackTrack;
         }
 
-        await recordStreamPlay(userId, track.id, track.title);
+        if (recordPlay) {
+            await recordStreamPlay(userId, track.id, track.title);
+        }
 
         if (canProxyPeer && federationPeer && track.remoteId) {
             const served = await proxyLibraryPeerStream({

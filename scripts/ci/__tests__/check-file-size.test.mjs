@@ -160,3 +160,112 @@ test("scans production source roots and excludes tests and generated files", () 
         fs.rmSync(fixtureRoot, { recursive: true, force: true });
     }
 });
+
+function withFixtureRoot(callback) {
+    const fixtureRoot = fs.mkdtempSync(
+        path.join(os.tmpdir(), "file-size-client-"),
+    );
+    try {
+        writeFixtureFiles(fixtureRoot, SCANNED_FIXTURE_FILES);
+        fs.mkdirSync(path.join(fixtureRoot, "frontend/hooks"), {
+            recursive: true,
+        });
+        fs.mkdirSync(path.join(fixtureRoot, "frontend/lib"), {
+            recursive: true,
+        });
+        return callback(fixtureRoot);
+    } finally {
+        fs.rmSync(fixtureRoot, { recursive: true, force: true });
+    }
+}
+
+function writeLines(fixtureRoot, relativePath, lineCount) {
+    const filePath = path.join(fixtureRoot, relativePath);
+    fs.mkdirSync(path.dirname(filePath), { recursive: true });
+    fs.writeFileSync(filePath, "line\n".repeat(lineCount));
+}
+
+function clientSizes(fixtureRoot) {
+    return Object.fromEntries(
+        Object.entries(collectFileSizes(fixtureRoot)).filter(([file]) =>
+            file.startsWith("client/"),
+        ),
+    );
+}
+
+test("flags Dart files under client/lib over the ratchet and hard caps", () => {
+    withFixtureRoot((fixtureRoot) => {
+        writeLines(fixtureRoot, "client/lib/features/big.dart", 1_501);
+        writeLines(fixtureRoot, "client/lib/core/huge.dart", 3_001);
+        writeLines(fixtureRoot, "client/lib/main.dart", 10);
+
+        const result = analyzeFileSizes(collectFileSizes(fixtureRoot), {});
+
+        assert.deepEqual(result.violations, [
+            {
+                cap: 3_000,
+                count: 3_001,
+                file: "client/lib/core/huge.dart",
+                kind: "hard-cap",
+            },
+            {
+                baseline: 1_500,
+                count: 1_501,
+                file: "client/lib/features/big.dart",
+                kind: "ratchet-cap",
+            },
+        ]);
+    });
+});
+
+test("scans Dart files under each client package's lib directory", () => {
+    withFixtureRoot((fixtureRoot) => {
+        writeLines(
+            fixtureRoot,
+            "client/packages/soundspan_api/lib/soundspan_api.dart",
+            3,
+        );
+        writeLines(fixtureRoot, "client/packages/soundspan_api/test/a.dart", 3);
+
+        assert.deepEqual(clientSizes(fixtureRoot), {
+            "client/packages/soundspan_api/lib/soundspan_api.dart": 3,
+        });
+    });
+});
+
+test("ignores generated Dart files and generated directories in the client", () => {
+    withFixtureRoot((fixtureRoot) => {
+        writeLines(fixtureRoot, "client/lib/core/storage/db.g.dart", 4_000);
+        writeLines(fixtureRoot, "client/lib/core/model.freezed.dart", 4_000);
+        writeLines(
+            fixtureRoot,
+            "client/packages/soundspan_api/lib/src/model.g.dart",
+            4_000,
+        );
+        writeLines(
+            fixtureRoot,
+            "client/packages/soundspan_api/lib/src/generated/clients.dart",
+            4_000,
+        );
+        writeLines(
+            fixtureRoot,
+            "client/lib/app/l10n/generated/app_localizations.dart",
+            4_000,
+        );
+        writeLines(fixtureRoot, "client/lib/main.dart", 1);
+
+        assert.deepEqual(clientSizes(fixtureRoot), {
+            "client/lib/main.dart": 1,
+        });
+    });
+});
+
+test("scans a repository root without client/ without error", () => {
+    withFixtureRoot((fixtureRoot) => {
+        assert.deepEqual(clientSizes(fixtureRoot), {});
+        assert.equal(
+            Object.keys(collectFileSizes(fixtureRoot)).length,
+            SCANNED_FIXTURE_FILES.length,
+        );
+    });
+});

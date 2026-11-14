@@ -91,6 +91,7 @@ class DownloadItems extends Table {
   TextColumn get metaJson => text()();             // TrackMeta / episode meta: enough to render and play offline
   TextColumn get quality => text().nullable()();   // As resolved by the server
   TextColumn get status => textEnum<DownloadStatus>()();
+  TextColumn get waitingFor => text().nullable()(); // Why a queued or paused item is not running: space, wifi
   TextColumn get taskId => text().nullable()();    // background_downloader task id
   TextColumn get downloadUrl => text().nullable()();
   TextColumn get etag => text().nullable()();
@@ -119,6 +120,24 @@ class Outbox extends Table {
 }
 ```
 
+The other tables. `DateTime` columns are UTC ISO-8601 text. A column listed as "text (values …)" is plain `text()` holding those strings.
+
+| Table | Columns |
+|---|---|
+| `device_settings` | `key` text PK; `value` text not null (JSON-encoded) |
+| `queue_snapshot` | `position` integer PK (index in canonical order, from 0); `queueItemId` text not null unique; `kind` text (values `track`, `episode`); `itemJson` text not null (the serialized `QueueItem`: track or episode with everything needed to show and play it, including its queue context) |
+| `queue_meta` | `id` integer PK with `CHECK (id = 1)`; `currentQueueItemId` text null; `positionMs` integer default 0; `shuffleOrderJson` text null (JSON array of canonical indices, the whole shuffle permutation; null means shuffle off); `repeatMode` text default `off` (values `off`, `all`, `one`); `contextJson` text null (the `QueueContext`); `revision` integer default 0; `updatedAt` datetime not null |
+| `download_collections` | `kind` text (values `track`, `album`, `playlist`, `episode`); `refId` text (track: the `playbackId`; album and playlist: their id; episode: `<podcastId>:<episodeId>`); `title` text not null; `metaJson` text not null (subtitle, artwork ref: enough to render the row offline); `status` text not null (a plain state name such as `resolving`, `ready`, `blocked`, never a compound string); `blockedReason` text null (`serverQuota`, `disabledByServer`); `detailJson` text null (state detail, for example the three byte values of a server-quota refusal); `quality` text null; `requestedAt` datetime not null; `resolvedAt` datetime null. PK `(kind, refId)` |
+| `download_membership` | `kind` text; `refId` text; `itemKey` text; `position` integer not null (track order inside the collection). PK `(kind, refId, itemKey)`; FK `(kind, refId)` → `download_collections` on delete cascade; FK `itemKey` → `download_items(itemKey)` on delete cascade |
+| `play_sessions` | `sessionId` text PK (client UUID); `queueItemId` text not null; `playbackId` text not null; `metaJson` text not null (`TrackMeta`); `playedAt` datetime not null (instant the play started); `listenedMs` integer default 0; `updatedAt` datetime not null |
+| `search_history` | `query` text PK with `COLLATE NOCASE`; `lastUsedAt` datetime not null |
+
+- `MediaType` (`track`, `episode`) and `DownloadStatus` (`queued`, `running`, `verifying`, `completed`, `paused`, `failedRetryable`, `failedPermanent`, `unavailable`, `missing`, `revoked`) are defined by the storage layer. "Confirmed" is the `serverConfirmed` flag; "deleted" is the absence of a row.
+- `download_items.waitingFor` holds wait reasons only; `failureCode` holds only failure and unavailability codes (including the server's `reason`).
+- Indexes: `outbox(entityKey)`, `outbox(nextAttemptAt)`, `download_items(status)`, `download_membership(itemKey)`.
+- A `playbackId` is stored verbatim wherever it appears and is never parsed or prefixed beyond the `itemKey` format above.
+- The tables exist on web too; the download tables stay empty there.
+
 `device_settings` keys: `quality.wifi`, `quality.cellular`, `quality.download` (each `serverDefault|original|high|medium|low`), `downloads.wifiOnly`, `downloads.quotaBytes`, `downloads.autoCacheBytes`, `playback.volume`, `playback.speed.podcast`, `playback.skipSeconds`, `offline.forced`.
 
 Metadata needed to render and play a downloaded item offline is stored on the `download_items` row itself (`metaJson`), so offline playback never depends on `cache.db`.
@@ -134,7 +153,7 @@ Normalized entity tables plus an ordered-list table for pages.
 | `artists` | `id` | `json`, `name`, `fetchedAt`, `detailFetchedAt` |
 | `playlists` | `id` | `json`, `name`, `fetchedAt`, `detailFetchedAt` |
 | `podcasts`, `episodes` | `id` | `json`, `fetchedAt` |
-| `lists` | `listKey` | `total`, `fetchedAt`, `complete` |
+| `lists` | `listKey` | `total`, `fetchedAt`, `complete`, `lastReadAt` (when the list was last read; pruning uses it) |
 | `list_entries` | `(listKey, position)` | `entityKind`, `entityKey` |
 | `blobs` | `key` | `json`, `fetchedAt` — for one-off payloads: home shelves, lyrics, artist detail extras |
 
@@ -173,7 +192,7 @@ Offline, every cached value is shown regardless of age.
 
 ### Pruning
 
-Runs at start-up after the first frame and when `cache.db` exceeds 64 MB: delete `lists` not read for 30 days with their entries, then entities referenced by no list and no `blobs` row. The image store is capped at 500 MB and 30 days by the cache manager configuration.
+Runs at start-up after the first frame and when `cache.db` exceeds 64 MB (`(page_count − freelist_count) × page_size`): in one transaction, delete `lists` not read for 30 days with their entries and `blobs` not fetched for 30 days, then every entity row no `list_entries` row references. A blob never keeps an entity alive by itself; data that needs its entities kept stores them as a list. If `cache.db` is still above 64 MB, the least recently read lists are deleted 50 at a time, with the entities they leave unreferenced, until it is under the limit or no list is left. The image store is capped at 500 MB and 30 days by the cache manager configuration.
 
 ## Image Cache
 
@@ -186,14 +205,32 @@ Runs at start-up after the first frame and when `cache.db` exceeds 64 MB: delete
 
 ## Migrations
 
-- Each database class has its own `schemaVersion`. `drift_dev schema dump` writes a JSON schema per version to `client/drift_schemas/<db>/`; `drift_dev schema generate` produces the helpers used by migration tests.
+- Each database class has its own `schemaVersion`. `tool/gen.sh` runs, per database, `drift_dev schema dump` (a JSON schema per version in `client/drift_schemas/<db>/`), `drift_dev schema steps` (the `stepByStep` helper, `<db>_database.steps.g.dart` next to the database class) and `drift_dev schema generate` (the helpers used by migration tests, in `client/test/core/storage/generated_migrations/<db>/`). CI runs `tool/gen.sh` and fails on a diff, so a table change without a new version does not merge.
+- `DateTime` columns are stored as ISO-8601 text (`store_date_time_values_as_text` in `client/build.yaml`) and written in UTC.
 - `AppDatabase` and `StateDatabase`: stepwise `MigrationStrategy.onUpgrade` using drift's `stepByStep`. Every version bump adds a test that opens a database at each earlier version with representative rows, migrates, and validates the schema and the data.
 - `CacheDatabase`: `onUpgrade` drops all tables and recreates them. A failure to open deletes the file and retries once.
-- Downgrade (an older app opening a newer `state.db`): refuse to open, show "This data was written by a newer version of the app", and offer to reset the profile's local state. Never silently delete downloads.
-- All databases run with `PRAGMA journal_mode = WAL`, `foreign_keys = ON`, `synchronous = NORMAL`, opened on a background isolate through `drift_flutter` (`driftDatabase(name:, native: DriftNativeOptions(databaseDirectory: …))`).
+- Downgrade (an older app opening a newer `app.db` or `state.db`): `onUpgrade` throws `DatabaseTooNewException` (database, found version, supported version) before touching the file. For `state.db` the app refuses to open, shows "This data was written by a newer version of the app", and offer to reset the profile's local state. Never silently delete downloads.
+- All databases run with `PRAGMA journal_mode = WAL`, `foreign_keys = ON`, `synchronous = NORMAL`, opened on a background isolate through `drift_flutter` (`driftDatabase(name:, native: DriftNativeOptions(databasePath: …))`; `databasePath` rather than `databaseDirectory`, because `databaseDirectory` names the file `<name>.sqlite` and the files are `app.db`, `state.db` and `cache.db`). The native `DatabaseOpener` sets WAL and `synchronous` in drift's per-connection `setup`; the databases set `foreign_keys` in `beforeOpen`. Deleting a database removes its `-wal` and `-shm` files too.
 
 ## Web Storage
 
-- drift WASM: `web/sqlite3.wasm` and `web/drift_worker.js` are shipped with the build. drift chooses the best storage the browser offers. Without cross-origin isolation headers (which the design rules out because they break third-party artwork), that is the OPFS dedicated-worker mode where available and IndexedDB otherwise. Both satisfy the client's needs; verify in spike S6.
+- drift WASM: `web/sqlite3.wasm` and `web/drift_worker.js` are shipped with the build. drift chooses the best storage the browser offers. Without cross-origin isolation headers (which the design rules out because they break third-party artwork), that is OPFS through drift's shared worker in Firefox and IndexedDB through the shared worker in Chromium and Safari. Both persist across reloads and open the three databases of one profile in one tab (see Spike S6 finding).
 - `state.db` on web holds the queue snapshot, outbox, and settings. Download tables exist but stay empty.
-- Private browsing can make storage unavailable. `DatabaseOpener` falls back to an in-memory database and shows a one-time notice that nothing will be remembered.
+- Private browsing can make storage unavailable. When the WASM open throws or drift can only offer in-memory storage, `DatabaseOpener` falls back to an in-memory database and reports `isVolatile`, and the app shows a one-time notice that nothing will be remembered.
+- `DatabaseOpener.delete` on web removes the named database from whichever storage drift reports it in.
+
+## Spike S6 finding
+
+A minimal Flutter web build opened three drift WASM databases named `app`, `p_spike_state` and `p_spike_cache` in one tab through `driftDatabase(name:, web: DriftWebOptions(...))`, served by a static server that sends no `Cross-Origin-Opener-Policy` or `Cross-Origin-Embedder-Policy` header. Each database incremented a counter row; the page was then reloaded and the counters read again.
+
+| Browser | Answer | Storage drift chose (all three databases) | Missing features reported | `crossOriginIsolated` | Counters after reload |
+|---|---|---|---|---|---|
+| Chromium 153.0.8010.12 (headless, Linux) | Yes | `sharedIndexedDb` | `dedicatedWorkersInSharedWorkers`, `sharedArrayBuffers` | false | 2, 2, 2 |
+| Firefox 155.0 (headless, Linux) | Yes | `opfsShared` | `sharedArrayBuffers` | false | 2, 2, 2 |
+| Safari 27.2 (macOS 26, through `safaridriver`) | Yes | `sharedIndexedDb` | `dedicatedWorkersInSharedWorkers`, `sharedArrayBuffers` | false | 2, 2, 2 |
+
+Package versions: Flutter 3.50.0 (Dart 3.14.0), `drift` 2.35.4, `drift_flutter` 0.3.1, `sqlite3` 3.9.1 (`sqlite3.wasm` from the `sqlite3-3.9.1` release), `drift_worker.js` from the `drift-2.35.4` release.
+
+None of the browsers fell back to `inMemory` or `unsafeIndexedDb`, so the design stands: the web `DatabaseOpener` lets drift choose, and the IndexedDB-only fallback is not needed. `opfsLocks` is never chosen without cross-origin isolation because it needs `SharedArrayBuffer`.
+
+**OIDC on the same-origin web build: no.** `redirectForResolution` in `backend/src/routes/auth/oidc.ts` sends every successful callback to `loginRedirect("ssoCode", …)`, which `webRedirectTarget` fixes to the web UI's `/login` page; `returnTo` only chooses where that page navigates afterwards. The web UI's `useOidcCodeExchange` (`frontend/app/login/page.tsx`) redeems the code at once, and `oidcExchangeHandler` takes it with a one-time `takeOnce` and requires the `httpOnly` flow-binding cookie (`hasMatchingFlowBinding`). A Flutter build on the same origin therefore never receives a code it could exchange, and the only tokens it could reach are the web UI's own entries in `localStorage`, which are not an endpoint. Web offers password sign-in only.

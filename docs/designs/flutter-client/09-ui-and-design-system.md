@@ -27,7 +27,7 @@ The dark values are the web UI's (`frontend/app/globals.css`, `@theme` block). T
 | `contentBody` | `#E5E5E5` | `#262626` | Body text |
 | `contentSecondary` | `#A3A3A3` | `#525252` | Subtitles, metadata |
 | `contentMuted` | `#8A8A8A` | `#666666` | Captions, timestamps |
-| `contentDisabled` | `#525252` | `#A3A3A3` | Disabled text and icons |
+| `contentDisabled` | `#676767` | `#858585` | Disabled text and icons |
 | `brand` | `#3B82F6` | `#2563EB` | Focus ring, links, selected indicators, progress |
 | `accent` | `#60A5FA` | `#2563EB` | Primary action fill (Play, Sign in) |
 | `onAccent` | `#000000` | `#FFFFFF` | Text and icons on `accent` |
@@ -38,11 +38,22 @@ The dark values are the web UI's (`frontend/app/globals.css`, `@theme` block). T
 | `danger` | `#EF4444` | `#B91C1C` | Errors, destructive actions |
 | `scrim` | `#000000` 60 % | `#000000` 40 % | Behind sheets and dialogs |
 
-Contrast: every text token meets 4.5:1 on every surface token it is used on, in both themes. The web's muted grey `#737373` does not reach 4.5:1 on `#0A0A0A`, so `contentMuted` is lightened to `#8A8A8A` in dark. A test computes the WCAG ratio for each allowed text-on-surface pair and fails below 4.5 (3.0 for `contentDisabled`, which marks non-interactive text).
+Contrast: every text token meets 4.5:1 on every surface token it is used on, in both themes. The web's muted grey `#737373` does not reach 4.5:1 on `#0A0A0A`, so `contentMuted` is lightened to `#8A8A8A` in dark. A test computes the WCAG ratio for each allowed text-on-surface pair and fails below 4.5 (3.0 for `contentDisabled`, which marks non-interactive text). The web's disabled grey `#525252` (and a light `#A3A3A3`) stays under 3.0:1 on the surfaces, so `contentDisabled` is `#676767` in dark and `#858585` in light: the closest greys that reach 3.0:1 on every surface it is allowed on.
 
-Material mapping (`ColorScheme`): `primary = accent`, `onPrimary = onAccent`, `secondary = brand`, `surface = surface`, `onSurface = contentBody`, `surfaceContainer = surfaceRaised`, `surfaceContainerHigh = surfaceOverlay`, `outline = lineStrong`, `outlineVariant = line`, `error = danger`. Stock Material widgets therefore pick up soundspan colours without per-widget styling.
+The allowed pairs are defined once as data (`requiredContrastPairs` in `lib/app/theme/contrast.dart`) and checked for all four variants (dark, light and both high-contrast):
 
-**Theme mode:** `system` (default), `dark`, `light`, in `Settings → Appearance`. The palette is fixed; Android dynamic colour is not used. When the OS requests high contrast, `line` and `lineStrong` step one shade stronger and `contentSecondary` becomes `contentBody`.
+| Foreground | Backgrounds | Minimum |
+|---|---|---|
+| `content`, `contentBody`, `contentSecondary` | `ground`, `surface`, `surfaceRaised`, `surfaceOverlay`, `surfaceHover`, `surfaceActive`, `surfaceHighlight` | 4.5 |
+| `contentMuted` | the same except `surfaceHighlight` | 4.5 |
+| `contentDisabled` | the same except `surfaceHighlight` | 3.0 |
+| `brand`, `positive`, `warning`, `danger` (as text) | `ground`, `surface`, `surfaceRaised`, `surfaceOverlay` | 4.5 |
+| `onAccent` | `accent` | 4.5 |
+| `onTransport` | `transport` | 4.5 |
+
+Material mapping (`ColorScheme`): `primary = accent`, `onPrimary = onAccent`, `secondary = brand`, `surface = surface`, `onSurface = contentBody`, `surfaceContainer = surfaceRaised`, `surfaceContainerHigh = surfaceOverlay`, `outline = lineStrong`, `outlineVariant = line`, `error = danger`. Roles the mapping above does not name: `onSecondary = onAccent`, `onError` black in dark and white in light, `scrim = scrim`, `surfaceContainerLow = surface`, `surfaceContainerLowest = ground`, `surfaceContainerHighest = surfaceHover`. Stock Material widgets therefore pick up soundspan colours without per-widget styling.
+
+**Theme mode:** `system` (default), `dark`, `light`, in `Settings → Appearance`. The palette is fixed; Android dynamic colour is not used. When the OS requests high contrast, `line` and `lineStrong` step one shade stronger and `contentSecondary` becomes `contentBody`: `line` takes the normal `lineStrong` value (`#333333` dark, `#D4D4D4` light), `lineStrong` becomes `#404040` (dark) or `#A3A3A3` (light), and `contentSecondary` is `#E5E5E5` (dark) or `#262626` (light). Every other token is unchanged. `SoundspanTheme` exposes the four variants for `MaterialApp.theme`, `darkTheme`, `highContrastTheme` and `highContrastDarkTheme`.
 
 **Dynamic backdrops:** album, artist, and playlist headers and the now-playing screen tint their background from the artwork, as the web UI does. The tint is computed off the UI thread from a 64-pixel copy of the cover (`ColorScheme.fromImageProvider`), cached per artwork ref in `cache.db`, and always composited under a scrim that keeps title contrast at 4.5:1. In light theme the tint is mixed 12 % into `surface`; in dark 35 % into `ground`, fading to `surface`.
 
@@ -61,6 +72,10 @@ Montserrat variable font (SIL Open Font License), bundled as an asset; no runtim
 | `caption` | 12 / 16 | 500 | Metadata, timestamps, badges |
 | `overline` | 11 / 14 | 700, +0.08 em, upper case | "NOW PLAYING", column headers |
 | `mono` | 22 / 28 | 700, platform monospace | Device-link code cells |
+
+Styles are a `ThemeExtension<SoundspanTypography>` read as `context.typography.body`, and carry no colour. Because Montserrat is a variable font, each style sets both `fontWeight` and the matching `wght` font variation. `mono` uses the family `monospace` with the fallbacks Menlo, Consolas, Roboto Mono and DejaVu Sans Mono. `TextStyle.tabular` adds tabular figures.
+
+Material `TextTheme` mapping: `displaySmall = display`, `headlineMedium = headline`, `titleLarge = title`, `titleMedium = subtitle`, `bodyLarge = body`, `bodyMedium = body`, `bodySmall = bodySmall`, `labelLarge = body` at weight 600, `labelMedium = caption`, `labelSmall = overline`. The theme's default family is Montserrat, so the roles the mapping does not name use it too.
 
 - Text scaling follows the OS setting up to 2.0×. Row heights are min-heights, grids reflow, and the player bar wraps its metadata to two lines before truncating.
 - **Wordmark:** the logo mark plus "soundspan" in Turret Road ExtraBold, lower case, as in the web UI. `Wordmark` is the only widget that uses the Turret Road family.
@@ -223,7 +238,7 @@ Implemented with `Shortcuts`/`Actions` at the shell so they are discoverable to 
 
 - `flutter gen-l10n`; ARB files in `lib/app/l10n/`; `app_en.arb` is the template. `nullable-getter: false`, `use-escaping: true`.
 - Message ids are `<feature><Thing>` (`libraryEmptyTitle`). Plurals and selects use ICU syntax. Durations and dates go through `intl` (`DateFormat.yMMMd(locale)`); track times use a fixed `m:ss` / `h:mm:ss` formatter.
-- `tool/check_l10n.dart` fails on a string literal passed to `Text(`, `tooltip:`, `label:`, or `semanticLabel:` under `lib/**/ui/` and `lib/shared/widgets/`.
+- `tool/check_l10n.dart` fails on a string literal containing a letter passed to `Text(`, `SelectableText(`, `TextSpan(text:`, `tooltip:`, `label:`, `semanticLabel:`, `semanticsLabel:`, `hintText:`, `labelText:`, `helperText:`, `errorText:`, or `message:` under `lib/**/ui/` and `lib/shared/widgets/`. Letterless literals (`'·'`, `'0:00'`) and interpolation-only literals (`'$count'`) pass; there is no ignore comment.
 - A pseudo-locale (`en-XA`, accented and 40 % longer, generated by the tool) and Arabic (`ar`, RTL) are run in golden tests for the shell, a track row, the player bar, and the now-playing screen.
 - Server-provided text (error `message`s, playlist names) is shown as received.
 

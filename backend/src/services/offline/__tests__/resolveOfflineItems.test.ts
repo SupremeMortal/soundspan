@@ -114,7 +114,8 @@ describe("resolveOfflineItems", () => {
                 {
                     playbackId: "t.local1",
                     downloadable: true,
-                    downloadUrl: "/api/playback/stream/t.local1?quality=medium",
+                    downloadUrl:
+                        "/api/playback/stream/t.local1?quality=medium&report=0",
                     expectedSize: 1000,
                     quality: "medium",
                     contentType: "audio/mpeg",
@@ -151,13 +152,32 @@ describe("resolveOfflineItems", () => {
             expect(out.items.find((i) => i.playbackId === id)).toEqual({
                 playbackId: id,
                 downloadable: true,
-                downloadUrl: `/api/playback/stream/${id}?quality=medium`,
+                downloadUrl: `/api/playback/stream/${id}?quality=medium&report=0`,
                 expectedSize: SIZES[id],
                 quality: "medium",
                 contentType: "audio/mpeg",
             });
         }
         expect(out.estimatedTotalBytes).toBe(1000 + 2000 + 3000 + 4000);
+    });
+
+    it("marks every downloadUrl report=0 so downloads record no play", async () => {
+        mockAlbumFindFirst.mockResolvedValue(mixedAlbum());
+        const out = await resolveOfflineItems({
+            userId: "u1",
+            kind: "album",
+            id: "alb1",
+            quality: "low",
+        });
+        const downloadable = out.items.filter((i) => i.downloadable);
+        expect(downloadable).toHaveLength(4);
+        for (const item of downloadable) {
+            if (!item.downloadable) throw new Error("unreachable");
+            const url = new URL(item.downloadUrl, "http://server");
+            expect(item.downloadUrl.endsWith("&report=0")).toBe(true);
+            expect(url.searchParams.get("report")).toBe("0");
+            expect(url.searchParams.get("quality")).toBe(item.quality);
+        }
     });
 
     it("honours a policy block for one item", async () => {
@@ -190,7 +210,8 @@ describe("resolveOfflineItems", () => {
                 {
                     playbackId: "yt.vid2",
                     downloadable: true,
-                    downloadUrl: "/api/playback/stream/yt.vid2?quality=medium",
+                    downloadUrl:
+                        "/api/playback/stream/yt.vid2?quality=medium&report=0",
                     expectedSize: null,
                     quality: "medium",
                     contentType: "audio/mpeg",
@@ -240,7 +261,7 @@ describe("resolveOfflineItems", () => {
         expect(out.items[0]).toMatchObject({
             downloadable: true,
             quality: "low",
-            downloadUrl: "/api/playback/stream/t.local1?quality=low",
+            downloadUrl: "/api/playback/stream/t.local1?quality=low&report=0",
         });
     });
 

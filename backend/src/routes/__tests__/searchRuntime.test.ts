@@ -98,6 +98,7 @@ import { redisClient } from "../../utils/redis";
 import { lastFmService } from "../../services/lastfm";
 import { searchService } from "../../services/search";
 import { searchRemoteLibrary } from "../../services/remoteLibrary/remoteLibrarySearch";
+import { withClientSurfaceValidation } from "./helpers/expectClientSurfaceResponse";
 
 const mockArtistFindMany = prisma.artist.findMany as jest.Mock;
 const mockArtistFindFirst = prisma.artist.findFirst as jest.Mock;
@@ -140,6 +141,46 @@ function createRes() {
         }),
     };
     return res;
+}
+
+function remoteTrack(id: string, provider: "tidal" | "youtube") {
+    return {
+        id,
+        playbackId: provider === "tidal" ? "td.42" : "ym.video-1",
+        title: "Remote Track",
+        duration: 240,
+        trackNo: null,
+        artist: { id: null, name: "Remote Artist" },
+        album: {
+            id: null,
+            title: "Remote Album",
+            coverArt: null,
+            rgMbid: null,
+            matchedRgMbid: null,
+            matchedInLibrary: false,
+            coverUrl: null,
+            artistId: null,
+            artist: { id: null, name: "Remote Artist" },
+        },
+        source: provider,
+        streamSource: provider,
+        albumId: null,
+        artistId: null,
+        trackNumber: null,
+    };
+}
+
+function remoteAlbum(id: string) {
+    return {
+        id,
+        title: "Remote Album",
+        artistId: "artist-remote",
+        year: null,
+        coverUrl: null,
+        source: "remote",
+        remoteSources: ["tidal"],
+        artist: { id: "artist-remote", name: "Remote Artist", mbid: "" },
+    };
 }
 
 describe("remote search eligibility", () => {
@@ -236,9 +277,15 @@ describe("remote search eligibility", () => {
 });
 
 describe("search route runtime behavior", () => {
-    const rootHandler = getGetHandler("/");
+    const rootHandler = withClientSurfaceValidation(
+        "search",
+        getGetHandler("/"),
+    );
     const genresHandler = getGetHandler("/genres");
-    const discoverHandler = getGetHandler("/discover");
+    const discoverHandler = withClientSurfaceValidation(
+        "searchDiscover",
+        getGetHandler("/discover"),
+    );
     const discoverSimilarHandler = getGetHandler("/discover/similar");
 
     beforeEach(() => {
@@ -297,8 +344,39 @@ describe("search route runtime behavior", () => {
     });
 
     it("uses searchAll with clamped limit and transforms response shape", async () => {
+        const podcastRow = {
+            id: "pod-1",
+            title: "Radio Show",
+            author: null,
+            description: null,
+            imageUrl: null,
+            episodeCount: 3,
+            rank: 0.2,
+        };
+        const episodeRow = {
+            id: "ep-1",
+            title: "Episode",
+            description: null,
+            podcastId: "pod-1",
+            podcastTitle: "Radio Show",
+            publishedAt: new Date("2026-01-01T00:00:00.000Z"),
+            duration: 1800,
+            audioUrl: "https://example.test/ep-1.mp3",
+            rank: 0.1,
+        };
         mockSearchAll.mockResolvedValueOnce({
-            artists: [{ id: "artist-1", name: "Radiohead", mbid: "mbid-1" }],
+            artists: [
+                {
+                    id: "artist-1",
+                    name: "Radiohead",
+                    mbid: "mbid-1",
+                    heroUrl: null,
+                    summary: null,
+                    source: "local",
+                    peer: null,
+                    rank: 0.5,
+                },
+            ],
             albums: [
                 {
                     id: "album-1",
@@ -307,6 +385,9 @@ describe("search route runtime behavior", () => {
                     artistName: "Radiohead",
                     year: 2000,
                     coverUrl: "cover.jpg",
+                    source: "local",
+                    peer: null,
+                    rank: 0.4,
                 },
             ],
             tracks: [
@@ -322,11 +403,14 @@ describe("search route runtime behavior", () => {
                     truePeakDb: -1.3,
                     albumLoudnessLufs: -17.8,
                     albumTruePeakDb: -0.9,
+                    source: "local",
+                    peer: null,
+                    rank: 0.3,
                 },
             ],
             audiobooks: [{ id: "book-1" }],
-            podcasts: [{ id: "pod-1" }],
-            episodes: [{ id: "ep-1" }],
+            podcasts: [podcastRow],
+            episodes: [episodeRow],
         });
 
         const req = {
@@ -351,7 +435,11 @@ describe("search route runtime behavior", () => {
         expect(res.body).toEqual(
             expect.objectContaining({
                 artists: [
-                    { id: "artist-1", name: "Radiohead", mbid: "mbid-1" },
+                    expect.objectContaining({
+                        id: "artist-1",
+                        name: "Radiohead",
+                        mbid: "mbid-1",
+                    }),
                 ],
                 albums: [
                     expect.objectContaining({
@@ -386,8 +474,8 @@ describe("search route runtime behavior", () => {
                     }),
                 ],
                 audiobooks: [{ id: "book-1" }],
-                podcasts: [{ id: "pod-1" }],
-                episodes: [{ id: "ep-1" }],
+                podcasts: [podcastRow],
+                episodes: [episodeRow],
                 remoteTracks: [],
                 remoteAlbums: [],
             }),
@@ -395,7 +483,7 @@ describe("search route runtime behavior", () => {
     });
 
     it("adds up to five remote tracks after an all-type library search", async () => {
-        const remoteTracks = [{ id: "tidal:42", source: "tidal" }];
+        const remoteTracks = [remoteTrack("tidal:42", "tidal")];
         mockSearchRemoteLibrary.mockResolvedValueOnce({
             tracks: remoteTracks,
             albums: [],
@@ -426,7 +514,7 @@ describe("search route runtime behavior", () => {
     });
 
     it("adds remote tracks when an all-type search includes an ignored offset", async () => {
-        const remoteTracks = [{ id: "tidal:42", source: "tidal" }];
+        const remoteTracks = [remoteTrack("tidal:42", "tidal")];
         mockSearchRemoteLibrary.mockResolvedValueOnce({
             tracks: remoteTracks,
             albums: [],
@@ -448,7 +536,7 @@ describe("search route runtime behavior", () => {
     });
 
     it("uses the requested limit for remote track-only search", async () => {
-        const remoteTracks = [{ id: "yt:video-1", source: "youtube" }];
+        const remoteTracks = [remoteTrack("yt:video-1", "youtube")];
         mockSearchRemoteLibrary.mockResolvedValueOnce({
             tracks: remoteTracks,
             albums: [],
@@ -483,7 +571,7 @@ describe("search route runtime behavior", () => {
     });
 
     it("adds remote albums to the first album-only page", async () => {
-        const remoteAlbums = [{ id: "album-remote", source: "remote" }];
+        const remoteAlbums = [remoteAlbum("album-remote")];
         mockSearchRemoteLibrary.mockResolvedValueOnce({
             tracks: [],
             albums: remoteAlbums,
@@ -553,6 +641,110 @@ describe("search route runtime behavior", () => {
             { error: remoteError, queryLength: 9 },
         );
     });
+
+    const emptyGroups = {
+        artists: [],
+        albums: [],
+        tracks: [],
+        audiobooks: [],
+        podcasts: [],
+        episodes: [],
+    };
+    const rowsByType: Record<string, Record<string, unknown[]>> = {
+        artists: {
+            artists: [
+                {
+                    id: "artist-1",
+                    name: "Artist",
+                    mbid: null,
+                    heroUrl: null,
+                    rank: 0.5,
+                },
+            ],
+        },
+        albums: {
+            albums: [
+                {
+                    id: "album-1",
+                    title: "Album",
+                    artistId: "artist-1",
+                    artistName: "Artist",
+                    year: null,
+                    coverUrl: null,
+                    source: "federated",
+                    peer: { id: "peer-1", name: "Peer", online: true },
+                    rank: 0.5,
+                },
+            ],
+        },
+        tracks: {
+            tracks: [
+                {
+                    id: "track-1",
+                    title: "Track",
+                    albumId: "album-1",
+                    albumTitle: "Album",
+                    artistId: "artist-1",
+                    artistName: "Artist",
+                    duration: 200,
+                    loudnessLufs: null,
+                    truePeakDb: null,
+                    albumLoudnessLufs: null,
+                    albumTruePeakDb: null,
+                    rank: 0.5,
+                },
+            ],
+        },
+        audiobooks: { audiobooks: [{ id: "book-1", title: "Book" }] },
+        podcasts: {
+            podcasts: [
+                {
+                    id: "pod-1",
+                    title: "Podcast",
+                    author: "Host",
+                    description: null,
+                    imageUrl: null,
+                    episodeCount: 0,
+                },
+            ],
+        },
+        episodes: {
+            episodes: [
+                {
+                    id: "ep-1",
+                    title: "Episode",
+                    description: "About",
+                    podcastId: "pod-1",
+                    podcastTitle: "Podcast",
+                    publishedAt: "2026-01-01T00:00:00.000Z",
+                    duration: 600,
+                    audioUrl: "https://example.test/ep-1.mp3",
+                    rank: 0,
+                },
+            ],
+        },
+    };
+
+    it.each(Object.keys(rowsByType))(
+        "answers a type=%s search with the search response shape",
+        async (type) => {
+            mockSearchByType.mockResolvedValueOnce({
+                ...emptyGroups,
+                ...rowsByType[type],
+            });
+            const req = {
+                query: { q: "query", type },
+                user: { id: "user-1" },
+            } as any;
+            const res = createRes();
+
+            await rootHandler(req, res);
+
+            expect(res.statusCode).toBe(200);
+            const [group] = Object.keys(rowsByType[type]);
+            expect(res.body[group]).toHaveLength(1);
+        },
+    );
 
     it("uses searchByType with lower bound limit clamp", async () => {
         const req = {
@@ -895,7 +1087,7 @@ describe("search route runtime behavior", () => {
 
     it("skips library lookup when discovered artists have no usable names", async () => {
         mockSearchArtists.mockResolvedValueOnce([
-            { type: "music", id: "x", name: 42 },
+            { type: "music", id: "x", name: "   " },
         ]);
         const req = { query: { q: "odd", type: "music", limit: "3" } } as any;
         const res = createRes();
@@ -905,7 +1097,7 @@ describe("search route runtime behavior", () => {
         expect(mockArtistFindMany).not.toHaveBeenCalled();
         expect(res.statusCode).toBe(200);
         expect(res.body.results).toEqual([
-            { type: "music", id: "x", name: 42, source: "lastfm" },
+            { type: "music", id: "x", name: "   ", source: "lastfm" },
         ]);
     });
 

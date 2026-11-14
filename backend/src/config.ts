@@ -736,6 +736,14 @@ export const config = {
     // Raw OpenAPI JSON spec is public in production only when DOCS_PUBLIC=true.
     docsPublic: isEnvFlagEnabled(process.env.DOCS_PUBLIC),
 
+    // Client-surface response validation: a test and CI switch, on only for
+    // OPENAPI_VALIDATE_RESPONSES=1 or true.
+    openapi: {
+        validateResponses: ["1", "true"].includes(
+            process.env.OPENAPI_VALIDATE_RESPONSES ?? "",
+        ),
+    },
+
     // Prometheus metrics fail closed unless a bearer token is configured.
     // Public exposure is an explicit unsafe opt-out for private networks only.
     metrics: {

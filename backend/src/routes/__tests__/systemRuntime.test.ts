@@ -32,11 +32,13 @@ jest.mock("../../config", () => ({
             audioAnalysis: true,
             discovery: true,
             autoPlaylists: true,
+            federation: false,
         },
     },
 }));
 
 import router from "../system";
+import { expectClientSurfaceResponse } from "./helpers/expectClientSurfaceResponse";
 import { featureDetection } from "../../services/featureDetection";
 
 const mockGetFeatures = featureDetection.getFeatures as jest.Mock;
@@ -80,6 +82,8 @@ describe("system routes runtime", () => {
 
     it("returns detected features", async () => {
         mockGetFeatures.mockResolvedValue({
+            musicCNN: true,
+            vibeEmbeddings: false,
             clapAvailable: true,
             allAvailable: true,
         });
@@ -91,13 +95,17 @@ describe("system routes runtime", () => {
 
         expect(res.statusCode).toBe(200);
         expect(res.body).toEqual({
+            musicCNN: true,
+            vibeEmbeddings: false,
             clapAvailable: true,
             allAvailable: true,
             audioAnalysis: true,
             discovery: true,
             autoPlaylists: true,
+            federation: false,
             loudnessTargetLufs: -18,
         });
+        expectClientSurfaceResponse("getSystemFeatures", res);
     });
 
     it("returns cached vibe provider and migration state", async () => {
@@ -150,5 +158,6 @@ describe("system routes runtime", () => {
 
         expect(res.statusCode).toBe(500);
         expect(res.body).toEqual({ error: "Failed to detect features" });
+        expectClientSurfaceResponse("getSystemFeatures", res);
     });
 });

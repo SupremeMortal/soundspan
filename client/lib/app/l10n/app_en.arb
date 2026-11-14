@@ -1,0 +1,85 @@
+{
+  "@@locale": "en",
+  "appTitle": "soundspan",
+  "@appTitle": {
+    "description": "The application name, shown as the window and task-switcher title and on the start screen."
+  },
+  "windowTitle": "{screen} · soundspan",
+  "@windowTitle": {
+    "description": "The window or browser tab title: the current screen's name followed by the application name.",
+    "placeholders": {
+      "screen": {
+        "type": "String",
+        "example": "Home"
+      }
+    }
+  },
+  "navHome": "Home",
+  "@navHome": {
+    "description": "Navigation destination and screen name: the home screen."
+  },
+  "navSearch": "Search",
+  "@navSearch": {
+    "description": "Navigation destination and screen name: the search screen."
+  },
+  "navLibrary": "Library",
+  "@navLibrary": {
+    "description": "Navigation destination and screen name: the user's library."
+  },
+  "navPodcasts": "Podcasts",
+  "@navPodcasts": {
+    "description": "Navigation destination and screen name: podcasts."
+  },
+  "navMainLabel": "Main navigation",
+  "@navMainLabel": {
+    "description": "Accessibility label of the group holding the main navigation destinations."
+  },
+  "screenConnect": "Add server",
+  "@screenConnect": {
+    "description": "Screen name: entering the address of a server to add."
+  },
+  "screenConnectProbe": "Checking server",
+  "@screenConnectProbe": {
+    "description": "Screen name: the app is contacting the server the user entered."
+  },
+  "screenSignIn": "Sign in",
+  "@screenSignIn": {
+    "description": "Screen name: signing in to a server."
+  },
+  "screenSettings": "Settings",
+  "@screenSettings": {
+    "description": "Screen name: the settings screen."
+  },
+  "screenSettingsServers": "Servers",
+  "@screenSettingsServers": {
+    "description": "Screen name: the settings page listing the user's servers."
+  },
+  "screenSettingsPlayback": "Playback",
+  "@screenSettingsPlayback": {
+    "description": "Screen name: the playback settings page."
+  },
+  "screenSettingsStorage": "Storage",
+  "@screenSettingsStorage": {
+    "description": "Screen name: the storage settings page."
+  },
+  "screenSettingsAppearance": "Appearance",
+  "@screenSettingsAppearance": {
+    "description": "Screen name: the appearance settings page."
+  },
+  "screenSettingsAbout": "About",
+  "@screenSettingsAbout": {
+    "description": "Screen name: the about page."
+  },
+  "screenAlbum": "Album",
+  "@screenAlbum": {
+    "description": "Screen name: the detail screen of one album."
+  },
+  "screenArtist": "Artist",
+  "@screenArtist": {
+    "description": "Screen name: the detail screen of one artist."
+  },
+  "screenPlaylist": "Playlist",
+  "@screenPlaylist": {
+    "description": "Screen name: the detail screen of one playlist."
+  }
+}

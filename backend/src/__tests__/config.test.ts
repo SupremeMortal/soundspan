@@ -961,6 +961,25 @@ describe("config module", () => {
         expect(disabled.config.settingsDecryptFailClosed).toBe(false);
     });
 
+    it("enables client-surface response validation only for 1 and true", async () => {
+        const unset = await loadConfigModule({});
+        expect(unset.config.openapi.validateResponses).toBe(false);
+
+        for (const value of ["1", "true"]) {
+            const enabled = await loadConfigModule({
+                OPENAPI_VALIDATE_RESPONSES: value,
+            });
+            expect(enabled.config.openapi.validateResponses).toBe(true);
+        }
+
+        for (const value of ["0", "yes"]) {
+            const disabled = await loadConfigModule({
+                OPENAPI_VALIDATE_RESPONSES: value,
+            });
+            expect(disabled.config.openapi.validateResponses).toBe(false);
+        }
+    });
+
     it("parses metrics access settings with private defaults", async () => {
         const defaults = await loadConfigModule({
             METRICS_TOKEN: undefined,

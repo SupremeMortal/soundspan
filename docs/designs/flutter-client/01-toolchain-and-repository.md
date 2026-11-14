@@ -6,11 +6,11 @@ Status: design phase.
 
 | Tool | Pin | Where |
 |---|---|---|
-| Flutter | 3.50.x stable (Dart 3.14) | `client/.fvmrc`; CI reads the same file |
+| Flutter | 3.50.0 stable (Dart 3.14.0) | `client/.fvmrc`; CI reads the same file |
 | FVM | 3.x | Developer machines and CI (`subosito/flutter-action` with `flutter-version-file: client/.fvmrc`) |
 | Java | 17 (Temurin) | Android Gradle builds |
-| Android | compileSdk/targetSdk = Flutter default for the pinned SDK, minSdk 26 | `client/android/app/build.gradle.kts` |
-| Xcode | Latest stable on the `macos-latest` runner | iOS deployment target 15.0, macOS 11.0 |
+| Android | compileSdk 37 (`flutter_local_notifications` and `androidx.core` require it), targetSdk = Flutter default for the pinned SDK, minSdk 26, core library desugaring with `desugar_jdk_libs` 2.1.4 (required by `flutter_local_notifications`) | `client/android/app/build.gradle.kts` |
+| Xcode | Latest stable on the `macos-latest` runner | iOS deployment target 15.0, macOS 12.0 (the pinned SDK's minimum) |
 | Visual Studio | 2022 Build Tools with "Desktop development with C++" | Windows |
 | Linux build deps | `clang cmake ninja-build pkg-config libgtk-3-dev libmpv-dev libsecret-1-dev libjsoncpp-dev` | Linux |
 
@@ -32,8 +32,10 @@ client/
 ├── assets/
 │   ├── fonts/Montserrat-VariableFont_wght.ttf
 │   ├── fonts/TurretRoad-ExtraBold.ttf  # Wordmark only
-│   ├── brand/                      # logo.svg, logo_mono.svg, tray icons
-│   └── licenses/                   # Notices for bundled native libraries (libmpv, ffmpeg)
+│   ├── fonts/README.md             # Source, commit and SHA-256 of each font
+│   ├── brand/                      # soundspan-mark.svg, soundspan-mark-mono.svg, tray icons
+│   ├── licenses/                   # Notices for bundled native libraries (libmpv, ffmpeg)
+│   └── licenses/fonts/             # Montserrat.txt, TurretRoad.txt (SIL Open Font License)
 ├── lib/
 │   ├── main.dart                   # Calls bootstrap(); no logic
 │   ├── bootstrap.dart              # Zone, error hooks, logging, ProviderScope
@@ -78,7 +80,8 @@ client/
 ├── tool/
 │   ├── check_imports.dart          # Layer and platform import rules
 │   ├── check_l10n.dart             # No hard-coded user-visible strings in ui/
-│   ├── license_audit.dart          # Dependency license allowlist
+│   ├── license_audit.dart          # Dependency license allowlist and font-licence gate
+│   ├── license_overrides.yaml      # Justified exceptions for license_audit.dart
 │   ├── gen.sh                      # build_runner + gen-l10n
 │   ├── gen_icons.dart              # Icon sets from the vector logo master
 │   ├── specs/                      # Client-surface spec snapshot of the minServer release
@@ -88,7 +91,7 @@ client/
 
 ## `pubspec.yaml`
 
-Version floors are the releases current when the plan was written. The lockfile is the real pin.
+Version floors are the releases current when the plan was written; every floor resolves on the pinned SDK. The lockfile is the real pin. Dependencies are listed alphabetically (`sort_pub_dependencies`). `material_ui` carries the Material widgets, which moved out of the Flutter SDK (`package:flutter/material.dart` is deprecated in the pinned release).
 
 ```yaml
 name: soundspan
@@ -101,77 +104,72 @@ environment:
   flutter: ^3.50.0
 
 dependencies:
-  flutter: { sdk: flutter }
-  flutter_localizations: { sdk: flutter }
-  intl: any
-
-  soundspan_api: { path: packages/soundspan_api }
-
-  # State, routing
-  flutter_riverpod: ^3.5.0
-  riverpod_annotation: ^4.0.0
-  go_router: ^18.1.0
-
-  # Data
-  drift: ^2.35.0
-  drift_flutter: ^0.3.0
-  flutter_secure_storage: ^11.2.0
-  path_provider: ^2.1.6
-  path: ^1.9.0
-  freezed_annotation: ^3.0.0
-  json_annotation: ^4.9.0
-  collection: ^1.19.0
-
-  # Playback
-  just_audio: ^0.10.6            # Android, iOS, macOS, web
-  media_kit: ^1.2.6              # Windows, Linux
-  media_kit_libs_windows_audio: any
-  media_kit_libs_linux: any
+  app_links: ^7.2.0
   audio_service: ^0.18.19
   audio_service_mpris: ^0.2.1
   audio_session: ^0.2.4
-  smtc_windows: ^1.1.0           # Subject to spike S4
-
-  # Network and realtime
-  socket_io_client: ^3.1.6
-  connectivity_plus: ^7.3.0
   background_downloader: ^9.6.0
-
-  # UI
   cached_network_image: ^4.0.0
-  flutter_cache_manager: any
+  collection: ^1.19.0
+  connectivity_plus: ^7.3.0
+  drift: ^2.35.0
+  drift_flutter: ^0.3.0
   dynamic_color: ^2.1.0          # Only to read the platform contrast setting; palette is fixed
-  mobile_scanner: ^7.5.0         # QR; Android, iOS, macOS, web
-
-  # Platform
-  app_links: ^7.2.0
-  window_manager: ^0.7.0
-  tray_manager: ^0.9.0
-  package_info_plus: ^10.2.0
+  flutter: { sdk: flutter }
+  flutter_cache_manager: any
   flutter_local_notifications: ^23.0.0
-  url_launcher: any
+  flutter_localizations: { sdk: flutter }
+  flutter_riverpod: ^3.5.0
+  flutter_secure_storage: ^11.2.0
+  flutter_svg: ^2.4.0             # Logo mark and other SVG glyphs
+  freezed_annotation: ^3.0.0
+  go_router: ^18.1.0
+  intl: any
+  json_annotation: ^4.9.0
+  just_audio: ^0.10.6            # Android, iOS, macOS, web
   logging: ^1.3.0
+  material_ui: ^1.1.0            # Material widgets; moved out of the Flutter SDK
+  media_kit: ^1.2.6              # Windows, Linux
+  media_kit_libs_linux: any
+  media_kit_libs_windows_audio: any
+  mobile_scanner: ^7.5.0         # QR; Android, iOS, macOS, web
+  package_info_plus: ^10.2.0
+  path: ^1.9.0
+  path_provider: ^2.1.6
+  riverpod_annotation: ^4.0.0
+  smtc_windows: ^1.1.0           # Subject to spike S4
+  socket_io_client: ^3.1.6
+  soundspan_api: { path: packages/soundspan_api }
+  tray_manager: ^0.9.0
+  url_launcher: any
+  window_manager: ^0.7.0
 
 dev_dependencies:
-  flutter_test: { sdk: flutter }
-  integration_test: { sdk: flutter }
+  alchemist: ^0.14.0
+  analyzer: ^14.7.0              # tool/check_imports.dart
+  archive: ^4.7.1                # tool/gen_icons.dart (pure-Dart deflate)
   build_runner: any
   drift_dev: ^2.35.0
+  flutter_test: { sdk: flutter }
   freezed: ^4.0.0
+  http_mock_adapter: any
+  image: ^4.12.0                 # tool/gen_icons.dart
+  integration_test: { sdk: flutter }
   json_serializable: ^6.15.0
+  mocktail: ^1.0.5
+  patrol: ^4.11.0
   riverpod_generator: ^4.0.0
   very_good_analysis: ^11.0.0
-  mocktail: ^1.0.5
-  alchemist: ^0.14.0
-  patrol: ^4.11.0
-  http_mock_adapter: any
+  yaml: ^3.1.0                   # tool/license_audit.dart
 
 flutter:
   uses-material-design: true
   generate: true
   assets:
     - assets/brand/
+    - assets/brand/tray/
     - assets/licenses/
+    - assets/licenses/fonts/
   fonts:
     - family: Montserrat
       fonts:
@@ -194,11 +192,11 @@ Every package in the design document's table was checked for release cadence and
 | `smtc_windows` | Low release cadence; wraps WinRT through generated bindings | Spike S4 decides between it and an in-repo C++/WinRT plugin (`soundspan_smtc`) |
 | `auto_updater` | Low release cadence; wraps Sparkle and WinSparkle | Spike S7 in M5; fallback is a version check that opens the release page |
 | `sqlite3_flutter_libs` | End of life | Not referenced. `drift_flutter` brings the supported SQLite integration |
-| `openapi_generator` | Wraps the Java OpenAPI Generator, so CI and every developer machine would need a JDK | Replaced by `swagger_parser` (pure Dart). Kept as the fallback if spike S8 fails |
+| `openapi_generator` | Wraps the Java OpenAPI Generator, so CI and every developer machine would need a JDK | Replaced by `swagger_parser` (pure Dart), which spike S8 confirmed against the client-surface spec ([03](03-api-layer.md#spike-s8-finding)) |
 | `media_kit_libs_linux` | Uses the system libmpv | Packaging handles libmpv per format |
 | All others | Actively released | Adopted |
 
-`soundspan_api/pubspec.yaml` depends only on `dio`, `retrofit`, `freezed_annotation`, `json_annotation`, `meta`, and `collection` (dev: `swagger_parser`, `retrofit_generator`, `freezed`, `json_serializable`, `build_runner`), so it can be tested with plain `dart test` and reused by a future CLI or TV app.
+`soundspan_api/pubspec.yaml` depends only on `dio`, `retrofit`, `freezed_annotation`, `json_annotation`, `meta`, and `collection` (dev: `swagger_parser`, `retrofit_generator`, `freezed`, `json_serializable`, `build_runner`, plus `test` for its runner, `http_mock_adapter` for its transport tests and `very_good_analysis` for the shared analysis options it includes), so it can be tested with plain `dart test` and reused by a future CLI or TV app.
 
 ## Static Analysis
 
@@ -225,17 +223,21 @@ linter:
     lines_longer_than_80_chars: false   # dart format decides
 ```
 
-Rules the analyzer cannot express are enforced by `tool/check_imports.dart`, which parses import directives and fails CI on a violation:
+Rules the analyzer cannot express are enforced by `tool/check_imports.dart`. It parses files with `package:analyzer` (no resolution), prints `path:line: [rule] message` per violation, and fails CI on any. It runs in `client-analyze` after `flutter analyze` and in `tool/verify.sh`. It scans `lib/`, `test/`, `tool/`, `integration_test/`, `contract_test/`, and `packages/*/{lib,test}`; the import and code rules apply to `lib/` and `packages/*/lib/`, and `spdx` applies to all of them. Generated files (`*.g.dart`, `*.freezed.dart`, anything under a `generated/` directory) and `spikes/` are not checked. Relative and `package:soundspan/...` imports are resolved to a path under `lib/` before the path rules apply, and exports count as imports. There is no ignore comment and no baseline: a rule that needs an exception gets it in the tool, with a test.
 
-| Rule | Reason |
-|---|---|
-| `dart:io`, `dart:js_interop`, and `package:web` only under `lib/platform/**` and `packages/**` | Platform seams (design doc, Architecture) |
-| `package:just_audio` and `package:media_kit` only under `lib/core/playback/engines/**` | Playback packages stay behind `PlayerEngine` |
-| `package:dio` only under `packages/soundspan_api/**` and `lib/core/downloads/**` | Single HTTP boundary |
-| `features/<a>/**` never imports `features/<b>/**` except `features/<b>/<b>.dart` (its public barrel) | Feature isolation |
-| `**/domain/**` imports no Flutter, no drift, no dio | Pure domain |
-| `**/ui/**` imports no `data/` | UI talks to providers |
-| No file under `lib/` contains the identifiers `streamSource`, `tidalTrackId`, `youtubeVideoId`, or a string-prefix test on a `playbackId` | Source-agnostic rule (design doc, Source-Agnostic Tracks) |
+| Rule id | Fails when | Reason |
+|---|---|---|
+| `platform-imports` | `dart:io`, `dart:js_interop`, or `package:web` is imported under `lib/` outside `lib/platform/**` (`packages/**` is exempt) | Platform seams (design doc, Architecture) |
+| `playback-packages` | `package:just_audio` or `package:media_kit` is imported outside `lib/core/playback/engines/**` | Playback packages stay behind `PlayerEngine` |
+| `dio-boundary` | `package:dio` is imported outside `packages/soundspan_api/**` and `lib/core/downloads/**` | Single HTTP boundary |
+| `feature-isolation` | `lib/features/<a>/**` imports `lib/features/<b>/**` other than `lib/features/<b>/<b>.dart` (its public barrel) | Feature isolation |
+| `pure-domain` | a file under any `domain/` directory imports `package:flutter`, `dart:ui`, `package:drift`, or `package:dio` | Pure domain |
+| `ui-no-data` | a file under any `ui/` directory imports a file under a `data/` directory | UI talks to providers |
+| `core-direction` | `lib/core/<x>/` imports `lib/core/<y>/` against the order of [02](02-architecture.md) (`storage` ← `auth` ← `profile` ← `sync`, `downloads`, `realtime` ← `playback`), or anything under `lib/core/` imports `lib/features/`. Core directories outside that order (`logging`, `connectivity`) may be imported by any core directory and may themselves import only `storage` and each other | Core layering |
+| `source-agnostic` | under `lib/` or `packages/soundspan_api/lib/`, the identifier `streamSource`, `tidalTrackId`, or `youtubeVideoId` appears, or `startsWith`, `endsWith`, `contains`, `split`, `substring`, `indexOf`, `codeUnitAt`, `replaceFirst`, `replaceAll`, or an index is applied to an expression whose source mentions `playbackId` (any letter case). Comparing, hashing, interpolating, and passing a playback id are allowed | Source-agnostic rule (design doc, Source-Agnostic Tracks) |
+| `colour-literal` | under `lib/` outside `lib/app/theme/**`, a `Color(...)` or `Color.from...(...)` call or a `Colors.<name>` reference appears; `Colors.transparent` is allowed | Colours come from `SoundspanColors` ([09](09-ui-and-design-system.md)) |
+| `clock` | under `lib/` outside `lib/platform/**`, `DateTime.now()` is called | Time comes from the `Clock` seam, so tests use `FakeClock` ([11](11-testing-and-ci.md)) |
+| `spdx` | a hand-written Dart file does not start with the SPDX header (see the end of this document) | Client licence exception |
 
 ## Code Generation
 
@@ -247,6 +249,11 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 (cd packages/soundspan_api && dart run swagger_parser && dart run build_runner build --delete-conflicting-outputs)
 dart run build_runner build --delete-conflicting-outputs
+# Per database (app; state and cache join as they are added): schema dump, stepByStep helper, migration test helpers
+dart run drift_dev schema dump lib/core/storage/app/app_database.dart drift_schemas/app/
+dart run drift_dev schema steps drift_schemas/app/ lib/core/storage/app/app_database.steps.g.dart
+mkdir -p test/core/storage/generated_migrations
+dart run drift_dev schema generate drift_schemas/app/ test/core/storage/generated_migrations/app/
 flutter gen-l10n
 ```
 
@@ -255,7 +262,7 @@ flutter gen-l10n
 | `swagger_parser` | `packages/soundspan_api/openapi/soundspan-client.json` (emitted by the backend, P9) | `packages/soundspan_api/lib/src/generated/` |
 | `retrofit_generator` | Generated client interfaces | `*.g.dart` |
 | `freezed` + `json_serializable` | Generated API models, domain value types | `*.freezed.dart`, `*.g.dart` |
-| `drift_dev` | `lib/core/storage/**/tables/*.dart`, `*.drift` | `*.g.dart`, schema dumps under `drift_schemas/` |
+| `drift_dev` | `lib/core/storage/**/tables/*.dart`, `*.drift` | `*.g.dart`; schema dumps under `drift_schemas/`, `*.steps.g.dart` and migration test helpers under `test/core/storage/generated_migrations/` (the `drift_dev schema` commands) |
 | `riverpod_generator` | `@riverpod` functions and classes | `*.g.dart` |
 | `gen-l10n` | `lib/app/l10n/app_*.arb` | `lib/app/l10n/generated/` |
 

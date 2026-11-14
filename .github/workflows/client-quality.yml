@@ -1,0 +1,338 @@
+name: Client Quality
+
+on:
+  pull_request:
+    paths:
+      - "client/**"
+      - "backend/src/routes/**"
+      - "backend/src/openapi/**"
+      - ".github/workflows/client-*.yml"
+      - ".github/actions/client-flutter/**"
+  push:
+    branches: [main]
+    paths:
+      - "client/**"
+
+concurrency:
+  group: client-quality-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  changes:
+    name: Client changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      client: ${{ steps.diff.outputs.client }}
+      apple: ${{ steps.diff.outputs.apple }}
+      api_surface: ${{ steps.diff.outputs.api_surface }}
+      web_storage: ${{ steps.diff.outputs.web_storage }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Compute changed areas
+        id: diff
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          set -euo pipefail
+          if [[ "$EVENT_NAME" != "pull_request" ]]; then
+            {
+              echo "client=true"
+              echo "apple=true"
+              echo "api_surface=true"
+              echo "web_storage=true"
+            } >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # Diff against the merge base with the base branch, not the previous
+          # push, so a job that failed earlier cannot be skipped later.
+          git fetch --no-tags origin "$BASE_REF"
+          base="$(git merge-base "origin/$BASE_REF" HEAD)"
+          changed="$(git diff --name-only "$base" HEAD)"
+          printf 'Changed files:\n%s\n' "$changed"
+          has() { grep -Eq "$1" <<< "$changed" && echo true || echo false; }
+          {
+            echo "client=$(has '^(client/|\.github/workflows/client-[^/]*\.yml$|\.github/actions/client-flutter/)')"
+            echo "apple=$(has '^(client/ios/|client/macos/|client/pubspec\.lock$|client/lib/platform/|\.github/workflows/client-quality\.yml$|\.github/actions/client-flutter/)')"
+            echo "api_surface=$(has '^(client/packages/soundspan_api/|backend/src/routes/|backend/src/openapi/)')"
+            echo "web_storage=$(has '^(client/lib/platform/|client/web/|client/integration_test/web/|client/pubspec\.lock$|\.github/workflows/client-quality\.yml$)')"
+          } | tee -a "$GITHUB_OUTPUT"
+
+  client-analyze:
+    name: client-analyze
+    needs: changes
+    if: needs.changes.outputs.client == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Flutter
+        uses: ./.github/actions/client-flutter
+
+      - name: Generated code is current
+        working-directory: client
+        run: |
+          tool/gen.sh
+          git diff --exit-code -- .
+
+      - name: Format
+        working-directory: client
+        run: dart format --output=none --set-exit-if-changed .
+
+      - name: Analyze client
+        working-directory: client
+        run: flutter analyze --fatal-infos
+
+      - name: Layering and platform imports
+        working-directory: client
+        run: dart run tool/check_imports.dart
+
+      - name: No hard-coded UI strings
+        working-directory: client
+        run: dart run tool/check_l10n.dart
+
+      - name: Dependency and font licences
+        working-directory: client
+        run: dart run tool/license_audit.dart
+
+      - name: Icons are current
+        working-directory: client
+        run: dart run tool/gen_icons.dart --check
+
+      - name: Analyze soundspan_api
+        working-directory: client/packages/soundspan_api
+        run: dart analyze --fatal-infos
+
+  client-test:
+    name: client-test
+    needs: changes
+    if: needs.changes.outputs.client == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Flutter
+        uses: ./.github/actions/client-flutter
+
+      - name: Test soundspan_api with coverage
+        working-directory: client/packages/soundspan_api
+        run: dart test --coverage-path=coverage/lcov.info
+
+      - name: Test client with coverage
+        working-directory: client
+        run: flutter test --coverage --exclude-tags golden,contract,engine
+
+      - name: Coverage floor
+        working-directory: client
+        run: dart run tool/coverage_floor.dart
+
+  client-golden:
+    name: client-golden
+    needs: changes
+    if: needs.changes.outputs.client == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Flutter
+        uses: ./.github/actions/client-flutter
+
+      - name: Golden tests
+        working-directory: client
+        run: flutter test --tags golden
+
+      - name: Upload golden failures
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: client-golden-failures
+          # pubspec.yaml anchors the common root at client/, so paths in the
+          # artifact stay relative to client/.
+          path: |
+            client/pubspec.yaml
+            client/test/**/failures/**
+          if-no-files-found: warn
+
+      - name: Render goldens on this runner
+        if: failure()
+        working-directory: client
+        run: flutter test --tags golden --update-goldens
+
+      - name: Upload rendered goldens
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: client-golden-rendered
+          path: |
+            client/pubspec.yaml
+            client/test/**/goldens/**/*.png
+            !client/test/**/failures/**
+          if-no-files-found: warn
+
+  client-build-android:
+    name: client-build-android
+    needs: changes
+    if: needs.changes.outputs.client == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Java
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Flutter
+        uses: ./.github/actions/client-flutter
+
+      - name: Build debug APK
+        working-directory: client
+        run: flutter build apk --debug --dart-define-from-file=config/dev.json
+
+      - name: The APK has the adaptive launcher icon
+        working-directory: client
+        run: unzip -l build/app/outputs/flutter-apk/app-debug.apk | grep -q ' res/mipmap-anydpi-v26/ic_launcher.xml$'
+
+  client-build-linux:
+    name: client-build-linux
+    needs: changes
+    if: needs.changes.outputs.client == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # The composite action apt-installs the Linux build packages of doc 01.
+      - name: Set up Flutter
+        uses: ./.github/actions/client-flutter
+
+      - name: Build Linux release
+        working-directory: client
+        run: flutter build linux --release --dart-define-from-file=config/dev.json
+
+      - name: Every shared library resolves
+        working-directory: client
+        run: tool/check_ldd.sh build/linux/x64/release/bundle
+
+  client-build-web:
+    name: client-build-web
+    needs: changes
+    if: needs.changes.outputs.client == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Flutter
+        uses: ./.github/actions/client-flutter
+
+      - name: Build web release
+        working-directory: client
+        run: flutter build web --release --dart-define-from-file=config/dev.json
+
+      - name: The bundle ships the drift WASM files
+        working-directory: client
+        run: |
+          test -s build/web/sqlite3.wasm
+          test -s build/web/drift_worker.js
+
+      - name: The bundle ships the committed icons
+        working-directory: client
+        run: |
+          for icon in favicon.png icons/Icon-192.png icons/Icon-512.png icons/Icon-maskable-192.png icons/Icon-maskable-512.png; do
+            cmp "web/$icon" "build/web/$icon"
+          done
+
+      - name: Bundle-size report
+        working-directory: client
+        run: tool/web_bundle_report.sh build/web >> "$GITHUB_STEP_SUMMARY"
+
+  client-web-integration:
+    name: client-web-integration
+    needs: changes
+    if: needs.changes.outputs.web_storage == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Flutter
+        uses: ./.github/actions/client-flutter
+
+      # The runner image ships Google Chrome and the matching chromedriver.
+      - name: Start chromedriver
+        run: |
+          "$CHROMEWEBDRIVER/chromedriver" --port=4444 &
+          for _ in $(seq 1 30); do
+            curl -fsS http://localhost:4444/status > /dev/null && exit 0
+            sleep 1
+          done
+          echo "chromedriver did not start" >&2
+          exit 1
+
+      - name: Web storage integration test
+        working-directory: client
+        run: >-
+          flutter drive
+          --driver=test_driver/integration_test.dart
+          --target=integration_test/web/storage_web_test.dart
+          -d web-server --browser-name=chrome --headless
+
+  client-build-windows:
+    name: client-build-windows
+    needs: changes
+    if: needs.changes.outputs.client == 'true'
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Flutter
+        uses: ./.github/actions/client-flutter
+
+      - name: Build Windows release
+        working-directory: client
+        run: flutter build windows --release --dart-define-from-file=config/dev.json
+
+  client-build-macos-ios:
+    name: client-build-macos-ios
+    needs: changes
+    if: needs.changes.outputs.apple == 'true'
+    runs-on: macos-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Flutter
+        uses: ./.github/actions/client-flutter
+
+      - name: Build macOS release
+        working-directory: client
+        run: flutter build macos --release --dart-define-from-file=config/dev.json
+
+      - name: Build iOS release without code signing
+        working-directory: client
+        run: flutter build ios --release --no-codesign --dart-define-from-file=config/dev.json

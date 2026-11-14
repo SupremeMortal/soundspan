@@ -137,6 +137,21 @@ end each other's sessions. `SOULSEEK_SMOKE_QUERY` changes the search (default
 `aphex twin xtal`), and `SOULSEEK_SMOKE_MAX_BYTES` caps the size of the
 downloaded file (default 15 MiB).
 
+#### Response validation
+
+Operations in the client-surface registry (`backend/src/openapi/`) declare a
+zod schema for each JSON status. With `OPENAPI_VALIDATE_RESPONSES=1` (or
+`true`) the backend checks every JSON body it sends for a registered operation
+against the schema for its status and answers a mismatch with `500`
+`{ code: "RESPONSE_SCHEMA_MISMATCH", operationId, path }`. It is a test and CI
+switch and stays off in production. Route tests get the same check without the
+variable: `createRouteTestApp` always installs it and throws on a mismatch, and
+tests that call a handler directly with `createMockJsonResponse` assert the
+captured response with `expectClientSurfaceResponse(operationId, res)`, or wrap
+the handler with `withClientSurfaceValidation(operationId, handler)` so every
+response it sends is checked (all three in
+`backend/src/routes/__tests__/helpers/`).
+
 ### Frontend
 
 ```bash
@@ -309,7 +324,7 @@ Quality visibility workflow:
 | Backend Typecheck / Frontend Typecheck | **Yes**      | Standalone TypeScript checks.                                                                                                                                                                                                                                                                                         |
 | Helm Chart Visibility                  | Configurable | Helm lint and render assertions.                                                                                                                                                                                                                                                                                      |
 | Python Quality                         | **Yes**      | Root AIO image-hardening tests, `ruff check`, `ruff format --check`, the aggregate `mypy` run, and four per-sidecar `mypy` runs that avoid top-level module collisions.                                                                                                                                               |
-| Enforcement Gates                      | **Yes**      | Route-error canonicalization, the source-file-size ratchet, the environment-variable documentation and deployment parity ratchet, the source-scrape ratchet, the routes README index check, and npm override staleness, each with its self-test; the infrastructure and release helper tests (`npm run check:infra-release:test`); Dockerfile hygiene; and the 130-use hardcoded-hex baseline. The companion Enforcement Gates Build job runs OpenAPI route synchronization and repository-wide Prettier checks. Local `npm run verify:gates` runs the checks from both jobs. |
+| Enforcement Gates                      | **Yes**      | Route-error canonicalization, the source-file-size ratchet, the environment-variable documentation and deployment parity ratchet, the source-scrape ratchet, the routes README index check, and npm override staleness, each with its self-test; the infrastructure and release helper tests (`npm run check:infra-release:test`); Dockerfile hygiene; and the 130-use hardcoded-hex baseline. The companion Enforcement Gates Build job runs OpenAPI route synchronization, the client-surface spec check (`npm run check:client-spec`: the committed `client/packages/soundspan_api/openapi/soundspan-client.json` matches what `npm --prefix backend run openapi:emit-client` writes), and repository-wide Prettier checks. Local `npm run verify:gates` runs the checks from both jobs. |
 
 Configurable jobs set `continue-on-error` unless the repository variable
 `CI_NON_BLOCKING_TEST_VISIBILITY` is `false`. With the variable unset or set to

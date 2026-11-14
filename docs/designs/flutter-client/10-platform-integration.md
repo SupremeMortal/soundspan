@@ -6,7 +6,7 @@ What each target needs beyond shared Dart code. Identifier everywhere: `io.sound
 
 ## Android
 
-**Gradle:** `minSdk 26`, `targetSdk` and `compileSdk` at the Flutter default for the pinned SDK, Java 17, R8 on in release, `abiFilters` arm64-v8a, armeabi-v7a, x86_64. Universal APK and AAB.
+**Gradle:** `minSdk 26`, `compileSdk 37` (required by `flutter_local_notifications` and `androidx.core`), `targetSdk` at the Flutter default for the pinned SDK, core library desugaring (`desugar_jdk_libs` 2.1.4, required by `flutter_local_notifications`), Java 17, R8 on in release, `abiFilters` arm64-v8a, armeabi-v7a, x86_64. Universal APK and AAB.
 
 **`AndroidManifest.xml`:**
 
@@ -71,7 +71,7 @@ root
 
 ## macOS
 
-**Deployment target 11.0. Universal binary. Hardened runtime.**
+**Deployment target 12.0** (the minimum of the pinned Flutter SDK). **Universal binary. Hardened runtime.**
 
 Entitlements (release):
 
@@ -146,7 +146,7 @@ Flathub builds must work offline from declared sources. The manifest takes the p
 | Headers | The static host must send `Cache-Control: no-cache` for `index.html`, `flutter_bootstrap.js`, and long-lived caching for hashed assets. No COOP/COEP |
 | CSP (recommended in the container's nginx config) | `default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; connect-src *; img-src * blob: data:; media-src *; style-src 'self' 'unsafe-inline'; worker-src 'self' blob:` — `connect-src *` because the server address is chosen at run time |
 | Container | `nginx:alpine`-based image serving the bundle, running as an arbitrary UID in group 0 like the other images |
-| OIDC | Web offers password sign-in only. The server's OIDC code exchange is bound to a browser cookie set by its own login redirect; whether a same-origin Flutter build can complete that flow is evaluated in spike S6 and added only if it works without server changes |
+| OIDC | Web offers password sign-in only. The server's OIDC callback always hands its one-time exchange code to the web UI's `/login` page (`OIDC_WEB_BASE_URL` + `/login?ssoCode=…`), which redeems it at once, and `/api/auth/oidc/exchange` also requires the `httpOnly` flow-binding cookie. A Flutter build on the same origin never receives the code, so it cannot obtain its own tokens through existing endpoints |
 
 ## Deep Links Summary
 

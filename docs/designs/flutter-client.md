@@ -189,7 +189,7 @@ Probe failures are classified and explained individually: DNS failure, connectio
 2. **Device link** (preferred on mobile, and for SSO-only servers): the user, signed in on the web UI, generates a code (`POST /api/device-link/generate`). The client submits it to `POST /api/device-link/verify` `{ code, deviceName }` and receives an **API key**. No browser redirect is involved.
 3. **Pasted API key**: created under Settings → API keys in the web UI.
 
-OIDC is not driven from inside native apps: the server's OIDC callback redirects to the configured web frontend, not an app-registered URI scheme. Native targets offer device link instead. The Flutter web build, when hosted on the server's origin, can reuse the browser OIDC flow.
+OIDC is not driven from inside native apps: the server's OIDC callback redirects to the configured web frontend, not an app-registered URI scheme. Native targets offer device link instead. The Flutter web build offers password sign-in only, even on the server's origin, because the callback hands its one-time code to the web UI's own login page ([10-platform-integration.md](flutter-client/10-platform-integration.md#web), OIDC row).
 
 ### Credential Use
 

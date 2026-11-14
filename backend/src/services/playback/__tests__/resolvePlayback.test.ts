@@ -85,6 +85,7 @@ describe("resolvePlayback", () => {
                 quality: "low",
                 libraryQuality: "low",
                 middleware: NO_MIDDLEWARE,
+                recordPlay: true,
             });
             expect(mockTrackFindUnique).toHaveBeenCalledWith(
                 expect.objectContaining({
@@ -94,6 +95,22 @@ describe("resolvePlayback", () => {
                     }),
                 }),
             );
+        });
+
+        it("carries recordPlay false through to the library stream", async () => {
+            const out = await resolvePlayback(USER, {
+                parsed: { kind: "t", trackId: "trk1" },
+                recordPlay: false,
+            });
+            expect(out).toMatchObject({ kind: "t", recordPlay: false });
+        });
+
+        it("records plays when recordPlay is true", async () => {
+            const out = await resolvePlayback(USER, {
+                parsed: { kind: "t", trackId: "trk1" },
+                recordPlay: true,
+            });
+            expect(out).toMatchObject({ kind: "t", recordPlay: true });
         });
 
         it("uses the saved playback quality when none is requested", async () => {

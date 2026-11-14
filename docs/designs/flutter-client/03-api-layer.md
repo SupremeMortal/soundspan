@@ -32,7 +32,7 @@ The models and endpoint methods are generated from the server's OpenAPI document
 | Input | `packages/soundspan_api/openapi/soundspan-client.json`, the client-surface subset the backend emits (`npm --prefix backend run openapi:emit-client`). It is committed; CI re-emits it and fails on a difference. |
 | Generator | `swagger_parser` (a pure Dart dev dependency; no Java). It reads OpenAPI 3.0 and writes `freezed` + `json_serializable` models and `retrofit` clients over `dio`. |
 | Output | `lib/src/generated/`, committed like all generated code and excluded from analysis and the file-size gate. |
-| Naming | One client class per tag (`LibraryClient`, `PlaybackClient`, …); one method per `operationId`; one model per named component. |
+| Naming | One client class per tag (`LibraryClient`, `PlaybackClient`, …), each a getter of the root `SoundspanRestClient` named after the tag (`library` becomes `library2`, because `library` is a Dart built-in identifier); one method per `operationId`; one model per named component, plus one per inline enum or union, named after its operation or property (`LoginResponse200`, `ListAlbumsSortBy`). |
 
 `packages/soundspan_api/swagger_parser.yaml`:
 
@@ -40,16 +40,14 @@ The models and endpoint methods are generated from the server's OpenAPI document
 swagger_parser:
   schema_path: openapi/soundspan-client.json
   output_directory: lib/src/generated
-  language: dart
-  json_serializer: freezed
-  root_client: true
-  root_client_name: SoundspanRestClient
-  put_clients_in_folder: true
-  unknown_enum_value: true       # a value added by a newer server decodes to `unknown`
-  mark_files_as_generated: true
+  generation:
+    root_api_class_name: SoundspanRestClient
+    http_client: retrofit
+    serializer: freezed
+    unknown_enum_values: preserve   # a value added by a newer server decodes to `<Enum>Unknown`
 ```
 
-Option names and the generator's handling of nullable-versus-optional fields, `oneOf`, and unknown enum values are verified in spike S8 ([13](13-milestones-and-work-breakdown.md)) against the S1-P9b spec before M0 builds on it. If the spike fails, the fallback is `openapi-generator`'s `dart-dio` generator (same input, needs Java in CI); nothing outside `lib/src/generated/` changes.
+The generator follows the spec exactly, so two spec constructs decide how tolerant the generated code is: a closed object (`additionalProperties: false`) becomes a decoder that rejects unknown keys, so response objects in the client surface are open ([12](12-server-prerequisites-p6-p9.md), Serialisation Rules); and a value outside an `enum` decodes to the enum's `Unknown` subtype only because of `unknown_enum_values: preserve`. The answers for each generator behaviour the plan relies on are under [Spike S8 Finding](#spike-s8-finding).
 
 **Hand-written, around the generated code:**
 
@@ -83,10 +81,11 @@ packages/soundspan_api/
         ├── urls.dart                # StreamUrls, ImageUrls
         ├── paging.dart              # OffsetPage, KeysetPage
         └── generated/               # swagger_parser output; never edited
-            ├── models/              # One freezed class per component schema
-            └── clients/             # SessionClient, LibraryClient, PlaylistsClient, SearchClient,
-                                     # PlaybackClient, OfflineClient, PodcastsClient, DiscoveryClient,
-                                     # ListenTogetherClient, SocialClient
+            ├── soundspan_rest_client.dart   # Root client: one getter per tag
+            ├── exports.dart
+            └── <tag>/                       # One folder per tag (session, library, playlists, …)
+                ├── <tag>_client.dart        # SessionClient, LibraryClient, PlaylistsClient, …
+                └── models/                  # One freezed class per schema the tag's operations use
 ```
 
 ## Configuration and Credentials
@@ -134,7 +133,7 @@ Every resource method passes a path relative to the API root (`/library/albums`)
 ### 3. `RefreshInterceptor` (JWT sessions only)
 
 ```dart
-class RefreshInterceptor extends QueuedInterceptor {
+class RefreshInterceptor extends Interceptor {
   Future<JwtCredentials>? _inFlight;
 
   Future<JwtCredentials> _refresh(JwtCredentials stale) =>
@@ -142,21 +141,31 @@ class RefreshInterceptor extends QueuedInterceptor {
 }
 ```
 
-- **Proactive:** before sending, decode the access token's `exp` and `iat` claims (no signature check). If more than 80 % of the lifetime has elapsed, refresh first. With 24-hour tokens that is a refresh after about 19 hours of age.
-- **Reactive:** on 401 `AUTH_REQUIRED`, refresh once and replay the original request with the new token. A second 401 on the replay is final.
+It is a plain `Interceptor`, not a `QueuedInterceptor`: a replay is sent through the whole chain again, so it carries the current token and gets the retry policy, and a queued error handler would wait on itself when that replay fails with 401. The shared `_inFlight` future is what serializes renewals; a request that arrives while one is in flight waits for it and is sent with the new token.
+
+- **Proactive:** before sending, decode the access token's `exp` and `iat` claims (no signature check). If more than 80 % of the lifetime has elapsed, refresh first. With 24-hour tokens that is a refresh after about 19 hours of age. A token that cannot be decoded, or lacks either claim, is sent as is.
+- **Reactive:** on 401 whose `code` is `AUTH_REQUIRED` or absent, refresh once and replay the original request with the new token. A second 401 on the replay is final. A 401 with any other `code` is not refreshed.
+- **Refresh call:** `POST /auth/refresh` with `{ refreshToken }`, anonymous and never retried, on a separate bare `Dio` with the same configuration, guard and adapter but not this interceptor, so it cannot recurse. The answer is `{ token, refreshToken }`.
 - **Single flight:** all concurrent callers await the same `_inFlight` future. A request that was built with the stale token and fails with 401 after another request already refreshed compares its token with `current` and simply replays.
 - **Persistence order:** `onTokensRotated` is awaited before any request uses the new access token. Because server tokens are stateless, a crash between the server's response and the write leaves the old refresh token usable; nothing is lost.
 - **Failure:** refresh answers 401 (`Invalid refresh token`, `User not found`, `Token invalidated`) → `onUnauthenticated(sessionExpired)` and every waiter fails with `Unauthenticated`. Refresh answers 503 `AUTH_BACKEND_UNAVAILABLE` or fails on the network → waiters fail with `ServerError`/`Offline`; the session stays signed in and the next request tries again.
-- API-key sessions never refresh. A 401 with an API key → `onUnauthenticated(keyRejected)`.
+- API-key sessions never refresh. A 401 with an API key → `onUnauthenticated(keyRejected)`, once per key, and the request fails with `Unauthenticated`.
+- Anonymous requests and requests without a credential pass through untouched.
 
 ### 4. `RetryInterceptor`
 
 | Condition | Policy |
 |---|---|
-| 429 | Wait `Retry-After` seconds (cap 60 s) plus 0–20 % jitter, then retry. Up to 2 retries for idempotent methods, 1 for others. Longer waits surface `RateLimited(retryAfter)` to the caller. |
-| 502, 503, 504 on `GET` | Exponential backoff 0.5 s, 1 s, 2 s with jitter, 3 attempts |
-| Connection error or timeout on `GET` | Same backoff, 2 attempts, then `Offline` |
-| Any failure on a non-idempotent method | No automatic retry; the outbox owns retries for writes |
+| 429 | If `Retry-After` is at most 60 s: wait that long plus 0–20 % jitter, then retry; at most 2 retries for idempotent methods and 1 for others. If it is longer than 60 s, or the retries are used up: surface `RateLimited(retryAfter)` without waiting. A missing or unparseable header counts as 60 s. |
+| 502, 503, 504 on `GET` | Up to 3 retries, waiting 0.5 s, 1 s, 2 s, each plus 0–20 % jitter; then the error surfaces through the error mapper. |
+| Connection error or timeout on `GET` | Up to 2 retries, waiting 0.5 s and 1 s plus jitter; then `Offline`. |
+| Any other failure on a non-idempotent method | No retry; the outbox owns retries for writes |
+
+- Idempotent methods: `GET`, `HEAD`, `PUT`, `DELETE`, `OPTIONS`.
+- A request marked `extra: {noRetry: true}` is never retried; the refresh call uses it.
+- 401 is never retried here; it belongs to the refresh interceptor.
+- A retry is sent through the whole chain again, so it carries the current credential. Each kind of retry (429, gateway, network) counts its own attempts.
+- The clock, the backoff wait and the jitter's random source are constructor parameters of the interceptors and of `createDio`, so tests never sleep.
 
 ### 5. `ErrorMapper`
 
@@ -179,18 +188,33 @@ class CacheLimitExceeded extends Conflict { final int limitBytes, usedBytes, est
 class DownloadsDisabled extends Conflict {}         // code SOURCE_DOWNLOADS_DISABLED
 class InvalidRequest extends ApiException {}        // 400; `code` distinguishes METADATA_REQUIRED etc.
 class RateLimited extends ApiException { final Duration retryAfter; }
-class InvalidResponse extends ApiException {}      // 2xx body did not match the generated model
+class InvalidResponse extends ApiException {}       // 2xx JSON body that failed to decode into its model
 class Upstream extends ApiException {}              // 502/503/504 with code UPSTREAM_FAILED
 class ServerError extends ApiException {}           // other 5xx
-class NotSoundspan extends ApiException {}          // 2xx/4xx whose body is not the expected JSON
-class Unexpected extends ApiException {}            // decoding failure of a 2xx body
+class NotSoundspan extends ApiException {}          // 2xx body not JSON; 4xx (not 429) body not `{ error }`
+class Unexpected extends ApiException {}            // fits no other class: unclassifiable failure, 3xx
 ```
 
 Mapping is by status first, then `code`. Unknown `code` values keep the status-level class and carry the code through, so a newer server never crashes the mapper.
 
+Where the list above leaves a choice, the mapper decides:
+
+- `InvalidResponse` and `Unexpected` are not interchangeable. `InvalidResponse` is a 2xx JSON body that fails to decode into its generated model; the facade wraps each generated call in `guardDecode`, which turns the decoder's failure into it. `Unexpected` is anything no other class fits: a cancelled or otherwise unclassifiable `DioException`, or an unexpected status such as a 3xx.
+- `NotSoundspan` is a 2xx whose body is not JSON where JSON is expected (including a body that claims JSON and does not parse), or a 4xx whose body is HTML, plain text, or JSON without a string `error`. A plain-text 429 is `RateLimited`, not `NotSoundspan`.
+- A 4xx without a class of its own (405, 413, 422, …) with a JSON error body is `InvalidRequest` with its real `status`.
+- 502, 503 and 504 with code `UPSTREAM_FAILED` are `Upstream`; every other 5xx, including one with an HTML body, is `ServerError`.
+- `RateLimited.retryAfter` is the `Retry-After` header in seconds; a missing or unparseable header gives 60 s.
+- `Offline` is a connection error, a connect, send or receive timeout, or a bad certificate. A response-transform timeout is `Unexpected`.
+- `CacheLimitExceeded` reads `cacheLimitBytes`, `cacheUsedBytes` and `estimatedTotalBytes` from the body; a missing number reads as 0.
+- An `Error` (the guard's `ArgumentError`) is a programming error, not a server failure, and reaches the caller unchanged.
+
+The `Dio` built by `createDio` rethrows the `ApiException` a failed request carries, so callers, including the generated clients, never see a `DioException`.
+
 ### 6. `LogInterceptor`
 
 Logs method, path template, status, and duration at `fine`. Never logs headers, query values, or bodies.
+
+The package has no logging dependency: it reports one `ApiLogEntry` per finished request to an `ApiLogSink` callback the app forwards to its logger. The path template is the path relative to the API root with every segment that is not made only of lower-case letters and hyphens replaced by `:id` (`/library/albums/:id`).
 
 ### Platform HTTP Adapters
 
@@ -205,7 +229,7 @@ Wire models are the generated classes. The app never passes them to UI code: rep
 
 - **Nullability comes from the spec.** A nullable column is a nullable Dart field; a key the server may omit is an optional one. The client adds no guesses of its own.
 - **`playbackId` is optional.** The server omits it when a row has no external id. The repository maps a track without it to a non-playable domain `Track`.
-- **Unknown keys are ignored** (`json_serializable` default), so a newer server's extra fields do not break decoding. Unknown enum values decode to `unknown`.
+- **Unknown keys are ignored**, so a newer server's extra fields do not break decoding. This holds because response objects in the spec are open; the generated decoder keeps extra keys in the model's `additionalProperties` map. Unknown enum values decode to the enum's `Unknown` subtype (`TrackSourceUnknown`), which keeps the raw value.
 - **A decode failure is a contract bug.** It surfaces as `ApiException` of kind `InvalidResponse`, is logged at `severe` with the operation id and the failing key (no payload), and the screen shows the generic error view. It is not papered over, because P9's response validation is meant to make it impossible.
 - Timestamps are `date-time` strings decoded to UTC `DateTime`.
 - Request bodies are generated too. The `metadata` object sent with a `playbackId` is always built from the `TrackMeta` the client already holds.
@@ -350,3 +374,23 @@ Page size is 100 for lists and 60 for grids. The repository exposes a `PagedSour
 - **Decode smoke:** `tool/capture_fixtures.dart` records one real response per operation from the contract server; a single table-driven test decodes each with its generated model. This catches generator defects (as opposed to spec defects).
 - **Contract** (`client/contract_test`, tag `contract`): behaviour against a seeded server that runs with response validation on. See [11](11-testing-and-ci.md).
 - **Spec gates:** the committed spec equals the backend's emitted spec; generated Dart is current; `tool/spec_compat.dart` passes against the `minServer` snapshot.
+
+## Spike S8 Finding
+
+Spike S8 ([13](13-milestones-and-work-breakdown.md)) generated the client from the committed `soundspan-client.json` (S1-P9b surface) and decoded hand-written bodies built from its schemas. The answer is **yes, with a spec constraint**: `swagger_parser` is the generator.
+
+**Versions.** Dart 3.14.0 (Flutter 3.50.0); `swagger_parser` 2.1.1 (`swagger_parser_core` 1.0.2), `freezed` 4.0.3, `freezed_annotation` 3.1.0, `json_serializable` 6.15.2, `json_annotation` 4.12.0, `retrofit` 4.10.0, `retrofit_generator` 10.3.3, `dio` 5.11.1, `build_runner` 2.17.1.
+
+**Configuration.** The block under [Generated From the Server Specification](#generated-from-the-server-specification). `swagger_parser` 2 replaced the flat 1.x options: `language`, `json_serializer`, `root_client`, `root_client_name`, `put_clients_in_folder`, `unknown_enum_value` and `mark_files_as_generated` are rejected as unknown keys. Their equivalents are `generation.serializer`, `generation.http_client`, `generation.root_api_class_name` and `generation.unknown_enum_values`; the root client, the per-tag folders and the generated-file marker are always produced.
+
+| # | Question | Answer |
+|---|---|---|
+| 1 | Generation runs and the output compiles | Yes. `dart run swagger_parser`, `build_runner build` and `dart analyze --fatal-infos` (default lints) exit 0 with no findings. The output uses Dart primary constructors (`class const Foo({...})`), so it needs the Dart of `client/.fvmrc`. |
+| 2 | Optional versus nullable fields | Yes. A key in `required` that is `nullable` becomes `required final T? field` and must be present (as `null` or a value); a key outside `required` becomes `final T? field` and may be absent; an absent `required` key throws. |
+| 3 | `oneOf` responses | Yes. `login` returns a sealed `LoginResponse200` with the subtypes `LoginTokenResponse` and `LoginTwoFactorChallenge`; the decoder matches the body against each branch's required keys and types, and the caller tells them apart with a `switch` on the type. |
+| 4 | Unknown enum values | Yes, with `unknown_enum_values: preserve`. Each enum becomes a sealed type with `<Enum>Known` (wrapping a Dart `enum`) and `<Enum>Unknown` (holding the raw value, which `toJson` writes back unchanged). |
+| 5 | One client per tag | Yes. One `<Tag>Client` per operation tag, each a getter of `SoundspanRestClient`; the getter for `library` is `library2`. |
+| 6 | Method names from `operationId` | Yes. Every operation has a method named after its `operationId` that sends the spec's method and path; query parameters, path parameters and JSON bodies serialise as declared (enum query values as their wire strings). |
+| 7 | Unknown keys are ignored | Yes, with a spec constraint. The committed spec closes every object (`additionalProperties: false`), and the generator turns that into `disallowUnrecognizedKeys` and a branch matcher that rejects extra keys, so a body with an extra key fails to decode. The same spec with `additionalProperties: false` removed decodes it and keeps the extra key in `additionalProperties`. Response objects in the client surface are therefore emitted open ([12](12-server-prerequisites-p6-p9.md), Serialisation Rules). |
+| 8 | `date-time` strings decode to UTC `DateTime` | Yes. `DateTime.parse(value).toUtc()`; the decoded values have `isUtc` set. |
+

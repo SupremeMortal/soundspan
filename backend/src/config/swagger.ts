@@ -7,6 +7,8 @@ import {
     BRAND_SITE_URL,
 } from "./brand";
 import { resolveAppVersion } from "./appVersion";
+import { clientSurfaceOperations } from "../openapi/clientSurface";
+import { mergeClientSurface } from "../openapi/document";
 
 const ANONYMOUS_OPERATIONS = [
     ["/api/auth/login", "post"],
@@ -89,36 +91,6 @@ const options: swaggerJsdoc.Options = {
                         username: { type: "string" },
                         role: { type: "string", enum: ["user", "admin"] },
                         createdAt: { type: "string", format: "date-time" },
-                    },
-                },
-                LoginUser: {
-                    type: "object",
-                    additionalProperties: false,
-                    required: ["id", "username", "displayName", "role"],
-                    properties: {
-                        id: { type: "string" },
-                        username: { type: "string" },
-                        displayName: { type: "string", nullable: true },
-                        role: { type: "string", enum: ["user", "admin"] },
-                    },
-                },
-                LoginTokenResponse: {
-                    type: "object",
-                    additionalProperties: false,
-                    required: ["token", "refreshToken", "user"],
-                    properties: {
-                        token: { type: "string" },
-                        refreshToken: { type: "string" },
-                        user: { $ref: "#/components/schemas/LoginUser" },
-                    },
-                },
-                LoginTwoFactorChallenge: {
-                    type: "object",
-                    additionalProperties: false,
-                    required: ["requires2FA", "message"],
-                    properties: {
-                        requires2FA: { type: "boolean", enum: [true] },
-                        message: { type: "string" },
                     },
                 },
                 Artist: {
@@ -220,5 +192,11 @@ function applyAnonymousSecurity(document: object): void {
     }
 }
 
-export const swaggerSpec = swaggerJsdoc(options);
+/** The document described by `@openapi` comments alone, before the registry merge. */
+export const commentDocument = swaggerJsdoc(options);
+
+export const swaggerSpec = mergeClientSurface(
+    commentDocument,
+    clientSurfaceOperations,
+);
 applyAnonymousSecurity(swaggerSpec);

@@ -171,7 +171,7 @@ async function resolveItem(
     return {
         playbackId,
         downloadable: true,
-        downloadUrl: `/api/playback/stream/${playbackId}?quality=${quality}`,
+        downloadUrl: `/api/playback/stream/${playbackId}?quality=${quality}&report=0`,
         expectedSize: sizeOrNull(info.contentLength),
         quality,
         contentType:

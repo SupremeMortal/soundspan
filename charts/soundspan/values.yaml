@@ -764,6 +764,10 @@ config:
   #    The application default is 3; valid values range from 1 through 10.
   #    When unset, the application default applies and any global.env/envFrom value passes through untouched.
   scanFileConcurrency: null
+  # -- Check client-surface API responses against their OpenAPI schemas (1 or true).
+  #    A test and CI switch, not for production. When unset, validation is off
+  #    and any global.env/envFrom value passes through untouched.
+  openapiValidateResponses: null
   # -- Keep externally browsed artists and albums in the local catalog.
   #    The application default is on. When unset, the application default applies
   #    and any global.env/envFrom value passes through untouched.

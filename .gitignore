@@ -191,3 +191,11 @@ soularr/
 
 # local DB snapshots (analysis data) — never commit
 backups/
+
+# Flutter client
+# client/.gitignore and the per-platform .gitignore files under client/ cover
+# Flutter outputs (.dart_tool/, build/, ephemeral/, Pods/, .gradle/, and so on).
+# Re-include the client source directories that patterns above would hide.
+# **/build/, **/out/, *.db, *.keystore, *.jks, logs/ and issues/ stay ignored.
+!client/**/data/
+!client/**/docs/

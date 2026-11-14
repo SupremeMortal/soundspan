@@ -1,6 +1,6 @@
 # 12. Server Prerequisites P6–P9
 
-Status: design phase.
+Status: shipped (partial: P7, P9a, P9b).
 
 Four additive server changes the client needs beyond the Unified Playback API (P1–P5, `docs/designs/unified-playback-api.md`). They follow that document's rules: no existing route, field, or behaviour changes; each is its own PR (P9 is a series) with tests against real PostgreSQL where data is involved, OpenAPI annotations, and a `CHANGELOG.md` entry. Work stream **S1**. The release that contains P1–P9 is the client's `minServer`.
 
@@ -129,7 +129,7 @@ export const AlbumSummary = z.object({
 }).meta({ id: "AlbumSummary" });
 ```
 
-`zod` 4 is already a backend dependency and converts schemas to OpenAPI 3.0 itself (`z.toJSONSchema(schema, { target: "openapi-3.0" })`), so no new runtime dependency is needed. Where a route already validates its input with a zod schema, that schema object is exported and registered; it is not rewritten. Rules that JSON Schema cannot express (`superRefine` cross-field checks) are stated in the operation's description.
+`zod` 4 is already a backend dependency and converts schemas to OpenAPI 3.0 itself (`z.toJSONSchema(schema, { target: "openapi-3.0" })`), so no new runtime dependency is needed. Where a route already validates its input with a zod schema, that schema object is exported and registered; it is not rewritten. Rules that JSON Schema cannot express (`superRefine` cross-field checks) are stated in the operation's description. A query schema that coerces or preprocesses its values (`z.coerce`, `z.preprocess`, as for `GET /api/search`) has no typed input form, so the operation declares a plain query schema with the accepted values and the route keeps its own parser.
 
 **2. Operations are declared in a registry.** `backend/src/openapi/clientSurface.ts`:
 
@@ -168,6 +168,7 @@ defineOperation({
 | Enum columns | `z.enum([...])`; clients must tolerate values added later |
 | Integers that are counts, sizes, or durations | `z.number().int()` |
 | Fields added after the `minServer` release | `.optional()` in responses, so one generated client decodes both server versions |
+| Response objects | Open in the emitted spec: no `additionalProperties: false`. The generated client rejects unknown keys of a closed object, so a closed response object breaks every client older than the server that adds a field |
 
 ### What Does Not Change
 

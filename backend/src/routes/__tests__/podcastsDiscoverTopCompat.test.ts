@@ -66,6 +66,7 @@ jest.mock("axios", () => ({
 jest.mock("../../config", () => ({ config: { podcastDebug: false } }));
 
 import router from "../podcasts";
+import { withClientSurfaceValidation } from "./helpers/expectClientSurfaceResponse";
 
 function getGetHandler(path: string) {
     const layer = (router as any).stack.find(
@@ -92,7 +93,10 @@ function createRes() {
 }
 
 describe("podcasts discover/top compatibility", () => {
-    const discoverTopHandler = getGetHandler("/discover/top");
+    const discoverTopHandler = withClientSurfaceValidation(
+        "listTopPodcasts",
+        getGetHandler("/discover/top"),
+    );
 
     beforeEach(() => {
         jest.clearAllMocks();

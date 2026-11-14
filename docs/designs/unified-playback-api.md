@@ -193,7 +193,7 @@ All under `/api/offline`, `requireAuth`. Existing album routes stay as they are.
     {
       "playbackId": "t.ckz0…",
       "downloadable": true,
-      "downloadUrl": "/api/playback/stream/t.ckz0…?quality=high",
+      "downloadUrl": "/api/playback/stream/t.ckz0…?quality=high&report=0",
       "expectedSize": 3561234,
       "quality": "high",
       "contentType": "audio/mpeg"
@@ -217,7 +217,7 @@ All under `/api/offline`, `requireAuth`. Existing album routes stay as they are.
 
 Download quality is decided when `POST /items` resolves an item and is carried in its `downloadUrl`.
 
-- **Effective quality** is the quality requested in `POST /items` (default: the user's saved playback quality), in the library vocabulary (`original | high | medium | low`). The item reports it as `quality`, and `downloadUrl` is `/api/playback/stream/:playbackId?quality=<quality>`.
+- **Effective quality** is the quality requested in `POST /items` (default: the user's saved playback quality), in the library vocabulary (`original | high | medium | low`). The item reports it as `quality`, and `downloadUrl` is `/api/playback/stream/:playbackId?quality=<quality>&report=0`, so a download records no play (see `report` in the Flutter client's server prerequisites, P7).
 - `resolvePlayback` maps it to each source the same way it does for streaming: library tracks use the transcode cache (`TranscodedFile`, keyed by `(trackId, quality)`), and remote sources use their provider tiers.
 
 #### Consistent, resumable downloads
@@ -317,3 +317,5 @@ Planned as a separate project after this one ships:
 1. Move the Next.js frontend to `playbackId`: the player uses `/api/playback/stream`, preload and Listen Together use `playbackId`, and `frontend/lib/trackRef.ts` plus the `streamSource` branches in `AudioPlaybackOrchestrator.tsx` / `useNextTrackPreload.ts` are deleted.
 2. Once no first-party client uses them, mark the per-source stream routes and the legacy identifier fields deprecated in OpenAPI and `docs/UPGRADING.md`, keeping them for third-party consumers for at least one minor release.
 3. Removal is a separate, later decision.
+
+The server changes the Flutter client needs on top of this API (self-revoking API keys, the stream `report=0` opt-out of play logging, client timestamps on plays, and the typed client surface) are specified in [`flutter-client/12-server-prerequisites-p6-p9.md`](flutter-client/12-server-prerequisites-p6-p9.md).

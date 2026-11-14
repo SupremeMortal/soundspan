@@ -18,7 +18,7 @@ Status: design phase.
 | Integration (desktop) | `client/integration_test/desktop` | `flutter test integration_test -d linux|windows|macos` | Shell, shortcuts, window state, media-control adapter smoke | Nightly |
 | Manual matrix | `docs/designs/flutter-client/` release checklist issue template | People | Bluetooth, Android Auto, calls, sleep/wake, network handoff, screen readers, resource budgets | Each release |
 
-Coverage: `flutter test --coverage` merged with the API package's; floor 80 % lines for `lib/core/**` and `packages/soundspan_api/lib/**`, 60 % overall, excluding generated files. The floor is a ratchet: it is raised when exceeded by 5 points, never lowered.
+Coverage: `flutter test --coverage` merged with the API package's; floor 80 % lines for `lib/core/**` and `packages/soundspan_api/lib/**`, 60 % overall, excluding `*.g.dart`, `*.freezed.dart`, and `generated/` directories. `tool/coverage_floor.dart` checks the floors in `tool/coverage_floor.json`. `tool/coverage_exclusions.txt` lists plugin-bound adapters that `flutter test` cannot run, one glob per line with a ` # reason`; an entry without a reason or one that matches no file fails the check. Drift table definitions (`lib/core/storage/<db>/tables/*.dart`) are read by `drift_dev` and never run, so they start with `// coverage:ignore-file`, which `flutter test --coverage` honours; the generated code they produce is excluded as `*.g.dart`. The floor is a ratchet: it is raised when exceeded by 5 points, never lowered. The check is advisory about the ratchet: it prints the new floor to commit and does not fail for it.
 
 ## Test Doubles
 
@@ -32,14 +32,16 @@ Coverage: `flutter test --coverage` merged with the API package's; floor 80 % li
 | In-memory drift | Databases | `NativeDatabase.memory()`; migrations tested with generated schema helpers |
 | `InMemorySecretStore` | `SecretStore` | |
 
-`test/helpers/pump_app.dart` builds a `ProviderContainer` with these overrides and pumps a screen at a given window class, theme, locale, and text scale.
+`test/helpers/pump_app.dart` builds a `ProviderContainer` with these overrides and pumps a screen at a given window class, theme, locale, and text scale. `pumpApp(child, size:, theme:, highContrast:, locale:, textScale:, overrides:, clock:)` sets the view to `size` (`TestSizes.compact` 390 × 844, `medium` 800 × 1280, `expanded` 1440 × 900) at a device pixel ratio of 1.0, wraps `child` in a provider scope (clock overridden with a `FakeClock`, then the caller's overrides, which win) and a `MaterialApp` with the four `SoundspanTheme` variants and the generated localizations, resets the surface and platform values when the test ends, and returns the container. `FakeClock` starts at 2025-01-01T00:00:00Z and moves only through `advance` and `set`; it does not drive timers.
 
 ## Golden Tests
 
 - Matrix per component or screen: widths 390, 800, 1440 × themes dark, light. Selected ones also at text scale 2.0, pseudo-locale, and RTL.
-- Rendered with the bundled Montserrat (loaded in `flutter_test_config.dart`) so text is real; goldens are generated and compared **only on the Linux CI image** (`alchemist` CI mode) to avoid cross-platform anti-aliasing diffs. Developers on other OSes run the platform-independent "blocked text" variant locally.
-- Updating: `flutter test --tags golden --update-goldens` inside the CI container (`tool/goldens.sh` runs it through Docker or Podman).
-- Network images are replaced by a deterministic placeholder provider.
+- Rendered with real fonts: `test/flutter_test_config.dart` loads the bundled Montserrat, Turret Road, and the Material icon font before any test and runs every test under the soundspan `AlchemistConfig`. One set of goldens exists, rendered on Linux with the Flutter version pinned in `.fvmrc` and stored beside each test under `goldens/`. Alchemist's obscured-text "CI" variant is off and no second image set is committed. On a host other than Linux, golden tests still build and pump, but the comparison is skipped and nothing is written.
+- `test/helpers/golden.dart` provides `goldenMatrix(name, builder:, sizes:, themes:, highContrast:, textScales:, locales:)`: one test tagged `golden` per combination, pumped with `pumpApp`, each image the whole surface, named `<name>.<width>.<theme>[.x<scale>][.<locale>].png` (the theme is `dark` or `light`, with `-hc` for high contrast; the scale is left out at 1.0 and the locale at `en`). Defaults: the three window-class sizes, dark and light.
+- Updating: `tool/goldens.sh` runs `flutter test --tags golden --update-goldens` (extra arguments go to `flutter test`). On a Linux host with the pinned Flutter it runs directly; elsewhere it runs the same command in a container with that Flutter version through Docker or Podman, and fails with a clear message when neither is installed. When the `client-golden` job disagrees with committed images, commit the images from that run's `client-golden-rendered` artifact.
+- Network images are replaced by a deterministic placeholder provider: `PlaceholderImageProvider(ref)` in `test/helpers/` resolves synchronously to a flat image whose colour is one of eight, picked by the sum of the ref's code units modulo 8.
+- `test/helpers/guidelines.dart` provides `expectMeetsGuidelines(tester)`, which checks the tap-target size, tap-target label, and text contrast guidelines on the pumped tree.
 
 ## Contract Suite
 
@@ -74,7 +76,12 @@ Shapes are proven on the server: P9 validates every client-surface response agai
 ```yaml
 on:
   pull_request:
-    paths: ["client/**", "backend/src/routes/**", ".github/workflows/client-*.yml"]
+    paths:
+      - "client/**"
+      - "backend/src/routes/**"
+      - "backend/src/openapi/**"
+      - ".github/workflows/client-*.yml"
+      - ".github/actions/client-flutter/**"
   push:
     branches: [main]
     paths: ["client/**"]
@@ -82,20 +89,27 @@ on:
 
 Server-only PRs do not trigger it, except route and `backend/src/openapi/**` changes, which run the spec check and the contract job only.
 
+A first job, `changes`, diffs the pull request against the merge base with its base branch using plain `git diff --name-only` and sets four outputs: `client` (`client/**`, the client workflows, or the composite action changed), `apple` (`client/ios/**`, `client/macos/**`, `client/pubspec.lock`, `client/lib/platform/**`, `client-quality.yml`, or the composite action), `api_surface` (`client/packages/soundspan_api/**`, `backend/src/routes/**`, `backend/src/openapi/**`), and `web_storage` (`client/lib/platform/**`, `client/web/**`, `client/integration_test/web/**`, `client/pubspec.lock`, or `client-quality.yml`). On `push` every output is true. Because the diff is against the base branch and not the previous push, a job that failed on an earlier push cannot be skipped on a later one. The analyze, test, golden, Android, Linux, web, and Windows jobs run when `client` is true; the Apple job runs when `apple` is true; the web integration job runs when `web_storage` is true.
+
+Every client job sets Flutter up with the composite action `.github/actions/client-flutter`: on Linux it installs the build packages of [01](01-toolchain-and-repository.md) (plugin native-asset hooks run during `flutter test` and need GTK and X11 headers), then it reads the version from `client/.fvmrc` with `jq`, installs it with `subosito/flutter-action`, caches Flutter on `.fvmrc` and pub on `.fvmrc` plus both `pubspec.lock` files, and runs `flutter pub get` in `client/` and `dart pub get` in the API package.
+
 | Job | Runner | Blocking | Steps |
 |---|---|---|---|
-| `client-analyze` | ubuntu | Yes | `flutter pub get`; `tool/gen.sh` + `git diff --exit-code`; `dart format --output=none --set-exit-if-changed .`; `flutter analyze --fatal-infos`; `dart run tool/check_imports.dart`; `dart run tool/check_l10n.dart`; `dart run tool/license_audit.dart` |
-| `client-test` | ubuntu | Yes | `dart test` in the API package; `flutter test --coverage --exclude-tags golden,contract,engine`; coverage floor |
-| `client-golden` | ubuntu (pinned container) | Yes | `flutter test --tags golden`; uploads failure diffs as artifacts |
+| `client-analyze` | ubuntu | Yes | `tool/gen.sh` + `git diff --exit-code`; `dart format --output=none --set-exit-if-changed .`; `flutter analyze --fatal-infos`; `dart analyze --fatal-infos` in the API package; `dart run tool/check_imports.dart`; `dart run tool/check_l10n.dart`; `dart run tool/license_audit.dart`; `dart run tool/gen_icons.dart --check` (every committed icon equals a fresh run and no committed icon is left over) |
+| `client-test` | ubuntu | Yes | `dart test --coverage-path=coverage/lcov.info` in the API package; `flutter test --coverage --exclude-tags golden,contract,engine`; `dart run tool/coverage_floor.dart` |
+| `client-golden` | ubuntu, directly on the runner with the pinned Flutter (no container) | Yes | `flutter test --tags golden`; on failure uploads `client/test/**/failures/**` as `client-golden-failures`, then reruns with `--update-goldens` and uploads every golden image as `client-golden-rendered`, with paths relative to `client/`, ready to commit |
 | `client-spec` | ubuntu | Yes when the API package, backend routes, or `backend/src/openapi/**` changed | `npm --prefix backend run openapi:emit-client` + `git diff --exit-code`; `dart run tool/spec_compat.dart` |
 | `client-contract` | ubuntu | Yes on the same paths | Build backend, `docker compose up` with response validation on, seed, `dart test --tags contract` |
-| `client-build-android` | ubuntu | Yes | `flutter build apk --debug` |
-| `client-build-linux` | ubuntu | Yes | `flutter build linux --release`; `ldd` check |
-| `client-build-web` | ubuntu | Yes | `flutter build web --release`; bundle-size report |
+| `client-build-android` | ubuntu | Yes | Temurin 17 (`actions/setup-java`); `flutter build apk --debug`; checks that the APK contains `res/mipmap-anydpi-v26/ic_launcher.xml` |
+| `client-build-linux` | ubuntu | Yes | `flutter build linux --release`; `tool/check_ldd.sh` runs `ldd` on the executable and every `.so` in `build/linux/x64/release/bundle/lib/` and fails on any `not found` line |
+| `client-build-web` | ubuntu | Yes | `flutter build web --release`; checks that `build/web` contains `sqlite3.wasm` and `drift_worker.js` and that `favicon.png` and the four manifest icons are byte-identical to the committed ones in `web/`; `tool/web_bundle_report.sh` writes the gzip-compressed total of `build/web` and its five largest files to the job summary, with no threshold |
+| `client-web-integration` | ubuntu | Yes whenever it runs | Starts the runner's `chromedriver`; `flutter drive --driver=test_driver/integration_test.dart --target=integration_test/web/storage_web_test.dart -d web-server --browser-name=chrome --headless`: the three drift WASM databases of one profile open, persist across a reopen and are deleted in headless Chrome, the opener falls back to memory and reports `isVolatile` when storage fails, and web secrets survive a new store through `sessionStorage` with nothing in `localStorage` |
 | `client-build-windows` | windows | Yes | `flutter build windows --release` |
-| `client-build-macos-ios` | macos | Visibility on PRs, blocking on `main` | `flutter build macos --release`; `flutter build ios --release --no-codesign` |
+| `client-build-macos-ios` | macos | Yes whenever it runs | `flutter build macos --release`; `flutter build ios --release --no-codesign` |
 
-macOS minutes are the expensive ones, so on pull requests the Apple job runs only when `client/ios/**`, `client/macos/**`, `client/pubspec.lock`, or `client/lib/platform/**` changed, and always on `main`.
+Every build job passes `--dart-define-from-file=config/dev.json`.
+
+macOS minutes are the expensive ones, so on pull requests the Apple job runs only when the diff against the base branch touches `client/ios/**`, `client/macos/**`, `client/pubspec.lock`, `client/lib/platform/**`, `client-quality.yml`, or the composite action, and always on a push to `main`. Whenever it runs it is blocking, so a pull request cannot leave the Apple builds broken.
 
 Actions are pinned by commit SHA, as in the existing workflows. Flutter and pub caches are keyed on `.fvmrc` and `pubspec.lock`.
 
@@ -128,7 +142,7 @@ Trigger: tag `client-v*`.
 | No hard-coded UI strings | `tool/check_l10n.dart` | A literal reaches a text widget |
 | Token contrast | Unit test | A text/surface pair is under its ratio |
 | Spec is current and compatible | `client-spec` job | The committed spec differs from the backend's, or breaks compatibility with the `minServer` snapshot |
-| Dependency licences | `tool/license_audit.dart` | A dependency's licence is not on the allowlist (MIT, BSD-2/3, Apache-2.0, MPL-2.0, ISC, Zlib, LGPL for dynamically linked native libraries); GPL-only fails. Also fails when a file under `assets/fonts/` has no licence text beside it in `assets/licenses/` |
+| Dependency licences | `tool/license_audit.dart` | A dependency's licence is not on the allowlist (MIT, BSD-2/3, Apache-2.0, MPL-2.0, ISC, Zlib, LGPL for dynamically linked native libraries); GPL-only fails. The audited set is the transitive closure of the non-dev dependencies of the app and of `soundspan_api`, without Flutter SDK packages. LGPL needs a `linking: dynamic` entry in `tool/license_overrides.yaml`; an unrecognised or missing licence text needs an entry naming an allowed licence; an entry for a package outside the audited set fails. Also fails when a font file (`.ttf`, `.otf`, `.ttc`, `.woff`, `.woff2`) under `assets/fonts/` has no non-empty licence text at `assets/licenses/fonts/<Family>.txt`, where the family is the file name up to its first `-` |
 | File size | `scripts/ci/check-file-size.mjs` | Existing thresholds, extended to Dart |
 | ARB completeness | `flutter gen-l10n` with `--required-resource-attributes` | A message lacks a description |
 
