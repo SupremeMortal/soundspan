@@ -1,0 +1,11 @@
+{
+  "components": {
+    "schemas": {}
+  },
+  "info": {
+    "title": "soundspan client surface",
+    "version": "2.6.1"
+  },
+  "openapi": "3.0.0",
+  "paths": {}
+}
