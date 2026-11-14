@@ -39,6 +39,13 @@ android {
             signingConfig = signingConfigs.getByName("debug")
         }
     }
+
+    // Release builds skip lintVital: Android Lint crashes inside its own
+    // JavaDoc parser on plugin sources (NoSuchMethodError analysing
+    // url_launcher_android), which fails `flutter build apk --release`.
+    lint {
+        checkReleaseBuilds = false
+    }
 }
 
 kotlin {
