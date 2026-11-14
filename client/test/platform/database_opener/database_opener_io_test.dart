@@ -110,4 +110,14 @@ void main() {
     );
     expect(CacheDatabaseTarget(id), const CacheDatabaseTarget('a'));
   });
+
+  test('the native opener is never volatile', () {
+    expect(opener.isVolatile, isFalse);
+  });
+
+  test('database names follow doc 05', () {
+    expect(databaseNameOf(const AppDatabaseTarget()), 'app');
+    expect(databaseNameOf(const StateDatabaseTarget('p1')), 'p_p1_state');
+    expect(databaseNameOf(const CacheDatabaseTarget('p1')), 'p_p1_cache');
+  });
 }

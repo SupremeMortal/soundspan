@@ -19,6 +19,11 @@ class InMemoryDatabaseOpener implements DatabaseOpener {
   /// The targets passed to [delete].
   final List<DatabaseTarget> deleted = [];
 
+  /// What [isVolatile] reports; false, like the native opener, unless a
+  /// test sets it.
+  @override
+  bool isVolatile = false;
+
   @override
   QueryExecutor open(DatabaseTarget target) {
     opened.add(target);
