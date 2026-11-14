@@ -1,0 +1,20 @@
+swagger_parser:
+  output_directory: lib/src
+  generation:
+    http_client: retrofit
+    serializer: freezed
+    unknown_enum_values: preserve   # a value added by a newer server decodes to `<Enum>Unknown`
+  inputs:
+    # The committed spec, unchanged: every object is closed.
+    closed:
+      schema_path: ../../packages/soundspan_api/openapi/soundspan-client.json
+      output_directory: lib/src/closed
+      generation:
+        root_api_class_name: ClosedRestClient
+    # The same spec with `additionalProperties: false` removed
+    # (tool/open_objects.dart).
+    generated:
+      schema_path: build/soundspan-client.open.json
+      output_directory: lib/src/generated
+      generation:
+        root_api_class_name: SoundspanRestClient

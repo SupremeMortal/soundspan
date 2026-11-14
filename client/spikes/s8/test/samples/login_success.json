@@ -1,0 +1,5 @@
+{
+  "token": "access-token",
+  "refreshToken": "refresh-token",
+  "user": { "displayName": null, "id": "u-1", "role": "admin", "username": "ada" }
+}

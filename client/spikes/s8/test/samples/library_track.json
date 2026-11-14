@@ -1,0 +1,11 @@
+{
+  "album": { "coverArt": null, "id": "al-1", "title": "First Album" },
+  "albumId": "al-1",
+  "artist": { "id": "ar-1", "name": "First Artist" },
+  "duration": 241,
+  "id": "tr-1",
+  "playbackId": "local:tr-1",
+  "source": "local",
+  "title": "First Track",
+  "trackNo": 3
+}

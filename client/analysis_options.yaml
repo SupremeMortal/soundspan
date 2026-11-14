@@ -12,6 +12,7 @@ analyzer:
     - packages/soundspan_api/lib/src/generated/**
     - lib/app/l10n/generated/**
     - build/**
+    - spikes/**
     - android/**
     - ios/**
     - web/**
