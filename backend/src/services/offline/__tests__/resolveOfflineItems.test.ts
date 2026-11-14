@@ -33,6 +33,19 @@ jest.mock("../../playback/playbackStreamInfo", () => ({
 
 import { PlaybackResolutionError } from "../../playback/resolvePlayback";
 import { OfflineItemsError, resolveOfflineItems } from "../resolveOfflineItems";
+import { expectClientSurfaceResponse } from "../../../routes/__tests__/helpers/expectClientSurfaceResponse";
+
+/** Wraps resolved items in the 200 body of `requestOfflineItems`. */
+function expectValidItemsBody(out: {
+    items: unknown[];
+    estimatedTotalBytes: number;
+}): void {
+    expectClientSurfaceResponse("requestOfflineItems", 200, {
+        ...out,
+        cacheLimitBytes: 0,
+        cacheUsedBytes: 0,
+    });
+}
 
 const SIZES: Record<string, number | null> = {
     "t.local1": 1000,
@@ -319,6 +332,44 @@ describe("resolveOfflineItems", () => {
         await expect(
             resolveOfflineItems({ userId: "u1", kind: "playlist", id: "x" }),
         ).rejects.toBeInstanceOf(OfflineItemsError);
+    });
+
+    it.each([
+        "SOURCE_DOWNLOADS_DISABLED",
+        "TRACK_UNAVAILABLE",
+        "SOURCE_UNAVAILABLE",
+    ])(
+        "answers a %s block that validates as an offline item",
+        async (reason) => {
+            mockPolicy.mockResolvedValue({ downloadable: false, reason });
+            const out = await resolveOfflineItems({
+                userId: "u1",
+                kind: "track",
+                id: "t.local1",
+            });
+            expect(out.items).toEqual([
+                { playbackId: "t.local1", downloadable: false, reason },
+            ]);
+            expectValidItemsBody(out);
+        },
+    );
+
+    it("answers downloadable items with and without a size that validate", async () => {
+        mockAlbumFindFirst.mockResolvedValue(mixedAlbum());
+        const out = await resolveOfflineItems({
+            userId: "u1",
+            kind: "album",
+            id: "alb1",
+        });
+        expect(out.items.every((entry) => entry.downloadable)).toBe(true);
+        expectValidItemsBody(out);
+        const single = await resolveOfflineItems({
+            userId: "u1",
+            kind: "track",
+            id: "yt.vid2",
+        });
+        expect(single.items[0]).toMatchObject({ expectedSize: null });
+        expectValidItemsBody(single);
     });
 
     it("marks items unavailable when resolution or stream info fails", async () => {

@@ -727,6 +727,39 @@
         ],
         "type": "object"
       },
+      "CacheLimitExceededError": {
+        "additionalProperties": false,
+        "properties": {
+          "cacheLimitBytes": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "cacheUsedBytes": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "code": {
+            "type": "string"
+          },
+          "error": {
+            "type": "string"
+          },
+          "estimatedTotalBytes": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "cacheLimitBytes",
+          "cacheUsedBytes",
+          "error",
+          "estimatedTotalBytes"
+        ],
+        "type": "object"
+      },
       "ClearPlaybackStateResponse": {
         "additionalProperties": false,
         "properties": {
@@ -736,6 +769,68 @@
         },
         "required": [
           "success"
+        ],
+        "type": "object"
+      },
+      "CompleteOfflineItemRequest": {
+        "properties": {
+          "deviceId": {
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+            "type": "string"
+          },
+          "playbackId": {
+            "type": "string"
+          },
+          "quality": {
+            "enum": [
+              "original",
+              "high",
+              "medium",
+              "low"
+            ],
+            "type": "string"
+          },
+          "sizeBytes": {
+            "exclusiveMinimum": true,
+            "maximum": 4294967296,
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "deviceId",
+          "playbackId",
+          "quality",
+          "sizeBytes"
+        ],
+        "type": "object"
+      },
+      "CompletedOfflineItem": {
+        "additionalProperties": false,
+        "properties": {
+          "playbackId": {
+            "type": "string"
+          },
+          "quality": {
+            "enum": [
+              "original",
+              "high",
+              "medium",
+              "low"
+            ],
+            "type": "string"
+          },
+          "sizeBytes": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "playbackId",
+          "quality",
+          "sizeBytes"
         ],
         "type": "object"
       },
@@ -753,6 +848,43 @@
         },
         "required": [
           "name"
+        ],
+        "type": "object"
+      },
+      "DeleteOfflineItemsRequest": {
+        "properties": {
+          "deviceId": {
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+            "type": "string"
+          },
+          "playbackIds": {
+            "items": {
+              "maxLength": 256,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 500,
+            "type": "array"
+          }
+        },
+        "required": [
+          "deviceId",
+          "playbackIds"
+        ],
+        "type": "object"
+      },
+      "DeleteOfflineItemsResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "deletedCount": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "deletedCount"
         ],
         "type": "object"
       },
@@ -787,6 +919,54 @@
           "apiKey",
           "userId",
           "username"
+        ],
+        "type": "object"
+      },
+      "DeviceOfflineItem": {
+        "additionalProperties": false,
+        "properties": {
+          "playbackId": {
+            "type": "string"
+          },
+          "quality": {
+            "enum": [
+              "original",
+              "high",
+              "medium",
+              "low"
+            ],
+            "type": "string"
+          },
+          "revoked": {
+            "description": "True when an admin turned offline downloads off or the track no longer exists; the client removes the file.",
+            "type": "boolean"
+          },
+          "sizeBytes": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "playbackId",
+          "quality",
+          "revoked",
+          "sizeBytes"
+        ],
+        "type": "object"
+      },
+      "DeviceOfflineItemsResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/DeviceOfflineItem"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
         ],
         "type": "object"
       },
@@ -1533,6 +1713,143 @@
           "trackCount",
           "trackIds",
           "type"
+        ],
+        "type": "object"
+      },
+      "OfflineItem": {
+        "additionalProperties": false,
+        "properties": {
+          "contentType": {
+            "nullable": true,
+            "type": "string"
+          },
+          "downloadUrl": {
+            "description": "Relative stream URL of the file. It carries `report=0`, so the download records no play.",
+            "type": "string"
+          },
+          "downloadable": {
+            "type": "boolean"
+          },
+          "expectedSize": {
+            "description": "Bytes the stream serves; null when the source cannot say.",
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "nullable": true,
+            "type": "integer"
+          },
+          "playbackId": {
+            "type": "string"
+          },
+          "quality": {
+            "enum": [
+              "original",
+              "high",
+              "medium",
+              "low"
+            ],
+            "type": "string"
+          },
+          "reason": {
+            "description": "SOURCE_DOWNLOADS_DISABLED when an admin turned offline downloads off; SOURCE_UNAVAILABLE when the track's source cannot be streamed by this user; TRACK_UNAVAILABLE when the track no longer exists.",
+            "enum": [
+              "SOURCE_DOWNLOADS_DISABLED",
+              "TRACK_UNAVAILABLE",
+              "SOURCE_UNAVAILABLE"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "downloadable",
+          "playbackId"
+        ],
+        "type": "object"
+      },
+      "OfflineItemsResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "cacheLimitBytes": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "cacheUsedBytes": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "estimatedTotalBytes": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/OfflineItem"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "cacheLimitBytes",
+          "cacheUsedBytes",
+          "estimatedTotalBytes",
+          "items"
+        ],
+        "type": "object"
+      },
+      "OfflineStats": {
+        "additionalProperties": false,
+        "properties": {
+          "availableMb": {
+            "type": "number"
+          },
+          "device": {
+            "additionalProperties": false,
+            "description": "Totals of the requested device; present only with `deviceId`.",
+            "properties": {
+              "deviceId": {
+                "type": "string"
+              },
+              "trackCount": {
+                "maximum": 9007199254740991,
+                "minimum": -9007199254740991,
+                "type": "integer"
+              },
+              "usedMb": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "deviceId",
+              "trackCount",
+              "usedMb"
+            ],
+            "type": "object"
+          },
+          "maxMb": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "percentUsed": {
+            "type": "number"
+          },
+          "trackCount": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "usedMb": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "availableMb",
+          "maxMb",
+          "percentUsed",
+          "trackCount",
+          "usedMb"
         ],
         "type": "object"
       },
@@ -2549,6 +2866,43 @@
         },
         "required": [
           "playbackIds"
+        ],
+        "type": "object"
+      },
+      "RequestOfflineItemsRequest": {
+        "properties": {
+          "deviceId": {
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+            "type": "string"
+          },
+          "id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "track",
+              "album",
+              "playlist"
+            ],
+            "type": "string"
+          },
+          "quality": {
+            "enum": [
+              "original",
+              "high",
+              "medium",
+              "low"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "deviceId",
+          "id",
+          "kind"
         ],
         "type": "object"
       },
@@ -5566,6 +5920,397 @@
         "summary": "The user's generated mixes",
         "tags": [
           "discovery"
+        ]
+      }
+    },
+    "/api/offline/items": {
+      "delete": {
+        "description": "Unknown ids are ignored. Errors carry `code` `INVALID_REQUEST` (400).",
+        "operationId": "deleteOfflineItems",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteOfflineItemsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteOfflineItemsResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Remove a device's offline items",
+        "tags": [
+          "offline"
+        ]
+      },
+      "get": {
+        "description": "Used to reconcile after a reinstall. Errors carry `code` `INVALID_REQUEST` (400).",
+        "operationId": "listOfflineItems",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "deviceId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviceOfflineItemsResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "List what the server believes a device holds",
+        "tags": [
+          "offline"
+        ]
+      },
+      "post": {
+        "description": "Resolves the request to downloadable items or blocked items with a reason. `id` is a playbackId for `track` and the album or playlist id otherwise; albums and playlists include every visible track in order. Records no cached file; `completeOfflineItem` does. Errors carry `code` `INVALID_REQUEST` or `INVALID_PLAYBACK_ID` (400), `ALBUM_NOT_FOUND` or `PLAYLIST_NOT_FOUND` (404), and `CACHE_LIMIT_EXCEEDED` (409) when the used bytes of every device plus the estimate exceed the limit.",
+        "operationId": "requestOfflineItems",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestOfflineItemsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OfflineItemsResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CacheLimitExceededError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Request offline downloads for a track, album, or playlist",
+        "tags": [
+          "offline"
+        ]
+      }
+    },
+    "/api/offline/items/complete": {
+      "post": {
+        "description": "Upserts the device's cached-item row for the playbackId and quality; calling it again updates the recorded size. Errors carry `code` `INVALID_REQUEST` (400, including a `playbackId` that is not valid) or `TRACK_UNAVAILABLE` (404, the library track no longer exists).",
+        "operationId": "completeOfflineItem",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompleteOfflineItemRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompletedOfflineItem"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Record that a device finished writing an offline file",
+        "tags": [
+          "offline"
+        ]
+      }
+    },
+    "/api/offline/stats": {
+      "get": {
+        "description": "The top-level numbers always cover every device; with `deviceId` the answer also carries `device`. Errors carry `code` `INVALID_REQUEST` (400) for a `deviceId` that is not a UUID.",
+        "operationId": "getOfflineStats",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "deviceId",
+            "required": false,
+            "schema": {
+              "description": "Adds the `device` totals of this device to the answer.",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OfflineStats"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Get offline cache usage statistics",
+        "tags": [
+          "offline"
         ]
       }
     },

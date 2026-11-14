@@ -8,6 +8,7 @@ import {
 import { buildClientSurfaceDocument } from "./document";
 import { discoveryOperations } from "./operations/discovery";
 import { libraryOperations } from "./operations/library";
+import { offlineOperations } from "./operations/offline";
 import { playbackOperations } from "./operations/playback";
 import { playlistOperations } from "./operations/playlists";
 import { podcastOperations } from "./operations/podcasts";
@@ -35,6 +36,7 @@ export const clientSurfaceOperations: ClientSurface = createClientSurface([
     ...discoveryOperations,
     ...podcastOperations,
     ...playbackOperations,
+    ...offlineOperations,
 ]);
 
 /** The registered operation with `operationId`; throws when there is none. */

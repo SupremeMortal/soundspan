@@ -45,6 +45,7 @@ jest.mock("../../services/offline/resolveOfflineItems", () => {
 
 import router from "../offline";
 import { OfflineItemsError } from "../../services/offline/resolveOfflineItems";
+import { withClientSurfaceValidation } from "./helpers/expectClientSurfaceResponse";
 
 const MB = 1024 * 1024;
 const DEVICE = "6f1d2c9e-8a3b-4c57-9d0e-1b2a3c4d5e6f";
@@ -84,7 +85,10 @@ const item = (playbackId: string, expectedSize: number) => ({
 });
 
 describe("POST /api/offline/items", () => {
-    const post = getHandler("post", "/items");
+    const post = withClientSurfaceValidation(
+        "requestOfflineItems",
+        getHandler("post", "/items"),
+    );
 
     beforeEach(() => {
         jest.clearAllMocks();
@@ -150,6 +154,39 @@ describe("POST /api/offline/items", () => {
             expect(downloadUrl.endsWith("&report=0")).toBe(true);
             expect(downloadUrl).toContain("quality=high");
         }
+    });
+
+    it("answers a mix of downloadable and blocked items, one without a size", async () => {
+        const blockedItems = [
+            "SOURCE_DOWNLOADS_DISABLED",
+            "TRACK_UNAVAILABLE",
+            "SOURCE_UNAVAILABLE",
+        ].map((reason, index) => ({
+            playbackId: `t.b${index}`,
+            downloadable: false,
+            reason,
+        }));
+        mockResolveOfflineItems.mockResolvedValue({
+            items: [
+                item("t.abc", 2 * MB),
+                { ...item("yt.v2", 0), expectedSize: null, contentType: null },
+                ...blockedItems,
+            ],
+            estimatedTotalBytes: 2 * MB,
+        });
+        const res = createRes();
+        await post(
+            {
+                user: { id: "u1" },
+                body: { kind: "playlist", id: "p1", deviceId: DEVICE },
+            },
+            res,
+        );
+        expect(res.statusCode).toBe(200);
+        const items = (res.body as { items: Array<Record<string, unknown>> })
+            .items;
+        expect(items[1]).toMatchObject({ expectedSize: null });
+        expect(items.slice(2)).toEqual(blockedItems);
     });
 
     it("counts every device of the user toward the used total", async () => {
