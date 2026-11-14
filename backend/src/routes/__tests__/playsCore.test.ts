@@ -87,6 +87,8 @@ describe("plays routes integration", () => {
             userId: "user-1",
             trackId: "track-1",
             source: "LIBRARY",
+            playedAt: new Date("2026-03-04T05:06:07.000Z"),
+            listenedMs: null,
         });
         mockPlayFindMany.mockResolvedValue([]);
         mockPlayCount.mockResolvedValue(0);
@@ -123,6 +125,8 @@ describe("plays routes integration", () => {
             userId: "user-1",
             trackId: "track-1",
             source: "LIBRARY",
+            playedAt: "2026-03-04T05:06:07.000Z",
+            listenedMs: null,
         });
         expect(mockTrackFindUnique).toHaveBeenCalledWith({
             where: {
@@ -573,9 +577,11 @@ describe("POST /api/plays legacy forms with playedAt", () => {
         jest.clearAllMocks();
         mockTrackFindUnique.mockResolvedValue({ id: "track-1" });
         mockPlayFindFirst.mockResolvedValue(null);
+        // Like Prisma, an undefined field is not written and reads back null.
         mockPlayCreate.mockImplementation(async ({ data }: any) => ({
             id: "play-1",
             ...data,
+            listenedMs: data.listenedMs ?? null,
         }));
         mockResolveMetadata.mockImplementation(async (input: any) => ({
             ...input.metadata,
@@ -658,7 +664,9 @@ describe("POST /api/plays legacy forms with playedAt", () => {
             const existing = {
                 id: "play-existing",
                 userId: "user-1",
+                source: "LIBRARY",
                 playedAt: hourAgo(),
+                listenedMs: null,
             };
             mockPlayFindFirst.mockResolvedValue(existing);
             const res = await request(app)

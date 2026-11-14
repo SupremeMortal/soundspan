@@ -28,6 +28,15 @@ jest.mock("../../utils/schedulerClaim", () => ({
 jest.mock("../../services/audioStreaming", () => ({
     AudioStreamingService: jest.fn(),
 }));
+jest.mock("../../services/playback/resolvePlayback", () => ({
+    PlaybackResolutionError: class extends Error {},
+    resolvePlayback: jest.fn(),
+}));
+jest.mock("../../services/playback/playbackStreamInfo", () => ({}));
+jest.mock("../../services/playback/streamLibraryTrack", () => ({}));
+jest.mock("../../services/playback/streamTidalTrack", () => ({}));
+jest.mock("../../services/playback/streamYtMusicTrack", () => ({}));
+jest.mock("../../services/playback/streamYouTubeVideo", () => ({}));
 jest.mock("../../services/discoverMusicSearch", () => ({
     resolveUsableSearchProviders: jest.fn(),
     searchDiscoverMusic: jest.fn(),

@@ -51,7 +51,16 @@ const getCover = defineOperation({
     responses: { 200: { binary: "image/jpeg" }, ...standardErrors },
 });
 
-const operations = [getPodcast, getMix, getCover];
+const getLatestPodcast = defineOperation({
+    method: "get",
+    path: "/api/podcasts",
+    operationId: "getLatestPodcast",
+    tag: "podcasts",
+    summary: "The latest podcast",
+    responses: { 200: Podcast, ...standardErrors },
+});
+
+const operations = [getPodcast, getMix, getCover, getLatestPodcast];
 const mockOperations = operations;
 
 jest.mock("../clientSurface", () => {
@@ -84,6 +93,9 @@ function buildApp(onMismatch: "respond" | "throw", body: () => Body) {
     const app = express();
     app.use(validateClientSurfaceResponses({ operations, onMismatch }));
     const podcasts = Router();
+    podcasts.get("/", (_req, res) => {
+        res.json(body());
+    });
     podcasts.get("/peers", (_req, res) => {
         res.json({ peers: "not a podcast" });
     });
@@ -263,6 +275,20 @@ describe("validateClientSurfaceResponses", () => {
                 buildApp(mode, () => ({ message: "Not found" })),
             ).get("/api/mixes/m1");
             expectMismatch(bad, "$.error", "getMix");
+        });
+
+        it("validates a registered mount path served by a router's root route", async () => {
+            const ok = await request(buildApp(mode, () => conforming)).get(
+                "/api/podcasts",
+            );
+            expect(ok.status).toBe(200);
+            expect(ok.body).toEqual(conforming);
+
+            const { title: _title, ...missing } = conforming;
+            const bad = await request(buildApp(mode, () => missing)).get(
+                "/api/podcasts",
+            );
+            expectMismatch(bad, "$.title", "getLatestPodcast");
         });
 
         it("leaves a plain-text res.send untouched", async () => {

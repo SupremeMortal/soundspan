@@ -184,42 +184,6 @@ function withQueuePlaybackIds<State extends { queue: unknown }>(
     return { ...state, queue };
 }
 
-/**
- * @openapi
- * /api/playback-state:
- *   get:
- *     summary: Get current playback state for the authenticated user
- *     tags: [Playback State]
- *     security:
- *       - apiKeyAuth: []
- *     parameters:
- *       - in: header
- *         name: X-Playback-Device-Id
- *         schema:
- *           type: string
- *         description: Device identifier (defaults to "legacy")
- *     responses:
- *       200:
- *         description: Current playback state or null if none exists
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               nullable: true
- *               properties:
- *                 queue:
- *                   type: array
- *                   nullable: true
- *                   description: Queue items; music-track items carry a playbackId derived when the state is read.
- *                   items:
- *                     type: object
- *                     properties:
- *                       playbackId:
- *                         type: string
- *                         description: "Opaque track identifier. Do not parse."
- *       401:
- *         description: Not authenticated
- */
 // Get current playback state for the authenticated user
 router.get("/", playbackStateLimiter, requireAuth, async (req, res) => {
     try {
@@ -282,91 +246,6 @@ router.get("/", playbackStateLimiter, requireAuth, async (req, res) => {
     }
 });
 
-/**
- * @openapi
- * /api/playback-state:
- *   post:
- *     summary: Update current playback state for the authenticated user
- *     tags: [Playback State]
- *     security:
- *       - apiKeyAuth: []
- *     parameters:
- *       - in: header
- *         name: X-Playback-Device-Id
- *         schema:
- *           type: string
- *         description: Device identifier (defaults to "legacy")
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - playbackType
- *             properties:
- *               playbackType:
- *                 type: string
- *                 enum: [track, audiobook, podcast]
- *               trackId:
- *                 type: string
- *               playbackId:
- *                 type: string
- *                 description: >-
- *                   Source-agnostic current track. Wins over trackId; stored as
- *                   trackId for library tracks. Invalid ids answer 400 with
- *                   code INVALID_PLAYBACK_ID.
- *               audiobookId:
- *                 type: string
- *               podcastId:
- *                 type: string
- *               queue:
- *                 type: array
- *                 description: >-
- *                   Mixed-media queue items. Entries with itemType "episode"
- *                   are podcast episodes ({itemType, id, title, podcastTitle,
- *                   podcastId, episodeId, coverUrl, duration}); all other
- *                   entries are music tracks (itemType defaults to "track"
- *                   for legacy clients). A music-track entry may instead be
- *                   `{ playbackId, metadata? }`; the playbackId wins over any
- *                   legacy source fields and is stored in the legacy format.
- *                 items:
- *                   type: object
- *                   properties:
- *                     itemType:
- *                       type: string
- *                       enum: [track, episode]
- *                     playbackId:
- *                       type: string
- *                       description: "Opaque track identifier. Do not parse."
- *                     metadata:
- *                       type: object
- *                       description: Display metadata stored for remote tracks.
- *                       properties:
- *                         title: { type: string, minLength: 1 }
- *                         artist: { type: string, minLength: 1 }
- *                         album: { type: string, minLength: 1 }
- *                         durationSec: { type: integer, minimum: 0 }
- *                         artworkUrl: { type: string, minLength: 1 }
- *                         isrc: { type: string, minLength: 1 }
- *               currentIndex:
- *                 type: integer
- *               isShuffle:
- *                 type: boolean
- *               isPlaying:
- *                 type: boolean
- *               currentTime:
- *                 type: number
- *     responses:
- *       200:
- *         description: Playback state updated
- *       400:
- *         description: Invalid playbackType or missing required fields, or a coded playbackId error (INVALID_PLAYBACK_ID)
- *       401:
- *         description: Not authenticated
- *       404:
- *         description: A library playbackId names no stored track (code TRACK_NOT_FOUND)
- */
 // Update current playback state for the authenticated user
 router.post("/", playbackStateLimiter, requireAuth, async (req, res) => {
     try {
@@ -556,26 +435,6 @@ router.post("/", playbackStateLimiter, requireAuth, async (req, res) => {
     }
 });
 
-/**
- * @openapi
- * /api/playback-state:
- *   delete:
- *     summary: Clear playback state when the user stops playback
- *     tags: [Playback State]
- *     security:
- *       - apiKeyAuth: []
- *     parameters:
- *       - in: header
- *         name: X-Playback-Device-Id
- *         schema:
- *           type: string
- *         description: Device identifier (defaults to "legacy")
- *     responses:
- *       200:
- *         description: Playback state cleared
- *       401:
- *         description: Not authenticated
- */
 // Clear playback state (when user stops playback completely)
 router.delete("/", playbackStateLimiter, requireAuth, async (req, res) => {
     try {

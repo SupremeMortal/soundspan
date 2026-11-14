@@ -70,9 +70,11 @@ const YT_ROW = { ...TIDAL_ROW, id: "ym-1" };
 
 beforeEach(() => {
     jest.resetAllMocks();
+    // Like Prisma, an undefined field is not written and reads back null.
     prisma.play.create.mockImplementation(async ({ data }: any) => ({
         id: "play-1",
         ...data,
+        listenedMs: data.listenedMs ?? null,
     }));
 });
 
@@ -119,7 +121,9 @@ describe("POST /api/plays with playbackId", () => {
                           id: "stream-play",
                           userId: "user-1",
                           trackId: "track-1",
+                          source: "LIBRARY",
                           playedAt: new Date(Date.now() - 5_000),
+                          listenedMs: null,
                       }
                     : null,
             );
@@ -230,6 +234,16 @@ describe("POST /api/plays with playbackId", () => {
         expect(missing.body.code).toBe("TRACK_NOT_FOUND");
     });
 
+    it("answers SOURCE_UNAVAILABLE for a plain YouTube id, which no play row can store", async () => {
+        const res = await request(app)
+            .post("/api/plays")
+            .send({ playbackId: "yt.dQw4w9WgXcQ" });
+
+        expect(res.status).toBe(409);
+        expect(res.body.code).toBe("SOURCE_UNAVAILABLE");
+        expect(prisma.play.create).not.toHaveBeenCalled();
+    });
+
     it("lets playbackId win over legacy identifier fields", async () => {
         prisma.track.findUnique.mockResolvedValue({ id: "track-1" });
         const res = await request(app).post("/api/plays").send({
@@ -252,7 +266,11 @@ describe("POST /api/plays with playedAt", () => {
     beforeEach(() => {
         rows = [];
         prisma.play.create.mockImplementation(async ({ data }: any) => {
-            const row = { id: `play-${rows.length + 1}`, ...data };
+            const row = {
+                id: `play-${rows.length + 1}`,
+                ...data,
+                listenedMs: data.listenedMs ?? null,
+            };
             rows.push(row);
             return row;
         });
@@ -517,6 +535,7 @@ describe("POST /api/plays with listenedMs", () => {
             id: "play-existing",
             userId: "user-1",
             trackId: "track-1",
+            source: "LIBRARY",
             playedAt,
             listenedMs: 30_000,
         };

@@ -1,5 +1,4 @@
 import type { NextFunction, Request, Response } from "express";
-import express from "express";
 import request from "supertest";
 
 jest.mock("../../middleware/rateLimitStore", () => {
@@ -29,22 +28,23 @@ jest.mock("../../services/socialPresenceEvents", () => ({
     publishSocialPresenceUpdate: jest.fn(),
 }));
 
+const mockDbNull = { __dbNull: true };
 const prisma = {
     playbackState: { findUnique: jest.fn(), upsert: jest.fn() },
     track: { findMany: jest.fn() },
 };
 jest.mock("../../utils/db", () => ({
     prisma,
-    Prisma: { DbNull: { __dbNull: true } },
+    Prisma: { DbNull: mockDbNull },
 }));
 
 import router from "../playbackState";
+import { createRouteTestApp } from "./helpers/createRouteTestApp";
+
+const BASE = "/api/playback-state";
 
 function createApp() {
-    const app = express();
-    app.use(express.json());
-    app.use("/", router);
-    return app;
+    return createRouteTestApp(BASE, router);
 }
 
 const libraryTrack = {
@@ -64,10 +64,14 @@ const libraryTrack = {
 function storeUpserts() {
     let stored: any = null;
     prisma.playbackState.upsert.mockImplementation(async (args: any) => {
+        // Like Prisma: DbNull reads back as null, and timestamps are set.
         stored = {
             userId: "u1",
             deviceId: "legacy",
             ...args.create,
+            queue: args.create.queue === mockDbNull ? null : args.create.queue,
+            createdAt: new Date("2026-01-01T00:00:00.000Z"),
+            updatedAt: new Date("2026-01-01T00:00:00.000Z"),
         };
         return stored;
     });
@@ -85,7 +89,7 @@ describe("POST /api/playback-state with playbackId", () => {
         const app = createApp();
         const playbackIds = ["t.trk1", "td.42", "ym.vid1", "yt.vid2"];
         const post = await request(app)
-            .post("/")
+            .post(BASE)
             .send({
                 playbackType: "track",
                 currentIndex: 1,
@@ -153,7 +157,7 @@ describe("POST /api/playback-state with playbackId", () => {
             title: "YT Video",
         });
 
-        const get = await request(app).get("/");
+        const get = await request(app).get(BASE);
         expect(get.body.queue.map((i: any) => i.playbackId)).toEqual(
             playbackIds,
         );
@@ -164,7 +168,7 @@ describe("POST /api/playback-state with playbackId", () => {
             { ...libraryTrack, origin: "FEDERATED" },
         ]);
         const res = await request(createApp())
-            .post("/")
+            .post(BASE)
             .send({ playbackType: "track", queue: [{ playbackId: "t.trk1" }] });
         expect(res.status).toBe(200);
         const stored = prisma.playbackState.upsert.mock.calls[0][0].create
@@ -174,7 +178,7 @@ describe("POST /api/playback-state with playbackId", () => {
 
     it("accepts legacy and playbackId items in one request, playbackId winning over legacy fields", async () => {
         const res = await request(createApp())
-            .post("/")
+            .post(BASE)
             .send({
                 playbackType: "track",
                 queue: [
@@ -205,7 +209,7 @@ describe("POST /api/playback-state with playbackId", () => {
 
     it("rejects an invalid queue playbackId with 400 INVALID_PLAYBACK_ID and stores nothing", async () => {
         const res = await request(createApp())
-            .post("/")
+            .post(BASE)
             .send({
                 playbackType: "track",
                 queue: [{ playbackId: "t.trk1" }, { playbackId: "nope" }],
@@ -218,7 +222,7 @@ describe("POST /api/playback-state with playbackId", () => {
     it("answers 404 TRACK_NOT_FOUND for a library playbackId that is not stored", async () => {
         prisma.track.findMany.mockResolvedValue([]);
         const res = await request(createApp())
-            .post("/")
+            .post(BASE)
             .send({ playbackType: "track", queue: [{ playbackId: "t.gone" }] });
         expect(res.status).toBe(404);
         expect(res.body.code).toBe("TRACK_NOT_FOUND");
@@ -227,7 +231,7 @@ describe("POST /api/playback-state with playbackId", () => {
     it("stores a current-item playbackId as trackId and rejects an invalid one", async () => {
         const app = createApp();
         const ok = await request(app)
-            .post("/")
+            .post(BASE)
             .send({ playbackType: "track", playbackId: "t.trk1" });
         expect(ok.status).toBe(200);
         expect(
@@ -235,7 +239,7 @@ describe("POST /api/playback-state with playbackId", () => {
         ).toBe("trk1");
 
         const bad = await request(app)
-            .post("/")
+            .post(BASE)
             .send({ playbackType: "track", playbackId: "zz.1" });
         expect(bad.status).toBe(400);
         expect(bad.body.code).toBe("INVALID_PLAYBACK_ID");

@@ -171,39 +171,25 @@ describe("remote-media OpenAPI request contracts", () => {
         expect(acceptsOneOf(schema, payload)).toBe(accepted);
     });
 
-    test.each([
-        ["local", { trackId: "track-1" }, true],
-        ["TIDAL", tidalRequest, true],
-        ["YouTube", youtubeRequest, true],
-        ["missing remote metadata", { youtubeVideoId: "video-7" }, false],
-        ["no identifier", {}, false],
-        [
-            "conflicting identifiers",
-            { youtubeVideoId: "video-7", ...tidalRequest },
-            false,
-        ],
-    ])("play logging documents the %s request", (_label, payload, accepted) => {
-        const schema = requestSchema("/api/plays", "post");
+    test("play logging documents the playbackId form and names the legacy forms", () => {
+        const { swaggerSpec } = require("../swagger");
+        const operation = swaggerSpec.paths["/api/plays"].post;
+        const body = operation.requestBody.content["application/json"].schema;
 
-        expect(acceptsOneOf(schema, payload)).toBe(accepted);
-    });
-
-    test("play logging exposes required remote metadata and thumbnails", () => {
-        const schema = requestSchema("/api/plays", "post");
-        const remoteFields = [
-            "title",
-            "artist",
-            "album",
-            "duration",
-            "thumbnailUrl",
-        ];
-
-        expect(variantProperties(schema, "tidalTrackId")).toEqual(
-            expect.arrayContaining(["tidalTrackId", ...remoteFields]),
-        );
-        expect(variantProperties(schema, "youtubeVideoId")).toEqual(
-            expect.arrayContaining(["youtubeVideoId", ...remoteFields]),
-        );
+        expect(body).toEqual({
+            $ref: "#/components/schemas/RecordPlayRequest",
+        });
+        const schema = swaggerSpec.components.schemas
+            .RecordPlayRequest as RequestSchema;
+        expect(schema.required).toEqual(["playbackId"]);
+        expect(Object.keys(schema.properties ?? {}).sort()).toEqual([
+            "listenedMs",
+            "metadata",
+            "playbackId",
+            "playedAt",
+        ]);
+        expect(operation.description).toContain("`tidalTrackId`");
+        expect(operation.description).toContain("`youtubeVideoId`");
     });
 
     test.each([

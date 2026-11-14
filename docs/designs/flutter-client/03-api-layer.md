@@ -321,7 +321,7 @@ The complete set of server operations the client calls. This list is the **clien
 | `DELETE /playback-state` | | | M1 |
 | `GET /lyrics/:trackId` | `artist`, `title`, `album`, `duration` | `syncedLyrics`, `plainLyrics`, `synced`, `source` | M1 |
 
-`GET /lyrics/:trackId` takes a library track id, not a `playbackId`. The client passes the track's library id when the server returned one on the track payload, together with the metadata parameters, and otherwise calls it with the `playbackId` value in the path and relies on the metadata parameters. Whether the server accepts a non-library value there is verified when the operation is added to the P9 registry (S1-P9c); if it does not, lyrics for non-library tracks become a P-item appended to [12](12-server-prerequisites-p6-p9.md).
+`GET /lyrics/:trackId` takes a library track id, or any opaque value for a track that is not in the library. For a library id the server's stored metadata drives the lookup; for any other value the `artist`, `title`, `album` and `duration` parameters do, and the answer is 200 (`source: "none"` when nothing is found, or when `artist` or `title` is missing). The client passes the track's library id when the server returned one on the track payload, and otherwise the `playbackId` value, always together with the metadata parameters.
 
 ### Offline
 
