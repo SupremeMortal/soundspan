@@ -2,6 +2,7 @@
 
 import 'package:alchemist/alchemist.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:soundspan/app/theme/extensions.dart';
@@ -65,8 +66,11 @@ String goldenFileName(
 /// [themes], [highContrast], [textScales] and [locales].
 ///
 /// Each image is the whole surface: [builder]'s widget pumped with
-/// [PumpApp.pumpApp] on the theme's `ground` colour. Files are named by
-/// [goldenFileName] and stored under `goldens/` beside the test.
+/// [PumpApp.pumpApp] on the theme's `ground` colour, with [overrides], after
+/// [act] (when given) ran on the settled tree; with [act] the image is the
+/// whole app, so routes it opens (sheets, menus, dialogs) are in it. Files
+/// are named by [goldenFileName] and stored under `goldens/` beside the
+/// test.
 void goldenMatrix(
   String name, {
   required WidgetBuilder builder,
@@ -79,6 +83,8 @@ void goldenMatrix(
   List<bool> highContrast = const [false],
   List<double> textScales = const [1.0],
   List<Locale> locales = const [Locale('en')],
+  List<Override> overrides = const [],
+  Future<void> Function(WidgetTester tester)? act,
 }) {
   for (final size in sizes) {
     for (final theme in themes) {
@@ -110,10 +116,15 @@ void goldenMatrix(
                 highContrast: contrast,
                 textScale: textScale,
                 locale: locale,
+                overrides: overrides,
               );
               await tester.pumpAndSettle();
+              if (act != null) {
+                await act(tester);
+                await tester.pumpAndSettle();
+              }
               await expectLater(
-                find.byKey(boundary),
+                act == null ? find.byKey(boundary) : find.byType(MaterialApp),
                 matchesGoldenFile(goldenPath(fileName)),
               );
             });

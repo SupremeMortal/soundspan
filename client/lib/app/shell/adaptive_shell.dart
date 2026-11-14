@@ -44,8 +44,8 @@ enum ShellDestination {
 /// Compact windows put the content above a bottom [NavigationBar], medium
 /// windows put a [NavigationRail] beside it, and expanded windows put a
 /// [sidebarWidth] sidebar beside it, the panels separated by
-/// [Spacing.x8] of `ground`. The named slots are empty until their screens
-/// exist.
+/// [Spacing.x8] of `ground`. The top bar is shown only on expanded windows,
+/// the rail's trailing slot only on medium ones.
 class AdaptiveShell extends StatefulWidget {
   /// Creates the shell around [child].
   const new({
@@ -53,6 +53,7 @@ class AdaptiveShell extends StatefulWidget {
     required this.onDestinationSelected,
     required this.child,
     this.topBar,
+    this.railTrailing,
     this.miniPlayer,
     this.playerBar,
     this.sidebarPlaylists,
@@ -75,8 +76,11 @@ class AdaptiveShell extends StatefulWidget {
   /// The selected destination's content.
   final Widget child;
 
-  /// The top bar slot.
+  /// The top bar slot (expanded).
   final Widget? topBar;
+
+  /// The slot at the bottom of the navigation rail (medium).
+  final Widget? railTrailing;
 
   /// The mini player slot (compact and medium).
   final Widget? miniPlayer;
@@ -128,7 +132,6 @@ class _AdaptiveShellState extends State<AdaptiveShell> {
         bottom: false,
         child: Column(
           children: [
-            ?widget.topBar,
             Expanded(child: content),
             ?widget.miniPlayer,
           ],
@@ -159,7 +162,6 @@ class _AdaptiveShellState extends State<AdaptiveShell> {
       body: SafeArea(
         child: Column(
           children: [
-            ?widget.topBar,
             Expanded(
               child: Row(
                 children: [
@@ -169,6 +171,19 @@ class _AdaptiveShellState extends State<AdaptiveShell> {
                       selectedIndex: widget.selectedIndex,
                       onDestinationSelected: widget.onDestinationSelected,
                       labelType: NavigationRailLabelType.all,
+                      trailing: widget.railTrailing == null
+                          ? null
+                          : Expanded(
+                              child: Align(
+                                alignment: Alignment.bottomCenter,
+                                child: Padding(
+                                  padding: const EdgeInsets.only(
+                                    bottom: Spacing.x16,
+                                  ),
+                                  child: widget.railTrailing,
+                                ),
+                              ),
+                            ),
                       destinations: [
                         for (final destination in ShellDestination.values)
                           NavigationRailDestination(

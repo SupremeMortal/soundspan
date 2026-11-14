@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:soundspan/core/auth/profile.dart';
 import 'package:soundspan/core/auth/profile_repository.dart';
 import 'package:soundspan/core/storage/app/app_settings_store.dart';
 import 'package:soundspan/core/storage/providers.dart';
@@ -46,4 +47,10 @@ final Provider<ProfileRepository> profileRepositoryProvider =
         ref.watch(databaseOpenerProvider),
         ref.watch(clockProvider),
       ),
+    );
+
+/// Every profile, most recently used first, now and after every change.
+final StreamProvider<List<Profile>> profilesProvider =
+    StreamProvider<List<Profile>>(
+      (ref) => ref.watch(profileRepositoryProvider).watchAll(),
     );
