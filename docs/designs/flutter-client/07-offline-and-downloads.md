@@ -171,6 +171,14 @@ A durable, ordered queue of writes in `state.db`. Every user-visible write goes 
 | `offlineComplete` | `POST /offline/items/complete` | `oc:<playbackId>` | Last write wins |
 | `offlineDelete` | `DELETE /offline/items` | `od:<batchUuid>` | Batches merge up to 500 ids |
 
+Coalescing happens when an op is enqueued, in the same transaction as the insert (`OutboxStore`, `lib/core/sync/outbox/`):
+
+- A last-write-wins op deletes the pending ops with the same `opType` and `entityKey` and is inserted with a new `seq` at the tail and no attempts, so a reorder enqueued after an add stays after it.
+- `playlistDelete` deletes every pending rename, add, remove, reorder and delete of the playlist. If a `playlistCreate` with that temporary id is still pending, it is deleted too and nothing is stored: the playlist never reached the server.
+- A `playlistRemove` whose `opUuid` matches a pending `playlistAdd` of the same playlist deletes the add and is not stored. The caller passes the add's `opUuid` when removing an item that has not been sent, and a fresh uuid otherwise.
+- `offlineDelete` merges into the device's newest pending batch while it holds fewer than 500 ids and no `offlineComplete` of the device follows it, so a removal never moves ahead of a completion. Ids are deduplicated; the merged batch keeps its `batchUuid` and moves to the tail with a new `seq`, so a send already in flight never loses the added ids. Ids beyond 500 go into new batches with new `batchUuid`s.
+- Ops are compared and stored by value; `metadata` holds the JSON form of `TrackMeta`. A row that does not decode is logged at `severe` and deleted when read.
+
 A playlist created offline has a temporary id (`tmp_<uuid>`). When `playlistCreate` succeeds, the worker rewrites the id in later pending operations and in `cache.db` in the same transaction.
 
 ### Worker
