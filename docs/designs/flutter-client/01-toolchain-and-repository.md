@@ -185,7 +185,7 @@ Every package in the design document's table was checked for release cadence and
 | `smtc_windows` | Low release cadence; wraps WinRT through generated bindings | Spike S4 decides between it and an in-repo C++/WinRT plugin (`soundspan_smtc`) |
 | `auto_updater` | Low release cadence; wraps Sparkle and WinSparkle | Spike S7 in M5; fallback is a version check that opens the release page |
 | `sqlite3_flutter_libs` | End of life | Not referenced. `drift_flutter` brings the supported SQLite integration |
-| `openapi_generator` | Wraps the Java OpenAPI Generator, so CI and every developer machine would need a JDK | Replaced by `swagger_parser` (pure Dart). Kept as the fallback if spike S8 fails |
+| `openapi_generator` | Wraps the Java OpenAPI Generator, so CI and every developer machine would need a JDK | Replaced by `swagger_parser` (pure Dart), which spike S8 confirmed against the client-surface spec ([03](03-api-layer.md#spike-s8-finding)) |
 | `media_kit_libs_linux` | Uses the system libmpv | Packaging handles libmpv per format |
 | All others | Actively released | Adopted |
 

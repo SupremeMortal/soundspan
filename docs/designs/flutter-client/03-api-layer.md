@@ -32,7 +32,7 @@ The models and endpoint methods are generated from the server's OpenAPI document
 | Input | `packages/soundspan_api/openapi/soundspan-client.json`, the client-surface subset the backend emits (`npm --prefix backend run openapi:emit-client`). It is committed; CI re-emits it and fails on a difference. |
 | Generator | `swagger_parser` (a pure Dart dev dependency; no Java). It reads OpenAPI 3.0 and writes `freezed` + `json_serializable` models and `retrofit` clients over `dio`. |
 | Output | `lib/src/generated/`, committed like all generated code and excluded from analysis and the file-size gate. |
-| Naming | One client class per tag (`LibraryClient`, `PlaybackClient`, …); one method per `operationId`; one model per named component. |
+| Naming | One client class per tag (`LibraryClient`, `PlaybackClient`, …), each a getter of the root `SoundspanRestClient` named after the tag (`library` becomes `library2`, because `library` is a Dart built-in identifier); one method per `operationId`; one model per named component, plus one per inline enum or union, named after its operation or property (`LoginResponse200`, `ListAlbumsSortBy`). |
 
 `packages/soundspan_api/swagger_parser.yaml`:
 
@@ -40,16 +40,14 @@ The models and endpoint methods are generated from the server's OpenAPI document
 swagger_parser:
   schema_path: openapi/soundspan-client.json
   output_directory: lib/src/generated
-  language: dart
-  json_serializer: freezed
-  root_client: true
-  root_client_name: SoundspanRestClient
-  put_clients_in_folder: true
-  unknown_enum_value: true       # a value added by a newer server decodes to `unknown`
-  mark_files_as_generated: true
+  generation:
+    root_api_class_name: SoundspanRestClient
+    http_client: retrofit
+    serializer: freezed
+    unknown_enum_values: preserve   # a value added by a newer server decodes to `<Enum>Unknown`
 ```
 
-Option names and the generator's handling of nullable-versus-optional fields, `oneOf`, and unknown enum values are verified in spike S8 ([13](13-milestones-and-work-breakdown.md)) against the S1-P9b spec before M0 builds on it. If the spike fails, the fallback is `openapi-generator`'s `dart-dio` generator (same input, needs Java in CI); nothing outside `lib/src/generated/` changes.
+The generator follows the spec exactly, so two spec constructs decide how tolerant the generated code is: a closed object (`additionalProperties: false`) becomes a decoder that rejects unknown keys, so response objects in the client surface are open ([12](12-server-prerequisites-p6-p9.md), Serialisation Rules); and a value outside an `enum` decodes to the enum's `Unknown` subtype only because of `unknown_enum_values: preserve`. The answers for each generator behaviour the plan relies on are under [Spike S8 Finding](#spike-s8-finding).
 
 **Hand-written, around the generated code:**
 
@@ -83,10 +81,11 @@ packages/soundspan_api/
         ├── urls.dart                # StreamUrls, ImageUrls
         ├── paging.dart              # OffsetPage, KeysetPage
         └── generated/               # swagger_parser output; never edited
-            ├── models/              # One freezed class per component schema
-            └── clients/             # SessionClient, LibraryClient, PlaylistsClient, SearchClient,
-                                     # PlaybackClient, OfflineClient, PodcastsClient, DiscoveryClient,
-                                     # ListenTogetherClient, SocialClient
+            ├── soundspan_rest_client.dart   # Root client: one getter per tag
+            ├── exports.dart
+            └── <tag>/                       # One folder per tag (session, library, playlists, …)
+                ├── <tag>_client.dart        # SessionClient, LibraryClient, PlaylistsClient, …
+                └── models/                  # One freezed class per schema the tag's operations use
 ```
 
 ## Configuration and Credentials
@@ -205,7 +204,7 @@ Wire models are the generated classes. The app never passes them to UI code: rep
 
 - **Nullability comes from the spec.** A nullable column is a nullable Dart field; a key the server may omit is an optional one. The client adds no guesses of its own.
 - **`playbackId` is optional.** The server omits it when a row has no external id. The repository maps a track without it to a non-playable domain `Track`.
-- **Unknown keys are ignored** (`json_serializable` default), so a newer server's extra fields do not break decoding. Unknown enum values decode to `unknown`.
+- **Unknown keys are ignored**, so a newer server's extra fields do not break decoding. This holds because response objects in the spec are open; the generated decoder keeps extra keys in the model's `additionalProperties` map. Unknown enum values decode to the enum's `Unknown` subtype (`TrackSourceUnknown`), which keeps the raw value.
 - **A decode failure is a contract bug.** It surfaces as `ApiException` of kind `InvalidResponse`, is logged at `severe` with the operation id and the failing key (no payload), and the screen shows the generic error view. It is not papered over, because P9's response validation is meant to make it impossible.
 - Timestamps are `date-time` strings decoded to UTC `DateTime`.
 - Request bodies are generated too. The `metadata` object sent with a `playbackId` is always built from the `TrackMeta` the client already holds.
@@ -350,3 +349,23 @@ Page size is 100 for lists and 60 for grids. The repository exposes a `PagedSour
 - **Decode smoke:** `tool/capture_fixtures.dart` records one real response per operation from the contract server; a single table-driven test decodes each with its generated model. This catches generator defects (as opposed to spec defects).
 - **Contract** (`client/contract_test`, tag `contract`): behaviour against a seeded server that runs with response validation on. See [11](11-testing-and-ci.md).
 - **Spec gates:** the committed spec equals the backend's emitted spec; generated Dart is current; `tool/spec_compat.dart` passes against the `minServer` snapshot.
+
+## Spike S8 Finding
+
+Spike S8 ([13](13-milestones-and-work-breakdown.md)) generated the client from the committed `soundspan-client.json` (S1-P9b surface) and decoded hand-written bodies built from its schemas. The answer is **yes, with a spec constraint**: `swagger_parser` is the generator.
+
+**Versions.** Dart 3.14.0 (Flutter 3.50.0); `swagger_parser` 2.1.1 (`swagger_parser_core` 1.0.2), `freezed` 4.0.3, `freezed_annotation` 3.1.0, `json_serializable` 6.15.2, `json_annotation` 4.12.0, `retrofit` 4.10.0, `retrofit_generator` 10.3.3, `dio` 5.11.1, `build_runner` 2.17.1.
+
+**Configuration.** The block under [Generated From the Server Specification](#generated-from-the-server-specification). `swagger_parser` 2 replaced the flat 1.x options: `language`, `json_serializer`, `root_client`, `root_client_name`, `put_clients_in_folder`, `unknown_enum_value` and `mark_files_as_generated` are rejected as unknown keys. Their equivalents are `generation.serializer`, `generation.http_client`, `generation.root_api_class_name` and `generation.unknown_enum_values`; the root client, the per-tag folders and the generated-file marker are always produced.
+
+| # | Question | Answer |
+|---|---|---|
+| 1 | Generation runs and the output compiles | Yes. `dart run swagger_parser`, `build_runner build` and `dart analyze --fatal-infos` (default lints) exit 0 with no findings. The output uses Dart primary constructors (`class const Foo({...})`), so it needs the Dart of `client/.fvmrc`. |
+| 2 | Optional versus nullable fields | Yes. A key in `required` that is `nullable` becomes `required final T? field` and must be present (as `null` or a value); a key outside `required` becomes `final T? field` and may be absent; an absent `required` key throws. |
+| 3 | `oneOf` responses | Yes. `login` returns a sealed `LoginResponse200` with the subtypes `LoginTokenResponse` and `LoginTwoFactorChallenge`; the decoder matches the body against each branch's required keys and types, and the caller tells them apart with a `switch` on the type. |
+| 4 | Unknown enum values | Yes, with `unknown_enum_values: preserve`. Each enum becomes a sealed type with `<Enum>Known` (wrapping a Dart `enum`) and `<Enum>Unknown` (holding the raw value, which `toJson` writes back unchanged). |
+| 5 | One client per tag | Yes. One `<Tag>Client` per operation tag, each a getter of `SoundspanRestClient`; the getter for `library` is `library2`. |
+| 6 | Method names from `operationId` | Yes. Every operation has a method named after its `operationId` that sends the spec's method and path; query parameters, path parameters and JSON bodies serialise as declared (enum query values as their wire strings). |
+| 7 | Unknown keys are ignored | Yes, with a spec constraint. The committed spec closes every object (`additionalProperties: false`), and the generator turns that into `disallowUnrecognizedKeys` and a branch matcher that rejects extra keys, so a body with an extra key fails to decode. The same spec with `additionalProperties: false` removed decodes it and keeps the extra key in `additionalProperties`. Response objects in the client surface are therefore emitted open ([12](12-server-prerequisites-p6-p9.md), Serialisation Rules). |
+| 8 | `date-time` strings decode to UTC `DateTime` | Yes. `DateTime.parse(value).toUtc()`; the decoded values have `isUtc` set. |
+

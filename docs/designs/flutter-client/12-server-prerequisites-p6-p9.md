@@ -168,6 +168,7 @@ defineOperation({
 | Enum columns | `z.enum([...])`; clients must tolerate values added later |
 | Integers that are counts, sizes, or durations | `z.number().int()` |
 | Fields added after the `minServer` release | `.optional()` in responses, so one generated client decodes both server versions |
+| Response objects | Open in the emitted spec: no `additionalProperties: false`. The generated client rejects unknown keys of a closed object, so a closed response object breaks every client older than the server that adds a field |
 
 ### What Does Not Change
 
