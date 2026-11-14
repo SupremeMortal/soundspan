@@ -176,8 +176,9 @@ Playback restore (showing the last queue, paused) reads only `state.db`, so the 
 └── /settings/about
 ```
 
-- Detail routes (`/album/…`) are declared once and attached to every branch, so opening an album from Search keeps the Search tab selected.
-- Guards (`redirect`): no active profile → `/connect`; profile in `signedOut` state → `/connect/sign-in` with the server prefilled; server below `minServer` → `/connect/probe` showing the update message.
+- Detail routes (`album/:albumId`, `artist/:artistId`, `playlist/:playlistId`) are declared once, in a function, and attached as children of every branch root, so opening an album from Search keeps the Search tab selected. go_router cannot match one path in four branches, so their real locations are `/<branch root>/album/:albumId` and so on: `/home/album/42`, `/search/album/42?q=…`, `/library/<tab>/album/42`, `/podcasts/album/42`. The top-level `/album/:albumId`, `/artist/:artistId` and `/playlist/:playlistId` (the form deep links use) redirect into the currently selected branch, or Home when none was shown yet. Screens open details through `DetailNavigation` (`openAlbum(context, id)`, `openArtist`, `openPlaylist`) and never build these paths themselves.
+- `/` redirects to `/home`; `/library` and an unknown tab redirect to `/library/playlists`. Selecting the current destination again pops its branch to the root.
+- Guards (`redirect`): no active profile → `/connect`; profile in `signedOut` state → `/connect/sign-in?profile=<id>` with the server prefilled; server below `minServer` → `/connect/probe` showing the update message. `/connect/**` is always reachable, so a second server can be added. The router re-runs the guards when `ProfileRuntime.state` changes and when the active profile's `SessionController` signs out.
 - Deep links: `soundspan://link?code=…&server=…` maps to `/connect/probe` with the code carried as an extra. `soundspan://album/<id>`, `artist/<id>`, `playlist/<id>` open the matching route in the active profile.
 - On desktop and web the route is reflected in the window title and, on web, the URL (path strategy).
 
@@ -258,4 +259,14 @@ Each seam is an abstract class in `lib/platform/<name>/<name>.dart` with `_io.da
 | Capabilities | `PlatformCapabilities` | Constants per OS | Constants |
 | Persistent log sink | `createPersistentLogSink` (returns a `LogSink`) | `RollingFileLogSink` | `RingLogSink` |
 
-`PlatformCapabilities` is the only place UI asks "can this platform do X": `canDownload`, `canScanQr`, `hasTray`, `hasBackgroundPlayback`, `supportsApiKeyStreaming`. Screens hide features by capability, never by `Platform.isX`.
+`PlatformCapabilities` is the only place UI asks "can this platform do X": `canDownload`, `canScanQr`, `hasTray`, `hasBackgroundPlayback`, `supportsApiKeyStreaming`, `isDesktop`, and `allowsPublicCleartextHttp` (false on iOS and macOS, where App Transport Security blocks a public `http://` server). Screens hide features by capability, never by `Platform.isX`.
+
+| | Android | iOS | macOS | Windows, Linux | Web |
+|---|---|---|---|---|---|
+| `canDownload` | yes | yes | yes | yes | no |
+| `canScanQr` | yes | yes | yes | no | yes |
+| `hasTray` | no | no | no (the Dock keeps the app) | yes | no |
+| `hasBackgroundPlayback` | yes | yes | yes | yes | no |
+| `supportsApiKeyStreaming` | yes | yes | yes | yes | no |
+| `isDesktop` | no | no | yes | yes | no |
+| `allowsPublicCleartextHttp` | yes | no | no | yes | yes |

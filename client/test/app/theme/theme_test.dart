@@ -4,7 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:soundspan/app/theme/extensions.dart';
 import 'package:soundspan/app/theme/theme.dart';
-import 'package:soundspan/main.dart';
+
+import '../../helpers/test_root.dart';
 
 Future<BuildContext> _pumpThemed(WidgetTester tester, ThemeData theme) async {
   late BuildContext captured;
@@ -64,10 +65,9 @@ void main() {
         const FakeAccessibilityFeatures(highContrast: true);
     addTearDown(tester.platformDispatcher.clearAllTestValues);
 
-    await tester.pumpWidget(const SoundspanApp());
-    await tester.pumpAndSettle();
+    await tester.pumpSoundspanApp();
 
-    final context = tester.element(find.text('soundspan'));
+    final context = tester.element(find.text('Add server'));
     expect(context.colors.line, SoundspanColors.darkHighContrast.line);
     expect(context.colors.line.toARGB32(), 0xFF333333);
   });
@@ -76,10 +76,9 @@ void main() {
     tester.platformDispatcher.platformBrightnessTestValue = Brightness.light;
     addTearDown(tester.platformDispatcher.clearAllTestValues);
 
-    await tester.pumpWidget(const SoundspanApp());
-    await tester.pumpAndSettle();
+    await tester.pumpSoundspanApp();
 
-    final context = tester.element(find.text('soundspan'));
+    final context = tester.element(find.text('Add server'));
     expect(context.colors, SoundspanColors.light);
   });
 

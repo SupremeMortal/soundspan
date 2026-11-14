@@ -99,6 +99,114 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'soundspan'**
   String get appTitle;
+
+  /// The window or browser tab title: the current screen's name followed by the application name.
+  ///
+  /// In en, this message translates to:
+  /// **'{screen} · soundspan'**
+  String windowTitle(String screen);
+
+  /// Navigation destination and screen name: the home screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Home'**
+  String get navHome;
+
+  /// Navigation destination and screen name: the search screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Search'**
+  String get navSearch;
+
+  /// Navigation destination and screen name: the user's library.
+  ///
+  /// In en, this message translates to:
+  /// **'Library'**
+  String get navLibrary;
+
+  /// Navigation destination and screen name: podcasts.
+  ///
+  /// In en, this message translates to:
+  /// **'Podcasts'**
+  String get navPodcasts;
+
+  /// Accessibility label of the group holding the main navigation destinations.
+  ///
+  /// In en, this message translates to:
+  /// **'Main navigation'**
+  String get navMainLabel;
+
+  /// Screen name: entering the address of a server to add.
+  ///
+  /// In en, this message translates to:
+  /// **'Add server'**
+  String get screenConnect;
+
+  /// Screen name: the app is contacting the server the user entered.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking server'**
+  String get screenConnectProbe;
+
+  /// Screen name: signing in to a server.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in'**
+  String get screenSignIn;
+
+  /// Screen name: the settings screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get screenSettings;
+
+  /// Screen name: the settings page listing the user's servers.
+  ///
+  /// In en, this message translates to:
+  /// **'Servers'**
+  String get screenSettingsServers;
+
+  /// Screen name: the playback settings page.
+  ///
+  /// In en, this message translates to:
+  /// **'Playback'**
+  String get screenSettingsPlayback;
+
+  /// Screen name: the storage settings page.
+  ///
+  /// In en, this message translates to:
+  /// **'Storage'**
+  String get screenSettingsStorage;
+
+  /// Screen name: the appearance settings page.
+  ///
+  /// In en, this message translates to:
+  /// **'Appearance'**
+  String get screenSettingsAppearance;
+
+  /// Screen name: the about page.
+  ///
+  /// In en, this message translates to:
+  /// **'About'**
+  String get screenSettingsAbout;
+
+  /// Screen name: the detail screen of one album.
+  ///
+  /// In en, this message translates to:
+  /// **'Album'**
+  String get screenAlbum;
+
+  /// Screen name: the detail screen of one artist.
+  ///
+  /// In en, this message translates to:
+  /// **'Artist'**
+  String get screenArtist;
+
+  /// Screen name: the detail screen of one playlist.
+  ///
+  /// In en, this message translates to:
+  /// **'Playlist'**
+  String get screenPlaylist;
 }
 
 class _AppLocalizationsDelegate
