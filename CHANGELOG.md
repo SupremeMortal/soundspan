@@ -99,6 +99,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The client logs through one redacting logger: tokens, API keys, passwords, `?token=` query values and the server's base URL are removed before anything is written. Native targets keep the log in five rolling files of 1 MB under `logs/`; the web keeps the last 500 entries in memory. Nothing is sent off the device.
 - The client has the soundspan colour palette in dark, light and high-contrast variants. It follows the system's light or dark setting and switches to the high-contrast variant when the system asks for more contrast. Every text colour meets WCAG contrast (4.5:1, 3:1 for disabled text) on the surfaces it is used on.
 - The client bundles its fonts: Montserrat for all text and Turret Road ExtraBold for the soundspan wordmark, with their SIL Open Font License texts. No font is downloaded at runtime. Buttons, chips and the search field are pill-shaped, dialogs and sheets have 12-pixel corners and cards 6-pixel corners, and animations stop when the system asks for reduced motion.
+- The client's widget tests render with the bundled fonts and compare golden images of the colour tokens, the type styles and the wordmark, rendered on Linux. `client/tool/goldens.sh` regenerates them, through Docker or Podman on hosts other than Linux.
 
 ## [2.6.1] - 2026-08-26
 

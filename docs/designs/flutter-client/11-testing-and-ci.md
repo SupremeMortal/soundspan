@@ -32,14 +32,16 @@ Coverage: `flutter test --coverage` merged with the API package's; floor 80 % li
 | In-memory drift | Databases | `NativeDatabase.memory()`; migrations tested with generated schema helpers |
 | `InMemorySecretStore` | `SecretStore` | |
 
-`test/helpers/pump_app.dart` builds a `ProviderContainer` with these overrides and pumps a screen at a given window class, theme, locale, and text scale.
+`test/helpers/pump_app.dart` builds a `ProviderContainer` with these overrides and pumps a screen at a given window class, theme, locale, and text scale. `pumpApp(child, size:, theme:, highContrast:, locale:, textScale:, overrides:, clock:)` sets the view to `size` (`TestSizes.compact` 390 × 844, `medium` 800 × 1280, `expanded` 1440 × 900) at a device pixel ratio of 1.0, wraps `child` in a provider scope (clock overridden with a `FakeClock`, then the caller's overrides, which win) and a `MaterialApp` with the four `SoundspanTheme` variants and the generated localizations, resets the surface and platform values when the test ends, and returns the container. `FakeClock` starts at 2025-01-01T00:00:00Z and moves only through `advance` and `set`; it does not drive timers.
 
 ## Golden Tests
 
 - Matrix per component or screen: widths 390, 800, 1440 × themes dark, light. Selected ones also at text scale 2.0, pseudo-locale, and RTL.
-- Rendered with the bundled Montserrat (loaded in `flutter_test_config.dart`) so text is real; goldens are generated and compared **only on the Linux CI image** (`alchemist` CI mode) to avoid cross-platform anti-aliasing diffs. Developers on other OSes run the platform-independent "blocked text" variant locally.
-- Updating: commit the images from the `client-golden-rendered` artifact of a failing `client-golden` run, or run `flutter test --tags golden --update-goldens` on Linux with the pinned Flutter (`tool/goldens.sh` runs it through Docker or Podman).
-- Network images are replaced by a deterministic placeholder provider.
+- Rendered with real fonts: `test/flutter_test_config.dart` loads the bundled Montserrat, Turret Road, and the Material icon font before any test and runs every test under the soundspan `AlchemistConfig`. One set of goldens exists, rendered on Linux with the Flutter version pinned in `.fvmrc` and stored beside each test under `goldens/`. Alchemist's obscured-text "CI" variant is off and no second image set is committed. On a host other than Linux, golden tests still build and pump, but the comparison is skipped and nothing is written.
+- `test/helpers/golden.dart` provides `goldenMatrix(name, builder:, sizes:, themes:, highContrast:, textScales:, locales:)`: one test tagged `golden` per combination, pumped with `pumpApp`, each image the whole surface, named `<name>.<width>.<theme>[.x<scale>][.<locale>].png` (the theme is `dark` or `light`, with `-hc` for high contrast; the scale is left out at 1.0 and the locale at `en`). Defaults: the three window-class sizes, dark and light.
+- Updating: `tool/goldens.sh` runs `flutter test --tags golden --update-goldens` (extra arguments go to `flutter test`). On a Linux host with the pinned Flutter it runs directly; elsewhere it runs the same command in a container with that Flutter version through Docker or Podman, and fails with a clear message when neither is installed. When the `client-golden` job disagrees with committed images, commit the images from that run's `client-golden-rendered` artifact.
+- Network images are replaced by a deterministic placeholder provider: `PlaceholderImageProvider(ref)` in `test/helpers/` resolves synchronously to a flat image whose colour is one of eight, picked by the sum of the ref's code units modulo 8.
+- `test/helpers/guidelines.dart` provides `expectMeetsGuidelines(tester)`, which checks the tap-target size, tap-target label, and text contrast guidelines on the pumped tree.
 
 ## Contract Suite
 
