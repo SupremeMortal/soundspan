@@ -114,7 +114,9 @@ const completeTrackSchema = z.object({
  *                     properties:
  *                       playbackId: { type: string }
  *                       downloadable: { type: boolean }
- *                       downloadUrl: { type: string }
+ *                       downloadUrl:
+ *                         type: string
+ *                         description: /api/playback/stream/{playbackId}?quality={quality}&report=0; report=0 keeps the download from recording a play.
  *                       expectedSize: { type: integer, nullable: true }
  *                       quality: { type: string }
  *                       contentType: { type: string, nullable: true }

@@ -1,6 +1,6 @@
 # 12. Server Prerequisites P6–P9
 
-Status: design phase.
+Status: shipped (partial: P7, P9a, P9b).
 
 Four additive server changes the client needs beyond the Unified Playback API (P1–P5, `docs/designs/unified-playback-api.md`). They follow that document's rules: no existing route, field, or behaviour changes; each is its own PR (P9 is a series) with tests against real PostgreSQL where data is involved, OpenAPI annotations, and a `CHANGELOG.md` entry. Work stream **S1**. The release that contains P1–P9 is the client's `minServer`.
 

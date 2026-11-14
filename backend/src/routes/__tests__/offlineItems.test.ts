@@ -77,7 +77,7 @@ function createRes() {
 const item = (playbackId: string, expectedSize: number) => ({
     playbackId,
     downloadable: true,
-    downloadUrl: `/api/playback/stream/${playbackId}?quality=high`,
+    downloadUrl: `/api/playback/stream/${playbackId}?quality=high&report=0`,
     expectedSize,
     quality: "high",
     contentType: "audio/mpeg",
@@ -128,6 +128,29 @@ describe("POST /api/offline/items", () => {
             });
         },
     );
+
+    it("answers every downloadable item with a report=0 downloadUrl that keeps quality", async () => {
+        mockResolveOfflineItems.mockResolvedValue({
+            items: [item("t.abc", MB), item("td.7", MB), item("ym.v1", MB)],
+            estimatedTotalBytes: 3 * MB,
+        });
+        const res = createRes();
+        await post(
+            {
+                user: { id: "u1" },
+                body: { kind: "album", id: "x1", deviceId: DEVICE },
+            },
+            res,
+        );
+        expect(res.statusCode).toBe(200);
+        const items = (res.body as { items: Array<{ downloadUrl: string }> })
+            .items;
+        expect(items).toHaveLength(3);
+        for (const { downloadUrl } of items) {
+            expect(downloadUrl.endsWith("&report=0")).toBe(true);
+            expect(downloadUrl).toContain("quality=high");
+        }
+    });
 
     it("counts every device of the user toward the used total", async () => {
         mockResolveOfflineItems.mockResolvedValue({

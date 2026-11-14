@@ -9,7 +9,7 @@ const prisma = {
     track: { findUnique: jest.fn() },
     trackTidal: { findUnique: jest.fn() },
     trackYtMusic: { findUnique: jest.fn() },
-    play: { create: jest.fn() },
+    play: { create: jest.fn(), findFirst: jest.fn() },
 };
 
 jest.mock("../../middleware/auth", () => ({
@@ -101,6 +101,39 @@ describe("POST /api/plays with playbackId", () => {
             }),
         );
     });
+
+    it.each([
+        ["a stream already recorded a play in the last 30 seconds", true],
+        ["no play exists in the last 30 seconds", false],
+    ])(
+        "records an explicit library play when %s",
+        async (_label, recentPlayExists) => {
+            prisma.track.findUnique.mockResolvedValue({ id: "track-1" });
+            prisma.play.findFirst.mockResolvedValue(
+                recentPlayExists
+                    ? {
+                          id: "stream-play",
+                          userId: "user-1",
+                          trackId: "track-1",
+                          playedAt: new Date(Date.now() - 5_000),
+                      }
+                    : null,
+            );
+            const res = await request(app)
+                .post("/api/plays")
+                .send({ playbackId: "t.track-1" });
+            expect(res.status).toBe(200);
+            expect(prisma.play.create).toHaveBeenCalledTimes(1);
+            expect(prisma.play.create).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    data: expect.objectContaining({
+                        userId: "user-1",
+                        trackId: "track-1",
+                    }),
+                }),
+            );
+        },
+    );
 
     it("records a TIDAL play for an existing row without metadata", async () => {
         prisma.trackTidal.findUnique.mockResolvedValue(TIDAL_ROW);

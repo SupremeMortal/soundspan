@@ -25,6 +25,7 @@ import { parsePlaybackId } from "../services/playback/playbackId";
 import {
     PlaybackResolutionError,
     resolvePlayback,
+    type ResolvePlaybackInput,
     type PlaybackQuality,
     type ResolvedPlayback,
 } from "../services/playback/resolvePlayback";
@@ -120,6 +121,7 @@ interface ResolvedRequest {
 async function resolveRequest(
     req: Request<{ playbackId: string }>,
     res: Response,
+    options: Pick<ResolvePlaybackInput, "recordPlay"> = {},
 ): Promise<ResolvedRequest | null> {
     const parsed = parsePlaybackId(req.params.playbackId);
     if (!parsed) {
@@ -142,7 +144,11 @@ async function resolveRequest(
 
     const userId = req.user!.id;
     try {
-        const playback = await resolvePlayback(userId, { parsed, quality });
+        const playback = await resolvePlayback(userId, {
+            parsed,
+            quality,
+            ...options,
+        });
         return { playback, userId };
     } catch (err: unknown) {
         if (err instanceof PlaybackResolutionError) {
@@ -180,6 +186,7 @@ async function dispatchStream(
                 req: req as Request<{ id: string }>,
                 res,
                 playbackId: String(req.params.playbackId),
+                recordPlay: playback.recordPlay,
             });
         case "td":
             return streamTidalTrack({
@@ -248,6 +255,17 @@ async function dispatchStream(
  *           type: string
  *           enum: [original, high, medium, low]
  *         description: Requested quality; the user's saved playback quality when absent.
+ *       - in: query
+ *         name: report
+ *         schema:
+ *           type: string
+ *           enum: ["0"]
+ *         description: >
+ *           "0" streams without recording a play, for preloading and
+ *           downloads; the client reports the play itself with POST
+ *           /api/plays. Absent or any other value records a play for a
+ *           library track as usual. Remote sources never record a play on
+ *           stream.
  *     responses:
  *       200:
  *         description: Audio stream
@@ -271,7 +289,10 @@ router.get(
     requireAuthOrToken,
     asyncHandler(
         async (req: Request<{ playbackId: string }>, res: Response) => {
-            const resolved = await resolveRequest(req, res);
+            // Exactly "0" opts out; anything else keeps today's behaviour.
+            const resolved = await resolveRequest(req, res, {
+                recordPlay: req.query.report !== "0",
+            });
             if (!resolved) return;
             const { playback, userId } = resolved;
 
