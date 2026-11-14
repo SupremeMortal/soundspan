@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import {
+    assertSmoke,
     type BackendProcess,
     printLogTail,
     randomSecret,
@@ -25,6 +26,10 @@ import {
     assertWrites,
     bootstrapCredentials,
 } from "./unifiedPlaybackSmoke/flow";
+import {
+    assertPlayReporting,
+    assertSelfRevoke,
+} from "./unifiedPlaybackSmoke/prerequisites";
 
 const PORT = 3103;
 
@@ -60,7 +65,17 @@ function backendEnvironment(
         CATALOG_PERSISTENCE: "off",
         ENABLE_ENV_FILE_SYNC: "false",
         LOG_LEVEL: "info",
+        OPENAPI_VALIDATE_RESPONSES: "1",
     };
+}
+
+/** Fails unless the backend logged that response validation is installed. */
+async function assertResponseValidationEnabled(logPath: string): Promise<void> {
+    const log = await fs.readFile(logPath, "utf8");
+    assertSmoke(
+        log.includes("Client-surface response validation enabled"),
+        "Backend did not enable client-surface response validation",
+    );
 }
 
 async function main(): Promise<void> {
@@ -93,12 +108,15 @@ async function main(): Promise<void> {
             logPath,
         );
         await waitForReady(baseUrl, backend);
+        await assertResponseValidationEnabled(logPath);
         const creds = await bootstrapCredentials(baseUrl);
         const playbackId = await assertTrackListing(baseUrl, creds, library);
         await assertStreaming(baseUrl, creds, library, playbackId);
         await assertRemoteUnavailable(baseUrl, creds);
         await assertWrites(baseUrl, creds, playbackId);
+        await assertPlayReporting(baseUrl, creds, playbackId);
         await assertOffline(baseUrl, creds, library, playbackId);
+        await assertSelfRevoke(baseUrl, creds);
         await assertSocketApiKey(baseUrl, creds);
         process.stdout.write("Unified playback smoke passed.\n");
     } catch (error) {

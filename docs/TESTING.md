@@ -225,6 +225,29 @@ npm --prefix backend exec -- tsc --noEmit -p backend/tsconfig.integration.json
 npm --prefix backend run test:integration
 ```
 
+### Unified playback smoke
+
+`npm --prefix backend run smoke:unified-playback` creates a throwaway
+database, migrates it, seeds one library track, boots the built backend with
+`OPENAPI_VALIDATE_RESPONSES=1`, and drives the unified playback API over HTTP
+and the Listen Together socket. It checks that the backend logged
+`Client-surface response validation enabled` and fails, naming the request,
+when any response is a `RESPONSE_SCHEMA_MISMATCH`. Run it the way the CI job
+does, against throwaway PostgreSQL (with pgvector) and Redis:
+
+```bash
+docker compose -f docker-compose.local.yml up -d postgres-local redis-local
+npm --prefix packages/media-metadata-contract run build
+(cd backend && npx prisma generate && npm run build)
+SMOKE_ADMIN_DATABASE_URL=postgresql://soundspan:soundspan@127.0.0.1:5433/soundspan \
+SMOKE_REDIS_URL=redis://127.0.0.1:6380 \
+npm --prefix backend run smoke:unified-playback
+```
+
+It force-drops and recreates the `smoke_unified_playback` database on the
+server named by `SMOKE_ADMIN_DATABASE_URL` and uses Redis database 2.
+`SMOKE_LOG_DIR` keeps the backend log after the run.
+
 ### Scale smoke tier
 
 The scale smoke tier exercises real boundaries at production-like volume. It
@@ -319,6 +342,7 @@ Quality visibility workflow:
 | -------------------------------------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Backend Tests + Coverage               | **Yes**      | Backend Jest tests plus coverage summary and artifacts. The summary step fails the job below the `COVERAGE_*_MIN` floors unless `CI_ENFORCE_TEST_GATE` is `false`.                                                                                                                                                    |
 | Backend PostgreSQL Integration         | Configurable | The analyzer queue-claim PostgreSQL test, a typecheck of `backend/tests-integration/`, and the backend real-PostgreSQL Jest suites, all against a pgvector service container. See [Backend PostgreSQL integration](#backend-postgresql-integration).                                                                  |
+| Unified Playback Smoke                 | Configurable | Boots the built backend against PostgreSQL (pgvector) and Redis service containers with client-surface response validation on, and fails on any `RESPONSE_SCHEMA_MISMATCH`. Drives the unified playback API end to end: `playbackId` listing, stream authentication, `Range` and `If-Range`, writes by `playbackId`, play reporting (`report=0` streams record no play, `playedAt` and `listenedMs` are stored, a repeat is counted once, a listen under 5 seconds is not recorded, an explicit play is never dropped by the stream dedupe), offline items (`report=0` download URLs that record no play, revocation), `SOURCE_UNAVAILABLE`, API-key self-revoke, and API-key sockets. See [Unified playback smoke](#unified-playback-smoke). |
 | Frontend Quality Visibility            | Configurable | ESLint with the enforced 181-warning ceiling, Next build, targeted unit coverage, component tests, and E2E inventory visibility.                                                                                                                                                                                      |
 | Python Sidecar Tests (matrix)          | Configurable | The four sidecar `pytest` suites. The root AIO image-hardening suite runs in Python Quality and is also included by local `npm run verify:python`.                                                                                                                                                                    |
 | Backend Typecheck / Frontend Typecheck | **Yes**      | Standalone TypeScript checks.                                                                                                                                                                                                                                                                                         |
