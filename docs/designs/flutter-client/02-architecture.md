@@ -79,7 +79,7 @@ Two provider scopes.
 | `activeProfileIdProvider` | `Notifier<String?>` | Persisted in app settings |
 | `appSettingsProvider` | `AppSettings` | Theme mode, locale |
 | `reachabilityProvider` | `ReachabilityController` | See [07](07-offline-and-downloads.md) |
-| `appLoggerProvider` | `AppLogger` | |
+| `appLoggerProvider` | `AppLogger` | `Provider.family` keyed by scope: `ref.read(appLoggerProvider('Downloads'))` |
 
 **Profile scope** (one per signed-in profile; rebuilt when the active profile changes):
 
@@ -218,6 +218,7 @@ _log.info('task finished', {'bytes': size});
 - Sinks: debug console in debug builds; a rolling file (`<appSupport>/logs/app.<n>.log`, 5 files × 1 MB) on native targets; an in-memory ring (500 entries) on web.
 - Redaction happens in the logger, before any sink: values of keys named `token`, `refreshToken`, `apiKey`, `password`, `authorization`, `x-api-key`; any `?token=` query value; the host and path prefix of the active profile's base URL (replaced with `<server>`).
 - `Settings → About → Export logs` zips the rolling files through the platform share or save dialog.
+- A sink that throws does not reach the caller: the logger reports the first failure of each sink through `dart:developer` and keeps delivering to the other sinks.
 - Levels: `fine` for per-request detail (off in release), `info` for lifecycle, `warning` for recovered failures, `severe` for unrecovered ones.
 
 ## Platform Seams
@@ -238,5 +239,6 @@ Each seam is an abstract class in `lib/platform/<name>/<name>.dart` with `_io.da
 | Deep links | `DeepLinks` | `app_links` | URL on load |
 | Notifications | `LocalNotifications` | `flutter_local_notifications` | No-op |
 | Capabilities | `PlatformCapabilities` | Constants per OS | Constants |
+| Persistent log sink | `createPersistentLogSink` (returns a `LogSink`) | `RollingFileLogSink` | `RingLogSink` |
 
 `PlatformCapabilities` is the only place UI asks "can this platform do X": `canDownload`, `canScanQr`, `hasTray`, `hasBackgroundPlayback`, `supportsApiKeyStreaming`. Screens hide features by capability, never by `Platform.isX`.

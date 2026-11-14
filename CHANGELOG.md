@@ -96,6 +96,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Client
 
 - The repository contains the scaffold of a first-party Flutter client under `client/` for Android, iOS, Linux, macOS, Windows and the web. It is not released yet.
+- The client logs through one redacting logger: tokens, API keys, passwords, `?token=` query values and the server's base URL are removed before anything is written. Native targets keep the log in five rolling files of 1 MB under `logs/`; the web keeps the last 500 entries in memory. Nothing is sent off the device.
 
 ## [2.6.1] - 2026-08-26
 
