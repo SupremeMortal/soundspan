@@ -105,3 +105,36 @@ export const SystemFeatures = z
         loudnessTargetLufs: z.number(),
     })
     .meta({ id: "SystemFeatures" });
+
+/** Body of `POST /api/device-link/verify`. */
+export const DeviceLinkVerifyRequest = z
+    .object({
+        code: z.string(),
+        deviceName: z.string().optional(),
+    })
+    .meta({ id: "DeviceLinkVerifyRequest" });
+
+/** The API key minted for a device that submitted a valid link code. */
+export const DeviceLinkVerifyResponse = z
+    .object({
+        apiKey: z.string(),
+        userId: z.string(),
+        username: z.string(),
+    })
+    .meta({ id: "DeviceLinkVerifyResponse" });
+
+/** One API key of the current user; the key value itself is never sent. */
+export const ApiKeySummary = z
+    .object({
+        id: z.string(),
+        name: z.string(),
+        createdAt: z.iso.datetime(),
+        expiresAt: z.iso.datetime(),
+        lastUsed: z.iso.datetime().nullable(),
+    })
+    .meta({ id: "ApiKeySummary" });
+
+/** The current user's API keys, newest first. */
+export const ApiKeyListResponse = z
+    .object({ apiKeys: z.array(ApiKeySummary) })
+    .meta({ id: "ApiKeyListResponse" });

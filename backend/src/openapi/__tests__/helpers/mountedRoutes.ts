@@ -7,7 +7,9 @@ import { pathShape, toOpenApiPaths } from "../../expressPath";
  * here and mocks the module's heavy dependencies in the test file.
  */
 export const CLIENT_SURFACE_MOUNTS: Record<string, () => Router> = {
+    "/api/api-keys": () => require("../../../routes/apiKeys").default,
     "/api/auth": () => require("../../../routes/auth").default,
+    "/api/device-link": () => require("../../../routes/deviceLink").default,
     "/api/library": () => require("../../../routes/library").default,
     "/api/mixes": () => require("../../../routes/mixes").default,
     "/api/lyrics": () => require("../../../routes/lyrics").default,

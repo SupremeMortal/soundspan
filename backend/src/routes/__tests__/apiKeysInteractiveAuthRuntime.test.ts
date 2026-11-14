@@ -31,6 +31,7 @@ jest.mock("../../utils/logger", () => ({ logger: scopedLogger }));
 import express from "express";
 import request from "supertest";
 import router from "../apiKeys";
+import { expectClientSurfaceResponse } from "./helpers/expectClientSurfaceResponse";
 
 function createRes() {
     const res: any = {
@@ -49,7 +50,7 @@ function createRes() {
 }
 
 async function executeRoute(
-    method: "post" | "delete",
+    method: "get" | "post" | "delete",
     path: string,
     req: any,
     res: any,
@@ -141,6 +142,15 @@ describe("API key management interactive authentication", () => {
 
         expect(res.statusCode).toBe(200);
         expect(res.body).toEqual({ message: "API key revoked successfully" });
+    });
+
+    it("answers an unidentified list request 401 with the ApiError envelope", async () => {
+        const res = createRes();
+
+        await executeRoute("get", "/", { headers: {} }, res);
+
+        expect(res.statusCode).toBe(401);
+        expectClientSurfaceResponse("listApiKeys", res);
     });
 
     describe("routing through the mounted router", () => {

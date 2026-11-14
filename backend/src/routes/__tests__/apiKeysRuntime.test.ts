@@ -39,6 +39,7 @@ jest.mock("../../services/listenTogetherSocketRevocation", () => ({
 
 import router from "../apiKeys";
 import { prisma as prismaClient } from "../../utils/db";
+import { withClientSurfaceValidation } from "./helpers/expectClientSurfaceResponse";
 
 const mockCreateApiKey = prismaClient.apiKey.create as jest.Mock;
 const mockFindManyApiKeys = prismaClient.apiKey.findMany as jest.Mock;
@@ -76,7 +77,10 @@ function createRes() {
 
 describe("apiKeys routes runtime", () => {
     const postCreate = getHandler("post", "/");
-    const getList = getHandler("get", "/");
+    const getList = withClientSurfaceValidation(
+        "listApiKeys",
+        getHandler("get", "/"),
+    );
     const deleteKey = getHandler("delete", "/:id");
 
     beforeEach(() => {
@@ -210,6 +214,42 @@ describe("apiKeys routes runtime", () => {
         expect(errorRes.body).toEqual({ error: "Failed to list API keys" });
     });
 
+    it("lists a used and a never-used key with their expiry", async () => {
+        mockFindManyApiKeys.mockResolvedValueOnce([
+            {
+                id: "k2",
+                name: "Laptop",
+                lastUsed: new Date("2026-02-18T08:30:00.000Z"),
+                createdAt: new Date("2026-02-17T00:00:00.000Z"),
+            },
+            {
+                id: "k1",
+                name: "My Phone",
+                lastUsed: null,
+                createdAt: new Date("2026-02-16T00:00:00.000Z"),
+            },
+        ]);
+        const res = createRes();
+
+        await getList({ user: { id: "u1" } } as any, res);
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.apiKeys).toHaveLength(2);
+        expect(res.body.apiKeys[1]).toEqual(
+            expect.objectContaining({ id: "k1", lastUsed: null }),
+        );
+    });
+
+    it("lists no keys as an empty array", async () => {
+        mockFindManyApiKeys.mockResolvedValueOnce([]);
+        const res = createRes();
+
+        await getList({ user: { id: "u1" } } as any, res);
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body).toEqual({ apiKeys: [] });
+    });
+
     it("deletes owned keys, returns 404 for missing keys, and handles failures", async () => {
         const req = { params: { id: "k1" }, user: { id: "u1" } } as any;
         const res = createRes();
@@ -259,7 +299,10 @@ describe("apiKeys routes runtime", () => {
     });
 
     describe("DELETE /current", () => {
-        const deleteCurrent = getHandler("delete", "/current");
+        const deleteCurrent = withClientSurfaceValidation(
+            "revokeCurrentApiKey",
+            getHandler("delete", "/current"),
+        );
 
         it("lets an API key delete itself and revokes its sockets", async () => {
             const res = createRes();

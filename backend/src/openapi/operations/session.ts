@@ -2,7 +2,10 @@ import { defineOperation } from "../defineOperation";
 import { ApiError, standardErrors } from "../schemas/common";
 import {
     ApiDocumentInfo,
+    ApiKeyListResponse,
     AuthConfig,
+    DeviceLinkVerifyRequest,
+    DeviceLinkVerifyResponse,
     HealthStatus,
     LoginRequest,
     LoginResponse,
@@ -132,5 +135,40 @@ export const sessionOperations = [
             "Omitted fields keep their stored value. The server accepts further settings for other consumers; a value it does not accept answers 400.",
         body: UpdateSettingsRequest,
         responses: { 200: UserSettings, 400: ApiError, ...standardErrors },
+    }),
+    defineOperation({
+        method: "post",
+        path: "/api/device-link/verify",
+        operationId: "verifyDeviceLink",
+        tag: "session",
+        summary: "Exchange a device link code for an API key",
+        description:
+            "The code is matched case-insensitively. 404 for an unknown code; 400 for a missing, used or expired code. `deviceName` names the key and defaults to `Mobile Device`.",
+        anonymous: true,
+        body: DeviceLinkVerifyRequest,
+        responses: {
+            200: DeviceLinkVerifyResponse,
+            400: ApiError,
+            404: ApiError,
+            500: ApiError,
+        },
+    }),
+    defineOperation({
+        method: "get",
+        path: "/api/api-keys",
+        operationId: "listApiKeys",
+        tag: "session",
+        summary: "The current user's API keys, newest first",
+        responses: { 200: ApiKeyListResponse, ...standardErrors },
+    }),
+    defineOperation({
+        method: "delete",
+        path: "/api/api-keys/current",
+        operationId: "revokeCurrentApiKey",
+        tag: "session",
+        summary: "Revoke the API key that authenticates this request",
+        description:
+            "The request must be authenticated with `X-API-Key`; any other session answers 400 with code `NOT_API_KEY_SESSION`. The key is deleted and sockets authenticated with it are disconnected; a key already gone still answers 200.",
+        responses: { 200: MessageResponse, 400: ApiError, ...standardErrors },
     }),
 ];

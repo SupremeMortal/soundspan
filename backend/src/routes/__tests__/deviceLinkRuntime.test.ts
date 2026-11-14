@@ -48,6 +48,7 @@ jest.mock("../../services/listenTogetherSocketRevocation", () => ({
 
 import router from "../deviceLink";
 import { prisma as prismaClient } from "../../utils/db";
+import { withClientSurfaceValidation } from "./helpers/expectClientSurfaceResponse";
 
 const mockDeviceCodeDeleteMany = prismaClient.deviceLinkCode
     .deleteMany as jest.Mock;
@@ -161,7 +162,10 @@ async function executeDeleteDevice(req: any, res: any): Promise<void> {
 
 describe("deviceLink routes runtime", () => {
     const postGenerate = getHandler("/generate", "post");
-    const postVerify = getHandler("/verify", "post");
+    const postVerify = withClientSurfaceValidation(
+        "verifyDeviceLink",
+        getHandler("/verify", "post"),
+    );
     const getStatus = getHandler("/status/:code", "get");
     const getDevices = getHandler("/devices", "get");
     const deleteDevice = getHandler("/devices/:id", "delete");

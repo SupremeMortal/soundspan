@@ -117,34 +117,6 @@ router.post("/", requireInteractiveSession, async (req, res) => {
     }
 });
 
-/**
- * @openapi
- * /api/api-keys:
- *   get:
- *     summary: List all API keys for the current user
- *     tags: [API Keys]
- *     security:
- *       - bearerAuth: []
- *       - apiKeyAuth: []
- *     responses:
- *       200:
- *         description: List of API keys (without the actual key values for security)
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 apiKeys:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/ApiKey'
- *       401:
- *         description: Not authenticated
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- */
 router.get("/", async (req, res) => {
     try {
         const userId = req.user?.id;
@@ -176,42 +148,6 @@ router.get("/", async (req, res) => {
     }
 });
 
-/**
- * @openapi
- * /api/api-keys/current:
- *   delete:
- *     summary: Revoke the API key that authenticates this request
- *     description: >-
- *       Deletes the API key sent in `X-API-Key` and disconnects sockets
- *       authenticated with it. A request authenticated any other way is
- *       answered 400 with code `NOT_API_KEY_SESSION`.
- *     tags: [API Keys]
- *     security:
- *       - apiKeyAuth: []
- *     responses:
- *       200:
- *         description: API key revoked successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "API key revoked successfully"
- *       400:
- *         description: The request is not authenticated with an API key (code NOT_API_KEY_SESSION)
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *       401:
- *         description: Not authenticated
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- */
 router.delete("/current", async (req, res) => {
     const keyId = req.apiKeyId;
     const userId = req.user?.id;

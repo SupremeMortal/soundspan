@@ -12,12 +12,15 @@ const ANONYMOUS = [
     ["post", "/api/auth/login"],
     ["post", "/api/auth/refresh"],
     ["post", "/api/auth/logout"],
+    ["post", "/api/device-link/verify"],
 ] as const;
 
 const AUTHENTICATED = [
     ["get", "/api/auth/me"],
     ["get", "/api/docs.json"],
     ["get", "/api/system/features"],
+    ["get", "/api/api-keys"],
+    ["delete", "/api/api-keys/current"],
 ] as const;
 
 describe("session operations in the merged document", () => {
@@ -80,10 +83,13 @@ describe("session operations in the emitted client spec", () => {
             "getOnboardingStatus",
             "getSettings",
             "getSystemFeatures",
+            "listApiKeys",
             "login",
             "logout",
             "refreshSession",
+            "revokeCurrentApiKey",
             "updateSettings",
+            "verifyDeviceLink",
         ]);
     });
 });
