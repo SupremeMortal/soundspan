@@ -2,6 +2,7 @@
 
 import 'package:material_ui/material_ui.dart';
 import 'package:soundspan/app/l10n/generated/app_localizations.dart';
+import 'package:soundspan/app/theme/theme.dart';
 
 void main() {
   runApp(const SoundspanApp());
@@ -18,6 +19,10 @@ class SoundspanApp extends StatelessWidget {
       onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
+      theme: SoundspanTheme.light,
+      darkTheme: SoundspanTheme.dark,
+      highContrastTheme: SoundspanTheme.lightHighContrast,
+      highContrastDarkTheme: SoundspanTheme.darkHighContrast,
       home: Builder(
         builder: (context) => Scaffold(
           body: Center(child: Text(AppLocalizations.of(context).appTitle)),
