@@ -93,36 +93,6 @@ const options: swaggerJsdoc.Options = {
                         createdAt: { type: "string", format: "date-time" },
                     },
                 },
-                LoginUser: {
-                    type: "object",
-                    additionalProperties: false,
-                    required: ["id", "username", "displayName", "role"],
-                    properties: {
-                        id: { type: "string" },
-                        username: { type: "string" },
-                        displayName: { type: "string", nullable: true },
-                        role: { type: "string", enum: ["user", "admin"] },
-                    },
-                },
-                LoginTokenResponse: {
-                    type: "object",
-                    additionalProperties: false,
-                    required: ["token", "refreshToken", "user"],
-                    properties: {
-                        token: { type: "string" },
-                        refreshToken: { type: "string" },
-                        user: { $ref: "#/components/schemas/LoginUser" },
-                    },
-                },
-                LoginTwoFactorChallenge: {
-                    type: "object",
-                    additionalProperties: false,
-                    required: ["requires2FA", "message"],
-                    properties: {
-                        requires2FA: { type: "boolean", enum: [true] },
-                        message: { type: "string" },
-                    },
-                },
                 Artist: {
                     type: "object",
                     properties: {

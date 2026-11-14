@@ -15,6 +15,11 @@ import { ApiError, standardErrors } from "../schemas/common";
 import { isMounted, isMountedIn, routerServes } from "./helpers/mountedRoutes";
 
 jest.mock("../../config", () => ({ config: { port: 3006 } }));
+jest.mock("../../utils/db", () => ({ prisma: {} }));
+jest.mock("../../middleware/auth", () => {
+    const pass = (_req: unknown, _res: unknown, next: () => void) => next();
+    return new Proxy({}, { get: () => pass });
+});
 
 function fixture(
     overrides: Partial<Parameters<typeof defineOperation>[0]> = {},

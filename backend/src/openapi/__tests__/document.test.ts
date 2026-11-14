@@ -285,7 +285,7 @@ describe("mergeClientSurface", () => {
         ).toThrow(/Error/);
     });
 
-    test("the served document is unchanged while the registry is empty", () => {
+    test("an empty surface leaves the comment document unchanged", () => {
         const swagger = require("../../config/swagger");
         const merged = mergeClientSurface(
             swagger.commentDocument,
@@ -295,9 +295,18 @@ describe("mergeClientSurface", () => {
         expect(JSON.stringify(merged)).toBe(
             JSON.stringify(swagger.commentDocument),
         );
-        expect(JSON.stringify(swagger.swaggerSpec)).toBe(
-            JSON.stringify(swagger.commentDocument),
-        );
+    });
+
+    test("the served document carries every registered operation", () => {
+        const swagger = require("../../config/swagger");
+        const { clientSurfaceOperations } = require("../clientSurface");
+
+        for (const operation of clientSurfaceOperations) {
+            expect(
+                swagger.swaggerSpec.paths[operation.path][operation.method]
+                    .operationId,
+            ).toBe(operation.operationId);
+        }
     });
 });
 

@@ -155,6 +155,8 @@ import {
     refreshLimiter,
 } from "../../middleware/rateLimiter";
 import router from "../auth";
+import { createRouteTestApp } from "./helpers/createRouteTestApp";
+import { expectClientSurfaceResponse } from "./helpers/expectClientSurfaceResponse";
 
 type HttpMethod = "get" | "post" | "put" | "patch" | "delete";
 
@@ -386,6 +388,11 @@ describe("auth routes runtime", () => {
             error: "Too many token refresh attempts. Please try again later.",
             code: "RATE_LIMITED",
         });
+        expectClientSurfaceResponse(
+            "refreshSession",
+            throttledResponse.status,
+            throttledResponse.body,
+        );
     });
 
     it("throttles repeated invalid registration attempts", async () => {
@@ -488,6 +495,7 @@ describe("auth routes runtime", () => {
         const invalidRes = createRes();
         await login(invalidReq, invalidRes);
         expect(invalidRes.statusCode).toBe(400);
+        expectClientSurfaceResponse("login", invalidRes);
 
         prisma.user.findUnique
             .mockResolvedValueOnce(null)
@@ -496,6 +504,7 @@ describe("auth routes runtime", () => {
         const missingRes = createRes();
         await login(missingReq, missingRes);
         expect(missingRes.statusCode).toBe(401);
+        expectClientSurfaceResponse("login", missingRes);
 
         prisma.user.findUnique.mockResolvedValueOnce({
             id: "u2",
@@ -540,6 +549,7 @@ describe("auth routes runtime", () => {
             message: "2FA token required",
         });
         expectLoginBodyMatchesOpenApi(challengeRes.body);
+        expectClientSurfaceResponse("login", challengeRes);
 
         mockOtplibVerify.mockResolvedValueOnce({ valid: true });
         const totpReq = {
@@ -559,6 +569,7 @@ describe("auth routes runtime", () => {
             },
         });
         expectLoginBodyMatchesOpenApi(totpRes.body);
+        expectClientSurfaceResponse("login", totpRes);
 
         const recoveryReq = {
             body: { username: "alice", password: "pw", token: "ABCDEF12" },
@@ -633,11 +644,13 @@ describe("auth routes runtime", () => {
         await logout({} as any, logoutRes);
         expect(logoutRes.statusCode).toBe(200);
         expect(logoutRes.body).toEqual({ message: "Logged out" });
+        expectClientSurfaceResponse("logout", logoutRes);
 
         const missingReq = { body: {} } as any;
         const missingRes = createRes();
         await refresh(missingReq, missingRes);
         expect(missingRes.statusCode).toBe(400);
+        expectClientSurfaceResponse("refreshSession", missingRes);
 
         mockVerifyAuthToken.mockReturnValueOnce({
             type: "access",
@@ -665,6 +678,7 @@ describe("auth routes runtime", () => {
         await refresh(invalidatedReq, invalidatedRes);
         expect(invalidatedRes.statusCode).toBe(401);
         expect(invalidatedRes.body).toEqual({ error: "Token invalidated" });
+        expectClientSurfaceResponse("refreshSession", invalidatedRes);
 
         prisma.user.findUnique.mockResolvedValueOnce({
             id: "u1",
@@ -680,6 +694,7 @@ describe("auth routes runtime", () => {
             token: "jwt-access",
             refreshToken: "jwt-refresh",
         });
+        expectClientSurfaceResponse("refreshSession", okRes);
 
         mockVerifyAuthToken.mockImplementationOnce(() => {
             throw new Error("bad token");
@@ -704,6 +719,7 @@ describe("auth routes runtime", () => {
             error: "Authentication service unavailable",
             code: "AUTH_BACKEND_UNAVAILABLE",
         });
+        expectClientSurfaceResponse("refreshSession", res);
         expect(mockLogger.warn).toHaveBeenCalledWith(
             "Refresh authentication backend unavailable",
             expect.any(Error),
@@ -716,10 +732,13 @@ describe("auth routes runtime", () => {
         const missingRes = createRes();
         await me(missingReq, missingRes);
         expect(missingRes.statusCode).toBe(404);
+        expectClientSurfaceResponse("getCurrentUser", missingRes);
 
         prisma.user.findUnique.mockResolvedValueOnce({
             id: "u1",
             username: "alice",
+            displayName: null,
+            email: null,
             role: "user",
             onboardingComplete: true,
             enrichmentSettings: { genre: true },
@@ -730,6 +749,24 @@ describe("auth routes runtime", () => {
         await me(okReq, okRes);
         expect(okRes.statusCode).toBe(200);
         expect(okRes.body.username).toBe("alice");
+        expectClientSurfaceResponse("getCurrentUser", okRes);
+    });
+
+    it("answers /me without credentials with the 401 error envelope", async () => {
+        mockRequireAuth.mockImplementationOnce((_req: any, res: any) =>
+            res
+                .status(401)
+                .json({ error: "Not authenticated", code: "AUTH_REQUIRED" }),
+        );
+        const app = createRouteTestApp("/api/auth", router);
+
+        const response = await request(app).get("/api/auth/me");
+
+        expect(response.status).toBe(401);
+        expect(response.body).toEqual({
+            error: "Not authenticated",
+            code: "AUTH_REQUIRED",
+        });
     });
 
     it("changes password with full validation and token-version increment", async () => {

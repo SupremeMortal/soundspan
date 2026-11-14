@@ -24,12 +24,6 @@
  *     responses:
  *       "200":
  *         description: Service is ready.
- * /api/health:
- *   get:
- *     summary: API health check endpoint.
- *     responses:
- *       "200":
- *         description: API healthy.
  * /api/health/live:
  *   get:
  *     summary: API liveness check endpoint.
@@ -42,11 +36,5 @@
  *     responses:
  *       "200":
  *         description: API is ready.
- * /api/docs.json:
- *   get:
- *     summary: Return generated OpenAPI JSON.
- *     responses:
- *       "200":
- *         description: OpenAPI document returned.
  */
 export {};

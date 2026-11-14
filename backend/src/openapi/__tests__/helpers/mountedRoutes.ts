@@ -6,7 +6,11 @@ import { pathShape, toOpenApiPaths } from "../../expressPath";
  * to a lazy `require` of the route module. A registry issue adds its prefix
  * here and mocks the module's heavy dependencies in the test file.
  */
-export const CLIENT_SURFACE_MOUNTS: Record<string, () => Router> = {};
+export const CLIENT_SURFACE_MOUNTS: Record<string, () => Router> = {
+    "/api/auth": () => require("../../../routes/auth").default,
+    "/api/onboarding": () => require("../../../routes/onboarding").default,
+    "/api/system": () => require("../../../routes/system").default,
+};
 
 /** Operations declared on `app` itself in `backend/src/index.ts`. */
 export const APP_LEVEL_ROUTES: ReadonlyArray<readonly [string, string]> = [

@@ -564,16 +564,6 @@ router.post("/complete", requireAuth, async (req, res) => {
     }
 });
 
-/**
- * @openapi
- * /api/onboarding/status:
- *   get:
- *     summary: Check if the system needs onboarding or if a user has completed it
- *     tags: [Onboarding]
- *     responses:
- *       200:
- *         description: Onboarding status
- */
 router.get("/status", async (req, res) => {
     try {
         // Check if any users exist in the system

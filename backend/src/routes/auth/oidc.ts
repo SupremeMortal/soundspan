@@ -640,17 +640,6 @@ async function oidcRedeemInviteHandler(
 
 /** Register OIDC and public authentication-capability routes. */
 export default function registerOidcRoutes(router: Router): void {
-    /**
-     * @openapi
-     * /api/auth/config:
-     *   get:
-     *     summary: Get public authentication capabilities
-     *     tags: [Authentication]
-     *     security: []
-     *     responses:
-     *       200:
-     *         description: Authentication capabilities
-     */
     router.get("/config", (_req, res) =>
         res.json({
             localLoginEnabled: config.localLoginEnabled,

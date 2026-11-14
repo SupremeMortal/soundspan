@@ -1,3 +1,5 @@
+import { expectClientSurfaceResponse } from "../routes/__tests__/helpers/expectClientSurfaceResponse";
+
 describe("api entrypoint runtime behavior", () => {
     const originalEnv = process.env;
     const originalExit = process.exit;
@@ -358,7 +360,7 @@ describe("api entrypoint runtime behavior", () => {
             validateClientSurfaceResponses,
         }));
         jest.doMock("../config/swagger", () => ({
-            swaggerSpec: { openapi: "3.0.0" },
+            swaggerSpec: { openapi: "3.0.0", info: { version: "1.2.3" } },
         }));
         jest.doMock("bcrypt", () => ({
             hash: hashedAdminPassword,
@@ -1203,6 +1205,7 @@ describe("api entrypoint runtime behavior", () => {
         expect(apiReadyRes.statusCode).toBe(503);
         expect(legacyRes.statusCode).toBe(503);
         expect(apiHealthRes.statusCode).toBe(503);
+        expectClientSurfaceResponse("getHealth", apiHealthRes);
         expect(readyRes.body).toMatchObject({
             role: "api",
             startupComplete: false,
@@ -1292,6 +1295,7 @@ describe("api entrypoint runtime behavior", () => {
 
         expect(healthRes.statusCode).toBe(200);
         expect(apiHealthRes.statusCode).toBe(200);
+        expectClientSurfaceResponse("getHealth", apiHealthRes);
         expect(readyRes.statusCode).toBe(200);
         expect(apiReadyRes.statusCode).toBe(200);
         expect(liveRes.statusCode).toBe(200);
@@ -1677,6 +1681,31 @@ describe("api entrypoint runtime behavior", () => {
         expect(process.exit).toHaveBeenCalledWith(1);
         expect(mocks.redisClient.ping).not.toHaveBeenCalled();
         expect(setTimeoutSpy).toHaveBeenCalledTimes(9);
+    });
+
+    it("serves the merged OpenAPI document at /api/docs.json", async () => {
+        process.env = {
+            ...originalEnv,
+            BACKEND_PROCESS_ROLE: "api",
+        };
+        process.exit = jest.fn() as any;
+
+        const mocks = setupApiEntrypointMocks();
+
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        require("../index");
+        await flushPromises();
+
+        const docs = getGetHandler(mocks.app, "/api/docs.json");
+        const res = createJsonRes();
+        docs({}, res);
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body).toEqual({
+            openapi: "3.0.0",
+            info: { version: "1.2.3" },
+        });
+        expectClientSurfaceResponse("getApiDocument", res);
     });
 
     it("requires auth middleware for API docs in production without DOCS_PUBLIC", async () => {
