@@ -1,0 +1,25 @@
+name: spike_s2
+description: "Spike S2 harness: media_kit gapless, per-item headers and playlist index events."
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.14.0
+  flutter: ^3.50.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  media_kit: 1.2.6
+  media_kit_libs_linux: 1.2.1
+  media_kit_libs_windows_audio: 1.0.9
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  integration_test:
+    sdk: flutter
+
+flutter:
+  assets:
+    - assets/

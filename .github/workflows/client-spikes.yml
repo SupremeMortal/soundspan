@@ -1,0 +1,100 @@
+name: Client Spikes
+
+# Throwaway spike harnesses of docs/designs/flutter-client/13-milestones-and-work-breakdown.md
+# (Spikes). Each job runs a harness's integration test on a device and writes
+# its measurements to the job summary and an artifact. A spike's jobs are
+# deleted together with its harness.
+
+on:
+  pull_request:
+    paths:
+      - "client/spikes/**"
+      - ".github/workflows/client-spikes.yml"
+
+concurrency:
+  group: client-spikes-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  spike-s2-linux:
+    name: spike-s2-linux
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Flutter
+        uses: ./.github/actions/client-flutter
+
+      - name: Install Xvfb
+        run: sudo apt-get install -y --no-install-recommends xvfb
+
+      - name: Resolve harness dependencies
+        working-directory: client/spikes/s2
+        run: flutter pub get
+
+      - name: Run the harness on Linux
+        working-directory: client/spikes/s2
+        run: |
+          set -o pipefail
+          xvfb-run -a flutter test integration_test -d linux 2>&1 | tee s2.log
+
+      - name: Summarise
+        if: always()
+        working-directory: client/spikes/s2
+        run: |
+          touch s2.log
+          dart run tool/summarize.dart s2.log linux | tee summary.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload measurements
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: spike-s2-linux
+          path: |
+            client/spikes/s2/s2.log
+            client/spikes/s2/summary.md
+
+  spike-s2-windows:
+    name: spike-s2-windows
+    runs-on: windows-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Flutter
+        uses: ./.github/actions/client-flutter
+
+      - name: Resolve harness dependencies
+        working-directory: client/spikes/s2
+        run: flutter pub get
+
+      - name: Run the harness on Windows
+        working-directory: client/spikes/s2
+        run: |
+          set -o pipefail
+          flutter test integration_test -d windows 2>&1 | tee s2.log
+
+      - name: Summarise
+        if: always()
+        working-directory: client/spikes/s2
+        run: |
+          touch s2.log
+          dart run tool/summarize.dart s2.log windows | tee summary.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload measurements
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: spike-s2-windows
+          path: |
+            client/spikes/s2/s2.log
+            client/spikes/s2/summary.md
