@@ -1,0 +1,15 @@
+name: spike_s6
+description: Spike S6 harness; deleted when the spike is answered.
+publish_to: none
+
+environment:
+  sdk: ^3.14.0
+  flutter: ^3.50.0
+
+# Versions pinned to client/pubspec.lock.
+dependencies:
+  drift: 2.35.4
+  drift_flutter: 0.3.1
+  flutter:
+    sdk: flutter
+  web: 1.1.2
