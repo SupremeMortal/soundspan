@@ -186,11 +186,12 @@ Runs at start-up after the first frame and when `cache.db` exceeds 64 MB: delete
 
 ## Migrations
 
-- Each database class has its own `schemaVersion`. `drift_dev schema dump` writes a JSON schema per version to `client/drift_schemas/<db>/`; `drift_dev schema generate` produces the helpers used by migration tests.
+- Each database class has its own `schemaVersion`. `tool/gen.sh` runs, per database, `drift_dev schema dump` (a JSON schema per version in `client/drift_schemas/<db>/`), `drift_dev schema steps` (the `stepByStep` helper, `<db>_database.steps.g.dart` next to the database class) and `drift_dev schema generate` (the helpers used by migration tests, in `client/test/core/storage/generated_migrations/<db>/`). CI runs `tool/gen.sh` and fails on a diff, so a table change without a new version does not merge.
+- `DateTime` columns are stored as ISO-8601 text (`store_date_time_values_as_text` in `client/build.yaml`) and written in UTC.
 - `AppDatabase` and `StateDatabase`: stepwise `MigrationStrategy.onUpgrade` using drift's `stepByStep`. Every version bump adds a test that opens a database at each earlier version with representative rows, migrates, and validates the schema and the data.
 - `CacheDatabase`: `onUpgrade` drops all tables and recreates them. A failure to open deletes the file and retries once.
-- Downgrade (an older app opening a newer `state.db`): refuse to open, show "This data was written by a newer version of the app", and offer to reset the profile's local state. Never silently delete downloads.
-- All databases run with `PRAGMA journal_mode = WAL`, `foreign_keys = ON`, `synchronous = NORMAL`, opened on a background isolate through `drift_flutter` (`driftDatabase(name:, native: DriftNativeOptions(databaseDirectory: …))`).
+- Downgrade (an older app opening a newer `app.db` or `state.db`): `onUpgrade` throws `DatabaseTooNewException` (database, found version, supported version) before touching the file. For `state.db` the app refuses to open, shows "This data was written by a newer version of the app", and offer to reset the profile's local state. Never silently delete downloads.
+- All databases run with `PRAGMA journal_mode = WAL`, `foreign_keys = ON`, `synchronous = NORMAL`, opened on a background isolate through `drift_flutter` (`driftDatabase(name:, native: DriftNativeOptions(databasePath: …))`; `databasePath` rather than `databaseDirectory`, because `databaseDirectory` names the file `<name>.sqlite` and the files are `app.db`, `state.db` and `cache.db`). The native `DatabaseOpener` sets WAL and `synchronous` in drift's per-connection `setup`; the databases set `foreign_keys` in `beforeOpen`. Deleting a database removes its `-wal` and `-shm` files too.
 
 ## Web Storage
 

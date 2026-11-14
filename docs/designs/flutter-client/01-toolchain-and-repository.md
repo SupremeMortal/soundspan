@@ -246,6 +246,11 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 (cd packages/soundspan_api && dart run swagger_parser && dart run build_runner build --delete-conflicting-outputs)
 dart run build_runner build --delete-conflicting-outputs
+# Per database (app; state and cache join as they are added): schema dump, stepByStep helper, migration test helpers
+dart run drift_dev schema dump lib/core/storage/app/app_database.dart drift_schemas/app/
+dart run drift_dev schema steps drift_schemas/app/ lib/core/storage/app/app_database.steps.g.dart
+mkdir -p test/core/storage/generated_migrations
+dart run drift_dev schema generate drift_schemas/app/ test/core/storage/generated_migrations/app/
 flutter gen-l10n
 ```
 
@@ -254,7 +259,7 @@ flutter gen-l10n
 | `swagger_parser` | `packages/soundspan_api/openapi/soundspan-client.json` (emitted by the backend, P9) | `packages/soundspan_api/lib/src/generated/` |
 | `retrofit_generator` | Generated client interfaces | `*.g.dart` |
 | `freezed` + `json_serializable` | Generated API models, domain value types | `*.freezed.dart`, `*.g.dart` |
-| `drift_dev` | `lib/core/storage/**/tables/*.dart`, `*.drift` | `*.g.dart`, schema dumps under `drift_schemas/` |
+| `drift_dev` | `lib/core/storage/**/tables/*.dart`, `*.drift` | `*.g.dart`; schema dumps under `drift_schemas/`, `*.steps.g.dart` and migration test helpers under `test/core/storage/generated_migrations/` (the `drift_dev schema` commands) |
 | `riverpod_generator` | `@riverpod` functions and classes | `*.g.dart` |
 | `gen-l10n` | `lib/app/l10n/app_*.arb` | `lib/app/l10n/generated/` |
 

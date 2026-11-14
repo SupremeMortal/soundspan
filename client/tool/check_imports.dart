@@ -109,7 +109,9 @@ List<String> _dartFiles(Directory clientRoot) {
 bool _isGenerated(String path) =>
     path.endsWith('.g.dart') ||
     path.endsWith('.freezed.dart') ||
-    path.split('/').contains('generated');
+    path
+        .split('/')
+        .any((dir) => dir == 'generated' || dir == 'generated_migrations');
 
 /// Whether [path] is production code: under `lib/` or `packages/*/lib/`.
 bool _isSource(String path) {

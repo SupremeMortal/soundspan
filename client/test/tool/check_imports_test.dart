@@ -423,6 +423,8 @@ final b = Colors.red;
           'lib/a.g.dart': 'const a = 1;',
           'lib/b.freezed.dart': 'const b = 1;',
           'lib/app/l10n/generated/c.dart': 'const c = 1;',
+          'test/core/storage/generated_migrations/app/schema.dart':
+              'const d = 1;',
         }, header: false),
         isEmpty,
       );
