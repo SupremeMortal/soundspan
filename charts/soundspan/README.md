@@ -658,6 +658,7 @@ When `deploymentMode=individual` and `backendWorker.enabled=true`, the chart inj
 | `REQUESTS_PER_USER_PER_DAY` | `config.requestsPerUserPerDay` | No | App default: `10` requests per rolling 24 hours (chart leaves unset unless configured) |
 | `FEDERATION_ENABLED` | `config.features.federation` | No | `false` |
 | `SCAN_FILE_CONCURRENCY` | `config.scanFileConcurrency` | No | App default: `3` (chart leaves unset unless configured) |
+| `OPENAPI_VALIDATE_RESPONSES` | `config.openapiValidateResponses` | No | App default: off; test and CI switch, not for production (chart leaves unset unless configured) |
 | `CATALOG_PERSISTENCE` | `config.catalogPersistence` | No | App default: `true` (chart leaves unset unless configured) |
 | `CATALOG_RETENTION_DAYS` | `config.catalogRetentionDays` | No | App default: `180` (chart leaves unset unless configured) |
 | `FEDERATION_TOMBSTONE_RETENTION_DAYS` | `config.federationTombstoneRetentionDays` | No | `90` |

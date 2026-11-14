@@ -137,6 +137,19 @@ end each other's sessions. `SOULSEEK_SMOKE_QUERY` changes the search (default
 `aphex twin xtal`), and `SOULSEEK_SMOKE_MAX_BYTES` caps the size of the
 downloaded file (default 15 MiB).
 
+#### Response validation
+
+Operations in the client-surface registry (`backend/src/openapi/`) declare a
+zod schema for each JSON status. With `OPENAPI_VALIDATE_RESPONSES=1` (or
+`true`) the backend checks every JSON body it sends for a registered operation
+against the schema for its status and answers a mismatch with `500`
+`{ code: "RESPONSE_SCHEMA_MISMATCH", operationId, path }`. It is a test and CI
+switch and stays off in production. Route tests get the same check without the
+variable: `createRouteTestApp` always installs it and throws on a mismatch, and
+tests that call a handler directly with `createMockJsonResponse` assert the
+captured response with `expectClientSurfaceResponse(operationId, res)` (both in
+`backend/src/routes/__tests__/helpers/`).
+
 ### Frontend
 
 ```bash
