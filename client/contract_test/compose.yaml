@@ -35,9 +35,6 @@ services:
             file: ../../docker-compose.yml
             service: postgres
         container_name: soundspan-contract-postgres
-        # The root file replaces the image's entrypoint, which also drops the
-        # image's CMD; restate it so docker-entrypoint.sh starts the server.
-        command: ["postgres"]
         ports: !reset []
         restart: "no"
 

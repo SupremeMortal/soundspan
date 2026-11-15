@@ -497,10 +497,15 @@ const envSchema = z
         SESSION_SECRET: z
             .string()
             .min(32, "SESSION_SECRET must be at least 32 characters"),
-        JWT_SECRET: z
-            .string()
-            .min(32, "JWT_SECRET must be at least 32 characters")
-            .optional(),
+        // Compose passes an unset JWT_SECRET as an empty string; treat it as
+        // absent so the SESSION_SECRET fallback applies.
+        JWT_SECRET: z.preprocess(
+            (value) => (value === "" ? undefined : value),
+            z
+                .string()
+                .min(32, "JWT_SECRET must be at least 32 characters")
+                .optional(),
+        ),
         SETTINGS_ENCRYPTION_KEY: z.string().optional(),
         ENCRYPTION_KEY: z.string().optional(),
         INTERNAL_API_SECRET: z.string().optional(),

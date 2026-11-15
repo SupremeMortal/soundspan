@@ -360,6 +360,9 @@ services:
                 fi
                 exec docker-entrypoint.sh "$$@"
             - --
+        # Replacing the entrypoint drops the image's CMD, so restate it;
+        # without it docker-entrypoint.sh gets no arguments and exits at once.
+        command: ["postgres"]
         container_name: ${SOUNDSPAN_DB_CONTAINER_NAME:-soundspan_db}
         environment:
             POSTGRES_USER: ${POSTGRES_USER:-soundspan}

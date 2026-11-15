@@ -85,6 +85,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `docker compose up` with the root `docker-compose.yml` starts PostgreSQL. The `postgres` service replaces the image's entrypoint, which also dropped the image's `postgres` command, so the container exited at once and every service that waits for it failed to start. The service sets `command: ["postgres"]`.
+- The backend starts with `JWT_SECRET` left empty, as the root `docker-compose.yml` passes it when unset: an empty value counts as unset and falls back to `SESSION_SECRET`. It exited with "JWT_SECRET must be at least 32 characters" before.
+- The backend connects to the database built from `POSTGRES_HOST`, `POSTGRES_PORT`, `POSTGRES_USER`, `POSTGRES_PASSWORD` and `POSTGRES_DB` when `DATABASE_URL` is empty. Migrations used those settings, but the running server tried `127.0.0.1:5432` and exited.
 - `GET /api/playback/stream/:playbackId` and `/stream-info/:playbackId` for `ym.*` ids answer `409` `SOURCE_UNAVAILABLE` on a server that has no saved system settings yet. They answered `500` before.
 - `GET /api/library/tracks` now includes `playbackId` on every local and peer-library track, as its OpenAPI schema already documented. It was missing from that listing.
 - `GET /api/library/tracks/shuffle` includes `playbackId` on every track, so a shuffled sample can be played and queued like the other library track lists. It was missing from that response.
