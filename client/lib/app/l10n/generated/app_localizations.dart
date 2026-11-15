@@ -690,6 +690,138 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Copy'**
   String get connectProbeCopyOrigin;
+
+  /// Heading of the sign-in form; names the server.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to {server}'**
+  String connectSignInHeading(String server);
+
+  /// Back control of the sign-in screen; returns to the address screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Use a different server'**
+  String get connectSignInBack;
+
+  /// Label of the user name field on the sign-in form.
+  ///
+  /// In en, this message translates to:
+  /// **'User name or email'**
+  String get connectSignInUsername;
+
+  /// Label of the password field on the sign-in form.
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get connectSignInPassword;
+
+  /// Tooltip of the control that reveals the typed password.
+  ///
+  /// In en, this message translates to:
+  /// **'Show password'**
+  String get connectSignInShowPassword;
+
+  /// Tooltip of the control that hides the typed password again.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide password'**
+  String get connectSignInHidePassword;
+
+  /// Button that submits the user name and password.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in'**
+  String get connectSignInSubmit;
+
+  /// Inline error when the server rejected the user name or password.
+  ///
+  /// In en, this message translates to:
+  /// **'The user name or password is not correct'**
+  String get connectSignInInvalidCredentials;
+
+  /// Instruction on the two-factor step in authenticator mode.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the 6-digit code from your authenticator app.'**
+  String get connectSignInAuthenticatorPrompt;
+
+  /// Instruction on the two-factor step in recovery-code mode.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter one of your 8-character recovery codes.'**
+  String get connectSignInRecoveryPrompt;
+
+  /// Label of the code field in authenticator mode.
+  ///
+  /// In en, this message translates to:
+  /// **'Authenticator code'**
+  String get connectSignInAuthenticatorCode;
+
+  /// Label of the code field in recovery-code mode.
+  ///
+  /// In en, this message translates to:
+  /// **'Recovery code'**
+  String get connectSignInRecoveryCode;
+
+  /// Button that switches the two-factor step to recovery codes.
+  ///
+  /// In en, this message translates to:
+  /// **'Use a recovery code instead'**
+  String get connectSignInUseRecovery;
+
+  /// Button that switches the two-factor step back to authenticator codes.
+  ///
+  /// In en, this message translates to:
+  /// **'Use an authenticator code instead'**
+  String get connectSignInUseAuthenticator;
+
+  /// Button that submits the two-factor code.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify'**
+  String get connectSignInVerify;
+
+  /// Button that leaves the two-factor step and returns to the user name and password.
+  ///
+  /// In en, this message translates to:
+  /// **'Start over'**
+  String get connectSignInStartOver;
+
+  /// Inline error when the server rejected the two-factor or recovery code.
+  ///
+  /// In en, this message translates to:
+  /// **'That code is not correct'**
+  String get connectSignInInvalidCode;
+
+  /// Shown after too many sign-in attempts, counting down until the next one is allowed.
+  ///
+  /// In en, this message translates to:
+  /// **'{seconds, plural, =1{Too many attempts. Try again in 1 second.} other{Too many attempts. Try again in {seconds} seconds.}}'**
+  String connectSignInRateLimited(int seconds);
+
+  /// Inline error when the sign-in request failed for any other reason.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not sign in. Check the connection and try again.'**
+  String get connectSignInFailed;
+
+  /// Button that sends the failed sign-in again.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get connectSignInRetry;
+
+  /// Error when the device cannot store the sign-in securely; nothing was saved.
+  ///
+  /// In en, this message translates to:
+  /// **'This device has no secure storage service, so the sign-in cannot be kept. On Linux, install and start a Secret Service provider such as GNOME Keyring or KWallet.'**
+  String get connectSignInSecureStorage;
+
+  /// Shown instead of the form when the server has password sign-in turned off.
+  ///
+  /// In en, this message translates to:
+  /// **'This server does not offer password sign-in.'**
+  String get connectSignInNoPassword;
 }
 
 class _AppLocalizationsDelegate

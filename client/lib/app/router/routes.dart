@@ -10,6 +10,7 @@ import 'package:soundspan/app/router/guards.dart';
 import 'package:soundspan/app/router/placeholder_screen.dart';
 import 'package:soundspan/app/router/shell_route.dart';
 import 'package:soundspan/app/shell/shell_history.dart';
+import 'package:soundspan/core/auth/probe/server_probe.dart';
 import 'package:soundspan/core/profile/profile_runtime.dart';
 import 'package:soundspan/features/connect/connect.dart';
 import 'package:soundspan/features/settings/settings.dart';
@@ -227,8 +228,13 @@ GoRouter createRouter(
           ),
           GoRoute(
             path: 'sign-in',
-            builder: (context, _) =>
-                PlaceholderScreen(AppLocalizations.of(context).screenSignIn),
+            builder: (_, state) => SignInScreen(
+              result: switch (state.extra) {
+                final ProbeResult result => result,
+                _ => null,
+              },
+              profileId: state.uri.queryParameters['profile'],
+            ),
           ),
         ],
       ),

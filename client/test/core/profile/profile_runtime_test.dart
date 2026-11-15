@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show ProviderBase;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:soundspan/core/auth/active_profile.dart';
+import 'package:soundspan/core/auth/profile.dart';
 import 'package:soundspan/core/auth/session_controller.dart';
 import 'package:soundspan/core/profile/profile_context.dart';
 import 'package:soundspan/core/profile/profile_disposer.dart';
@@ -184,6 +185,46 @@ void main() {
     await runtime.switchTo(h.a);
     expect(runtime.container, same(container));
     expect(h.opener.opened, hasLength(1));
+  });
+
+  test('switching to the active profile after it signed in again creates its '
+      'container again with the new credential', () async {
+    final (h, runtime) = await setUpRuntime();
+    final repository = h.root.read(profileRepositoryProvider);
+    await repository.setState(h.a, ProfileState.signedOut);
+    await repository.deleteCredentials(h.a);
+    await runtime.switchTo(h.a);
+    final signedOut = runtime.container;
+    expect(
+      signedOut!.read(profileContextProvider).profile.state,
+      ProfileState.signedOut,
+    );
+
+    await repository.upsertSignedIn(
+      baseUrl: Uri.parse('https://a.example.com'),
+      userId: 'user-a',
+      username: 'a',
+      role: 'user',
+      authKind: AuthKind.password,
+      credentials: const JwtCredentials(
+        accessToken: 'a-new',
+        refreshToken: 'a-new-r',
+      ),
+      credentialCreatedAt: h.clock.now(),
+    );
+    await runtime.switchTo(h.a);
+
+    final container = runtime.container!;
+    expect(container, isNot(same(signedOut)));
+    expect(
+      container.read(profileContextProvider).profile.state,
+      ProfileState.active,
+    );
+    final credential =
+        container.read(sessionControllerProvider).current! as JwtCredentials;
+    expect(credential.accessToken, 'a-new');
+    expect(credential.refreshToken, 'a-new-r');
+    expect(runtime.state.value, ProfileRuntimeActive(h.a));
   });
 
   test(

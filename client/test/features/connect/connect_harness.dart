@@ -47,6 +47,21 @@ class FakeProbeController extends ProbeController {
   void emit(ProbeState next) => state = AsyncData(next);
 }
 
+/// A probe that reaches [result] as soon as it starts.
+class InstantProbeController extends FakeProbeController {
+  /// Creates the probe that ends in [result].
+  new(this.result);
+
+  /// The state every run reaches.
+  final ProbeState result;
+
+  @override
+  void start(ServerAddress address) {
+    super.start(address);
+    emit(result);
+  }
+}
+
 /// Records the addresses it is asked to open.
 class RecordingUrlOpener implements UrlOpener {
   /// The opened addresses.

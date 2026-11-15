@@ -56,7 +56,8 @@ class TestRoot {
   /// the [InMemoryDatabaseOpener]; [role] is the stored profile's role.
   /// Each name in [others] adds a signed-in profile of user `<name>` on
   /// `https://<name>.example.com`, each used one minute after the one
-  /// before; their ids are in [otherIds].
+  /// before; their ids are in [otherIds]. [secrets] and [clock] replace the
+  /// new [InMemorySecretStore] and [FakeClock].
   static Future<TestRoot> create({
     StoredProfile stored = StoredProfile.none,
     List<Override> overrides = const [],
@@ -64,13 +65,15 @@ class TestRoot {
     InMemoryDatabaseOpener? opener,
     String role = 'user',
     List<String> others = const [],
+    InMemorySecretStore? secrets,
+    FakeClock? clock,
   }) async {
     final reused = database != null;
     database ??= AppDatabase(NativeDatabase.memory());
-    final secrets = InMemorySecretStore();
+    secrets ??= InMemorySecretStore();
     opener ??= InMemoryDatabaseOpener();
     final paths = RecordingAppPaths();
-    final clock = FakeClock();
+    clock ??= FakeClock();
     String? profileId;
     final otherIds = <String, String>{};
     final repository = ProfileRepository(
@@ -163,8 +166,8 @@ extension PumpSoundspanApp on WidgetTester {
   /// Builds a [TestRoot] with [stored] and pumps [SoundspanApp] on it at
   /// [size]; everything is released when the test ends.
   ///
-  /// [overrides], [database], [opener], [role] and [others] are passed to
-  /// [TestRoot.create].
+  /// [overrides], [database], [opener], [role], [others], [secrets] and
+  /// [clock] are passed to [TestRoot.create].
   Future<TestRoot> pumpSoundspanApp({
     StoredProfile stored = StoredProfile.none,
     Size size = const Size(390, 844),
@@ -173,6 +176,8 @@ extension PumpSoundspanApp on WidgetTester {
     InMemoryDatabaseOpener? opener,
     String role = 'user',
     List<String> others = const [],
+    InMemorySecretStore? secrets,
+    FakeClock? clock,
   }) async {
     view
       ..physicalSize = size
@@ -186,6 +191,8 @@ extension PumpSoundspanApp on WidgetTester {
         opener: opener,
         role: role,
         others: others,
+        secrets: secrets,
+        clock: clock,
       ),
     ))!;
     addTearDown(() async {

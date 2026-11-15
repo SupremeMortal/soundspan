@@ -1,18 +1,38 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:soundspan/app/router/placeholder_screen.dart';
 import 'package:soundspan/app/router/routes.dart';
 import 'package:soundspan/app/shell/adaptive_shell.dart';
+import 'package:soundspan/core/auth/probe/server_probe.dart';
 import 'package:soundspan/core/profile/profile_providers.dart';
 import 'package:soundspan/core/profile/profile_runtime.dart';
 import 'package:soundspan/features/connect/connect.dart';
+import 'package:soundspan/features/connect/ui/probe_controller.dart';
 import 'package:soundspan_api/soundspan_api.dart';
 
+import '../../features/connect/connect_harness.dart';
 import '../../helpers/test_root.dart';
+
+/// The sign-in screen probes a signed-out profile's server: it is found.
+final Override _probeFindsServer = probeControllerProvider.overrideWith(
+  () => InstantProbeController(
+    ProbeReady(
+      ProbeResult(
+        baseUrl: Uri.parse('https://music.example.com'),
+        requestedBaseUrl: Uri.parse('https://music.example.com'),
+        localLoginEnabled: true,
+        oidcEnabled: false,
+        isCleartext: false,
+        isPrivateHost: false,
+      ),
+    ),
+  ),
+);
 
 void main() {
   String location(TestRoot root) => root.container
@@ -79,7 +99,10 @@ void main() {
   testWidgets('signed-out profile lands on /connect/sign-in with its id', (
     tester,
   ) async {
-    final root = await tester.pumpSoundspanApp(stored: StoredProfile.signedOut);
+    final root = await tester.pumpSoundspanApp(
+      stored: StoredProfile.signedOut,
+      overrides: [_probeFindsServer],
+    );
     expect(location(root), '/connect/sign-in?profile=${root.profileId}');
     expect(find.text('Sign in'), findsOneWidget);
   });
@@ -94,7 +117,10 @@ void main() {
   testWidgets('a session sign-out redirects to /connect/sign-in', (
     tester,
   ) async {
-    final root = await tester.pumpSoundspanApp(stored: StoredProfile.signedIn);
+    final root = await tester.pumpSoundspanApp(
+      stored: StoredProfile.signedIn,
+      overrides: [_probeFindsServer],
+    );
     final profile = root.container.read(profileRuntimeProvider).container!;
     await tester.runAsync(() async {
       profile
