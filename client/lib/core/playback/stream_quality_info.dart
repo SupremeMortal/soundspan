@@ -16,7 +16,8 @@ abstract class StreamQualityInfo with _$StreamQualityInfo {
     /// or a value a newer server added.
     required String quality,
 
-    /// The MIME type of the stream, if known.
+    /// The content type the server reports, a MIME type or a format name
+    /// such as `FLAC`, if known.
     String? contentType,
 
     /// The codec, if known.

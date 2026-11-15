@@ -216,7 +216,8 @@ void main() {
 
     expect(info.playbackId, playbackId);
     expect(info.quality, PlaybackQuality.original);
-    expect(info.contentType, startsWith('audio/'));
+    // The server sends the container format here (`FLAC`), not a MIME type.
+    expect(info.contentType, isNotEmpty);
     expect(info.contentLength, greaterThan(0));
     expect(info.durationMs, closeTo(30000, 1000));
   });
@@ -279,7 +280,7 @@ void main() {
             listenedMs: listenedMs,
             metadata: PlaybackMetadata(
               title: track.title,
-              artist: track.artist?.name ?? '',
+              artist: track.artist?.name ?? track.album.artist?.name ?? '',
               album: track.album.title,
               durationSec: track.duration,
             ),
@@ -388,7 +389,10 @@ void main() {
             playbackId: tracks[i % tracks.length].playbackId,
             metadata: PlaybackMetadata(
               title: tracks[i % tracks.length].title,
-              artist: tracks[i % tracks.length].artist?.name ?? '',
+              artist:
+                  tracks[i % tracks.length].artist?.name ??
+                  tracks[i % tracks.length].album.artist?.name ??
+                  '',
               album: tracks[i % tracks.length].album.title,
               durationSec: tracks[i % tracks.length].duration,
             ),
@@ -474,7 +478,7 @@ void main() {
     final lyrics = await api.send(
       (rest) => rest.playback.getLyrics(
         trackId: track.id,
-        artist: track.artist?.name,
+        artist: track.artist?.name ?? track.album.artist?.name,
         title: track.title,
         album: track.album.title,
         duration: track.duration,

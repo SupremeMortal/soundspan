@@ -100,6 +100,31 @@ void main() {
     });
   });
 
+  test('metadata with a blank artist, title or album is left out', () async {
+    when(() => client.recordPlay(body: any(named: 'body'))).thenAnswer(
+      (_) async => api.RecordPlayResponse200.fromJson({'recorded': false}),
+    );
+
+    for (final meta in const [
+      TrackMeta(title: 't', artist: '', album: 'b', durationSec: 3),
+      TrackMeta(title: ' ', artist: 'a', album: 'b', durationSec: 3),
+      TrackMeta(title: 't', artist: 'a', album: '', durationSec: 3),
+    ]) {
+      await repository.report(
+        playbackId: const PlaybackId('p-1'),
+        meta: meta,
+        playedAt: DateTime.utc(2025),
+        listenedMs: 5000,
+      );
+      final body =
+          verify(() => client.recordPlay(body: captureAny(named: 'body')))
+                  .captured
+                  .single
+              as api.RecordPlayRequest;
+      expect(jsonDecode(jsonEncode(body)), isNot(contains('metadata')));
+    }
+  });
+
   test('a play row maps to recorded', () async {
     when(() => client.recordPlay(body: any(named: 'body'))).thenAnswer(
       (_) async => api.RecordPlayResponse200.fromJson({
