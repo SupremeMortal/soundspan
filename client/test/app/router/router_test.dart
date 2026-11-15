@@ -16,8 +16,8 @@ import '../../helpers/test_root.dart';
 void main() {
   String location(TestRoot root) => root.container
       .read(routerProvider)
-      .routerDelegate
-      .currentConfiguration
+      .routeInformationProvider
+      .value
       .uri
       .toString();
 
@@ -36,6 +36,38 @@ void main() {
 
   int selectedIndex(WidgetTester tester) =>
       tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex;
+
+  Future<void> back(WidgetTester tester, TestRoot root) async {
+    root.container.read(routerProvider).pop();
+    await tester.pumpAndSettle();
+  }
+
+  String visibleScreen(WidgetTester tester) => tester
+      .widgetList<PlaceholderScreen>(find.byType(PlaceholderScreen))
+      .last
+      .name;
+
+  List<String> recordTitles(WidgetTester tester) {
+    final titles = <String>[];
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (call) async {
+        if (call.method == 'SystemChrome.setApplicationSwitcherDescription') {
+          titles.add(
+            (call.arguments as Map<Object?, Object?>)['label']! as String,
+          );
+        }
+        return null;
+      },
+    );
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        null,
+      ),
+    );
+    return titles;
+  }
 
   testWidgets('no active profile lands on /connect', (tester) async {
     final root = await tester.pumpSoundspanApp();
@@ -184,6 +216,107 @@ void main() {
     await tester.pumpAndSettle();
     expect(location(root), '/home');
     expect(find.text('Album'), findsNothing);
+  });
+
+  testWidgets('a detail opened from a detail stacks', (tester) async {
+    final root = await tester.pumpSoundspanApp(stored: StoredProfile.signedIn);
+    await go(tester, root, '/library/albums');
+    DetailNavigation.openAlbum(screen(tester), 'a1');
+    await tester.pumpAndSettle();
+    DetailNavigation.openArtist(screen(tester), 'r1');
+    await tester.pumpAndSettle();
+    expect(location(root), '/library/albums/artist/r1');
+    DetailNavigation.openAlbum(screen(tester), 'a2');
+    await tester.pumpAndSettle();
+    expect(location(root), '/library/albums/album/a2');
+    expect(visibleScreen(tester), 'Album');
+    expect(selectedIndex(tester), ShellDestination.library.index);
+
+    await back(tester, root);
+    expect(location(root), '/library/albums/artist/r1');
+    expect(visibleScreen(tester), 'Artist');
+    await back(tester, root);
+    expect(location(root), '/library/albums/album/a1');
+    expect(visibleScreen(tester), 'Album');
+    await back(tester, root);
+    expect(location(root), '/library/albums');
+    expect(visibleScreen(tester), 'Library');
+    expect(selectedIndex(tester), ShellDestination.library.index);
+  });
+
+  testWidgets('a stacked branch survives a branch switch', (tester) async {
+    final root = await tester.pumpSoundspanApp(stored: StoredProfile.signedIn);
+    await go(tester, root, '/search?q=blue');
+    DetailNavigation.openAlbum(screen(tester), 'a1');
+    await tester.pumpAndSettle();
+    DetailNavigation.openArtist(screen(tester), 'r1');
+    await tester.pumpAndSettle();
+
+    await tester.tap(destination('Home'));
+    await tester.pumpAndSettle();
+    expect(location(root), '/home');
+
+    await tester.tap(destination('Search'));
+    await tester.pumpAndSettle();
+    expect(location(root), '/search/artist/r1?q=blue');
+    expect(visibleScreen(tester), 'Artist');
+
+    await back(tester, root);
+    expect(location(root), '/search/album/a1?q=blue');
+    expect(visibleScreen(tester), 'Album');
+    expect(selectedIndex(tester), ShellDestination.search.index);
+  });
+
+  testWidgets('tapping the selected destination pops a stacked branch to its '
+      'root', (tester) async {
+    final root = await tester.pumpSoundspanApp(stored: StoredProfile.signedIn);
+    DetailNavigation.openAlbum(screen(tester), 'a1');
+    await tester.pumpAndSettle();
+    DetailNavigation.openArtist(screen(tester), 'r1');
+    await tester.pumpAndSettle();
+    DetailNavigation.openPlaylist(screen(tester), 'p1');
+    await tester.pumpAndSettle();
+
+    await tester.tap(destination('Home'));
+    await tester.pumpAndSettle();
+    expect(location(root), '/home');
+    expect(visibleScreen(tester), 'Home');
+    expect(find.text('Album'), findsNothing);
+    expect(find.text('Artist'), findsNothing);
+    expect(find.text('Playlist'), findsNothing);
+  });
+
+  testWidgets('the title follows the top detail after Back', (tester) async {
+    final titles = recordTitles(tester);
+    final root = await tester.pumpSoundspanApp(stored: StoredProfile.signedIn);
+    await go(tester, root, '/library/songs');
+    DetailNavigation.openAlbum(screen(tester), 'a1');
+    await tester.pumpAndSettle();
+    DetailNavigation.openArtist(screen(tester), 'r1');
+    await tester.pumpAndSettle();
+    expect(titles.last, 'Artist · soundspan');
+
+    await back(tester, root);
+    expect(titles.last, 'Album · soundspan');
+    await back(tester, root);
+    expect(titles.last, 'Library · soundspan');
+  });
+
+  testWidgets('/album/42 pushes onto a branch that shows a detail', (
+    tester,
+  ) async {
+    final root = await tester.pumpSoundspanApp(stored: StoredProfile.signedIn);
+    DetailNavigation.openArtist(screen(tester), 'r1');
+    await tester.pumpAndSettle();
+    DetailNavigation.openLocation(
+      root.container.read(routerProvider),
+      '/album/42',
+    );
+    await tester.pumpAndSettle();
+    expect(location(root), '/home/album/42');
+
+    await back(tester, root);
+    expect(location(root), '/home/artist/r1');
   });
 
   testWidgets('/connect is reachable with an active profile', (tester) async {
