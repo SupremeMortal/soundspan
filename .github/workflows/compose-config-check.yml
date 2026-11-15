@@ -18,10 +18,6 @@ on:
 permissions:
   contents: read
 
-concurrency:
-  group: compose-config-check-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
   compose-config:
     name: Compose Config Check

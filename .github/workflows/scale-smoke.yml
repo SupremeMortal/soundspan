@@ -14,10 +14,6 @@ on:
 permissions:
   contents: read
 
-concurrency:
-  group: scale-smoke-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
   backend-scale:
     name: Backend Scale Smoke
