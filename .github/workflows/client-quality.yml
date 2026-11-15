@@ -30,6 +30,7 @@ jobs:
       web_storage: ${{ steps.diff.outputs.web_storage }}
       desktop: ${{ steps.diff.outputs.desktop }}
       device: ${{ steps.diff.outputs.device }}
+      downloads: ${{ steps.diff.outputs.downloads }}
       release_build: ${{ steps.diff.outputs.release_build }}
       release_notes: ${{ steps.diff.outputs.release_notes }}
       version: ${{ steps.version.outputs.version }}
@@ -56,6 +57,7 @@ jobs:
               echo "web_storage=true"
               echo "desktop=true"
               echo "device=true"
+              echo "downloads=true"
               echo "release_build=true"
               echo "release_notes=true"
             } >> "$GITHUB_OUTPUT"
@@ -76,6 +78,7 @@ jobs:
             echo "web_storage=$(has '^(client/lib/platform/|client/web/|client/integration_test/web/|client/pubspec\.lock$|\.github/workflows/client-quality\.yml$)')"
             echo "desktop=$(has '^(client/linux/|client/windows/|client/lib/platform/desktop_shell/|client/lib/app/shell/window_state_controller\.dart$|client/integration_test/desktop/|client/tool/ci/|\.github/workflows/client-quality\.yml$)')"
             echo "device=$(has '^(client/lib/core/playback/engines/|client/integration_test/|client/lib/platform/player_engine/|\.github/workflows/client-device-tests\.yml$)')"
+            echo "downloads=$(has '^(client/lib/platform/downloader/|client/lib/core/downloads/|client/integration_test/downloads/|client/integration_test/support/throttled_file_server\.dart$|\.github/workflows/client-quality\.yml$)')"
             echo "release_build=$(has '^(\.github/workflows/client-(build|release)\.yml$|client/tool/release/|client/pubspec\.(yaml|lock)$|client/config/|client/(android|ios|linux|macos|windows|web)/)')"
             echo "release_notes=$(has '^(\.github/workflows/client-(build|release)\.yml$|client/tool/release/|client/pubspec\.(yaml|lock)$|client/config/|client/(android|ios|linux|macos|windows|web)/|CHANGELOG\.md$)')"
           } | tee -a "$GITHUB_OUTPUT"
@@ -283,6 +286,69 @@ jobs:
 
       - name: Tear down the contract server
         if: always()
+        run: docker compose -f compose.yaml down -v --remove-orphans
+
+  client-downloads-integration:
+    name: client-downloads-integration
+    needs: changes
+    if: needs.changes.outputs.downloads == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # The composite action apt-installs the Linux build packages of doc 01.
+      - name: Set up Flutter
+        uses: ./.github/actions/client-flutter
+
+      - name: Setup Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+
+      # The plugin's task store lives under the XDG documents directory,
+      # which path_provider resolves with xdg-user-dir.
+      - name: Install ffmpeg, Xvfb and xdg-user-dirs
+        run: |
+          sudo apt-get install -y --no-install-recommends \
+            ffmpeg xvfb xdg-user-dirs
+
+      - name: Generate the fixture library
+        working-directory: client/contract_test
+        run: fixtures/generate.sh
+
+      - name: Start the contract server
+        working-directory: client/contract_test
+        run: docker compose -f compose.yaml up -d --build --wait
+
+      - name: Seed the contract server
+        working-directory: client/contract_test
+        run: node seed.ts
+
+      - name: Downloader integration test
+        working-directory: client
+        run: |
+          xvfb-run -a flutter test integration_test/downloads -d linux \
+            --tags downloads \
+            --dart-define=DOWNLOADS_SEED="$GITHUB_WORKSPACE/client/contract_test/.seed/credentials.json"
+
+      - name: Collect server logs
+        if: failure()
+        working-directory: client/contract_test
+        run: docker compose -f compose.yaml logs --no-color > compose-logs.txt 2>&1 || true
+
+      - name: Upload server logs
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: client-downloads-integration-logs
+          path: client/contract_test/compose-logs.txt
+          if-no-files-found: warn
+
+      - name: Tear down the contract server
+        if: always()
+        working-directory: client/contract_test
         run: docker compose -f compose.yaml down -v --remove-orphans
 
   client-golden:
