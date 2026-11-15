@@ -10,6 +10,7 @@ import 'package:soundspan/core/auth/active_profile.dart';
 import 'package:soundspan/core/auth/profile.dart';
 
 import '../../helpers/golden.dart';
+import '../../helpers/track_row_samples.dart';
 
 Profile _profile(String id, String host, String username, int minutes) =>
     Profile(
@@ -55,6 +56,15 @@ void main() {
     'shell',
     builder: _shell,
     overrides: _overrides,
+    locales: const [pseudoLocale, Locale('ar')],
+  );
+  // Track rows with an index, with a thumbnail and disabled, in the same two
+  // locales, compact and expanded (with the album column), dark only.
+  goldenMatrix(
+    'track_row',
+    sizes: const [Size(390, 320), Size(1440, 320)],
+    themes: const [ThemeMode.dark],
+    builder: trackRowSamples,
     locales: const [pseudoLocale, Locale('ar')],
   );
 }

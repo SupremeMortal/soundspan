@@ -3,6 +3,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/rendering.dart' show RenderParagraph;
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
@@ -14,13 +15,16 @@ import 'package:soundspan/app/shell/adaptive_shell.dart';
 import 'package:soundspan/app/shell/app_shell.dart';
 import 'package:soundspan/app/shell/avatar_menu.dart';
 import 'package:soundspan/app/shell/top_bar.dart';
+import 'package:soundspan/app/theme/dimens.dart';
 import 'package:soundspan/core/auth/active_profile.dart';
 import 'package:soundspan/core/auth/profile.dart';
 import 'package:soundspan/features/settings/settings.dart';
+import 'package:soundspan/shared/widgets/track_row.dart';
 import 'package:soundspan/shared/widgets/wordmark.dart';
 
 import '../../helpers/pump_app.dart';
 import '../../helpers/test_root.dart';
+import '../../helpers/track_row_samples.dart';
 
 final Profile _profile = Profile(
   id: 'p1',
@@ -75,6 +79,72 @@ void main() {
         expect(tester.takeException(), isNull);
         final l10n = lookupAppLocalizations(pseudoLocale);
         expect(find.textContaining(l10n.navHome), findsWidgets);
+      });
+    }
+  }
+
+  for (final size in [TestSizes.compact, TestSizes.expanded]) {
+    for (final textScale in [1.0, 2.0]) {
+      testWidgets('TrackRow at ${size.width.toInt()} in en_XA at text scale '
+          '$textScale lays out without overflow', (tester) async {
+        await tester.pumpApp(
+          const Builder(builder: trackRowSamples),
+          size: size,
+          locale: pseudoLocale,
+          textScale: textScale,
+        );
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+
+        final rows = find.byType(TrackRow);
+        expect(rows, findsNWidgets(4));
+        final scaler = MediaQuery.textScalerOf(tester.element(rows.first));
+        for (final row in rows.evaluate()) {
+          final box = row.renderObject! as RenderBox;
+          final withThumbnail =
+              (row.widget as TrackRow).leading is TrackRowThumbnail;
+          expect(
+            box.size.height,
+            greaterThanOrEqualTo(
+              withThumbnail ? Sizes.trackRow : Sizes.albumTrackRow,
+            ),
+          );
+          expect(box.size.width, size.width - 32);
+        }
+        expect(scaler.scale(1), textScale);
+
+        // Only the title, artist and album ellipsize: index and duration
+        // fit their columns and are never clipped.
+        final unclipped = find.descendant(
+          of: rows,
+          matching: find.byWidgetPredicate(
+            (widget) =>
+                widget is RichText && widget.overflow != TextOverflow.ellipsis,
+          ),
+        );
+        expect(unclipped, findsNWidgets(6));
+        for (final text in unclipped.evaluate()) {
+          final paragraph = text.renderObject! as RenderParagraph;
+          expect(
+            paragraph.didExceedMaxLines,
+            isFalse,
+            reason: paragraph.text.toPlainText(),
+          );
+          expect(
+            paragraph.getMaxIntrinsicWidth(double.infinity),
+            lessThanOrEqualTo(paragraph.size.width + 0.01),
+            reason: paragraph.text.toPlainText(),
+          );
+        }
+
+        // The spoken duration is the pseudo-locale's.
+        final l10n = lookupAppLocalizations(pseudoLocale);
+        expect(
+          find.bySemanticsLabel(
+            RegExp(RegExp.escape(l10n.trackRowDurationMinutes(4))),
+          ),
+          findsOneWidget,
+        );
       });
     }
   }
