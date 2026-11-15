@@ -43,7 +43,7 @@ Checked in the backend source; the contract suite ([11](11-testing-and-ci.md)) k
 ```
 
 - **`PlaybackController`** owns the queue and the engine. It exposes `Stream<PlaybackSnapshot>` and command methods. Nothing else calls the engine.
-- **`QueueReducer`** is a pure function `(QueueState, QueueCommand) → QueueState`. All queue rules are tested here with no player.
+- **`QueueReducer`** is a pure function `(QueueState, QueueCommand) → QueueTransition` (the next `QueueState` and a `QueueEffect`). All queue rules are tested here with no player.
 - **`PlayerEngine`** plays at most two things: the current source and a preloaded next source. It knows nothing about queues, shuffle, or the server.
 - **`MediaControls`** mirrors the snapshot to the OS and turns OS button presses into controller commands.
 
@@ -149,6 +149,8 @@ class QueueState {
 sealed class QueueCommand {}            // ReplaceAll, PlayNext, Append, RemoveAt, Move, JumpTo,
                                         // Next, Previous, SetShuffle, SetRepeat, Clear, ItemFinished
 ```
+
+`QueueReducer.reduce` returns a `QueueTransition`: the next state plus a `QueueEffect` (`none`, `loadCurrent`, `restartCurrent` or `stop`), so the controller applies the engine change the queue rules imply without re-deriving them; a command that changes nothing returns the identical state, and `revision` grows by one exactly when the state changes.
 
 Rules, each with unit tests:
 
