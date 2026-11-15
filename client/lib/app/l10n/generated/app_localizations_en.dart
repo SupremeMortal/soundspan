@@ -365,6 +365,63 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get shelfScrollForward => 'Scroll forward';
+
+  @override
+  String trackRowDurationHours(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count hours',
+      one: '1 hour',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String trackRowDurationMinutes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count minutes',
+      one: '1 minute',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String trackRowDurationSeconds(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count seconds',
+      one: '1 second',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get errorViewOffline => 'You’re offline';
+
+  @override
+  String get errorViewFeatureDisabled => 'Not available on this server';
+
+  @override
+  String get errorViewRateLimited => 'Too many requests, try again shortly';
+
+  @override
+  String get errorViewServerProblem => 'The server ran into a problem';
+
+  @override
+  String get errorViewNotFound => 'This item is no longer available';
+
+  @override
+  String get errorViewGeneric => 'Something went wrong';
+
+  @override
+  String get errorViewRetry => 'Retry';
+
+  @override
+  String get appBannerDismiss => 'Dismiss';
 }
 
 /// The translations for English (`en_XA`).
@@ -734,4 +791,65 @@ class AppLocalizationsEnXa extends AppLocalizationsEn {
 
   @override
   String get shelfScrollForward => '[Šçŕöļļ föŕŵåŕð one two]';
+
+  @override
+  String trackRowDurationHours(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ĥöûŕš one',
+      one: '1 ĥöûŕ one',
+    );
+    return '[$_temp0]';
+  }
+
+  @override
+  String trackRowDurationMinutes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count mîñûţéš one',
+      one: '1 mîñûţé one',
+    );
+    return '[$_temp0]';
+  }
+
+  @override
+  String trackRowDurationSeconds(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count šéçöñðš one',
+      one: '1 šéçöñð one',
+    );
+    return '[$_temp0]';
+  }
+
+  @override
+  String get errorViewOffline => '[Ýöû’ŕé öffļîñé one two]';
+
+  @override
+  String get errorViewFeatureDisabled =>
+      '[Ñöţ åvåîļåbļé öñ ţĥîš šéŕvéŕ one two three]';
+
+  @override
+  String get errorViewRateLimited =>
+      '[Ţöö måñý ŕéqûéšţš, ţŕý åĝåîñ šĥöŕţļý one two three four]';
+
+  @override
+  String get errorViewServerProblem =>
+      '[Ţĥé šéŕvéŕ ŕåñ îñţö å þŕöbļém one two three]';
+
+  @override
+  String get errorViewNotFound =>
+      '[Ţĥîš îţém îš ñö ļöñĝéŕ åvåîļåbļé one two three]';
+
+  @override
+  String get errorViewGeneric => '[Šöméţĥîñĝ ŵéñţ ŵŕöñĝ one two]';
+
+  @override
+  String get errorViewRetry => '[Ŕéţŕý one]';
+
+  @override
+  String get appBannerDismiss => '[Ðîšmîšš one]';
 }
