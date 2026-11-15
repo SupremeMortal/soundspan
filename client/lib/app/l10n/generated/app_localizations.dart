@@ -426,6 +426,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This browser is not keeping data, so nothing will be remembered after this page is closed.'**
   String get storageVolatileNotice;
+
+  /// Screen name: the list of the licences of the app, its bundled fonts and libraries, and the packages it uses.
+  ///
+  /// In en, this message translates to:
+  /// **'Open-source licences'**
+  String get screenLicenses;
+
+  /// Row in Settings → About that opens the open-source licences screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Licences'**
+  String get settingsAboutLicenses;
+
+  /// Section heading on the licences screen: the fonts and native libraries shipped inside the app.
+  ///
+  /// In en, this message translates to:
+  /// **'Fonts and bundled libraries'**
+  String get licensesSectionBundled;
+
+  /// Section heading on the licences screen: the software packages the app is built with.
+  ///
+  /// In en, this message translates to:
+  /// **'Packages'**
+  String get licensesSectionPackages;
+
+  /// Under a package name on the licences screen: how many licences apply to it.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 licence} other{{count} licences}}'**
+  String licensesCount(int count);
+
+  /// Accessibility label of the progress indicator while the licences are collected.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading licences'**
+  String get licensesLoading;
+
+  /// Shown on the licences screen when collecting the licences failed.
+  ///
+  /// In en, this message translates to:
+  /// **'The licences could not be loaded.'**
+  String get licensesLoadFailed;
+
+  /// Button on the licences screen that collects the licences again after a failure.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get licensesRetry;
 }
 
 class _AppLocalizationsDelegate

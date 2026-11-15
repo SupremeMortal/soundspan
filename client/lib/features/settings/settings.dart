@@ -4,4 +4,5 @@
 /// Settings).
 library;
 
+export 'ui/about/licenses_screen.dart' show LicenseDetailScreen, LicensesScreen;
 export 'ui/settings_screen.dart' show SettingsScreen, SettingsSection;

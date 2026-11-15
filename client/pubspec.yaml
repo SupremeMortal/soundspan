@@ -79,6 +79,7 @@ flutter:
     - assets/brand/tray/
     - assets/licenses/
     - assets/licenses/fonts/
+    - LICENSE                      # the client's own licence (Licences screen)
   fonts:
     - family: Montserrat
       fonts:

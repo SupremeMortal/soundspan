@@ -241,5 +241,43 @@
   "storageVolatileNotice": "[Ţĥîš bŕöŵšéŕ îš ñöţ ķééþîñĝ ðåţå, šö ñöţĥîñĝ ŵîļļ bé ŕémémbéŕéð åfţéŕ ţĥîš þåĝé îš çļöšéð. one two three four five six seven eight]",
   "@storageVolatileNotice": {
     "description": "One-time notice on the web when the browser offers no lasting storage, for example in private browsing."
+  },
+  "screenLicenses": "[Öþéñ-šöûŕçé ļîçéñçéš one two]",
+  "@screenLicenses": {
+    "description": "Screen name: the list of the licences of the app, its bundled fonts and libraries, and the packages it uses."
+  },
+  "settingsAboutLicenses": "[Ļîçéñçéš one]",
+  "@settingsAboutLicenses": {
+    "description": "Row in Settings → About that opens the open-source licences screen."
+  },
+  "licensesSectionBundled": "[Föñţš åñð bûñðļéð ļîbŕåŕîéš one two three]",
+  "@licensesSectionBundled": {
+    "description": "Section heading on the licences screen: the fonts and native libraries shipped inside the app."
+  },
+  "licensesSectionPackages": "[Þåçķåĝéš one]",
+  "@licensesSectionPackages": {
+    "description": "Section heading on the licences screen: the software packages the app is built with."
+  },
+  "licensesCount": "[{count, plural, =1{1 ļîçéñçé one} other{{count} ļîçéñçéš one}}]",
+  "@licensesCount": {
+    "description": "Under a package name on the licences screen: how many licences apply to it.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "2"
+      }
+    }
+  },
+  "licensesLoading": "[Ļöåðîñĝ ļîçéñçéš one two]",
+  "@licensesLoading": {
+    "description": "Accessibility label of the progress indicator while the licences are collected."
+  },
+  "licensesLoadFailed": "[Ţĥé ļîçéñçéš çöûļð ñöţ bé ļöåðéð. one two three]",
+  "@licensesLoadFailed": {
+    "description": "Shown on the licences screen when collecting the licences failed."
+  },
+  "licensesRetry": "[Ţŕý åĝåîñ one]",
+  "@licensesRetry": {
+    "description": "Button on the licences screen that collects the licences again after a failure."
   }
 }

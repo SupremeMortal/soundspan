@@ -183,6 +183,38 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get storageVolatileNotice =>
       'This browser is not keeping data, so nothing will be remembered after this page is closed.';
+
+  @override
+  String get screenLicenses => 'Open-source licences';
+
+  @override
+  String get settingsAboutLicenses => 'Licences';
+
+  @override
+  String get licensesSectionBundled => 'Fonts and bundled libraries';
+
+  @override
+  String get licensesSectionPackages => 'Packages';
+
+  @override
+  String licensesCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count licences',
+      one: '1 licence',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get licensesLoading => 'Loading licences';
+
+  @override
+  String get licensesLoadFailed => 'The licences could not be loaded.';
+
+  @override
+  String get licensesRetry => 'Try again';
 }
 
 /// The translations for English (`en_XA`).
@@ -365,4 +397,38 @@ class AppLocalizationsEnXa extends AppLocalizationsEn {
   @override
   String get storageVolatileNotice =>
       '[Ţĥîš bŕöŵšéŕ îš ñöţ ķééþîñĝ ðåţå, šö ñöţĥîñĝ ŵîļļ bé ŕémémbéŕéð åfţéŕ ţĥîš þåĝé îš çļöšéð. one two three four five six seven eight]';
+
+  @override
+  String get screenLicenses => '[Öþéñ-šöûŕçé ļîçéñçéš one two]';
+
+  @override
+  String get settingsAboutLicenses => '[Ļîçéñçéš one]';
+
+  @override
+  String get licensesSectionBundled =>
+      '[Föñţš åñð bûñðļéð ļîbŕåŕîéš one two three]';
+
+  @override
+  String get licensesSectionPackages => '[Þåçķåĝéš one]';
+
+  @override
+  String licensesCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ļîçéñçéš one',
+      one: '1 ļîçéñçé one',
+    );
+    return '[$_temp0]';
+  }
+
+  @override
+  String get licensesLoading => '[Ļöåðîñĝ ļîçéñçéš one two]';
+
+  @override
+  String get licensesLoadFailed =>
+      '[Ţĥé ļîçéñçéš çöûļð ñöţ bé ļöåðéð. one two three]';
+
+  @override
+  String get licensesRetry => '[Ţŕý åĝåîñ one]';
 }

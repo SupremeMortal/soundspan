@@ -3,12 +3,14 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:soundspan/app/app.dart';
+import 'package:soundspan/app/licenses/license_registration.dart';
 import 'package:soundspan/app/shell/window_state_controller.dart';
 import 'package:soundspan/core/auth/active_profile.dart';
 import 'package:soundspan/core/logging/app_logger.dart';
@@ -33,7 +35,8 @@ typedef PostFirstFrameTask = Future<void> Function(ProviderContainer root);
 /// features append theirs.
 final List<PostFirstFrameTask> postFirstFrameTasks = [];
 
-/// Starts the app (doc 02, Bootstrap Sequence): error hooks, paths,
+/// Starts the app (doc 02, Bootstrap Sequence): error hooks, the bundled
+/// licences (read only when the licences screen asks), paths,
 /// logging, `app.db`, the root container and the active profile, the
 /// desktop window, then `runApp` and the [postFirstFrameTasks].
 Future<void> bootstrap() async {
@@ -41,6 +44,7 @@ Future<void> bootstrap() async {
     () async {
       WidgetsFlutterBinding.ensureInitialized();
       installErrorHooks();
+      registerBundledLicenses(rootBundle);
       if (kIsWeb) usePathUrlStrategy();
       final paths = await resolveAppPaths();
       AppLogging.configure(

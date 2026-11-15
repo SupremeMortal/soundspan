@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 
-// Fails when a shipped dependency's licence is not on the allowlist, or when a
-// bundled font has no licence text (doc 11, Gates Specific to the Client).
+// Fails when a shipped dependency's licence is not on the allowlist, when a
+// bundled font has no licence text, or when the notice manifest
+// assets/licenses/index.json and the files beside it disagree (doc 11, Gates
+// Specific to the Client).
 //
 // Usage, from client/ after `flutter pub get`:
 //   dart run tool/license_audit.dart [--report]
@@ -71,7 +73,7 @@ const _sdkPackages = {
 };
 
 /// Audits the shipped dependencies of the app and of `packages/soundspan_api`,
-/// and the bundled fonts.
+/// the bundled fonts, and the notice manifest `assets/licenses/index.json`.
 ///
 /// The audited set is the transitive closure of the non-dev `dependencies` of
 /// `pubspec.yaml` and `packages/soundspan_api/pubspec.yaml` under
@@ -86,6 +88,7 @@ Future<List<LicenseFinding>> auditLicenses(
   final findings = <LicenseFinding>[
     ..._auditDependencies(clientRoot, onAudited),
     ..._auditFonts(clientRoot),
+    ..._auditNotices(clientRoot),
   ];
   return findings;
 }
@@ -357,6 +360,138 @@ List<LicenseFinding> _auditFonts(Directory clientRoot) {
     }
   }
   return findings;
+}
+
+/// The notices `pubspec.lock` requires while it contains a `media_kit_libs_*`
+/// package, which ships libmpv and the FFmpeg libraries inside it.
+const mediaKitNotices = ['mpv-NOTICE.txt', 'FFmpeg-NOTICE.txt'];
+
+/// Every file under `assets/licenses/` other than `index.json` must be named
+/// by an `index.json` entry, and every entry must name an existing file. A
+/// `media_kit_libs_*` package in `pubspec.lock` requires [mediaKitNotices].
+List<LicenseFinding> _auditNotices(Directory clientRoot) {
+  final dir = Directory(p.join(clientRoot.path, 'assets', 'licenses'));
+  final findings = <LicenseFinding>[];
+  String relative(String path) =>
+      p.relative(path, from: dir.path).replaceAll(r'\', '/');
+  const indexSubject = 'assets/licenses/index.json';
+
+  final files = dir.existsSync()
+      ? (dir
+            .listSync(recursive: true)
+            .whereType<File>()
+            .map((f) => relative(f.path))
+            .where((f) => f != 'index.json' && !p.basename(f).startsWith('.'))
+            .toList()
+          ..sort())
+      : <String>[];
+  final index = File(p.join(dir.path, 'index.json'));
+  if (!index.existsSync()) {
+    if (files.isNotEmpty) {
+      findings.add(
+        const LicenseFinding(
+          indexSubject,
+          'missing; list every notice file in assets/licenses/',
+        ),
+      );
+    }
+  } else {
+    final listed = _readNoticeIndex(index, findings, indexSubject);
+    for (final file in files) {
+      if (!listed.contains(file)) {
+        findings.add(
+          LicenseFinding(
+            'assets/licenses/$file',
+            'not listed in assets/licenses/index.json',
+          ),
+        );
+      }
+    }
+    for (final file in listed) {
+      if (!File(p.join(dir.path, file)).existsSync()) {
+        findings.add(
+          LicenseFinding(
+            indexSubject,
+            'an entry names $file, which does not exist',
+          ),
+        );
+      }
+    }
+  }
+
+  final lock = File(p.join(clientRoot.path, 'pubspec.lock'));
+  if (lock.existsSync()) {
+    final yaml = loadYaml(lock.readAsStringSync());
+    final packages = yaml is YamlMap ? yaml['packages'] : null;
+    final mediaKitLibs = packages is YamlMap
+        ? (packages.keys
+              .whereType<String>()
+              .where((name) => name.startsWith('media_kit_libs_'))
+              .toList()
+            ..sort())
+        : const <String>[];
+    if (mediaKitLibs.isNotEmpty) {
+      for (final notice in mediaKitNotices) {
+        if (!files.contains(notice)) {
+          findings.add(
+            LicenseFinding(
+              'assets/licenses/$notice',
+              'missing; pubspec.lock contains ${mediaKitLibs.join(', ')}',
+            ),
+          );
+        }
+      }
+    }
+  }
+  return findings;
+}
+
+/// The files named by the notice manifest [index]. A malformed manifest or
+/// entry adds a finding under [subject].
+Set<String> _readNoticeIndex(
+  File index,
+  List<LicenseFinding> findings,
+  String subject,
+) {
+  Object? json;
+  try {
+    json = jsonDecode(index.readAsStringSync());
+  } on FormatException catch (error) {
+    findings.add(LicenseFinding(subject, 'not valid JSON: ${error.message}'));
+    return const {};
+  }
+  if (json is! List<Object?>) {
+    findings.add(
+      LicenseFinding(
+        subject,
+        'must be an array of {title, file, spdx, platforms} entries',
+      ),
+    );
+    return const {};
+  }
+  final listed = <String>{};
+  for (final entry in json) {
+    final valid =
+        entry is Map<String, Object?> &&
+        entry['title'] is String &&
+        (entry['title']! as String).trim().isNotEmpty &&
+        entry['file'] is String &&
+        entry['spdx'] is String &&
+        entry['platforms'] is List<Object?> &&
+        (entry['platforms']! as List<Object?>).every((e) => e is String);
+    if (!valid) {
+      findings.add(
+        LicenseFinding(
+          subject,
+          'entry $entry needs a non-empty `title`, `file`, `spdx` and a '
+          '`platforms` array of strings',
+        ),
+      );
+      continue;
+    }
+    listed.add(entry['file']! as String);
+  }
+  return listed;
 }
 
 Future<void> main(List<String> args) async {

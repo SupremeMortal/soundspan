@@ -9,6 +9,7 @@ import 'package:soundspan/app/router/placeholder_screen.dart';
 import 'package:soundspan/app/router/routes.dart';
 import 'package:soundspan/app/shell/window_class.dart';
 import 'package:soundspan/app/theme/dimens.dart';
+import 'package:soundspan/features/settings/ui/about/about_section.dart';
 import 'package:soundspan/features/settings/ui/appearance_section.dart';
 import 'package:soundspan/features/settings/ui/servers_section.dart';
 
@@ -18,7 +19,10 @@ enum SettingsSection {
   servers(Icons.dns_rounded),
 
   /// Theme and language.
-  appearance(Icons.palette_rounded);
+  appearance(Icons.palette_rounded),
+
+  /// Licences.
+  about(Icons.info_outline_rounded);
 
   new(this.icon);
 
@@ -32,6 +36,7 @@ enum SettingsSection {
   String title(AppLocalizations l10n) => switch (this) {
     servers => l10n.screenSettingsServers,
     appearance => l10n.screenSettingsAppearance,
+    about => l10n.screenSettingsAbout,
   };
 }
 
@@ -112,6 +117,7 @@ class SettingsScreen extends StatelessWidget {
   static Widget _body(SettingsSection section) => switch (section) {
     SettingsSection.servers => const ServersSection(),
     SettingsSection.appearance => const AppearanceSection(),
+    SettingsSection.about => const AboutSection(),
   };
 }
 

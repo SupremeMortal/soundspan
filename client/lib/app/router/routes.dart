@@ -42,6 +42,12 @@ abstract final class RoutePaths {
 
   /// The Appearance settings.
   static const settingsAppearance = '/settings/appearance';
+
+  /// The About settings.
+  static const settingsAbout = '/settings/about';
+
+  /// The open-source licences, opened from the About settings.
+  static const settingsAboutLicenses = '/settings/about/licenses';
 }
 
 /// The tabs of `/library/:tab`.
@@ -213,12 +219,18 @@ GoRouter createRouter(
             GoRoute(
               path: section.name,
               builder: (context, _) => SettingsScreen(section: section),
+              routes: [
+                if (section == SettingsSection.about)
+                  GoRoute(
+                    path: 'licenses',
+                    builder: (context, _) => const LicensesScreen(),
+                  ),
+              ],
             ),
           for (final (path, title)
               in <(String, String Function(AppLocalizations))>[
                 ('playback', (l10n) => l10n.screenSettingsPlayback),
                 ('storage', (l10n) => l10n.screenSettingsStorage),
-                ('about', (l10n) => l10n.screenSettingsAbout),
               ])
             GoRoute(
               path: path,

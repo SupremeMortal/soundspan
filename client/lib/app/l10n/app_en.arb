@@ -241,5 +241,43 @@
   "storageVolatileNotice": "This browser is not keeping data, so nothing will be remembered after this page is closed.",
   "@storageVolatileNotice": {
     "description": "One-time notice on the web when the browser offers no lasting storage, for example in private browsing."
+  },
+  "screenLicenses": "Open-source licences",
+  "@screenLicenses": {
+    "description": "Screen name: the list of the licences of the app, its bundled fonts and libraries, and the packages it uses."
+  },
+  "settingsAboutLicenses": "Licences",
+  "@settingsAboutLicenses": {
+    "description": "Row in Settings → About that opens the open-source licences screen."
+  },
+  "licensesSectionBundled": "Fonts and bundled libraries",
+  "@licensesSectionBundled": {
+    "description": "Section heading on the licences screen: the fonts and native libraries shipped inside the app."
+  },
+  "licensesSectionPackages": "Packages",
+  "@licensesSectionPackages": {
+    "description": "Section heading on the licences screen: the software packages the app is built with."
+  },
+  "licensesCount": "{count, plural, =1{1 licence} other{{count} licences}}",
+  "@licensesCount": {
+    "description": "Under a package name on the licences screen: how many licences apply to it.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "2"
+      }
+    }
+  },
+  "licensesLoading": "Loading licences",
+  "@licensesLoading": {
+    "description": "Accessibility label of the progress indicator while the licences are collected."
+  },
+  "licensesLoadFailed": "The licences could not be loaded.",
+  "@licensesLoadFailed": {
+    "description": "Shown on the licences screen when collecting the licences failed."
+  },
+  "licensesRetry": "Try again",
+  "@licensesRetry": {
+    "description": "Button on the licences screen that collects the licences again after a failure."
   }
 }
