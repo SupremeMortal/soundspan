@@ -4,6 +4,8 @@ import 'package:soundspan_api/soundspan_api.dart';
 import 'package:test/test.dart';
 
 void main() {
+  _streamUrlsTests();
+
   final urls = ImageUrls(Uri.parse('https://music.example.org'));
 
   String sizeOf(double logicalPx, double devicePixelRatio) => urls
@@ -161,6 +163,125 @@ void main() {
         'size': '64',
         'token': 'a.b.c',
       });
+    });
+  });
+}
+
+void _streamUrlsTests() {
+  final urls = StreamUrls(Uri.parse('https://music.example.org'));
+  final prefixed = StreamUrls(Uri.parse('https://example.com/soundspan'));
+
+  group('StreamUrls.track', () {
+    test('without quality carries only report=0', () {
+      expect(
+        urls.track('abc').toString(),
+        'https://music.example.org/api/playback/stream/abc?report=0',
+      );
+    });
+
+    test('with quality adds it beside report=0', () {
+      final uri = urls.track('abc', quality: 'high');
+
+      expect(uri.path, '/api/playback/stream/abc');
+      expect(uri.queryParameters, {'quality': 'high', 'report': '0'});
+    });
+
+    test('reportPlay: true leaves report out', () {
+      expect(
+        urls.track('abc', reportPlay: true).toString(),
+        'https://music.example.org/api/playback/stream/abc',
+      );
+      expect(
+        urls.track('abc', quality: 'low', reportPlay: true).queryParameters,
+        {'quality': 'low'},
+      );
+    });
+
+    test('an id with /, :, ? and spaces is one encoded segment', () {
+      final uri = urls.track('a/b:c?d e');
+
+      expect(uri.pathSegments, ['api', 'playback', 'stream', 'a/b:c?d e']);
+      expect(
+        uri.toString(),
+        'https://music.example.org/api/playback/stream/'
+        'a%2Fb%3Ac%3Fd%20e?report=0',
+      );
+    });
+
+    test('a base with a path prefix keeps the prefix', () {
+      expect(
+        prefixed.track('abc').toString(),
+        'https://example.com/soundspan/api/playback/stream/abc?report=0',
+      );
+    });
+  });
+
+  test('StreamUrls.episode', () {
+    expect(
+      prefixed.episode('pod 1', 'ep/2').toString(),
+      'https://example.com/soundspan/api/podcasts/pod%201/episodes/ep%2F2/'
+      'stream',
+    );
+  });
+
+  group('StreamUrls.resolve', () {
+    test('resolves against the base', () {
+      expect(
+        urls.resolve('/api/playback/stream/abc?quality=high&report=0'),
+        Uri.parse(
+          'https://music.example.org/api/playback/stream/abc?quality=high&'
+          'report=0',
+        ),
+      );
+    });
+
+    test('keeps the path prefix of the base', () {
+      expect(
+        prefixed.resolve('/api/playback/stream/abc?report=0').toString(),
+        'https://example.com/soundspan/api/playback/stream/abc?report=0',
+      );
+    });
+
+    test('rejects a value that does not start with /api/', () {
+      expect(
+        () => urls.resolve('https://other.example/x'),
+        throwsArgumentError,
+      );
+      expect(() => urls.resolve('/other'), throwsArgumentError);
+      expect(
+        () => prefixed.resolve('//other.example/api/x'),
+        throwsArgumentError,
+      );
+    });
+  });
+
+  group('StreamUrls.authHeaders', () {
+    test('an API key is sent as X-API-Key', () {
+      expect(urls.authHeaders(const ApiKeyCredentials(apiKey: 'k')), {
+        'X-API-Key': 'k',
+      });
+    });
+
+    test('a JWT session is sent as a bearer token', () {
+      expect(
+        urls.authHeaders(
+          const JwtCredentials(accessToken: 'a', refreshToken: 'r'),
+        ),
+        {'Authorization': 'Bearer a'},
+      );
+    });
+  });
+
+  test('StreamUrls.withQueryToken keeps existing parameters', () {
+    final uri = urls.withQueryToken(
+      urls.track('abc', quality: 'high'),
+      const JwtCredentials(accessToken: 'a', refreshToken: 'r'),
+    );
+
+    expect(uri.queryParameters, {
+      'quality': 'high',
+      'report': '0',
+      'token': 'a',
     });
   });
 }

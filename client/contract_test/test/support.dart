@@ -231,14 +231,20 @@ SoundspanApi anonymousApi(ContractCredentials credentials) {
 }
 
 /// A guarded API for [credentials]' server that sends the credential of
-/// [provider], closed and verified when the test ends.
+/// [provider] (and [playbackDeviceId] as `X-Playback-Device-Id` when set),
+/// closed and verified when the test ends.
 SoundspanApi credentialedApi(
   ContractCredentials credentials,
-  CredentialProvider provider,
-) {
+  CredentialProvider provider, {
+  String? playbackDeviceId,
+}) {
   final guard = SchemaMismatchGuard(platformHttpClientAdapter());
   final api = SoundspanApi(
-    ApiConfig(baseUrl: credentials.baseUrl, userAgent: _userAgent),
+    ApiConfig(
+      baseUrl: credentials.baseUrl,
+      userAgent: _userAgent,
+      playbackDeviceId: playbackDeviceId,
+    ),
     credentials: provider,
     adapter: guard,
   );
@@ -274,11 +280,13 @@ Future<LoginTokenResponse> logIn(
 
 /// Signs [account] in with its password (and [totp] when it has 2FA) and
 /// returns a guarded API carrying the session in an
-/// [InMemoryCredentialProvider], closed and verified when the test ends.
+/// [InMemoryCredentialProvider] (and [playbackDeviceId] when set), closed
+/// and verified when the test ends.
 Future<SoundspanApi> signedInApi(
   ContractCredentials credentials,
   ContractAccount account, {
   String? totp,
+  String? playbackDeviceId,
 }) async {
   final login = await logIn(credentials, account, totp: totp);
   return credentialedApi(
@@ -289,5 +297,6 @@ Future<SoundspanApi> signedInApi(
         refreshToken: login.refreshToken,
       ),
     ),
+    playbackDeviceId: playbackDeviceId,
   );
 }

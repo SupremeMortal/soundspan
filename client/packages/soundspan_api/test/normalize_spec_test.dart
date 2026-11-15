@@ -170,6 +170,56 @@ void main() {
     expect(normalizeSpec(input), input);
   });
 
+  test('a nullable response body marks its component nullable; another '
+      "operation's plain response body does not keep it non-null", () {
+    Map<String, Object?> body(Map<String, Object?> schema) => {
+      'responses': {
+        '200': {
+          'content': {
+            'application/json': {'schema': schema},
+          },
+        },
+      },
+    };
+    final spec = normalizeSpec({
+      'paths': {
+        '/state': {
+          'get': body(_nullableRef('State')),
+          'post': body(_ref('State')),
+        },
+      },
+      'components': {
+        'schemas': {'State': _object()},
+      },
+    });
+
+    expect(_schemas(spec)['State'], {..._object(), 'nullable': true});
+  });
+
+  test('a component referenced only from plain response bodies is '
+      'unchanged', () {
+    final input = {
+      'paths': {
+        '/info': {
+          'get': {
+            'responses': {
+              '200': {
+                'content': {
+                  'application/json': {'schema': _ref('Info')},
+                },
+              },
+            },
+          },
+        },
+      },
+      'components': {
+        'schemas': {'Info': _object()},
+      },
+    };
+
+    expect(normalizeSpec(input), input);
+  });
+
   test('a spec without components is returned as it is', () {
     final input = {
       'paths': {

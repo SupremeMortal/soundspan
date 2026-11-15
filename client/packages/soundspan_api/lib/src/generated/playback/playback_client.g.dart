@@ -67,7 +67,7 @@ class _PlaybackClient extends PlaybackClient {
   }
 
   @override
-  Future<PlaybackState> getPlaybackState({
+  Future<PlaybackState?> getPlaybackState({
     Map<String, Object?> extra = const {},
     CancelToken? cancelToken,
     Options? options,
@@ -79,7 +79,7 @@ class _PlaybackClient extends PlaybackClient {
     final _headers = <String, dynamic>{r'Accept': 'application/json'};
     _headers.removeWhere((k, v) => v == null);
     const Map<String, dynamic>? _data = null;
-    final _options = _setStreamType<PlaybackState>(
+    final _options = _setStreamType<PlaybackState?>(
       Options(method: 'GET', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
@@ -90,10 +90,12 @@ class _PlaybackClient extends PlaybackClient {
           )
           .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
     );
-    final _result = await _dio.fetch<Map<String, Object?>>(_options);
-    late PlaybackState _value;
+    final _result = await _dio.fetch<Map<String, Object?>?>(_options);
+    late PlaybackState? _value;
     try {
-      _value = PlaybackState.fromJson(_result.data!);
+      _value = _result.data == null
+          ? null
+          : PlaybackState.fromJson(_result.data!);
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options, response: _result);
       rethrow;
@@ -102,7 +104,7 @@ class _PlaybackClient extends PlaybackClient {
   }
 
   @override
-  Future<PlaybackState> savePlaybackState({
+  Future<PlaybackState?> savePlaybackState({
     Map<String, Object?> extra = const {},
     CancelToken? cancelToken,
     Options? options,
@@ -119,7 +121,7 @@ class _PlaybackClient extends PlaybackClient {
     _headers.removeWhere((k, v) => v == null);
     final _data = <String, dynamic>{};
     _data.addAll(body.toJson());
-    final _options = _setStreamType<PlaybackState>(
+    final _options = _setStreamType<PlaybackState?>(
       Options(
             method: 'POST',
             headers: _headers,
@@ -135,10 +137,12 @@ class _PlaybackClient extends PlaybackClient {
           )
           .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
     );
-    final _result = await _dio.fetch<Map<String, Object?>>(_options);
-    late PlaybackState _value;
+    final _result = await _dio.fetch<Map<String, Object?>?>(_options);
+    late PlaybackState? _value;
     try {
-      _value = PlaybackState.fromJson(_result.data!);
+      _value = _result.data == null
+          ? null
+          : PlaybackState.fromJson(_result.data!);
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options, response: _result);
       rethrow;

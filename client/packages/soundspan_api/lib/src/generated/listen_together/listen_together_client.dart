@@ -34,7 +34,7 @@ abstract class ListenTogetherClient {
 
   final Dio _transport;
 
-  Future<ListenGroupSnapshot> _createListenGroupWithOptions({
+  Future<ListenGroupSnapshot?> _createListenGroupWithOptions({
     Map<String, Object?> extra = const {},
     CancelToken? cancelToken,
     Options? options,
@@ -58,7 +58,9 @@ abstract class ListenTogetherClient {
       data: convert.jsonEncode(body),
       cancelToken: cancelToken,
     );
-    return ListenGroupSnapshot.fromJson(response.data as Map<String, Object?>);
+    return response.data == null
+        ? null
+        : ListenGroupSnapshot.fromJson(response.data as Map<String, Object?>);
   }
 
   /// Create a Listen Together group hosted by the user
@@ -66,7 +68,7 @@ abstract class ListenTogetherClient {
   /// Each `queueTracks` entry needs a `playbackId`, which wins over the legacy queue item fields (`trackId` and display fields), still accepted and not described here. 400 with code `INVALID_PLAYBACK_ID` for a `playbackId` that cannot be parsed, and without a code for an invalid body. 409 when a concurrent change to the group wins; the request can be retried.
   @POST('/api/listen-together')
   @Headers({'Content-Type': 'application/json'})
-  Future<ListenGroupSnapshot> createListenGroup({
+  Future<ListenGroupSnapshot?> createListenGroup({
     @Extras() Map<String, Object?> extra = const {},
     @CancelRequest() CancelToken? cancelToken,
     Options? options,
@@ -101,7 +103,7 @@ abstract class ListenTogetherClient {
         .toList();
   }
 
-  Future<ListenGroupSnapshot> _joinListenGroupWithOptions({
+  Future<ListenGroupSnapshot?> _joinListenGroupWithOptions({
     Map<String, Object?> extra = const {},
     CancelToken? cancelToken,
     Options? options,
@@ -125,7 +127,9 @@ abstract class ListenTogetherClient {
       data: convert.jsonEncode(body),
       cancelToken: cancelToken,
     );
-    return ListenGroupSnapshot.fromJson(response.data as Map<String, Object?>);
+    return response.data == null
+        ? null
+        : ListenGroupSnapshot.fromJson(response.data as Map<String, Object?>);
   }
 
   /// Join a group by its join code
@@ -133,13 +137,13 @@ abstract class ListenTogetherClient {
   /// 400 for an invalid join code. 403 when the user may not join. 404 when no active group has the code. 409 when a concurrent change to the group wins; the request can be retried.
   @POST('/api/listen-together/join')
   @Headers({'Content-Type': 'application/json'})
-  Future<ListenGroupSnapshot> joinListenGroup({
+  Future<ListenGroupSnapshot?> joinListenGroup({
     @Extras() Map<String, Object?> extra = const {},
     @CancelRequest() CancelToken? cancelToken,
     Options? options,
     @Body() required JoinListenGroupRequest body,
   });
-  Future<ListenGroupSnapshot> _getMyListenGroupWithOptions({
+  Future<ListenGroupSnapshot?> _getMyListenGroupWithOptions({
     Map<String, Object?> extra = const {},
     CancelToken? cancelToken,
     Options? options,
@@ -155,14 +159,16 @@ abstract class ListenTogetherClient {
       options: _options,
       cancelToken: cancelToken,
     );
-    return ListenGroupSnapshot.fromJson(response.data as Map<String, Object?>);
+    return response.data == null
+        ? null
+        : ListenGroupSnapshot.fromJson(response.data as Map<String, Object?>);
   }
 
   /// The active group the user is a member of
   ///
   /// Answers `null` when the user is in no active group.
   @GET('/api/listen-together/mine')
-  Future<ListenGroupSnapshot> getMyListenGroup({
+  Future<ListenGroupSnapshot?> getMyListenGroup({
     @Extras() Map<String, Object?> extra = const {},
     @CancelRequest() CancelToken? cancelToken,
     Options? options,
@@ -237,7 +243,7 @@ class _ListenTogetherClientWithOptions extends _ListenTogetherClient {
   _ListenTogetherClientWithOptions(Dio dio) : super._(dio, dio);
 
   @override
-  Future<ListenGroupSnapshot> createListenGroup({
+  Future<ListenGroupSnapshot?> createListenGroup({
     Map<String, Object?> extra = const {},
     CancelToken? cancelToken,
     Options? options,
@@ -259,7 +265,7 @@ class _ListenTogetherClientWithOptions extends _ListenTogetherClient {
   }
 
   @override
-  Future<ListenGroupSnapshot> joinListenGroup({
+  Future<ListenGroupSnapshot?> joinListenGroup({
     Map<String, Object?> extra = const {},
     CancelToken? cancelToken,
     Options? options,
@@ -281,7 +287,7 @@ class _ListenTogetherClientWithOptions extends _ListenTogetherClient {
   }
 
   @override
-  Future<ListenGroupSnapshot> getMyListenGroup({
+  Future<ListenGroupSnapshot?> getMyListenGroup({
     Map<String, Object?> extra = const {},
     CancelToken? cancelToken,
     Options? options,
