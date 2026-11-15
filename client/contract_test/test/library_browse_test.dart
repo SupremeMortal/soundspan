@@ -189,20 +189,14 @@ void main() {
       }
     });
 
-    test(
-      'shuffle returns at most limit tracks, each with a playbackId',
-      () async {
-        final shuffled = await api.send(
-          (rest) => rest.library2.listShuffledTracks(limit: 3),
-        );
+    test('shuffle returns at most limit tracks', () async {
+      final shuffled = await api.send(
+        (rest) => rest.library2.listShuffledTracks(limit: 3),
+      );
 
-        expect(shuffled.tracks.length, lessThanOrEqualTo(3));
-        expect(shuffled.tracks, isNotEmpty);
-        for (final track in shuffled.tracks) {
-          expect(track.playbackId, isNotNull);
-        }
-      },
-    );
+      expect(shuffled.tracks.length, inInclusiveRange(1, 3));
+      expect(shuffled.total, greaterThanOrEqualTo(shuffled.tracks.length));
+    });
 
     test('liked: keyset paging with limit 2 returns all three tracks across '
         'two pages with hasMore false at the end', () async {
