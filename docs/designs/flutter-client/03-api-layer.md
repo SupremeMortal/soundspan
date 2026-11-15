@@ -412,7 +412,7 @@ Page size is 100 for lists and 60 for grids. The repository exposes a `PagedSour
 
 Spike S8 ([13](13-milestones-and-work-breakdown.md)) generated the client from the committed `soundspan-client.json` (S1-P9b surface) and decoded hand-written bodies built from its schemas. The answer is **yes, with a spec constraint**: `swagger_parser` is the generator.
 
-**Versions.** Dart 3.14.0 (Flutter 3.50.0); `swagger_parser` 2.1.1 (`swagger_parser_core` 1.0.2), `freezed` 4.0.3, `freezed_annotation` 3.1.0, `json_serializable` 6.15.2, `json_annotation` 4.12.0, `retrofit` 4.10.0, `retrofit_generator` 10.3.3, `dio` 5.11.1, `build_runner` 2.17.1.
+**Versions.** Dart 3.14.0 (Flutter 3.50.0); `swagger_parser` 2.1.1 (`swagger_parser_core` 1.0.2), `freezed` 4.0.3, `freezed_annotation` 3.1.0, `json_serializable` 6.15.2, `json_annotation` 4.12.0, `dio` 5.11.1, `build_runner` 2.17.1.
 
 **Configuration.** The block under [Generated From the Server Specification](#generated-from-the-server-specification). `swagger_parser` 2 replaced the flat 1.x options: `language`, `json_serializer`, `root_client`, `root_client_name`, `put_clients_in_folder`, `unknown_enum_value` and `mark_files_as_generated` are rejected as unknown keys. Their equivalents are `generation.serializer`, `generation.http_client`, `generation.root_api_class_name` and `generation.unknown_enum_values`; the root client, the per-tag folders and the generated-file marker are always produced.
 

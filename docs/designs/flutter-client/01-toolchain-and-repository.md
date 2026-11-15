@@ -200,7 +200,7 @@ Every package in the design document's table was checked for release cadence and
 | `media_kit_libs_linux` | Uses the system libmpv | Packaging handles libmpv per format |
 | All others | Actively released | Adopted |
 
-`soundspan_api/pubspec.yaml` depends only on `dio`, `retrofit`, `freezed_annotation`, `json_annotation`, `meta`, and `collection` (dev: `swagger_parser`, `retrofit_generator`, `freezed`, `json_serializable`, `build_runner`, plus `test` for its runner, `http_mock_adapter` for its transport tests and `very_good_analysis` for the shared analysis options it includes), so it can be tested with plain `dart test` and reused by a future CLI or TV app.
+`soundspan_api/pubspec.yaml` depends only on `dio`, `freezed_annotation`, `json_annotation`, `meta`, and `collection` (dev: `swagger_parser`, `freezed`, `json_serializable`, `build_runner`, plus `test` for its runner, `http_mock_adapter` for its transport tests and `very_good_analysis` for the shared analysis options it includes), so it can be tested with plain `dart test` and reused by a future CLI or TV app.
 
 ## Static Analysis
 
@@ -279,7 +279,6 @@ flutter gen-l10n
 |---|---|---|
 | `swagger_parser` | `packages/soundspan_api/openapi/soundspan-client.json` (emitted by the backend, P9) | `packages/soundspan_api/lib/src/generated/` (its `.swagger_parser.lock` is ignored by git) |
 | `packages/soundspan_api/tool/gen_anonymous_operations.dart` | the same spec | `packages/soundspan_api/lib/src/generated/anonymous_operations.g.dart` |
-| `retrofit_generator` | Generated client interfaces | `*.g.dart` |
 | `freezed` + `json_serializable` | Generated API models, domain value types | `*.freezed.dart`, `*.g.dart` |
 | `drift_dev` | `lib/core/storage/**/tables/*.dart`, `*.drift` | `*.g.dart`; schema dumps under `drift_schemas/`, `*.steps.g.dart` and migration test helpers under `test/core/storage/generated_migrations/` (the `drift_dev schema` commands) |
 | `riverpod_generator` | `@riverpod` functions and classes | `*.g.dart` |

@@ -377,14 +377,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.5.3"
-  protobuf:
-    dependency: transitive
-    description:
-      name: protobuf
-      sha256: "13b6717366aa7ec3792dd62c19c7d33a785708224365f2db23c5ca01f1c1a0f2"
-      url: "https://pub.dev"
-    source: hosted
-    version: "6.1.0"
   pub_semver:
     dependency: transitive
     description:
@@ -401,22 +393,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.7.0"
-  retrofit:
-    dependency: "direct main"
-    description:
-      name: retrofit
-      sha256: d700c1e7599bc6327cbe19ec7a2c87b595f6063ce888e8015f30cab655972331
-      url: "https://pub.dev"
-    source: hosted
-    version: "4.10.0"
-  retrofit_generator:
-    dependency: "direct dev"
-    description:
-      name: retrofit_generator
-      sha256: "756d252a6089e18209e5cf515f18784b80819b1a09abcc2ba3dcdafeb0246004"
-      url: "https://pub.dev"
-    source: hosted
-    version: "10.3.3"
   shelf:
     dependency: transitive
     description:
