@@ -191,6 +191,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsAboutLicenses => 'Licences';
 
   @override
+  String settingsAboutPendingChanges(int count) {
+    return 'Pending changes: $count';
+  }
+
+  @override
+  String get outboxItemsGoneMessage =>
+      'Some changes couldn’t be saved because the item no longer exists';
+
+  @override
+  String get outboxConflictMessage =>
+      'A change couldn’t be saved because it was changed elsewhere';
+
+  @override
   String get licensesSectionBundled => 'Fonts and bundled libraries';
 
   @override
@@ -1003,6 +1016,19 @@ class AppLocalizationsEnXa extends AppLocalizationsEn {
 
   @override
   String get settingsAboutLicenses => '[Ļîçéñçéš one]';
+
+  @override
+  String settingsAboutPendingChanges(int count) {
+    return '[Þéñðîñĝ çĥåñĝéš: $count one two]';
+  }
+
+  @override
+  String get outboxItemsGoneMessage =>
+      '[Šömé çĥåñĝéš çöûļðñ’ţ bé šåvéð béçåûšé ţĥé îţém ñö ļöñĝéŕ éxîšţš one two three four five six]';
+
+  @override
+  String get outboxConflictMessage =>
+      '[Å çĥåñĝé çöûļðñ’ţ bé šåvéð béçåûšé îţ ŵåš çĥåñĝéð éļšéŵĥéŕé one two three four five]';
 
   @override
   String get licensesSectionBundled =>

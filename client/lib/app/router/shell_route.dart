@@ -8,6 +8,7 @@ import 'package:soundspan/app/router/routes.dart';
 import 'package:soundspan/app/shell/adaptive_shell.dart';
 import 'package:soundspan/app/shell/app_shell.dart';
 import 'package:soundspan/app/shell/local_data_too_new_screen.dart';
+import 'package:soundspan/app/shell/outbox_notice_listener.dart';
 import 'package:soundspan/app/shell/shell_history.dart';
 import 'package:soundspan/core/profile/profile_scope.dart';
 import 'package:soundspan/features/album/album.dart';
@@ -79,31 +80,33 @@ StatefulShellRoute buildShellRoute(
     final canBack = branchBaseOf(state.uri)?.path != state.uri.path;
     return LocalDataTooNewGate(
       child: ProfileScope(
-        child: AppShell(
-          selectedIndex: branch,
-          onDestinationSelected: (index) =>
-              shell.goBranch(index, initialLocation: index == branch),
-          onSearch: (query) => router.go(searchLocation(query)),
-          onSearchChanged: branch == ShellDestination.search.index
-              ? (query) => router.go(searchLocation(query))
-              : null,
-          onBack: canBack
-              ? () {
-                  history.back(branch);
-                  router.pop();
-                }
-              : null,
-          onForward: history.canForward(branch)
-              ? () {
-                  final target = history.forward(branch);
-                  // Pushed onto a detail so the branch's stack survives.
-                  if (target != null) {
-                    DetailNavigation.openLocation(router, target);
+        child: OutboxNoticeListener(
+          child: AppShell(
+            selectedIndex: branch,
+            onDestinationSelected: (index) =>
+                shell.goBranch(index, initialLocation: index == branch),
+            onSearch: (query) => router.go(searchLocation(query)),
+            onSearchChanged: branch == ShellDestination.search.index
+                ? (query) => router.go(searchLocation(query))
+                : null,
+            onBack: canBack
+                ? () {
+                    history.back(branch);
+                    router.pop();
                   }
-                }
-              : null,
-          openPlaylistId: openPlaylistIdOf(state.uri),
-          child: shell,
+                : null,
+            onForward: history.canForward(branch)
+                ? () {
+                    final target = history.forward(branch);
+                    // Pushed onto a detail so the branch's stack survives.
+                    if (target != null) {
+                      DetailNavigation.openLocation(router, target);
+                    }
+                  }
+                : null,
+            openPlaylistId: openPlaylistIdOf(state.uri),
+            child: shell,
+          ),
         ),
       ),
     );

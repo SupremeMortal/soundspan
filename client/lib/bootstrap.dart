@@ -21,6 +21,7 @@ import 'package:soundspan/core/profile/profile_runtime.dart';
 import 'package:soundspan/core/storage/app/app_database.dart';
 import 'package:soundspan/core/storage/app/app_settings_store.dart';
 import 'package:soundspan/core/storage/providers.dart';
+import 'package:soundspan/core/sync/outbox/outbox.dart';
 import 'package:soundspan/platform/capabilities/capabilities.dart';
 import 'package:soundspan/platform/database_opener/database_opener.dart';
 import 'package:soundspan/platform/log_sink/log_sink.dart';
@@ -36,11 +37,12 @@ final AppLogger _log = AppLogger.scope('App');
 typedef PostFirstFrameTask = Future<void> Function(ProviderContainer root);
 
 /// The tasks [bootstrap] starts, in parallel, after the first frame: the
-/// capability refresh and the cache pruning of every profile that becomes
-/// active. Later features append theirs.
+/// capability refresh, the cache pruning and the outbox worker of every
+/// profile that becomes active. Later features append theirs.
 final List<PostFirstFrameTask> postFirstFrameTasks = [
   startCapabilityRefresh,
   startCachePruning,
+  startOutbox,
 ];
 
 /// Starts the app (doc 02, Bootstrap Sequence): error hooks, the decoded-image

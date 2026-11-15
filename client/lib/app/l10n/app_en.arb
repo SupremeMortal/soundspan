@@ -250,6 +250,24 @@
   "@settingsAboutLicenses": {
     "description": "Row in Settings → About that opens the open-source licences screen."
   },
+  "settingsAboutPendingChanges": "Pending changes: {count}",
+  "@settingsAboutPendingChanges": {
+    "description": "Row in Settings → About: how many changes made on this device have not reached the server yet.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "outboxItemsGoneMessage": "Some changes couldn’t be saved because the item no longer exists",
+  "@outboxItemsGoneMessage": {
+    "description": "Snackbar: changes made on this device were discarded because the track or playlist they apply to was deleted on the server."
+  },
+  "outboxConflictMessage": "A change couldn’t be saved because it was changed elsewhere",
+  "@outboxConflictMessage": {
+    "description": "Snackbar: a change made on this device was discarded because the same item was changed on another device first."
+  },
   "licensesSectionBundled": "Fonts and bundled libraries",
   "@licensesSectionBundled": {
     "description": "Section heading on the licences screen: the fonts and native libraries shipped inside the app."

@@ -439,6 +439,24 @@ abstract class AppLocalizations {
   /// **'Licences'**
   String get settingsAboutLicenses;
 
+  /// Row in Settings → About: how many changes made on this device have not reached the server yet.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending changes: {count}'**
+  String settingsAboutPendingChanges(int count);
+
+  /// Snackbar: changes made on this device were discarded because the track or playlist they apply to was deleted on the server.
+  ///
+  /// In en, this message translates to:
+  /// **'Some changes couldn’t be saved because the item no longer exists'**
+  String get outboxItemsGoneMessage;
+
+  /// Snackbar: a change made on this device was discarded because the same item was changed on another device first.
+  ///
+  /// In en, this message translates to:
+  /// **'A change couldn’t be saved because it was changed elsewhere'**
+  String get outboxConflictMessage;
+
   /// Section heading on the licences screen: the fonts and native libraries shipped inside the app.
   ///
   /// In en, this message translates to:

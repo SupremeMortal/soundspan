@@ -179,7 +179,7 @@ Coalescing happens when an op is enqueued, in the same transaction as the insert
 - `offlineDelete` merges into the device's newest pending batch while it holds fewer than 500 ids and no `offlineComplete` of the device follows it, so a removal never moves ahead of a completion. Ids are deduplicated; the merged batch keeps its `batchUuid` and moves to the tail with a new `seq`, so a send already in flight never loses the added ids. Ids beyond 500 go into new batches with new `batchUuid`s.
 - Ops are compared and stored by value; `metadata` holds the JSON form of `TrackMeta`. A row that does not decode is logged at `severe` and deleted when read.
 
-A playlist created offline has a temporary id (`tmp_<uuid>`). When `playlistCreate` succeeds, the worker rewrites the id in later pending operations and in `cache.db` in the same transaction.
+A playlist created offline has a temporary id (`tmp_<uuid>`). When `playlistCreate` succeeds, the worker (`TempIdRewriter`) deletes the create op and rewrites the id in the payload and `entityKey` of every pending operation in one `state.db` transaction, then rewrites the `playlists` row, the `playlist:<id>` list and blob, and the list entries pointing at the playlist in one `cache.db` transaction, and emits `TempIdResolved(tempId, realId)`. The two databases cannot share a transaction, so `state.db` commits first; `cache.db` rows with a `tmp_` id and no pending create are deleted when the worker starts (the cache is disposable).
 
 ### Worker
 
@@ -189,7 +189,7 @@ A playlist created offline has a temporary id (`tmp_<uuid>`). When `playlistCrea
 
 | Result | Action |
 |---|---|
-| 2xx | Delete the op; update the cache from the response |
+| 2xx | Update the cache from the response (`OutboxHandler.onSuccess`), then delete the op |
 | `Offline`, 5xx, `Upstream` | Stop the pass; `nextAttemptAt` = backoff 5 s × 2^attempts, cap 15 min |
 | `RateLimited` | Stop the pass; retry after the given delay |
 | `Unauthenticated` | Stop; ops are kept across re-sign-in to the same `(baseUrl, userId)` |
@@ -197,6 +197,9 @@ A playlist created offline has a temporary id (`tmp_<uuid>`). When `playlistCrea
 | 409 | Drop the op; refetch the entity; snackbar |
 | 400 | Drop the op; log at `severe` (a client bug) |
 
+- The cache is updated before the op is deleted, so an overlay never falls back to the value from before the write between the two steps. An op replaced by coalescing while in flight needs no special case: deleting or recording a failure of a missing `seq` does nothing.
+- Results the table does not list: `Forbidden` is handled as 400, `FeatureDisabled` as 404, `NotSoundspan` as `Offline`; `InvalidResponse` and `Unexpected` (the write reached the server) as 2xx with no response, logged at `severe`. An error that is not an `ApiException` (a client bug) backs off like `Offline` and is logged at `severe`. An op whose type has no handler stops the pass and is kept.
+- Each `opType` has an `OutboxHandler` (`send`, `onSuccess`, `onDropped`) beside the repository it calls, contributed to the `OutboxHandlerRegistry` through a provider. Notices (`OutboxItemsGone(count)`, `OutboxConflict`) are grouped per pass and shown as snackbars by the shell.
 - Optimistic state: repositories overlay pending ops on cached data when reading (a liked track shows liked before the server confirms). Dropping an op removes the overlay, which is the rollback.
 - Plays older than 14 days are dropped unsent: scrobbling services reject old timestamps.
 - `Settings → About` shows the pending count; a non-empty outbox blocks "Remove this server" behind a confirmation.
