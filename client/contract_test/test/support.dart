@@ -183,7 +183,8 @@ final class SchemaMismatchGuard implements HttpClientAdapter {
   }
 }
 
-/// Holds one JWT session in memory.
+/// Holds one JWT session in memory and records every call the transport
+/// makes to it.
 final class InMemoryCredentialProvider implements CredentialProvider {
   /// Starts with [current].
   new(this.current);
@@ -191,11 +192,23 @@ final class InMemoryCredentialProvider implements CredentialProvider {
   @override
   Credentials? current;
 
-  @override
-  Future<void> onTokensRotated(JwtCredentials next) async => current = next;
+  /// Every pair passed to [onTokensRotated], oldest first.
+  final rotations = <JwtCredentials>[];
+
+  /// Every reason passed to [onUnauthenticated], oldest first.
+  final unauthenticatedReasons = <UnauthenticatedReason>[];
 
   @override
-  void onUnauthenticated(UnauthenticatedReason reason) => current = null;
+  Future<void> onTokensRotated(JwtCredentials next) async {
+    rotations.add(next);
+    current = next;
+  }
+
+  @override
+  void onUnauthenticated(UnauthenticatedReason reason) {
+    unauthenticatedReasons.add(reason);
+    current = null;
+  }
 }
 
 /// The `User-Agent` of every contract-suite request.
@@ -217,10 +230,29 @@ SoundspanApi anonymousApi(ContractCredentials credentials) {
   return api;
 }
 
-/// Signs [account] in with its password (and [totp] when it has 2FA) and
-/// returns a guarded API carrying the session in an
-/// [InMemoryCredentialProvider], closed and verified when the test ends.
-Future<SoundspanApi> signedInApi(
+/// A guarded API for [credentials]' server that sends the credential of
+/// [provider], closed and verified when the test ends.
+SoundspanApi credentialedApi(
+  ContractCredentials credentials,
+  CredentialProvider provider,
+) {
+  final guard = SchemaMismatchGuard(platformHttpClientAdapter());
+  final api = SoundspanApi(
+    ApiConfig(baseUrl: credentials.baseUrl, userAgent: _userAgent),
+    credentials: provider,
+    adapter: guard,
+  );
+  addTearDown(() {
+    api.close();
+    guard.verify();
+  });
+  return api;
+}
+
+/// Signs [account] in with its password (and [totp] when it has 2FA)
+/// through a guarded anonymous API and returns the session; fails the test
+/// when the server answers anything else.
+Future<LoginTokenResponse> logIn(
   ContractCredentials credentials,
   ContractAccount account, {
   String? totp,
@@ -237,20 +269,25 @@ Future<SoundspanApi> signedInApi(
   if (login is! LoginTokenResponse) {
     fail('${account.username} did not receive a session: $login');
   }
-  final guard = SchemaMismatchGuard(platformHttpClientAdapter());
-  final api = SoundspanApi(
-    ApiConfig(baseUrl: credentials.baseUrl, userAgent: _userAgent),
-    credentials: InMemoryCredentialProvider(
+  return login;
+}
+
+/// Signs [account] in with its password (and [totp] when it has 2FA) and
+/// returns a guarded API carrying the session in an
+/// [InMemoryCredentialProvider], closed and verified when the test ends.
+Future<SoundspanApi> signedInApi(
+  ContractCredentials credentials,
+  ContractAccount account, {
+  String? totp,
+}) async {
+  final login = await logIn(credentials, account, totp: totp);
+  return credentialedApi(
+    credentials,
+    InMemoryCredentialProvider(
       JwtCredentials(
         accessToken: login.token,
         refreshToken: login.refreshToken,
       ),
     ),
-    adapter: guard,
   );
-  addTearDown(() {
-    api.close();
-    guard.verify();
-  });
-  return api;
 }
