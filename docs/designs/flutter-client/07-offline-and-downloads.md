@@ -50,7 +50,7 @@ Podcast episodes do not use `/api/offline/items` (the unified offline API covers
 | `running → verifying` | Transfer reports complete | See Verification |
 | `verifying → completed` | Size check passes | Atomic rename `.part` → final path; set `sizeBytes`, `completedAt` |
 | `completed → confirmed` | `POST /api/offline/items/complete` succeeds | `serverConfirmed = true` (a flag on the completed row, not a separate status) |
-| `running → paused` | User pause, Wi-Fi-only and not on Wi-Fi, disk full | Pause the task if resumable, else cancel and keep `.part` |
+| `running → paused` | User pause, Wi-Fi-only and not on Wi-Fi, disk full | Cancel the task; the item restarts from byte zero when it runs again (Resume Rule) |
 | `running → failed(retryable)` | Network error, 5xx, 429, 401 | Backoff 5 s × 3^attempts, cap 1 h; 401 refreshes credentials first |
 | `running → failed(permanent)` | 400, 404, 409 | No retry. 404/409 re-resolve the collection once (the server may now say `downloadable: false`) |
 | `completed → missing` | File absent at play time or at the start-up scan | Re-queue |
@@ -74,7 +74,7 @@ DownloadTask(
   updates: Updates.statusAndProgress,
   requiresWiFi: settings.downloadsWifiOnly,
   retries: 0,                                  // The state machine owns retries
-  allowPause: true,
+  allowPause: false,                           // Resume Rule: transfers restart from zero
   metaData: item.itemKey,
 );
 ```
@@ -90,9 +90,9 @@ DownloadTask(
 
 The server contract (`unified-playback-api.md`, P4) is: resume with `Range` and `If-Range: <ETag>`; `206` continues the file; `200` means restart from byte zero.
 
-- The plugin's own pause/resume records the `ETag` and sends `Range` and `If-Range`. Spike S5 verifies both halves against the real server: that a `206` appends, and that a `200` to a ranged request truncates the partial file before writing instead of appending.
-- If S5 shows the plugin appends on `200`, the fallback is to never use plugin resume for items whose first response had no strong `ETag`: those are cancelled and restarted from zero, and only strong-`ETag` items are resumed.
-- The item row stores `etag` from the first response for diagnostics and for the fallback rule.
+- The plugin's own resume sends `Range` without `If-Range` (Spike S5 finding), so it does not follow that contract and is not used.
+- A paused or interrupted transfer is always cancelled and restarted from byte zero: tasks are created with `allowPause: false`, and an item that runs again gets a new transfer of the whole file.
+- The item row stores `etag` from the first response for diagnostics.
 
 ### Verification
 
@@ -204,3 +204,20 @@ A playlist created offline has a temporary id (`tmp_<uuid>`). When `playlistCrea
 ## Android Auto and Offline
 
 The Android Auto browse tree (M2) includes a "Downloads" root backed by `download_collections`, so the car UI works with no network. Artwork there comes from the pinned `art/` directory through a `content://` URI served by a small `FileProvider`.
+
+## Spike S5 finding
+
+A minimal Flutter app created download tasks like the `DownloadTask` sketch above, but with `allowPause: true` (`retries: 0`, `updates: Updates.statusAndProgress`, a `.part` file name, an `Authorization` header). A `dart:io` pass-through proxy inside the test process trickled every response body over about 10 seconds and recorded each request's `Range` and `If-Range` and each response's status, `ETag` and `Content-Range`. Reference bytes were fetched with `dart:io` `HttpClient`, without the plugin. Questions 1 to 3 ran on Linux (`ubuntu-latest`, under Xvfb), where the plugin transfers in a Dart isolate; question 4 ran on an Android emulator (API 34, x86_64, `google_apis`), where it transfers in WorkManager.
+
+| Question | Answer | Evidence |
+|---|---|---|
+| 1. Resume sends `Range` and `If-Range: <ETag>` | **No** | Real server (the contract server and seed), 30-second fixture track from `GET /api/playback/stream/<playbackId>?quality=original&report=0` through the proxy, paused at 49 %. First request: no `Range`; `200`, `ETag: "cc435de536b8dc26cf7208a107349e58"`, `Content-Length: 370783`. Resume request: `Range: bytes=180224-` (the paused offset) and no `If-Range`. |
+| 2. Appends on `206` | Yes | The resume answered `206`, `Content-Range: bytes 180224-370782/370783`, the same `ETag`; the task completed and the file is byte-identical to the reference (370783 bytes, SHA-256 `3bfcb3c5…6c237106`). |
+| 3. Restarts cleanly on `200` to a ranged request | Yes | Local server that answers every request with `200` and a fixed 2 MB body (2097152 bytes) and `Accept-Ranges: bytes`, paused at 43 %. With `ETag: "s5-fixed-body"` and without an `ETag`: the resume sent `Range: bytes=901120-` and no `If-Range`, got `200`, and the finished file is the 2097152-byte body, byte-identical (SHA-256 `018d7874…7673d75db`), not partial-plus-full. |
+| 4. Re-attaches after process death on Android | Yes, 3/3 | Slow 2 MB download (40 s) from the CI host at `10.0.2.2`; the process was killed with `kill -9` (after `adb root`) at 20–21 % and relaunched; the app called `FileDownloader().start()` and `resumeFromBackground()`. On relaunch the plugin's record said `running` and `allTasks` listed `s5-q4`; 14 to 17 seconds after the relaunch WorkManager ran the task again under its original id `s5-q4`, from byte 0 (a new request without `Range`), and it completed with the reference SHA-256 in each run. |
+| 5. Re-attaches after process death on iOS | Not answerable on CI | A simulator does not relaunch an app for background `URLSession` events. The design (background `URLSession`, Start-up reconciliation) stands; it is a human checklist row. |
+
+- The plugin protects a resume in the client instead of with `If-Range`: when the resume answer is `206`, it compares the answer's `ETag` with the one stored at pause and fails the task with "Cannot resume: ETag is not identical, or is weak" when they differ or the stored one is weak. The Android implementation has the same check. The contract of `unified-playback-api.md` P4 is stated in terms of `If-Range`, so the Resume Rule does not rely on this check.
+- On Linux the plugin listens to connectivity through NetworkManager on the system bus. Where NetworkManager is absent (the CI runners), that listener fails asynchronously with `org.freedesktop.DBus.Error.ServiceUnknown` and the plugin does not handle the error; it then keeps its default "connected". Code that creates the plugin on Linux has to expect this error.
+- The plugin's task store on Linux lives under the XDG documents directory, resolved with `xdg-user-dir`.
+- Package versions: Flutter 3.50.0, `background_downloader` 9.6.6.
