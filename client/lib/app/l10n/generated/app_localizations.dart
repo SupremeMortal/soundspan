@@ -1134,6 +1134,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, =1{1 song} other{{count} songs}}'**
   String homePlaylistSongs(int count);
+
+  /// Total running time of an album or playlist under an hour, in a detail page's metadata line, e.g. '45 min'.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes} min'**
+  String detailDurationMinutes(int minutes);
+
+  /// Total running time of an album or playlist from an hour, in a detail page's metadata line, e.g. '1 hr 5 min'.
+  ///
+  /// In en, this message translates to:
+  /// **'{hours} hr {minutes} min'**
+  String detailDurationHours(int hours, int minutes);
+
+  /// Number of songs in an album or playlist, in a detail page's metadata line.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 song} other{{count} songs}}'**
+  String detailSongCount(int count);
+
+  /// Snackbar when an album or playlist page could not be refreshed and the saved copy stays on screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t refresh. Showing saved content.'**
+  String get detailRefreshFailed;
+
+  /// Tooltip and accessibility reason of a track row that cannot be played.
+  ///
+  /// In en, this message translates to:
+  /// **'Not playable'**
+  String get trackNotPlayable;
+
+  /// Type label above the title of an album page.
+  ///
+  /// In en, this message translates to:
+  /// **'Album'**
+  String get albumOverline;
+
+  /// Group header over the tracks of one disc of a multi-disc album.
+  ///
+  /// In en, this message translates to:
+  /// **'Disc {number}'**
+  String albumDisc(int number);
+
+  /// Title of the shelf of the artist's other albums on an album page.
+  ///
+  /// In en, this message translates to:
+  /// **'More by this artist'**
+  String get albumMoreByArtist;
+
+  /// Type label above the title of a playlist page.
+  ///
+  /// In en, this message translates to:
+  /// **'Playlist'**
+  String get playlistOverline;
+
+  /// Metadata on a playlist page: the playlist is visible to other users.
+  ///
+  /// In en, this message translates to:
+  /// **'Public'**
+  String get playlistPublic;
+
+  /// Title of the page listing the tracks the user liked.
+  ///
+  /// In en, this message translates to:
+  /// **'Liked Songs'**
+  String get playlistLikedTitle;
+
+  /// Shown on a playlist page when the playlist has no songs.
+  ///
+  /// In en, this message translates to:
+  /// **'This playlist has no songs yet'**
+  String get playlistEmpty;
 }
 
 class _AppLocalizationsDelegate

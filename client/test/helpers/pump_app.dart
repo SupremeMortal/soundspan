@@ -11,10 +11,12 @@ import 'package:soundspan/core/storage/providers.dart';
 import 'package:soundspan/platform/secrets/secrets.dart';
 import 'package:soundspan/shared/clock.dart';
 import 'package:soundspan/shared/providers/images.dart';
+import 'package:soundspan/shared/providers/tint.dart';
 
 import 'fake_clock.dart';
 import 'fake_reachability.dart';
 import 'fake_repositories.dart';
+import 'fake_tint_extractor.dart';
 import 'in_memory_database_opener.dart';
 import 'in_memory_secret_store.dart';
 import 'placeholder_image_provider.dart';
@@ -43,7 +45,8 @@ extension PumpApp on WidgetTester {
   /// [FakeClock] ([clock], or a new one), the database opener an
   /// [InMemoryDatabaseOpener], reachability a [FakeReachability], the secret
   /// store an [InMemorySecretStore],
-  /// artwork a [PlaceholderImageProvider] of its ref, and the library,
+  /// artwork a [PlaceholderImageProvider] of its ref, backdrop tints a
+  /// [FakeTintExtractor] with no tints, and the library,
   /// playlist, home and search repositories new [FakeRepositories] (read
   /// them back from the returned container); [overrides] are applied after
   /// the defaults and win over them.
@@ -81,6 +84,7 @@ extension PumpApp on WidgetTester {
       artworkImageProvider.overrideWithValue(
         (request) => PlaceholderImageProvider(request.ref),
       ),
+      tintExtractorProvider.overrideWithValue(AsyncData(FakeTintExtractor())),
       ...FakeRepositories().overrides,
     ];
     final container = ProviderContainer(

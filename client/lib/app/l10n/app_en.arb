@@ -803,5 +803,76 @@
         "type": "int"
       }
     }
+  },
+  "detailDurationMinutes": "{minutes} min",
+  "@detailDurationMinutes": {
+    "description": "Total running time of an album or playlist under an hour, in a detail page's metadata line, e.g. '45 min'.",
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "detailDurationHours": "{hours} hr {minutes} min",
+  "@detailDurationHours": {
+    "description": "Total running time of an album or playlist from an hour, in a detail page's metadata line, e.g. '1 hr 5 min'.",
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "detailSongCount": "{count, plural, =1{1 song} other{{count} songs}}",
+  "@detailSongCount": {
+    "description": "Number of songs in an album or playlist, in a detail page's metadata line.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "detailRefreshFailed": "Couldn’t refresh. Showing saved content.",
+  "@detailRefreshFailed": {
+    "description": "Snackbar when an album or playlist page could not be refreshed and the saved copy stays on screen."
+  },
+  "trackNotPlayable": "Not playable",
+  "@trackNotPlayable": {
+    "description": "Tooltip and accessibility reason of a track row that cannot be played."
+  },
+  "albumOverline": "Album",
+  "@albumOverline": {
+    "description": "Type label above the title of an album page."
+  },
+  "albumDisc": "Disc {number}",
+  "@albumDisc": {
+    "description": "Group header over the tracks of one disc of a multi-disc album.",
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "albumMoreByArtist": "More by this artist",
+  "@albumMoreByArtist": {
+    "description": "Title of the shelf of the artist's other albums on an album page."
+  },
+  "playlistOverline": "Playlist",
+  "@playlistOverline": {
+    "description": "Type label above the title of a playlist page."
+  },
+  "playlistPublic": "Public",
+  "@playlistPublic": {
+    "description": "Metadata on a playlist page: the playlist is visible to other users."
+  },
+  "playlistLikedTitle": "Liked Songs",
+  "@playlistLikedTitle": {
+    "description": "Title of the page listing the tracks the user liked."
+  },
+  "playlistEmpty": "This playlist has no songs yet",
+  "@playlistEmpty": {
+    "description": "Shown on a playlist page when the playlist has no songs."
   }
 }

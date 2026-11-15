@@ -67,7 +67,8 @@ class TrackRow extends StatefulWidget {
   /// The track title, in `body`.
   final String title;
 
-  /// The artist line, in `bodySmall` and `contentSecondary`.
+  /// The artist line, in `bodySmall` and `contentSecondary`; empty leaves
+  /// the line out, as album tracks by the album artist do.
   final String artist;
 
   /// The album title shown in the album column.
@@ -108,6 +109,23 @@ class TrackRow extends StatefulWidget {
   /// The edge of the thumbnail artwork.
   static const double thumbnailSize = 44;
 
+  /// The height of a row with a title and an artist line at the ambient
+  /// text scale, for fixed-extent lists: at least [Sizes.trackRow] with a
+  /// thumbnail and [Sizes.albumTrackRow] with an index.
+  static double extentFor(BuildContext context, {required bool withThumbnail}) {
+    final typography = context.typography;
+    final scaler = MediaQuery.textScalerOf(context);
+    double line(TextStyle style) =>
+        scaler.scale(style.fontSize!) * (style.height ?? 1);
+    final content =
+        line(typography.body) + line(typography.bodySmall) + Spacing.x8;
+    return [
+      if (withThumbnail) Sizes.trackRow else Sizes.albumTrackRow,
+      content,
+      if (withThumbnail) thumbnailSize + Spacing.x8,
+    ].reduce((a, b) => a > b ? a : b);
+  }
+
   @override
   State<TrackRow> createState() => _TrackRowState();
 }
@@ -127,7 +145,7 @@ class _TrackRowState extends State<TrackRow> {
 
     final label = [
       widget.title,
-      widget.artist,
+      if (widget.artist.isNotEmpty) widget.artist,
       spokenTrackDuration(l10n, widget.duration),
       ?reason,
     ].join(', ');
@@ -168,14 +186,15 @@ class _TrackRowState extends State<TrackRow> {
             overflow: TextOverflow.ellipsis,
             style: typography.body.copyWith(color: colors.content),
           ),
-          Text(
-            widget.artist,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: typography.bodySmall.copyWith(
-              color: colors.contentSecondary,
+          if (widget.artist.isNotEmpty)
+            Text(
+              widget.artist,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: typography.bodySmall.copyWith(
+                color: colors.contentSecondary,
+              ),
             ),
-          ),
         ],
       ),
       album: widget.showAlbumColumn

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart' show AsyncData;
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -11,11 +12,16 @@ import 'package:soundspan/app/shell/adaptive_shell.dart';
 import 'package:soundspan/core/auth/probe/server_probe.dart';
 import 'package:soundspan/core/profile/profile_providers.dart';
 import 'package:soundspan/core/profile/profile_runtime.dart';
+import 'package:soundspan/features/album/album.dart';
 import 'package:soundspan/features/connect/connect.dart';
 import 'package:soundspan/features/connect/ui/probe_controller.dart';
+import 'package:soundspan/features/playlist/playlist.dart';
+import 'package:soundspan/shared/providers/tint.dart';
 import 'package:soundspan_api/soundspan_api.dart';
 
 import '../../features/connect/connect_harness.dart';
+import '../../helpers/fake_repositories.dart';
+import '../../helpers/fake_tint_extractor.dart';
 import '../../helpers/test_root.dart';
 
 /// The sign-in screen probes a signed-out profile's server: it is found.
@@ -33,6 +39,24 @@ final Override _probeFindsServer = probeControllerProvider.overrideWith(
     ),
   ),
 );
+
+/// Pumps the app with fake repositories and tints, so the album and
+/// playlist screens the routes open read no server.
+extension on WidgetTester {
+  Future<TestRoot> pumpRouterApp({
+    StoredProfile stored = StoredProfile.none,
+    Size size = const Size(390, 844),
+    List<Override> overrides = const [],
+  }) => pumpSoundspanApp(
+    stored: stored,
+    size: size,
+    overrides: [
+      ...overrides,
+      ...FakeRepositories().overrides,
+      tintExtractorProvider.overrideWithValue(AsyncData(FakeTintExtractor())),
+    ],
+  );
+}
 
 void main() {
   String location(TestRoot root) => root.container
@@ -89,7 +113,7 @@ void main() {
   }
 
   testWidgets('no active profile lands on /connect', (tester) async {
-    final root = await tester.pumpSoundspanApp();
+    final root = await tester.pumpRouterApp();
     expect(location(root), '/connect');
     expect(find.byType(AddressScreen), findsOneWidget);
   });
@@ -97,7 +121,7 @@ void main() {
   testWidgets('signed-out profile lands on /connect/sign-in with its id', (
     tester,
   ) async {
-    final root = await tester.pumpSoundspanApp(
+    final root = await tester.pumpRouterApp(
       stored: StoredProfile.signedOut,
       overrides: [_probeFindsServer],
     );
@@ -106,7 +130,7 @@ void main() {
   });
 
   testWidgets('active profile lands on /home', (tester) async {
-    final root = await tester.pumpSoundspanApp(stored: StoredProfile.signedIn);
+    final root = await tester.pumpRouterApp(stored: StoredProfile.signedIn);
     expect(location(root), '/home');
     expect(find.byType(AdaptiveShell), findsOneWidget);
     expect(selectedIndex(tester), ShellDestination.home.index);
@@ -115,7 +139,7 @@ void main() {
   testWidgets('a session sign-out redirects to /connect/sign-in', (
     tester,
   ) async {
-    final root = await tester.pumpSoundspanApp(
+    final root = await tester.pumpRouterApp(
       stored: StoredProfile.signedIn,
       overrides: [_probeFindsServer],
     );
@@ -131,7 +155,7 @@ void main() {
   });
 
   testWidgets('/library redirects to /library/playlists', (tester) async {
-    final root = await tester.pumpSoundspanApp(stored: StoredProfile.signedIn);
+    final root = await tester.pumpRouterApp(stored: StoredProfile.signedIn);
     await go(tester, root, '/library');
     expect(location(root), '/library/playlists');
     expect(selectedIndex(tester), ShellDestination.library.index);
@@ -140,39 +164,39 @@ void main() {
   testWidgets('an unknown library tab redirects to /library/playlists', (
     tester,
   ) async {
-    final root = await tester.pumpSoundspanApp(stored: StoredProfile.signedIn);
+    final root = await tester.pumpRouterApp(stored: StoredProfile.signedIn);
     await go(tester, root, '/library/bogus');
     expect(location(root), '/library/playlists');
   });
 
   testWidgets('/ redirects to /home', (tester) async {
-    final root = await tester.pumpSoundspanApp(stored: StoredProfile.signedIn);
+    final root = await tester.pumpRouterApp(stored: StoredProfile.signedIn);
     await go(tester, root, '/library/playlists');
     await go(tester, root, '/');
     expect(location(root), '/home');
   });
 
   testWidgets('each branch keeps its own stack', (tester) async {
-    final root = await tester.pumpSoundspanApp(stored: StoredProfile.signedIn);
+    final root = await tester.pumpRouterApp(stored: StoredProfile.signedIn);
     await go(tester, root, '/library/playlists');
     DetailNavigation.openAlbum(screen(tester), 'a1');
     await tester.pumpAndSettle();
     expect(location(root), '/library/playlists/album/a1');
-    expect(find.text('Album'), findsOneWidget);
+    expect(find.byType(AlbumScreen), findsOneWidget);
 
     await tester.tap(destination('Home'));
     await tester.pumpAndSettle();
     expect(location(root), '/home');
-    expect(find.text('Album'), findsNothing);
+    expect(find.byType(AlbumScreen), findsNothing);
 
     await tester.tap(destination('Library'));
     await tester.pumpAndSettle();
     expect(location(root), '/library/playlists/album/a1');
-    expect(find.text('Album'), findsOneWidget);
+    expect(find.byType(AlbumScreen), findsOneWidget);
   });
 
   testWidgets('resizing the window keeps the branch stack', (tester) async {
-    final root = await tester.pumpSoundspanApp(
+    final root = await tester.pumpRouterApp(
       stored: StoredProfile.signedIn,
       size: const Size(1440, 900),
     );
@@ -183,26 +207,26 @@ void main() {
     tester.view.physicalSize = const Size(390, 844);
     await tester.pumpAndSettle();
     expect(find.byType(NavigationBar), findsOneWidget);
-    expect(find.text('Album'), findsOneWidget);
+    expect(find.byType(AlbumScreen), findsOneWidget);
     expect(location(root), '/library/playlists/album/a5');
   });
 
   testWidgets('an album opened from Search keeps Search selected', (
     tester,
   ) async {
-    final root = await tester.pumpSoundspanApp(stored: StoredProfile.signedIn);
+    final root = await tester.pumpRouterApp(stored: StoredProfile.signedIn);
     await go(tester, root, '/search?q=blue');
     DetailNavigation.openAlbum(screen(tester), 'a2');
     await tester.pumpAndSettle();
     expect(location(root), '/search/album/a2?q=blue');
     expect(selectedIndex(tester), ShellDestination.search.index);
-    expect(find.text('Album'), findsOneWidget);
+    expect(find.byType(AlbumScreen), findsOneWidget);
   });
 
   testWidgets('artists and playlists open inside the branch too', (
     tester,
   ) async {
-    final root = await tester.pumpSoundspanApp(stored: StoredProfile.signedIn);
+    final root = await tester.pumpRouterApp(stored: StoredProfile.signedIn);
     DetailNavigation.openArtist(screen(tester), 'r1');
     await tester.pumpAndSettle();
     expect(location(root), '/home/artist/r1');
@@ -210,11 +234,11 @@ void main() {
     DetailNavigation.openPlaylist(screen(tester), 'liked');
     await tester.pumpAndSettle();
     expect(location(root), '/home/playlist/liked');
-    expect(find.text('Playlist'), findsOneWidget);
+    expect(find.byType(PlaylistScreen), findsOneWidget);
   });
 
   testWidgets('/album/42 redirects into the selected branch', (tester) async {
-    final root = await tester.pumpSoundspanApp(stored: StoredProfile.signedIn);
+    final root = await tester.pumpRouterApp(stored: StoredProfile.signedIn);
     await go(tester, root, '/podcasts');
     await go(tester, root, '/album/42');
     expect(location(root), '/podcasts/album/42');
@@ -224,7 +248,7 @@ void main() {
   testWidgets('/album/42 goes to Home before any branch is shown', (
     tester,
   ) async {
-    final root = await tester.pumpSoundspanApp(stored: StoredProfile.signedIn);
+    final root = await tester.pumpRouterApp(stored: StoredProfile.signedIn);
     await go(tester, root, '/album/42');
     expect(location(root), '/home/album/42');
   });
@@ -232,7 +256,7 @@ void main() {
   testWidgets('tapping the selected destination pops to its root', (
     tester,
   ) async {
-    final root = await tester.pumpSoundspanApp(stored: StoredProfile.signedIn);
+    final root = await tester.pumpRouterApp(stored: StoredProfile.signedIn);
     DetailNavigation.openAlbum(screen(tester), 'a3');
     await tester.pumpAndSettle();
     expect(location(root), '/home/album/a3');
@@ -240,11 +264,11 @@ void main() {
     await tester.tap(destination('Home'));
     await tester.pumpAndSettle();
     expect(location(root), '/home');
-    expect(find.text('Album'), findsNothing);
+    expect(find.byType(AlbumScreen), findsNothing);
   });
 
   testWidgets('a detail opened from a detail stacks', (tester) async {
-    final root = await tester.pumpSoundspanApp(stored: StoredProfile.signedIn);
+    final root = await tester.pumpRouterApp(stored: StoredProfile.signedIn);
     await go(tester, root, '/library/playlists');
     DetailNavigation.openAlbum(screen(tester), 'a1');
     await tester.pumpAndSettle();
@@ -270,7 +294,7 @@ void main() {
   });
 
   testWidgets('a stacked branch survives a branch switch', (tester) async {
-    final root = await tester.pumpSoundspanApp(stored: StoredProfile.signedIn);
+    final root = await tester.pumpRouterApp(stored: StoredProfile.signedIn);
     await go(tester, root, '/search?q=blue');
     DetailNavigation.openAlbum(screen(tester), 'a1');
     await tester.pumpAndSettle();
@@ -294,7 +318,7 @@ void main() {
 
   testWidgets('tapping the selected destination pops a stacked branch to its '
       'root', (tester) async {
-    final root = await tester.pumpSoundspanApp(stored: StoredProfile.signedIn);
+    final root = await tester.pumpRouterApp(stored: StoredProfile.signedIn);
     DetailNavigation.openAlbum(screen(tester), 'a1');
     await tester.pumpAndSettle();
     DetailNavigation.openArtist(screen(tester), 'r1');
@@ -306,14 +330,14 @@ void main() {
     await tester.pumpAndSettle();
     expect(location(root), '/home');
     expect(visibleScreen(tester), 'Home');
-    expect(find.text('Album'), findsNothing);
+    expect(find.byType(AlbumScreen), findsNothing);
     expect(find.text('Artist'), findsNothing);
-    expect(find.text('Playlist'), findsNothing);
+    expect(find.byType(PlaylistScreen), findsNothing);
   });
 
   testWidgets('the title follows the top detail after Back', (tester) async {
     final titles = recordTitles(tester);
-    final root = await tester.pumpSoundspanApp(stored: StoredProfile.signedIn);
+    final root = await tester.pumpRouterApp(stored: StoredProfile.signedIn);
     await go(tester, root, '/library/songs');
     DetailNavigation.openAlbum(screen(tester), 'a1');
     await tester.pumpAndSettle();
@@ -330,7 +354,7 @@ void main() {
   testWidgets('/album/42 pushes onto a branch that shows a detail', (
     tester,
   ) async {
-    final root = await tester.pumpSoundspanApp(stored: StoredProfile.signedIn);
+    final root = await tester.pumpRouterApp(stored: StoredProfile.signedIn);
     DetailNavigation.openArtist(screen(tester), 'r1');
     await tester.pumpAndSettle();
     DetailNavigation.openLocation(
@@ -345,14 +369,14 @@ void main() {
   });
 
   testWidgets('/connect is reachable with an active profile', (tester) async {
-    final root = await tester.pumpSoundspanApp(stored: StoredProfile.signedIn);
+    final root = await tester.pumpRouterApp(stored: StoredProfile.signedIn);
     await go(tester, root, '/connect');
     expect(location(root), '/connect');
     expect(find.byType(AddressScreen), findsOneWidget);
   });
 
   testWidgets('settings opens on the root navigator', (tester) async {
-    final root = await tester.pumpSoundspanApp(stored: StoredProfile.signedIn);
+    final root = await tester.pumpRouterApp(stored: StoredProfile.signedIn);
     await go(tester, root, '/settings/appearance');
     expect(location(root), '/settings/appearance');
     expect(find.text('Appearance'), findsOneWidget);
@@ -378,7 +402,7 @@ void main() {
         null,
       ),
     );
-    final root = await tester.pumpSoundspanApp(stored: StoredProfile.signedIn);
+    final root = await tester.pumpRouterApp(stored: StoredProfile.signedIn);
     expect(titles.last, 'Home · soundspan');
 
     await go(tester, root, '/library/songs');
@@ -390,7 +414,7 @@ void main() {
   });
 
   testWidgets('the guards follow a profile switch to none', (tester) async {
-    final root = await tester.pumpSoundspanApp(stored: StoredProfile.signedIn);
+    final root = await tester.pumpRouterApp(stored: StoredProfile.signedIn);
     await tester.runAsync(
       () => root.container.read(profileRuntimeProvider).switchTo(null),
     );

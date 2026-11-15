@@ -182,6 +182,23 @@ class CacheStore {
         );
   }
 
+  /// The blob [key] as stored now, decoded by [decode]; null when it is
+  /// missing or fails to decode.
+  Future<CacheEntry<T>?> readBlob<T>(
+    String key,
+    T Function(Object? json) decode,
+  ) async {
+    final row = await (_db.select(
+      _db.blobs,
+    )..where((b) => b.key.equals(key))).getSingleOrNull();
+    if (row == null) return null;
+    try {
+      return (value: decode(jsonDecode(row.json)), fetchedAt: row.fetchedAt);
+    } on Object {
+      return null;
+    }
+  }
+
   /// The blob [key] decoded by [decode], or null.
   ///
   /// A blob that fails to decode is a miss: its row is deleted and null is

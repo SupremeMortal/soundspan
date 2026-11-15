@@ -628,6 +628,56 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String detailDurationMinutes(int minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String detailDurationHours(int hours, int minutes) {
+    return '$hours hr $minutes min';
+  }
+
+  @override
+  String detailSongCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count songs',
+      one: '1 song',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get detailRefreshFailed => 'Couldn’t refresh. Showing saved content.';
+
+  @override
+  String get trackNotPlayable => 'Not playable';
+
+  @override
+  String get albumOverline => 'Album';
+
+  @override
+  String albumDisc(int number) {
+    return 'Disc $number';
+  }
+
+  @override
+  String get albumMoreByArtist => 'More by this artist';
+
+  @override
+  String get playlistOverline => 'Playlist';
+
+  @override
+  String get playlistPublic => 'Public';
+
+  @override
+  String get playlistLikedTitle => 'Liked Songs';
+
+  @override
+  String get playlistEmpty => 'This playlist has no songs yet';
 }
 
 /// The translations for English (`en_XA`).
@@ -1268,4 +1318,55 @@ class AppLocalizationsEnXa extends AppLocalizationsEn {
     );
     return '[$_temp0]';
   }
+
+  @override
+  String detailDurationMinutes(int minutes) {
+    return '[$minutes mîñ one]';
+  }
+
+  @override
+  String detailDurationHours(int hours, int minutes) {
+    return '[$hours ĥŕ $minutes mîñ one]';
+  }
+
+  @override
+  String detailSongCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count šöñĝš one',
+      one: '1 šöñĝ one',
+    );
+    return '[$_temp0]';
+  }
+
+  @override
+  String get detailRefreshFailed =>
+      '[Çöûļðñ’ţ ŕéfŕéšĥ. Šĥöŵîñĝ šåvéð çöñţéñţ. one two three four]';
+
+  @override
+  String get trackNotPlayable => '[Ñöţ þļåýåbļé one two]';
+
+  @override
+  String get albumOverline => '[Åļbûm one]';
+
+  @override
+  String albumDisc(int number) {
+    return '[Ðîšç $number one]';
+  }
+
+  @override
+  String get albumMoreByArtist => '[Möŕé bý ţĥîš åŕţîšţ one two]';
+
+  @override
+  String get playlistOverline => '[Þļåýļîšţ one]';
+
+  @override
+  String get playlistPublic => '[Þûbļîç one]';
+
+  @override
+  String get playlistLikedTitle => '[Ļîķéð Šöñĝš one two]';
+
+  @override
+  String get playlistEmpty => '[Ţĥîš þļåýļîšţ ĥåš ñö šöñĝš ýéţ one two three]';
 }

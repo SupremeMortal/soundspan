@@ -803,5 +803,76 @@
         "type": "int"
       }
     }
+  },
+  "detailDurationMinutes": "[{minutes} mîñ one]",
+  "@detailDurationMinutes": {
+    "description": "Total running time of an album or playlist under an hour, in a detail page's metadata line, e.g. '45 min'.",
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "detailDurationHours": "[{hours} ĥŕ {minutes} mîñ one]",
+  "@detailDurationHours": {
+    "description": "Total running time of an album or playlist from an hour, in a detail page's metadata line, e.g. '1 hr 5 min'.",
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "detailSongCount": "[{count, plural, =1{1 šöñĝ one} other{{count} šöñĝš one}}]",
+  "@detailSongCount": {
+    "description": "Number of songs in an album or playlist, in a detail page's metadata line.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "detailRefreshFailed": "[Çöûļðñ’ţ ŕéfŕéšĥ. Šĥöŵîñĝ šåvéð çöñţéñţ. one two three four]",
+  "@detailRefreshFailed": {
+    "description": "Snackbar when an album or playlist page could not be refreshed and the saved copy stays on screen."
+  },
+  "trackNotPlayable": "[Ñöţ þļåýåbļé one two]",
+  "@trackNotPlayable": {
+    "description": "Tooltip and accessibility reason of a track row that cannot be played."
+  },
+  "albumOverline": "[Åļbûm one]",
+  "@albumOverline": {
+    "description": "Type label above the title of an album page."
+  },
+  "albumDisc": "[Ðîšç {number} one]",
+  "@albumDisc": {
+    "description": "Group header over the tracks of one disc of a multi-disc album.",
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "albumMoreByArtist": "[Möŕé bý ţĥîš åŕţîšţ one two]",
+  "@albumMoreByArtist": {
+    "description": "Title of the shelf of the artist's other albums on an album page."
+  },
+  "playlistOverline": "[Þļåýļîšţ one]",
+  "@playlistOverline": {
+    "description": "Type label above the title of a playlist page."
+  },
+  "playlistPublic": "[Þûbļîç one]",
+  "@playlistPublic": {
+    "description": "Metadata on a playlist page: the playlist is visible to other users."
+  },
+  "playlistLikedTitle": "[Ļîķéð Šöñĝš one two]",
+  "@playlistLikedTitle": {
+    "description": "Title of the page listing the tracks the user liked."
+  },
+  "playlistEmpty": "[Ţĥîš þļåýļîšţ ĥåš ñö šöñĝš ýéţ one two three]",
+  "@playlistEmpty": {
+    "description": "Shown on a playlist page when the playlist has no songs."
   }
 }

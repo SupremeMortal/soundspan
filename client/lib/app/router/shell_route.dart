@@ -10,8 +10,10 @@ import 'package:soundspan/app/shell/app_shell.dart';
 import 'package:soundspan/app/shell/local_data_too_new_screen.dart';
 import 'package:soundspan/app/shell/shell_history.dart';
 import 'package:soundspan/core/profile/profile_scope.dart';
+import 'package:soundspan/features/album/album.dart';
 import 'package:soundspan/features/home/home.dart';
 import 'package:soundspan/features/library/library.dart';
+import 'package:soundspan/features/playlist/playlist.dart';
 
 /// The detail routes, attached as children of every branch root so a detail
 /// opens inside the branch it was opened from.
@@ -19,8 +21,16 @@ List<RouteBase> detailRoutes() => [
   for (final kind in DetailKind.values)
     GoRoute(
       path: '${kind.name}/:${kind.parameter}',
-      builder: (context, _) =>
-          PlaceholderScreen(kind.title(AppLocalizations.of(context))),
+      builder: (context, state) {
+        final id = state.pathParameters[kind.parameter]!;
+        return switch (kind) {
+          DetailKind.album => AlbumScreen(albumId: id),
+          DetailKind.playlist => PlaylistScreen(playlistId: id),
+          DetailKind.artist => PlaceholderScreen(
+            kind.title(AppLocalizations.of(context)),
+          ),
+        };
+      },
     ),
 ];
 
