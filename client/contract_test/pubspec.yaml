@@ -1,0 +1,16 @@
+name: soundspan_contract_test
+description: Contract suite for the soundspan client against a real soundspan server.
+publish_to: none
+version: 0.1.0
+
+environment:
+  sdk: ^3.14.0
+
+dependencies:
+  soundspan_api:
+    path: ../packages/soundspan_api
+
+dev_dependencies:
+  dio: ^5.9.0
+  test: ^1.26.0
+  very_good_analysis: ^11.0.0

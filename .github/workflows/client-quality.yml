@@ -30,6 +30,7 @@ jobs:
       client: ${{ steps.diff.outputs.client }}
       apple: ${{ steps.diff.outputs.apple }}
       api_surface: ${{ steps.diff.outputs.api_surface }}
+      contract: ${{ steps.diff.outputs.contract }}
       web_storage: ${{ steps.diff.outputs.web_storage }}
       desktop: ${{ steps.diff.outputs.desktop }}
       release_build: ${{ steps.diff.outputs.release_build }}
@@ -54,6 +55,7 @@ jobs:
               echo "client=true"
               echo "apple=true"
               echo "api_surface=true"
+              echo "contract=true"
               echo "web_storage=true"
               echo "desktop=true"
               echo "release_build=true"
@@ -72,6 +74,7 @@ jobs:
             echo "client=$(has '^(client/|\.github/workflows/client-[^/]*\.yml$|\.github/actions/client-flutter/)')"
             echo "apple=$(has '^(client/ios/|client/macos/|client/pubspec\.lock$|client/lib/platform/|\.github/workflows/client-quality\.yml$|\.github/actions/client-flutter/)')"
             echo "api_surface=$(has '^(client/packages/soundspan_api/|client/tool/specs/|client/tool/spec_compat\.dart$|backend/src/routes/|backend/src/openapi/|\.github/workflows/client-quality\.yml$)')"
+            echo "contract=$(has '^(client/packages/soundspan_api/|client/tool/specs/|client/tool/spec_compat\.dart$|client/contract_test/|backend/src/routes/|backend/src/openapi/|\.github/workflows/client-quality\.yml$)')"
             echo "web_storage=$(has '^(client/lib/platform/|client/web/|client/integration_test/web/|client/pubspec\.lock$|\.github/workflows/client-quality\.yml$)')"
             echo "desktop=$(has '^(client/linux/|client/windows/|client/lib/platform/desktop_shell/|client/lib/app/shell/window_state_controller\.dart$|client/integration_test/desktop/|client/tool/ci/|\.github/workflows/client-quality\.yml$)')"
             echo "release_build=$(has '^(\.github/workflows/client-(build|release)\.yml$|client/tool/release/|client/pubspec\.(yaml|lock)$|client/config/|client/(android|ios|linux|macos|windows|web)/)')"
@@ -134,6 +137,10 @@ jobs:
         working-directory: client/packages/soundspan_api
         run: dart analyze --fatal-infos
 
+      - name: Analyze contract_test
+        working-directory: client/contract_test
+        run: dart analyze --fatal-infos
+
   client-test:
     name: client-test
     needs: changes
@@ -154,6 +161,10 @@ jobs:
       - name: Test client with coverage
         working-directory: client
         run: flutter test --coverage --exclude-tags golden,contract,engine
+
+      - name: Test contract_test without a server
+        working-directory: client/contract_test
+        run: dart test --exclude-tags contract,contract-destructive
 
       - name: Coverage floor
         working-directory: client
@@ -202,6 +213,67 @@ jobs:
       - name: Spec is compatible with minServer
         working-directory: client
         run: dart run tool/spec_compat.dart
+
+  client-contract:
+    name: client-contract
+    needs: changes
+    if: needs.changes.outputs.contract == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: client/contract_test
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Flutter
+        uses: ./.github/actions/client-flutter
+
+      - name: Setup Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+
+      - name: Install ffmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ffmpeg
+
+      - name: Generate the fixture library
+        run: fixtures/generate.sh
+
+      - name: Start the contract server
+        run: docker compose -f compose.yaml up -d --build --wait
+
+      - name: Seed the contract server
+        run: node seed.ts
+
+      - name: Contract tests
+        run: dart test --tags contract
+
+      - name: Destructive contract tests
+        # Exit code 79 means no test matched: an empty selection passes.
+        run: |
+          status=0
+          dart test --tags contract-destructive || status=$?
+          if [[ "$status" -ne 0 && "$status" -ne 79 ]]; then exit "$status"; fi
+
+      - name: Collect server logs
+        if: failure()
+        run: docker compose -f compose.yaml logs --no-color > compose-logs.txt 2>&1 || true
+
+      - name: Upload server logs
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: client-contract-logs
+          path: client/contract_test/compose-logs.txt
+          if-no-files-found: warn
+
+      - name: Tear down the contract server
+        if: always()
+        run: docker compose -f compose.yaml down -v --remove-orphans
 
   client-golden:
     name: client-golden

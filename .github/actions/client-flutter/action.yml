@@ -2,8 +2,8 @@ name: Client Flutter setup
 description: >-
   Installs the Linux build packages (on Linux) and the Flutter release pinned
   in client/.fvmrc, caches Flutter and pub
-  on client/.fvmrc and the pubspec.lock files, and resolves the client's and
-  the soundspan_api package's dependencies.
+  on client/.fvmrc and the pubspec.lock files, and resolves the client's,
+  the soundspan_api package's and the contract suite's dependencies.
 
 runs:
   using: composite
@@ -32,7 +32,7 @@ runs:
         cache: true
         cache-key: flutter-:os:-:channel:-:version:-:arch:-${{ hashFiles('client/.fvmrc') }}
         pub-cache: true
-        pub-cache-key: flutter-pub-:os:-:channel:-:version:-:arch:-${{ hashFiles('client/.fvmrc', 'client/pubspec.lock', 'client/packages/soundspan_api/pubspec.lock') }}
+        pub-cache-key: flutter-pub-:os:-:channel:-:version:-:arch:-${{ hashFiles('client/.fvmrc', 'client/pubspec.lock', 'client/packages/soundspan_api/pubspec.lock', 'client/contract_test/pubspec.lock') }}
 
     - name: Resolve client dependencies
       shell: bash
@@ -42,4 +42,9 @@ runs:
     - name: Resolve soundspan_api dependencies
       shell: bash
       working-directory: client/packages/soundspan_api
+      run: dart pub get
+
+    - name: Resolve contract_test dependencies
+      shell: bash
+      working-directory: client/contract_test
       run: dart pub get

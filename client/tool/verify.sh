@@ -15,8 +15,10 @@ dart run tool/license_audit.dart
 dart run tool/gen_icons.dart --check
 dart run tool/spec_compat.dart
 (cd packages/soundspan_api && dart analyze --fatal-infos)
+(cd contract_test && dart analyze --fatal-infos)
 
 echo "== client-test"
 (cd packages/soundspan_api && dart test --coverage-path=coverage/lcov.info)
 flutter test --coverage --exclude-tags golden,contract,engine
+(cd contract_test && dart test --exclude-tags contract,contract-destructive)
 dart run tool/coverage_floor.dart
