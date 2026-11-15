@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 
+import 'dart:async';
+
+import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:soundspan/app/l10n/generated/app_localizations.dart';
 import 'package:soundspan/app/shell/avatar_menu.dart';
@@ -9,8 +12,10 @@ import 'package:soundspan/app/shell/window_class.dart';
 /// the visible one.
 ///
 /// A route that is covered by another in its navigator, or that sits in a
-/// shell branch that is not selected, leaves the title alone.
-class RouteTitle extends StatelessWidget {
+/// shell branch that is not selected, leaves the title alone. The widget
+/// tree below keeps its shape either way, so the state of [child] survives a
+/// dialog, sheet or popup opening over the route.
+class RouteTitle extends StatefulWidget {
   /// Titles the window with [screen] around [child].
   const new({required this.screen, required this.child, super.key});
 
@@ -21,16 +26,33 @@ class RouteTitle extends StatelessWidget {
   final Widget child;
 
   @override
+  State<RouteTitle> createState() => _RouteTitleState();
+}
+
+class _RouteTitleState extends State<RouteTitle> {
+  /// The description this route last applied while visible, or null while
+  /// it is hidden, so the title is set again when it becomes visible.
+  ApplicationSwitcherDescription? _applied;
+
+  @override
   Widget build(BuildContext context) {
     final visible =
         TickerMode.valuesOf(context).enabled &&
         (ModalRoute.of(context)?.isCurrent ?? true);
-    if (!visible) return child;
-    return Title(
-      title: AppLocalizations.of(context).windowTitle(screen),
-      color: Theme.of(context).colorScheme.surface,
-      child: child,
+    if (!visible) {
+      _applied = null;
+      return widget.child;
+    }
+    final description = ApplicationSwitcherDescription(
+      label: AppLocalizations.of(context).windowTitle(widget.screen),
+      primaryColor: Theme.of(context).colorScheme.surface.toARGB32(),
     );
+    if (_applied?.label != description.label ||
+        _applied?.primaryColor != description.primaryColor) {
+      _applied = description;
+      unawaited(SystemChrome.setApplicationSwitcherDescription(description));
+    }
+    return widget.child;
   }
 }
 
