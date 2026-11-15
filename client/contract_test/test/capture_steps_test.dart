@@ -45,4 +45,12 @@ void main() {
     final names = captureSteps.map((step) => step.fileName);
     expect(names, containsAll(['login.json', 'login.requires2FA.json']));
   });
+
+  test('the device-link key is verified before it revokes itself', () {
+    final names = captureSteps.map((step) => step.fileName).toList();
+    final verify = names.indexOf('verifyDeviceLink.json');
+    final revoke = names.indexOf('revokeCurrentApiKey.json');
+    expect(verify, isNonNegative, reason: 'verifyDeviceLink is not captured');
+    expect(revoke, greaterThan(verify));
+  });
 }

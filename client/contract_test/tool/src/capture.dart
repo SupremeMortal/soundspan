@@ -148,6 +148,10 @@ final class CaptureContext {
     );
   }
 
+  /// A connection that sends [apiKey] as `X-API-Key`.
+  Dio apiKeySession(String apiKey) =>
+      _open(_FixedCredentials(ApiKeyCredentials(apiKey: apiKey)));
+
   /// Decodes the JSON body of [response].
   Object? decode(Response<String> response) => jsonDecode(response.data ?? '');
 

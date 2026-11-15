@@ -66,6 +66,27 @@ final List<CaptureStep> captureSteps = [
   ),
   CaptureStep('getCurrentUser', (c) => c.listener.get('/auth/me')),
   CaptureStep('listApiKeys', (c) => c.listener.get('/api-keys')),
+  // A key linked from a code the listener's session generates
+  // (`POST /device-link/generate` is not a client operation), revoked with
+  // itself so the capture leaves no key behind.
+  CaptureStep('verifyDeviceLink', (c) async {
+    final generated = await c.listener.post<String>('/device-link/generate');
+    final response = await c.anonymous.post<String>(
+      '/device-link/verify',
+      data: {
+        'code': (c.decode(generated)! as Map<String, Object?>)['code'],
+        'deviceName': 'Captured fixtures (soundspan Linux)',
+      },
+    );
+    c.values['apiKey'] =
+        (c.decode(response)! as Map<String, Object?>)['apiKey'];
+    return response;
+  }),
+  CaptureStep('revokeCurrentApiKey', (c) {
+    final apiKey = c.values['apiKey'];
+    if (apiKey is! String) throw StateError('verifyDeviceLink linked no key');
+    return c.apiKeySession(apiKey).delete('/api-keys/current');
+  }),
   CaptureStep('getSettings', (c) async {
     final response = await c.listener.get<String>('/settings');
     c.values['settings'] = c.decode(response);
