@@ -27,3 +27,16 @@ List<Locale> appLocalesFor(String channel) => [
 final Provider<List<Locale>> appLocalesProvider = Provider<List<Locale>>(
   (ref) => appLocalesFor(ref.watch(buildChannelProvider)),
 );
+
+/// The app's localization delegates: the generated [AppLocalizations]
+/// messages followed by `material_ui`'s Material, Cupertino and Widgets
+/// localizations, whose `MaterialLocalizations` type is the one
+/// `material_ui` widgets look up.
+///
+/// The generated `AppLocalizations.localizationsDelegates` holds the
+/// `flutter_localizations` delegates instead, which `material_ui` widgets do
+/// not find for a language other than English.
+const List<LocalizationsDelegate<Object?>> appLocalizationsDelegates = [
+  AppLocalizations.delegate,
+  ...GlobalMaterialLocalizations.delegates,
+];

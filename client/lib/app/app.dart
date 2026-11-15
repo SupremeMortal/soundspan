@@ -61,7 +61,7 @@ class SoundspanApp extends ConsumerWidget {
       builder: (context, child) =>
           VolatileStorageNotice(child: child ?? const SizedBox.shrink()),
       onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      localizationsDelegates: appLocalizationsDelegates,
       supportedLocales: ref.watch(appLocalesProvider),
       locale: ref.watch(localeSettingProvider).value,
       theme: SoundspanTheme.light,

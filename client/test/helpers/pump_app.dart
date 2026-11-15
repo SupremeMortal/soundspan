@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:soundspan/app/l10n/app_locales.dart';
 import 'package:soundspan/app/l10n/generated/app_localizations.dart';
 import 'package:soundspan/app/theme/theme.dart';
 import 'package:soundspan/core/connectivity/reachability.dart';
@@ -110,10 +111,10 @@ extension PumpApp on WidgetTester {
           themeMode: theme,
           locale: locale,
           localizationsDelegates: appHasLocale
-              ? AppLocalizations.localizationsDelegates
+              ? appLocalizationsDelegates
               : [
                   const _EnglishMessagesDelegate(),
-                  ...GlobalMaterialLocalizations.delegates,
+                  ...appLocalizationsDelegates,
                 ],
           supportedLocales: [
             ...AppLocalizations.supportedLocales,

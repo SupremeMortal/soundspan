@@ -3,6 +3,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:soundspan/app/app.dart';
+import 'package:soundspan/app/l10n/app_locales.dart';
 import 'package:soundspan/app/l10n/generated/app_localizations.dart';
 import 'package:soundspan/core/storage/app/app_settings_store.dart';
 import 'package:soundspan/core/storage/providers.dart';
@@ -18,6 +19,18 @@ void main() {
     final context = tester.element(find.byType(AddressScreen));
     expect(app.onGenerateTitle!(context), 'soundspan');
     expect(AppLocalizations.of(context).appTitle, 'soundspan');
+  });
+
+  testWidgets('uses the shared app localization delegates', (tester) async {
+    await tester.pumpSoundspanApp();
+    expect(
+      tester
+          .widget<MaterialApp>(find.byType(MaterialApp))
+          .localizationsDelegates,
+      appLocalizationsDelegates,
+    );
+    final context = tester.element(find.byType(AddressScreen));
+    expect(MaterialLocalizations.of(context).backButtonTooltip, 'Back');
   });
 
   testWidgets('follows the stored theme mode', (tester) async {

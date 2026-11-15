@@ -107,6 +107,39 @@ void main() {
     );
   }
 
+  group('in a language other than English', () {
+    for (final size in _sizes) {
+      testWidgets('the shell at ${size.width.toInt()} in ar builds without '
+          'exceptions and NavigationRail finds MaterialLocalizations', (
+        tester,
+      ) async {
+        await tester.pumpApp(
+          _shell(),
+          size: size,
+          locale: const Locale('ar'),
+          overrides: _overrides,
+        );
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        final context = tester.element(find.byType(AdaptiveShell));
+        expect(Localizations.localeOf(context), const Locale('ar'));
+        expect(Directionality.of(context), TextDirection.rtl);
+        // The app's messages fall back to English.
+        expect(AppLocalizations.of(context).navHome, 'Home');
+        final materialLocalizations = MaterialLocalizations.of(context);
+        // material_ui's own Arabic localizations, not the English default.
+        expect(
+          materialLocalizations.backButtonTooltip,
+          isNot(const DefaultMaterialLocalizations().backButtonTooltip),
+        );
+        if (find.byType(NavigationRail).evaluate().isNotEmpty) {
+          final rail = tester.element(find.byType(NavigationRail));
+          expect(MaterialLocalizations.of(rail), same(materialLocalizations));
+        }
+      });
+    }
+  });
+
   group('in RTL', () {
     testWidgets('the navigation rail is on the right', (tester) async {
       await tester.pumpApp(
