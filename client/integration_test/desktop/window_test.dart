@@ -81,6 +81,10 @@ void main() {
       const wanted = WindowBounds(left: 60, top: 50, width: 820, height: 640);
       final first = newController();
       await tester.runAsync(first.start);
+      // start() restores bounds itself. A second request issued while that
+      // one is half applied measures no decorations and sizes the content,
+      // not the frame, so let the restore land first.
+      await settleWindow(tester);
       await tester.runAsync(() => shell.setBounds(wanted));
       await settleWindow(tester);
       await tester.runAsync(first.save);
