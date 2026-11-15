@@ -9,10 +9,12 @@ import 'package:soundspan/app/theme/theme.dart';
 import 'package:soundspan/core/storage/providers.dart';
 import 'package:soundspan/platform/secrets/secrets.dart';
 import 'package:soundspan/shared/clock.dart';
+import 'package:soundspan/shared/providers/images.dart';
 
 import 'fake_clock.dart';
 import 'in_memory_database_opener.dart';
 import 'in_memory_secret_store.dart';
+import 'placeholder_image_provider.dart';
 
 /// Logical sizes for the three window classes.
 abstract final class TestSizes {
@@ -36,9 +38,9 @@ extension PumpApp on WidgetTester {
   /// or light, [highContrast] the high-contrast variant. The surface and the
   /// platform values are reset when the test ends. The clock is a
   /// [FakeClock] ([clock], or a new one), the database opener an
-  /// [InMemoryDatabaseOpener] and the secret store an [InMemorySecretStore];
-  /// [overrides] are applied after the defaults and
-  /// win over them.
+  /// [InMemoryDatabaseOpener], the secret store an [InMemorySecretStore] and
+  /// artwork a [PlaceholderImageProvider] of its ref; [overrides] are applied
+  /// after the defaults and win over them.
   ///
   /// [locale] picks the app's messages when the app has them (`en`,
   /// `en_XA`). For a locale it has none for, such as `ar`, the framework's
@@ -69,6 +71,9 @@ extension PumpApp on WidgetTester {
       clockProvider.overrideWithValue(clock ?? FakeClock()),
       databaseOpenerProvider.overrideWithValue(InMemoryDatabaseOpener()),
       secretStoreProvider.overrideWithValue(InMemorySecretStore()),
+      artworkImageProvider.overrideWithValue(
+        (request) => PlaceholderImageProvider(request.ref),
+      ),
     ];
     final container = ProviderContainer(
       overrides: [

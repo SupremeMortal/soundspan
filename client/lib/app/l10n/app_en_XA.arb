@@ -465,5 +465,21 @@
   "connectProbeCopyOrigin": "[Çöþý one]",
   "@connectProbeCopyOrigin": {
     "description": "Button that copies the web app’s origin to the clipboard."
+  },
+  "mediaCardPlay": "[Þļåý one]",
+  "@mediaCardPlay": {
+    "description": "Tooltip and accessibility label of the play button shown over a hovered or focused album, artist or playlist card."
+  },
+  "shelfShowAll": "[Šĥöŵ åļļ one]",
+  "@shelfShowAll": {
+    "description": "Button in the header of a horizontal row of cards on Home: opens the whole section."
+  },
+  "shelfScrollBack": "[Šçŕöļļ båçķ one two]",
+  "@shelfScrollBack": {
+    "description": "Arrow button in the header of a horizontal row of cards: scrolls the row back by one visible width."
+  },
+  "shelfScrollForward": "[Šçŕöļļ föŕŵåŕð one two]",
+  "@shelfScrollForward": {
+    "description": "Arrow button in the header of a horizontal row of cards: scrolls the row forward by one visible width."
   }
 }

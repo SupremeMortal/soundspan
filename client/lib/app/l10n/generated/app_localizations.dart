@@ -690,6 +690,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Copy'**
   String get connectProbeCopyOrigin;
+
+  /// Tooltip and accessibility label of the play button shown over a hovered or focused album, artist or playlist card.
+  ///
+  /// In en, this message translates to:
+  /// **'Play'**
+  String get mediaCardPlay;
+
+  /// Button in the header of a horizontal row of cards on Home: opens the whole section.
+  ///
+  /// In en, this message translates to:
+  /// **'Show all'**
+  String get shelfShowAll;
+
+  /// Arrow button in the header of a horizontal row of cards: scrolls the row back by one visible width.
+  ///
+  /// In en, this message translates to:
+  /// **'Scroll back'**
+  String get shelfScrollBack;
+
+  /// Arrow button in the header of a horizontal row of cards: scrolls the row forward by one visible width.
+  ///
+  /// In en, this message translates to:
+  /// **'Scroll forward'**
+  String get shelfScrollForward;
 }
 
 class _AppLocalizationsDelegate
