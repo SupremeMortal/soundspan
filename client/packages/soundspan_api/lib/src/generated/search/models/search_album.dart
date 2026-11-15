@@ -26,7 +26,7 @@ class const SearchAlbum({
 
   @JsonKey(required: true, disallowNullValue: true) required final String id,
 
-  @JsonKey(disallowNullValue: true, includeIfNull: false) final PeerRef? peer,
+  @JsonKey(includeIfNull: false) final PeerRef? peer,
 
   @JsonKey(
     disallowNullValue: true,

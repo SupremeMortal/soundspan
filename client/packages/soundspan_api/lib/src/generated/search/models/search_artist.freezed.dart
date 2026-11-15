@@ -51,7 +51,7 @@ abstract mixin class $SearchArtistCopyWith<$Res>  {
   factory $SearchArtistCopyWith(SearchArtist value, $Res Function(SearchArtist) _then) = _$SearchArtistCopyWithImpl;
 @useResult
 $Res call({
-@JsonKey(required: true) String? heroUrl,@JsonKey(required: true, disallowNullValue: true) String id,@JsonKey(required: true) String? mbid,@JsonKey(required: true, disallowNullValue: true) String name,@JsonKey(disallowNullValue: true, includeIfNull: false) PeerRef? peer,@JsonKey(required: true, disallowNullValue: true) num rank,@JsonKey(disallowNullValue: true, includeIfNull: false, fromJson: SearchArtist._read_source, toJson: SearchArtist._write_source) SearchArtistSource? source,@JsonKey(includeIfNull: false) String? summary,@JsonKey(readValue: SearchArtist._extras, fromJson: SearchArtist._readExtras, includeToJson: false) Map<String, Object?> additionalProperties
+@JsonKey(required: true) String? heroUrl,@JsonKey(required: true, disallowNullValue: true) String id,@JsonKey(required: true) String? mbid,@JsonKey(required: true, disallowNullValue: true) String name,@JsonKey(includeIfNull: false) PeerRef? peer,@JsonKey(required: true, disallowNullValue: true) num rank,@JsonKey(disallowNullValue: true, includeIfNull: false, fromJson: SearchArtist._read_source, toJson: SearchArtist._write_source) SearchArtistSource? source,@JsonKey(includeIfNull: false) String? summary,@JsonKey(readValue: SearchArtist._extras, fromJson: SearchArtist._readExtras, includeToJson: false) Map<String, Object?> additionalProperties
 });
 
 

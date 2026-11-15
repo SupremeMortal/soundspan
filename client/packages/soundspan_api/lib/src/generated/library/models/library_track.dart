@@ -47,7 +47,7 @@ class const LibraryTrack({
 
   @JsonKey(includeIfNull: false) final num? loudnessLufs,
 
-  @JsonKey(disallowNullValue: true, includeIfNull: false) final PeerRef? peer,
+  @JsonKey(includeIfNull: false) final PeerRef? peer,
 
   @JsonKey(disallowNullValue: true, includeIfNull: false)
   final String? playbackId,

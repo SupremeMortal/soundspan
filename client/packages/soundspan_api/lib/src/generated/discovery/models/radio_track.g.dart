@@ -18,7 +18,6 @@ RadioTrack _$RadioTrackFromJson(Map<String, dynamic> json) {
       'discNo',
       'duration',
       'id',
-      'peer',
       'playbackId',
       'title',
       'trackNo',

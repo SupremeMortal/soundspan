@@ -24,7 +24,6 @@ SearchRemoteTrack _$SearchRemoteTrackFromJson(Map<String, dynamic> json) {
       'discNo',
       'duration',
       'id',
-      'peer',
       'playbackId',
       'title',
     ],

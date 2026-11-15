@@ -17,14 +17,7 @@ SearchAlbum _$SearchAlbumFromJson(Map<String, dynamic> json) {
       'title',
       'year',
     ],
-    disallowNullValues: const [
-      'artist',
-      'artistId',
-      'id',
-      'peer',
-      'source',
-      'title',
-    ],
+    disallowNullValues: const ['artist', 'artistId', 'id', 'source', 'title'],
   );
   return SearchAlbum(
     artist: ArtistRef.fromJson(json['artist'] as Map<String, dynamic>),

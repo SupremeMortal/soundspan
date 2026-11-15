@@ -17,7 +17,6 @@ SearchTrack _$SearchTrackFromJson(Map<String, dynamic> json) {
       'discNo',
       'duration',
       'id',
-      'peer',
       'playbackId',
       'source',
       'title',

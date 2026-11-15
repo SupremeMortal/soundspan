@@ -25,7 +25,6 @@ LikedTrack _$LikedTrackFromJson(Map<String, dynamic> json) {
       'duration',
       'id',
       'likedAt',
-      'peer',
       'playbackId',
       'source',
       'title',

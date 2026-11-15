@@ -27,7 +27,7 @@ class const ArtistAlbum({
 
   @JsonKey(required: true, disallowNullValue: true) required final bool owned,
 
-  @JsonKey(disallowNullValue: true, includeIfNull: false) final PeerRef? peer,
+  @JsonKey(includeIfNull: false) final PeerRef? peer,
 
   @JsonKey(
     disallowNullValue: true,

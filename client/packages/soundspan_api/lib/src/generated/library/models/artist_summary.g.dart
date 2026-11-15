@@ -21,7 +21,6 @@ ArtistSummary _$ArtistSummaryFromJson(Map<String, dynamic> json) {
       'albumCount',
       'id',
       'name',
-      'peer',
       'remoteSources',
       'source',
       'trackCount',

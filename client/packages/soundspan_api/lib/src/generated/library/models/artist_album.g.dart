@@ -24,7 +24,6 @@ ArtistAlbum _$ArtistAlbumFromJson(Map<String, dynamic> json) {
       'artistId',
       'id',
       'owned',
-      'peer',
       'provenanceSource',
       'remoteSources',
       'source',

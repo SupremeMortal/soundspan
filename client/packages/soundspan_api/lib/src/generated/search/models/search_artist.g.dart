@@ -10,7 +10,7 @@ SearchArtist _$SearchArtistFromJson(Map<String, dynamic> json) {
   $checkKeys(
     json,
     requiredKeys: const ['heroUrl', 'id', 'mbid', 'name', 'rank'],
-    disallowNullValues: const ['id', 'name', 'peer', 'rank', 'source'],
+    disallowNullValues: const ['id', 'name', 'rank', 'source'],
   );
   return SearchArtist(
     heroUrl: json['heroUrl'] as String?,

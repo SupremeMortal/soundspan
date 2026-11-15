@@ -8,9 +8,10 @@
 /// non-null, so a `null` the server is allowed to send fails to decode; it
 /// reads nullability only from the referenced component. The copy marks a
 /// component `nullable` when every reference to it is such a nullable
-/// reference, which changes no other field. A component that is also
-/// referenced without `nullable` is left as it is. The committed spec is
-/// untouched.
+/// reference or the value of an optional property (already nullable in
+/// Dart), which changes no Dart type. A component that is also referenced
+/// from a required property, an array or elsewhere is left as it is. The
+/// committed spec is untouched.
 ///
 /// Run from the package root by `client/tool/gen.sh`:
 ///
@@ -23,7 +24,8 @@ import 'dart:io';
 const _componentPrefix = '#/components/schemas/';
 
 /// [spec] with every component that is referenced only through nullable
-/// single-reference `allOf` schemas marked `nullable: true`.
+/// single-reference `allOf` schemas or from optional properties, at least
+/// once the former, marked `nullable: true`.
 Map<String, Object?> normalizeSpec(Map<String, Object?> spec) {
   final nullableRefs = <String>{};
   final plainRefs = <String>{};
@@ -49,7 +51,12 @@ Map<String, Object?> normalizeSpec(Map<String, Object?> spec) {
   };
 }
 
-void _collect(Object? value, Set<String> nullableRefs, Set<String> plainRefs) {
+void _collect(
+  Object? value,
+  Set<String> nullableRefs,
+  Set<String> plainRefs, {
+  bool optionalProperty = false,
+}) {
   if (value is List<Object?>) {
     for (final item in value) {
       _collect(item, nullableRefs, plainRefs);
@@ -66,14 +73,49 @@ void _collect(Object? value, Set<String> nullableRefs, Set<String> plainRefs) {
       }
       when part.length == 1) {
     nullableRefs.add(ref);
-    for (final MapEntry(:key, :value) in value.entries) {
-      if (key != 'allOf') _collect(value, nullableRefs, plainRefs);
-    }
+    _collectRest(value, nullableRefs, plainRefs);
     return;
   }
+  // The value of an optional property is already nullable in Dart, so a
+  // reference from it neither blocks nor needs the nullable mark.
+  if (optionalProperty) {
+    if (value[r'$ref'] is String) return;
+    if (value
+        case {'allOf': [{r'$ref': String()} && final Map<String, Object?> part]}
+        when part.length == 1 && value['nullable'] == null) {
+      _collectRest(value, nullableRefs, plainRefs);
+      return;
+    }
+  }
   if (value[r'$ref'] case final String ref) plainRefs.add(ref);
-  for (final child in value.values) {
-    _collect(child, nullableRefs, plainRefs);
+  final required = switch (value['required']) {
+    final List<Object?> names => names.toSet(),
+    _ => const <Object?>{},
+  };
+  for (final MapEntry(:key, value: child) in value.entries) {
+    if (key == 'properties' && child is Map<String, Object?>) {
+      for (final MapEntry(key: name, value: property) in child.entries) {
+        _collect(
+          property,
+          nullableRefs,
+          plainRefs,
+          optionalProperty: !required.contains(name),
+        );
+      }
+    } else {
+      _collect(child, nullableRefs, plainRefs);
+    }
+  }
+}
+
+/// Collects the references of [value]'s keys other than `allOf`.
+void _collectRest(
+  Map<String, Object?> value,
+  Set<String> nullableRefs,
+  Set<String> plainRefs,
+) {
+  for (final MapEntry(:key, :value) in value.entries) {
+    if (key != 'allOf') _collect(value, nullableRefs, plainRefs);
   }
 }
 

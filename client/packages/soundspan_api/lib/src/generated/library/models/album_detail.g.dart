@@ -28,7 +28,6 @@ AlbumDetail _$AlbumDetailFromJson(Map<String, dynamic> json) {
       'id',
       'matchedInLibrary',
       'owned',
-      'peer',
       'remoteSources',
       'source',
       'title',

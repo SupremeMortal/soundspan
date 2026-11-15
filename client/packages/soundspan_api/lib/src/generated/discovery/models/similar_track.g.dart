@@ -26,7 +26,6 @@ SimilarTrack _$SimilarTrackFromJson(Map<String, dynamic> json) {
       'distance',
       'duration',
       'id',
-      'peer',
       'playbackId',
       'similarity',
       'title',
