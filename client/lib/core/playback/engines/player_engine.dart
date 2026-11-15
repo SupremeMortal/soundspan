@@ -4,6 +4,14 @@
 /// preloaded next source, behind which `just_audio` and `media_kit` live.
 library;
 
+/// Asks the server which HTTP status a request for [uri] with [headers]
+/// gets; null when no response arrived. Engines whose player does not
+/// report the status of a failed stream source ask it once.
+typedef StreamStatusOf = Future<int?> Function(
+  Uri uri,
+  Map<String, String> headers,
+);
+
 /// A playable thing handed to the engine. Built by the source resolver.
 final class EngineSource {
   /// Creates a source for the queue entry [queueItemId] at [uri].

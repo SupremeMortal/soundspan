@@ -4,7 +4,8 @@ name: Client Device Tests
 # CI Workflows). Called by client-quality.yml when the engines, the engine
 # factory, integration_test/ or this workflow changed. Every job runs
 # integration_test/engine_conformance_test.dart against the real
-# PlayerEngine of one target with tones from the in-process (web: a
+# PlayerEngine of one target (an Android emulator, an iOS simulator, macOS,
+# headless Chrome, Linux and Windows) with tones from the in-process (web: a
 # separate process) tone server.
 
 on:
@@ -151,3 +152,91 @@ jobs:
       - name: Tone server log
         if: always()
         run: cat "$RUNNER_TEMP/tone_server.log" || true
+
+  engine-conformance-linux:
+    name: engine-conformance-linux
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # The composite action apt-installs the Linux build packages of doc 01.
+      - name: Set up Flutter
+        uses: ./.github/actions/client-flutter
+
+      - name: Install the libmpv runtime, Xvfb and PulseAudio
+        run: |
+          sudo apt-get install -y --no-install-recommends \
+            libmpv2 mpv xvfb pulseaudio
+
+      # The runner has no sound card; mpv plays to a PulseAudio null sink in
+      # real time, with the engine's production configuration.
+      - name: Start PulseAudio with a null sink
+        run: |
+          pulseaudio -D --exit-idle-time=-1
+          for _ in $(seq 1 30); do
+            pactl info > /dev/null 2>&1 && break
+            sleep 1
+          done
+          pactl load-module module-null-sink sink_name=null
+          pactl set-default-sink null
+          pactl info
+
+      - name: Engine conformance on Linux
+        working-directory: client
+        run: >-
+          xvfb-run -a
+          flutter test integration_test/engine_conformance_test.dart -d linux
+
+  engine-conformance-windows:
+    name: engine-conformance-windows
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Flutter
+        uses: ./.github/actions/client-flutter
+
+      # A hosted Windows runner has no audio endpoint, so mpv's WASAPI output
+      # cannot open. The Scream virtual sound card gives it one, so the engine
+      # runs with its production configuration.
+      - name: Install a virtual audio device
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Set-Service -Name Audiosrv -StartupType Automatic
+          Set-Service -Name AudioEndpointBuilder -StartupType Automatic
+          Start-Service -Name AudioEndpointBuilder
+          Start-Service -Name Audiosrv
+          $zip = Join-Path $env:RUNNER_TEMP 'Scream4.0.zip'
+          $dir = Join-Path $env:RUNNER_TEMP 'Scream'
+          Invoke-WebRequest -Uri 'https://github.com/duncanthrax/scream/releases/download/4.0/Scream4.0.zip' -OutFile $zip
+          Expand-Archive -Path $zip -DestinationPath $dir
+          $inf = Get-ChildItem -Path $dir -Recurse -Filter Scream.inf |
+            Where-Object { $_.FullName -match 'x64' } | Select-Object -First 1
+          $sys = Get-ChildItem -Path $inf.DirectoryName -Filter Scream.sys | Select-Object -First 1
+          $devcon = Get-ChildItem -Path $dir -Recurse -Filter 'devcon*.exe' |
+            Sort-Object { $_.Name -notmatch 'x64' } | Select-Object -First 1
+          Write-Host "Driver: $($inf.FullName); devcon: $($devcon.FullName)"
+          # Trust the driver's publisher so the install needs no prompt.
+          $cert = (Get-AuthenticodeSignature $sys.FullName).SignerCertificate
+          $store = [System.Security.Cryptography.X509Certificates.X509Store]::new('TrustedPublisher', 'LocalMachine')
+          $store.Open('ReadWrite')
+          $store.Add($cert)
+          $store.Close()
+          Push-Location $inf.DirectoryName
+          & $devcon.FullName install Scream.inf '*Scream'
+          if ($LASTEXITCODE -ne 0) { throw "devcon exited with $LASTEXITCODE" }
+          Pop-Location
+          Restart-Service -Name Audiosrv -Force
+          Get-CimInstance Win32_SoundDevice | Format-Table Name, Status
+          if (-not (Get-CimInstance Win32_SoundDevice | Where-Object { $_.Name -match 'Scream' })) {
+            throw 'no Scream sound device after the install'
+          }
+
+      - name: Engine conformance on Windows
+        working-directory: client
+        run: flutter test integration_test/engine_conformance_test.dart -d windows

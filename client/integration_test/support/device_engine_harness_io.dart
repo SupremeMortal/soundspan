@@ -65,10 +65,10 @@ final class _NativeHarness extends DeviceEngineHarnessBase {
   @override
   Future<void> disableNetwork() async => _server.reachable = false;
 
-  /// 20 ms on Android and on iOS hardware; 100 ms, the largest tolerance
-  /// doc 06 allows, on macOS and on the iOS simulator, whose CI job defines
-  /// it (see [deviceGapTolerance]). Gapless playback on a Mac and an iPhone
-  /// is confirmed on real hardware.
+  /// 20 ms on Android, Windows, Linux and iOS hardware; 100 ms, the
+  /// largest tolerance doc 06 allows, on macOS and on the iOS simulator,
+  /// whose CI job defines it (see [deviceGapTolerance]). Gapless playback on
+  /// a Mac and an iPhone is confirmed on real hardware.
   @override
   Duration get gapTolerance => deviceGapTolerance(
     isMacOS: Platform.isMacOS,

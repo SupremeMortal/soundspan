@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:soundspan/core/playback/engines/just_audio_engine.dart';
 import 'package:soundspan/core/playback/engines/just_audio_mapping.dart';
+import 'package:soundspan/core/playback/engines/media_kit_engine.dart';
 import 'package:soundspan/core/playback/engines/player_engine.dart';
 import 'package:soundspan_api/soundspan_api.dart';
 
@@ -15,24 +16,53 @@ StreamStatusProbe? _probe;
 Future<int?> _statusOf(Uri uri, Map<String, String> headers) =>
     (_probe ??= StreamStatusProbe()).status(uri, headers: headers);
 
-/// Builds the [PlayerEngine] of [operatingSystem], a value of
-/// `Platform.operatingSystem`: [JustAudioEngine] on Android, iOS and macOS
-/// (macOS reloads the playlist in `setNext`, Spike S1 finding). Throws
-/// [UnsupportedError] anywhere else.
-PlayerEngine playerEngineFor(String operatingSystem) =>
+MediaKitEngine _mediaKitEngine() {
+  MediaKitEngine.ensureInitialized();
+  return MediaKitEngine(statusOf: _statusOf);
+}
+
+/// Which [PlayerEngine] a native platform plays through.
+enum PlayerEngineKind {
+  /// [JustAudioEngine] replacing the next source in place (Android, iOS).
+  justAudio,
+
+  /// [JustAudioEngine] reloading the playlist in `setNext` (macOS, Spike S1
+  /// finding).
+  justAudioReloading,
+
+  /// [MediaKitEngine] over libmpv (Windows, Linux).
+  mediaKit,
+}
+
+/// The [PlayerEngineKind] of [operatingSystem], a value of
+/// `Platform.operatingSystem`, or null for a platform without an engine.
+PlayerEngineKind? playerEngineKindFor(String operatingSystem) =>
     switch (operatingSystem) {
-      'android' => JustAudioEngine(
-        family: PlayerFamily.android,
+      'android' || 'ios' => PlayerEngineKind.justAudio,
+      'macos' => PlayerEngineKind.justAudioReloading,
+      'windows' || 'linux' => PlayerEngineKind.mediaKit,
+      _ => null,
+    };
+
+/// Builds the [PlayerEngine] of [operatingSystem], a value of
+/// `Platform.operatingSystem`, as [playerEngineKindFor] selects it. Throws
+/// [UnsupportedError] for a platform without an engine.
+///
+/// libmpv is initialised here, on Windows and Linux only, so it is never
+/// loaded on another platform.
+PlayerEngine playerEngineFor(String operatingSystem) =>
+    switch (playerEngineKindFor(operatingSystem)) {
+      PlayerEngineKind.justAudio => JustAudioEngine(
+        family: operatingSystem == 'android'
+            ? PlayerFamily.android
+            : PlayerFamily.darwin,
         statusOf: _statusOf,
       ),
-      'ios' => JustAudioEngine(
-        family: PlayerFamily.darwin,
-        statusOf: _statusOf,
-      ),
-      'macos' => JustAudioEngine(
+      PlayerEngineKind.justAudioReloading => JustAudioEngine(
         family: PlayerFamily.darwin,
         statusOf: _statusOf,
         reloadOnSetNext: true,
       ),
-      _ => throw UnsupportedError('No PlayerEngine for $operatingSystem'),
+      PlayerEngineKind.mediaKit => _mediaKitEngine(),
+      null => throw UnsupportedError('No PlayerEngine for $operatingSystem'),
     };

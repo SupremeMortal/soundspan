@@ -3,8 +3,8 @@
 /// The player engine seam: `createPlayerEngine()` builds the `PlayerEngine`
 /// of the running platform (doc 02, Platform Seams).
 ///
-/// `JustAudioEngine` on Android, iOS, macOS and the web. Windows and Linux
-/// have no engine yet and throw [UnsupportedError].
+/// `JustAudioEngine` on Android, iOS, macOS and the web; `MediaKitEngine` on
+/// Windows and Linux. Any other platform throws [UnsupportedError].
 library;
 
 export 'player_engine_factory_web.dart'

@@ -599,7 +599,7 @@ jobs:
         run: flutter build ios --release --no-codesign --dart-define-from-file=config/dev.json
 
   # The engine conformance suite on an Android emulator, an iOS simulator,
-  # macOS and headless Chrome (client-device-tests.yml).
+  # macOS, headless Chrome, Linux and Windows (client-device-tests.yml).
   client-device-tests:
     name: client-device-tests
     needs: changes

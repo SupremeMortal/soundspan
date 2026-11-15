@@ -6,13 +6,6 @@ import 'package:just_audio/just_audio.dart';
 import 'package:soundspan/core/playback/engines/just_audio_mapping.dart';
 import 'package:soundspan/core/playback/engines/player_engine.dart';
 
-/// Asks the server which HTTP status a request for [uri] with [headers]
-/// gets; null when no response arrived.
-typedef StreamStatusOf = Future<int?> Function(
-  Uri uri,
-  Map<String, String> headers,
-);
-
 /// The [PlayerEngine] of Android, iOS, macOS and the web, over one
 /// `just_audio` [AudioPlayer] (doc 06, `JustAudioEngine`).
 ///

@@ -8,7 +8,9 @@ import 'package:soundspan/platform/player_engine/player_engine_factory.dart';
 typedef PlayerEngineBuilder = PlayerEngine Function();
 
 /// The root-scope [PlayerEngineBuilder]. The default is the platform
-/// factory, `createPlayerEngine`, which throws [UnsupportedError] on a
-/// platform without an engine; tests override it with `FakeEngine.new`.
+/// factory, `createPlayerEngine` (`JustAudioEngine` on Android, iOS, macOS
+/// and the web, `MediaKitEngine` on Windows and Linux), which throws
+/// [UnsupportedError] on a platform without an engine; tests override it
+/// with `FakeEngine.new`.
 final Provider<PlayerEngineBuilder> playerEngineBuilderProvider =
     Provider<PlayerEngineBuilder>((ref) => createPlayerEngine);
