@@ -139,6 +139,13 @@ void main() {
         detail.albums!.map((album) => album.title).toSet(),
         containsAll(<String>['First Light', _multiDiscAlbum]),
       );
+      final libraryAlbums = detail.albums!.where(
+        (album) => album.source == ArtistAlbumSource.database,
+      );
+      expect(libraryAlbums, isNotEmpty);
+      for (final album in libraryAlbums) {
+        expect(album.primaryType, isNotNull, reason: album.title);
+      }
     });
   });
 

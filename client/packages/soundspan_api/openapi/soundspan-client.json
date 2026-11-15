@@ -364,6 +364,10 @@
               }
             ]
           },
+          "primaryType": {
+            "nullable": true,
+            "type": "string"
+          },
           "provenanceSource": {
             "enum": [
               "local",

@@ -177,6 +177,7 @@ Album albumFromArtistAlbum(api.ArtistAlbum wire, {required Artist artist}) =>
       year: wire.year,
       artworkRef: wire.coverArt,
       trackCount: wire.tracks.isEmpty ? null : wire.tracks.length,
+      releaseType: wire.primaryType,
     );
 
 /// An album with its tracks.

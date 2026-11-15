@@ -39,6 +39,7 @@ ArtistAlbum _$ArtistAlbumFromJson(Map<String, dynamic> json) {
     peer: json['peer'] == null
         ? null
         : PeerRef.fromJson(json['peer'] as Map<String, dynamic>),
+    primaryType: json['primaryType'] as String?,
     provenanceSource: ArtistAlbum._read_provenanceSource(
       json['provenanceSource'],
     ),
@@ -67,6 +68,7 @@ Map<String, dynamic> _$ArtistAlbumToJson(
   'id': instance.id,
   'owned': instance.owned,
   'peer': ?instance.peer?.toJson(),
+  'primaryType': ?instance.primaryType,
   'provenanceSource': ?ArtistAlbum._write_provenanceSource(
     instance.provenanceSource,
   ),

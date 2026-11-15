@@ -540,6 +540,7 @@ export async function handleGetArtist(
                                   )
                                 : null,
                             type: rg["primary-type"],
+                            primaryType: rg["primary-type"] ?? null,
                             coverUrl,
                             coverArt: coverUrl,
                             artistId: artist.id,

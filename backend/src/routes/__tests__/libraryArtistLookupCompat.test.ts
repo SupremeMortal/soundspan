@@ -643,6 +643,60 @@ describe("library artist lookup compatibility", () => {
         expect(res.body.discographyComplete).toBe(true);
     });
 
+    it("returns the release type of library albums and discography entries", async () => {
+        mockArtistFindFirst.mockResolvedValueOnce({
+            ...createMockArtist(),
+            albums: [
+                {
+                    id: "album-ep",
+                    artistId: "artist-1",
+                    title: "Owned EP",
+                    year: 2015,
+                    rgMbid: "rg-owned-ep",
+                    coverUrl: null,
+                    primaryType: "EP",
+                    location: "LIBRARY",
+                    tracks: [],
+                },
+            ],
+        });
+        mockMusicBrainzGetReleaseGroups.mockResolvedValueOnce([
+            {
+                id: "rg-mb-single",
+                title: "Catalog Single",
+                "first-release-date": "2016-01-01",
+                "primary-type": "Single",
+                "secondary-types": [],
+            },
+        ]);
+        const req = {
+            params: { id: "artist-local-id-123" },
+            query: {
+                includeDiscography: "true",
+                includeTopTracks: "false",
+                includeSimilarArtists: "false",
+            },
+            user: { id: "user-1" },
+        } as any;
+        const res = createRes();
+
+        await artistHandler(req, res);
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.albums).toEqual([
+            expect.objectContaining({
+                id: "album-ep",
+                source: "database",
+                primaryType: "EP",
+            }),
+            expect.objectContaining({
+                id: "rg-mb-single",
+                source: "musicbrainz",
+                primaryType: "Single",
+            }),
+        ]);
+    });
+
     it("uses a fresh persisted discography on Redis miss without MusicBrainz", async () => {
         const artist = {
             ...createMockArtist(),

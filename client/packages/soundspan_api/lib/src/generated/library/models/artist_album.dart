@@ -29,6 +29,8 @@ class const ArtistAlbum({
 
   @JsonKey(includeIfNull: false) final PeerRef? peer,
 
+  @JsonKey(includeIfNull: false) final String? primaryType,
+
   @JsonKey(
     disallowNullValue: true,
     includeIfNull: false,
@@ -80,6 +82,7 @@ class const ArtistAlbum({
     "id",
     "owned",
     "peer",
+    "primaryType",
     "provenanceSource",
     "remoteSources",
     "rgMbid",

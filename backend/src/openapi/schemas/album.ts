@@ -67,6 +67,11 @@ export const ArtistAlbum = z
         source: z.enum(["database", "musicbrainz", "remote"]),
         provenanceSource: z.enum(["local", "federated", "remote"]).optional(),
         owned: z.boolean(),
+        /**
+         * Release-group primary type, such as `Album`, `Single` or `EP`:
+         * the album's stored type, or MusicBrainz's for a discography entry.
+         */
+        primaryType: z.string().nullable().optional(),
         tracks: z.array(TrackSummary),
     })
     .meta({ id: "ArtistAlbum" });

@@ -10,7 +10,7 @@ import 'playlist_item_type.dart';
 part 'playlist_item.freezed.dart';
 part 'playlist_item.g.dart';
 
-abstract final class _Scalar632 {
+abstract final class _Scalar633 {
   static mapped1.NullableLibraryTrack read(Object? value) {
     if (!_matches3(value) || value == null) {
       throw ArgumentError("Invalid NullableLibraryTrack wire value.");
@@ -89,12 +89,12 @@ class const PlaylistItem({
   static mapped1.NullableLibraryTrack? _read_track(Object? value) =>
       switch (value) {
         null => null,
-        final item => _Scalar632.read(item),
+        final item => _Scalar633.read(item),
       };
   static Object? _write_track(mapped1.NullableLibraryTrack? value) =>
       switch (value) {
         null => null,
-        final item => _Scalar632.write(item),
+        final item => _Scalar633.write(item),
       };
   static PlaylistItemType _read_type(Object? value) =>
       PlaylistItemType.fromJson(value);

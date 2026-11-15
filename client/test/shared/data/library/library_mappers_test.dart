@@ -232,6 +232,31 @@ void main() {
       expect(detail.tracks.last.playbackId, isNull);
     });
 
+    Album artistAlbum(Map<String, Object?> extra) => albumFromArtistAlbum(
+      api.ArtistAlbum.fromJson({
+        'id': 'al-1',
+        'title': 'Record',
+        'artistId': 'ar-1',
+        'coverArt': null,
+        'rgMbid': null,
+        'year': 2015,
+        'source': 'database',
+        'owned': true,
+        'tracks': <Object?>[],
+        ...extra,
+      }),
+      artist: const Artist(id: 'ar-1', name: 'Band'),
+    );
+
+    test("an artist album's release type is mapped", () {
+      expect(artistAlbum({'primaryType': 'EP'}).releaseType, 'EP');
+    });
+
+    test('an artist album without a release type maps to null', () {
+      expect(artistAlbum({}).releaseType, isNull);
+      expect(artistAlbum({'primaryType': null}).releaseType, isNull);
+    });
+
     test('artist detail with empty optional lists', () {
       final detail = artistDetailFromWire(
         api.ArtistDetail.fromJson({
