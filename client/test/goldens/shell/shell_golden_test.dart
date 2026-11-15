@@ -8,7 +8,9 @@ import 'package:soundspan/app/shell/app_shell.dart';
 import 'package:soundspan/app/shell/avatar_menu.dart';
 import 'package:soundspan/core/auth/active_profile.dart';
 import 'package:soundspan/core/auth/profile.dart';
+import 'package:soundspan/shared/domain/domain.dart';
 
+import '../../helpers/fake_repositories.dart';
 import '../../helpers/golden.dart';
 import '../../helpers/pump_app.dart';
 
@@ -32,9 +34,25 @@ final List<Profile> _profiles = [
   _profile('p2', 'friends.example.org', 'ada', 1),
 ];
 
+PlaylistSummary _playlist(String id, String name) => PlaylistSummary(
+  id: id,
+  name: name,
+  trackCount: 12,
+  isOwner: true,
+  isPublic: false,
+);
+
 final List<Override> _overrides = [
   profilesProvider.overrideWith((ref) => Stream.value(_profiles)),
   initialActiveProfileIdProvider.overrideWithValue('p1'),
+  ...FakeRepositories(
+    playlists: FakePlaylistRepository()
+      ..playlistList = [
+        _playlist('pl1', 'Road trip'),
+        _playlist('pl2', 'Focus'),
+        _playlist('pl3', 'Late night jazz'),
+      ],
+  ).overrides,
 ];
 
 Widget _shell(BuildContext context) => AppShell(
@@ -42,6 +60,7 @@ Widget _shell(BuildContext context) => AppShell(
   onDestinationSelected: (_) {},
   onSearch: (_) {},
   onBack: () {},
+  openPlaylistId: 'pl2',
   child: const PlaceholderScreen('Home', branchRoot: true),
 );
 

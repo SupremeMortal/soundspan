@@ -4,11 +4,13 @@ import 'package:material_ui/material_ui.dart';
 import 'package:soundspan/app/shell/adaptive_shell.dart';
 import 'package:soundspan/app/shell/avatar_menu.dart';
 import 'package:soundspan/app/shell/player_slots.dart';
+import 'package:soundspan/app/shell/sidebar_playlists.dart';
 import 'package:soundspan/app/shell/top_bar.dart';
 
 /// The [AdaptiveShell] with its slots filled: the [TopBar] on expanded
 /// windows, the [AvatarButton] at the bottom of the rail on medium ones,
-/// and the player slots.
+/// the [SidebarPlaylists] under the expanded sidebar's destinations, and the
+/// player slots.
 ///
 /// On compact windows the avatar sits in each branch root's app bar, which
 /// the branch screens build.
@@ -22,6 +24,7 @@ class AppShell extends StatelessWidget {
     this.onSearchChanged,
     this.onBack,
     this.onForward,
+    this.openPlaylistId,
     super.key,
   });
 
@@ -44,6 +47,10 @@ class AppShell extends StatelessWidget {
   /// Re-opens the location last left with Back; null disables Forward.
   final VoidCallback? onForward;
 
+  /// The id of the playlist the window shows, marked in the sidebar; null
+  /// when none is open.
+  final String? openPlaylistId;
+
   /// The selected destination's content.
   final Widget child;
 
@@ -61,6 +68,7 @@ class AppShell extends StatelessWidget {
     railTrailing: const AvatarButton(),
     miniPlayer: const MiniPlayerSlot(),
     playerBar: const PlayerBarSlot(),
+    sidebarPlaylists: SidebarPlaylists(selectedPlaylistId: openPlaylistId),
     child: child,
   );
 }

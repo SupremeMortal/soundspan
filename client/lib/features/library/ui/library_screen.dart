@@ -9,6 +9,8 @@ import 'package:soundspan/app/shell/avatar_menu.dart';
 import 'package:soundspan/app/shell/window_class.dart';
 import 'package:soundspan/features/library/ui/albums_tab.dart';
 import 'package:soundspan/features/library/ui/artists_tab.dart';
+import 'package:soundspan/features/library/ui/playlists_tab.dart';
+import 'package:soundspan/features/library/ui/songs_tab.dart';
 
 /// The localized name of [tab].
 String libraryTabLabel(AppLocalizations l10n, LibraryTab tab) => switch (tab) {
@@ -95,11 +97,10 @@ class _LibraryScreenState extends State<LibraryScreen>
                 const SizedBox.shrink()
               else
                 switch (tab) {
+                  LibraryTab.playlists => const PlaylistsTab(),
                   LibraryTab.artists => const ArtistsTab(),
                   LibraryTab.albums => const AlbumsTab(),
-                  LibraryTab.playlists || LibraryTab.songs => Center(
-                    child: Text(libraryTabLabel(l10n, tab)),
-                  ),
+                  LibraryTab.songs => const SongsTab(),
                 },
           ],
         ),

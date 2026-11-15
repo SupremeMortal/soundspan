@@ -1033,6 +1033,36 @@ abstract class AppLocalizations {
   /// **'No artists yet'**
   String get libraryArtistsEmpty;
 
+  /// Shown in place of the songs list when the library holds no tracks.
+  ///
+  /// In en, this message translates to:
+  /// **'No songs yet'**
+  String get librarySongsEmpty;
+
+  /// Name of the pinned row at the top of the playlist list in the Library and the sidebar; it opens the tracks the user liked.
+  ///
+  /// In en, this message translates to:
+  /// **'Liked Songs'**
+  String get libraryLikedSongs;
+
+  /// Second line of a playlist row in the Library: how many songs the playlist holds.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 song} other{{count} songs}}'**
+  String libraryPlaylistTrackCount(int count);
+
+  /// One line under Liked Songs in the Library's playlist list when the user has no playlists yet.
+  ///
+  /// In en, this message translates to:
+  /// **'Playlists you create appear here'**
+  String get libraryPlaylistsEmptyHint;
+
+  /// Accessibility label of the list of playlists in the sidebar, under the main destinations.
+  ///
+  /// In en, this message translates to:
+  /// **'Playlists'**
+  String get sidebarPlaylistsLabel;
+
   /// Second line of an artist card in the library grid, under the artist's name.
   ///
   /// In en, this message translates to:

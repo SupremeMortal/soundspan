@@ -17,7 +17,7 @@ import '../../helpers/pump_app.dart';
 
 /// What [PumpLibrary.pumpLibrary] built.
 class LibraryHarness {
-  new _(this.container, this.router, this.library);
+  new _(this.container, this.router, this.library, this.playlists);
 
   /// The provider container.
   final ProviderContainer container;
@@ -27,6 +27,9 @@ class LibraryHarness {
 
   /// The library repository fake.
   final FakeLibraryRepository library;
+
+  /// The playlist repository fake.
+  final FakePlaylistRepository playlists;
 
   /// The router's current location.
   String get location =>
@@ -50,6 +53,38 @@ List<Album> albums(int count) => [
 /// [count] artists named `Artist <index>`.
 List<Artist> artists(int count) => [
   for (var i = 0; i < count; i++) Artist(id: 'ar$i', name: 'Artist $i'),
+];
+
+/// [count] tracks titled `Song <index>` by `Artist <index>` on
+/// `Album <index>`; the indexes in [unplayable] have no playback id.
+List<Track> tracks(int count, {Set<int> unplayable = const {}}) => [
+  for (var i = 0; i < count; i++) track(i, playable: !unplayable.contains(i)),
+];
+
+/// Track [index] of [tracks].
+Track track(int index, {bool playable = true}) => Track(
+  meta: TrackMeta(
+    title: 'Song $index',
+    artist: 'Artist $index',
+    album: 'Album $index',
+    durationSec: 200,
+    artworkRef: 'cover-$index',
+  ),
+  playbackId: playable ? PlaybackId('p$index') : null,
+);
+
+/// [count] playlists named `Playlist <index>` with `index + 1` tracks and
+/// four covers each.
+List<PlaylistSummary> playlists(int count) => [
+  for (var i = 0; i < count; i++)
+    PlaylistSummary(
+      id: 'pl$i',
+      name: 'Playlist $i',
+      trackCount: i + 1,
+      isOwner: true,
+      isPublic: false,
+      coverRefs: ['c$i-1', 'c$i-2', 'c$i-3', 'c$i-4'],
+    ),
 ];
 
 /// The capabilities of a server with federation [federation].
@@ -91,17 +126,20 @@ GoRouter libraryRouter(LibraryTab tab) {
 /// Pumps the Library screen.
 extension PumpLibrary on WidgetTester {
   /// Pumps the library routes at [tab] in a window of [size], over
-  /// [library] (a new empty fake by default) and a server with
-  /// [federation].
+  /// [library] and [playlists] (new empty fakes by default) and a server
+  /// with [federation]. [settle] false pumps one frame instead of settling.
   Future<LibraryHarness> pumpLibrary({
     LibraryTab tab = LibraryTab.albums,
     FakeLibraryRepository? library,
+    FakePlaylistRepository? playlists,
+    bool settle = true,
     bool federation = false,
     Size size = TestSizes.compact,
     ThemeMode theme = ThemeMode.dark,
     double textScale = 1.0,
   }) async {
     library ??= FakeLibraryRepository();
+    playlists ??= FakePlaylistRepository();
     final router = libraryRouter(tab);
     addTearDown(router.dispose);
     final container = await pumpApp(
@@ -113,7 +151,7 @@ extension PumpLibrary on WidgetTester {
       theme: theme,
       textScale: textScale,
       overrides: [
-        ...FakeRepositories(library: library).overrides,
+        ...FakeRepositories(library: library, playlists: playlists).overrides,
         serverCapabilitiesProvider.overrideWithBuild(
           (ref, notifier) => capabilities(federation: federation),
         ),
@@ -121,7 +159,11 @@ extension PumpLibrary on WidgetTester {
         activeProfileIdProvider.overrideWithBuild((ref, notifier) => null),
       ],
     );
-    await pumpAndSettle();
-    return LibraryHarness._(container, router, library);
+    if (settle) {
+      await pumpAndSettle();
+    } else {
+      await pump();
+    }
+    return LibraryHarness._(container, router, library, playlists);
   }
 }

@@ -4,7 +4,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:soundspan/app/router/routes.dart';
 import 'package:soundspan/features/library/library.dart';
-import 'package:soundspan/shared/widgets/media_card.dart';
+import 'package:soundspan/features/library/ui/playlists_tab.dart';
+import 'package:soundspan/features/library/ui/songs_tab.dart';
+import 'package:soundspan/shared/domain/domain.dart';
 
 import '../../helpers/fake_repositories.dart';
 import '../../helpers/guidelines.dart';
@@ -76,16 +78,19 @@ void main() {
     expect(harness.library.queries.whereType<Object>().length, 2);
   });
 
-  testWidgets('Songs and Playlists show placeholders', (tester) async {
+  testWidgets('Songs and Playlists show their tabs and open a source only '
+      'when shown', (tester) async {
     final harness = await tester.pumpLibrary(tab: LibraryTab.songs);
-    expect(find.byType(MediaCard), findsNothing);
-    expect(find.byType(MediaCardSkeleton), findsNothing);
-    expect(find.text('Songs'), findsNWidgets(2));
+    expect(find.byType(SongsTab), findsOneWidget);
+    expect(find.byType(PlaylistsTab), findsNothing);
+    expect(harness.library.queries, [const TrackQuery()]);
+    expect(harness.playlists.sources, isEmpty);
 
     harness.router.go('/library/playlists');
     await tester.pumpAndSettle();
-    expect(find.text('Playlists'), findsNWidgets(2));
-    expect(harness.library.queries, isEmpty);
+    expect(find.byType(PlaylistsTab), findsOneWidget);
+    expect(harness.playlists.sources, hasLength(1));
+    expect(harness.library.queries, [const TrackQuery()]);
   });
 
   for (final size in [TestSizes.compact, TestSizes.expanded]) {

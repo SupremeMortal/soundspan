@@ -731,6 +731,32 @@
   "@libraryArtistsEmpty": {
     "description": "Shown in place of the artists list when the library holds no artists."
   },
+  "librarySongsEmpty": "[Ñö šöñĝš ýéţ one two]",
+  "@librarySongsEmpty": {
+    "description": "Shown in place of the songs list when the library holds no tracks."
+  },
+  "libraryLikedSongs": "[Ļîķéð Šöñĝš one two]",
+  "@libraryLikedSongs": {
+    "description": "Name of the pinned row at the top of the playlist list in the Library and the sidebar; it opens the tracks the user liked."
+  },
+  "libraryPlaylistTrackCount": "[{count, plural, =1{1 šöñĝ one} other{{count} šöñĝš one}}]",
+  "@libraryPlaylistTrackCount": {
+    "description": "Second line of a playlist row in the Library: how many songs the playlist holds.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "12"
+      }
+    }
+  },
+  "libraryPlaylistsEmptyHint": "[Þļåýļîšţš ýöû çŕéåţé åþþéåŕ ĥéŕé one two three]",
+  "@libraryPlaylistsEmptyHint": {
+    "description": "One line under Liked Songs in the Library's playlist list when the user has no playlists yet."
+  },
+  "sidebarPlaylistsLabel": "[Þļåýļîšţš one]",
+  "@sidebarPlaylistsLabel": {
+    "description": "Accessibility label of the list of playlists in the sidebar, under the main destinations."
+  },
   "libraryArtistCardSubtitle": "[Åŕţîšţ one]",
   "@libraryArtistCardSubtitle": {
     "description": "Second line of an artist card in the library grid, under the artist's name."

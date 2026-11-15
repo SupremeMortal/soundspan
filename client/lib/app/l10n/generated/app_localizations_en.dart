@@ -569,6 +569,29 @@ class AppLocalizationsEn extends AppLocalizations {
   String get libraryArtistsEmpty => 'No artists yet';
 
   @override
+  String get librarySongsEmpty => 'No songs yet';
+
+  @override
+  String get libraryLikedSongs => 'Liked Songs';
+
+  @override
+  String libraryPlaylistTrackCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count songs',
+      one: '1 song',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get libraryPlaylistsEmptyHint => 'Playlists you create appear here';
+
+  @override
+  String get sidebarPlaylistsLabel => 'Playlists';
+
+  @override
   String get libraryArtistCardSubtitle => 'Artist';
 
   @override
@@ -1371,6 +1394,30 @@ class AppLocalizationsEnXa extends AppLocalizationsEn {
 
   @override
   String get libraryArtistsEmpty => '[Ñö åŕţîšţš ýéţ one two]';
+
+  @override
+  String get librarySongsEmpty => '[Ñö šöñĝš ýéţ one two]';
+
+  @override
+  String get libraryLikedSongs => '[Ļîķéð Šöñĝš one two]';
+
+  @override
+  String libraryPlaylistTrackCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count šöñĝš one',
+      one: '1 šöñĝ one',
+    );
+    return '[$_temp0]';
+  }
+
+  @override
+  String get libraryPlaylistsEmptyHint =>
+      '[Þļåýļîšţš ýöû çŕéåţé åþþéåŕ ĥéŕé one two three]';
+
+  @override
+  String get sidebarPlaylistsLabel => '[Þļåýļîšţš one]';
 
   @override
   String get libraryArtistCardSubtitle => '[Åŕţîšţ one]';

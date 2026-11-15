@@ -102,6 +102,7 @@ StatefulShellRoute buildShellRoute(
                   }
                 }
               : null,
+          openPlaylistId: openPlaylistIdOf(state.uri),
           child: shell,
         ),
       ),

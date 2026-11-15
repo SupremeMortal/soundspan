@@ -38,3 +38,12 @@ artistQueryProvider =
       () => LibraryQueryNotifier(const ArtistQuery()),
       dependencies: [profileContextProvider],
     );
+
+/// The query of the Songs tab; the server's defaults until the user
+/// chooses.
+final NotifierProvider<LibraryQueryNotifier<TrackQuery>, TrackQuery>
+trackQueryProvider =
+    NotifierProvider<LibraryQueryNotifier<TrackQuery>, TrackQuery>(
+      () => LibraryQueryNotifier(const TrackQuery()),
+      dependencies: [profileContextProvider],
+    );

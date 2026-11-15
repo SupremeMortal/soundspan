@@ -127,6 +127,15 @@ class ShellLocation {
       .toString();
 }
 
+/// The id of the playlist [location] shows (`…/playlist/<id>` as its last
+/// two segments), or null when it shows none.
+String? openPlaylistIdOf(Uri location) {
+  final segments = location.pathSegments;
+  if (segments.length < 2) return null;
+  if (segments[segments.length - 2] != DetailKind.playlist.name) return null;
+  return segments.last;
+}
+
 /// The root location of the branch [location] is in, or null when it is in
 /// none.
 Uri? branchBaseOf(Uri location) {
