@@ -17,7 +17,8 @@ mixin _$StreamQualityInfo {
 
 /// The quality the server chose: `original`, `high`, `medium`, `low`,
 /// or a value a newer server added.
- String get quality;/// The MIME type of the stream, if known.
+ String get quality;/// The content type the server reports, a MIME type or a format name
+/// such as `FLAC`, if known.
  String? get contentType;/// The codec, if known.
  String? get codec;/// The bit rate in kbit/s, if known.
  num? get bitrate;/// The sample rate in Hz, if known.
@@ -234,7 +235,8 @@ class _StreamQualityInfo implements StreamQualityInfo {
 /// The quality the server chose: `original`, `high`, `medium`, `low`,
 /// or a value a newer server added.
 @override final  String quality;
-/// The MIME type of the stream, if known.
+/// The content type the server reports, a MIME type or a format name
+/// such as `FLAC`, if known.
 @override final  String? contentType;
 /// The codec, if known.
 @override final  String? codec;
