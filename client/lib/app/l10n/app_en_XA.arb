@@ -581,5 +581,64 @@
   "connectSignInNoPassword": "[Ţĥîš šéŕvéŕ ðöéš ñöţ öfféŕ þåššŵöŕð šîĝñ-îñ. one two three four]",
   "@connectSignInNoPassword": {
     "description": "Shown instead of the form when the server has password sign-in turned off."
+  },
+  "trackRowDurationHours": "[{count, plural, =1{1 ĥöûŕ one} other{{count} ĥöûŕš one}}]",
+  "@trackRowDurationHours": {
+    "description": "Hours part of a track's length as read by a screen reader, e.g. the '1 hour' of '1 hour 2 minutes 3 seconds'.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trackRowDurationMinutes": "[{count, plural, =1{1 mîñûţé one} other{{count} mîñûţéš one}}]",
+  "@trackRowDurationMinutes": {
+    "description": "Minutes part of a track's length as read by a screen reader, e.g. the '3 minutes' of '3 minutes 41 seconds'.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trackRowDurationSeconds": "[{count, plural, =1{1 šéçöñð one} other{{count} šéçöñðš one}}]",
+  "@trackRowDurationSeconds": {
+    "description": "Seconds part of a track's length as read by a screen reader, e.g. the '41 seconds' of '3 minutes 41 seconds'.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "errorViewOffline": "[Ýöû’ŕé öffļîñé one two]",
+  "@errorViewOffline": {
+    "description": "Shown in place of a screen's content when the server could not be reached and nothing is cached."
+  },
+  "errorViewFeatureDisabled": "[Ñöţ åvåîļåbļé öñ ţĥîš šéŕvéŕ one two three]",
+  "@errorViewFeatureDisabled": {
+    "description": "Shown in place of a screen's content when the server has turned off the feature the screen needs."
+  },
+  "errorViewRateLimited": "[Ţöö måñý ŕéqûéšţš, ţŕý åĝåîñ šĥöŕţļý one two three four]",
+  "@errorViewRateLimited": {
+    "description": "Shown in place of a screen's content when the server refused the request because too many were sent."
+  },
+  "errorViewServerProblem": "[Ţĥé šéŕvéŕ ŕåñ îñţö å þŕöbļém one two three]",
+  "@errorViewServerProblem": {
+    "description": "Shown in place of a screen's content when the server, or a service it relies on, failed."
+  },
+  "errorViewNotFound": "[Ţĥîš îţém îš ñö ļöñĝéŕ åvåîļåbļé one two three]",
+  "@errorViewNotFound": {
+    "description": "Shown in place of an album, artist, playlist or other item that no longer exists on the server."
+  },
+  "errorViewGeneric": "[Šöméţĥîñĝ ŵéñţ ŵŕöñĝ one two]",
+  "@errorViewGeneric": {
+    "description": "Shown in place of a screen's content when loading failed for any other reason."
+  },
+  "errorViewRetry": "[Ŕéţŕý one]",
+  "@errorViewRetry": {
+    "description": "Button under a loading error: tries to load the screen again."
+  },
+  "appBannerDismiss": "[Ðîšmîšš one]",
+  "@appBannerDismiss": {
+    "description": "Tooltip and accessibility label of the close button of an inline notice at the top of a screen."
   }
 }

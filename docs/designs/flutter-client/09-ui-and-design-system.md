@@ -117,7 +117,7 @@ Shared widgets in `lib/shared/widgets/`. Each has a golden test at three widths 
 | `SeekBar` | 4 px track, `brand` fill, thumb on hover/drag/focus. Buffered range in `lineStrong`. Keyboard: arrows ±5 s. Semantics: slider with "m:ss of m:ss" |
 | `QualityBadge` | One neutral style: `surfaceActive` fill, `contentSecondary` text, e.g. "FLAC · 24/96 kHz", "AAC · 256 kbps", "Downloaded". Never coloured or labelled by source |
 | `DownloadGlyph` | States: none, queued (outlined arrow), running (determinate ring), completed (filled check, `positive`), failed (`danger`), unavailable (struck through) |
-| `Banner` | Inline, full width: offline, link expiring, server newer than tested |
+| `AppBanner` | Inline, full width: offline, link expiring, server newer than tested or version unknown. A live region, announced when it appears. Named `AppBanner` because Flutter already has a `Banner` |
 | `EmptyState`, `ErrorView` | Icon, one sentence, one action |
 | `ContextMenu` | One menu definition per entity rendered as a bottom sheet on touch and a popup at the pointer on desktop |
 | `CodeCells` | Six cells for the device-link code |

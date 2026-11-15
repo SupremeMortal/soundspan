@@ -846,6 +846,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This server does not offer password sign-in.'**
   String get connectSignInNoPassword;
+
+  /// Hours part of a track's length as read by a screen reader, e.g. the '1 hour' of '1 hour 2 minutes 3 seconds'.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 hour} other{{count} hours}}'**
+  String trackRowDurationHours(int count);
+
+  /// Minutes part of a track's length as read by a screen reader, e.g. the '3 minutes' of '3 minutes 41 seconds'.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 minute} other{{count} minutes}}'**
+  String trackRowDurationMinutes(int count);
+
+  /// Seconds part of a track's length as read by a screen reader, e.g. the '41 seconds' of '3 minutes 41 seconds'.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 second} other{{count} seconds}}'**
+  String trackRowDurationSeconds(int count);
+
+  /// Shown in place of a screen's content when the server could not be reached and nothing is cached.
+  ///
+  /// In en, this message translates to:
+  /// **'You’re offline'**
+  String get errorViewOffline;
+
+  /// Shown in place of a screen's content when the server has turned off the feature the screen needs.
+  ///
+  /// In en, this message translates to:
+  /// **'Not available on this server'**
+  String get errorViewFeatureDisabled;
+
+  /// Shown in place of a screen's content when the server refused the request because too many were sent.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many requests, try again shortly'**
+  String get errorViewRateLimited;
+
+  /// Shown in place of a screen's content when the server, or a service it relies on, failed.
+  ///
+  /// In en, this message translates to:
+  /// **'The server ran into a problem'**
+  String get errorViewServerProblem;
+
+  /// Shown in place of an album, artist, playlist or other item that no longer exists on the server.
+  ///
+  /// In en, this message translates to:
+  /// **'This item is no longer available'**
+  String get errorViewNotFound;
+
+  /// Shown in place of a screen's content when loading failed for any other reason.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong'**
+  String get errorViewGeneric;
+
+  /// Button under a loading error: tries to load the screen again.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get errorViewRetry;
+
+  /// Tooltip and accessibility label of the close button of an inline notice at the top of a screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Dismiss'**
+  String get appBannerDismiss;
 }
 
 class _AppLocalizationsDelegate

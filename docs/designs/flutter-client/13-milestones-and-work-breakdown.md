@@ -67,7 +67,7 @@ Exit: a debug build on all six targets signs in with a password to a real server
 | M0-13 | App shell: router, `WindowClass`, bottom bar / rail / sidebar, top bar, empty player slots, settings skeleton with theme mode and servers | M0-05, M0-10 | Goldens at 390, 800, 1440 in both themes |
 | M0-14 | Library, playlist, and search repositories over the generated clients; `ImageUrls`; `OffsetPage` and `KeysetPage` | M0-07 | Mapping tests (wire to domain); contract group "Library and browse" |
 | M0-15 | `CacheDatabase`, `Cached<T>` SWR repositories, `PagedSource` | M0-09, M0-14 | SWR sequence tests (cache hit, stale, refresh failure, offline) |
-| M0-16 | Shared widgets: `Artwork`, `MediaCard`, `Shelf`, `TrackRow` (no playback actions), `EmptyState`, `ErrorView`, `Banner`; image cache manager | M0-05, M0-14 | Goldens; semantics guideline tests |
+| M0-16 | Shared widgets: `Artwork`, `MediaCard`, `Shelf`, `TrackRow` (no playback actions), `EmptyState`, `ErrorView`, `AppBanner`; image cache manager | M0-05, M0-14 | Goldens; semantics guideline tests |
 | M0-17 | Library screens: Playlists, Artists, Albums, Songs tabs with paging | M0-15, M0-16 | Scroll test over a 10,000-row fake source keeps extent stable |
 | M0-18 | Album, Artist, Playlist detail (read-only) | M0-15, M0-16 | Widget tests; goldens |
 | M0-19 | Home shelves and Search (library + discover, recent searches) | M0-15, M0-16 | Widget tests |

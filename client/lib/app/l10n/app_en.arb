@@ -581,5 +581,64 @@
   "connectSignInNoPassword": "This server does not offer password sign-in.",
   "@connectSignInNoPassword": {
     "description": "Shown instead of the form when the server has password sign-in turned off."
+  },
+  "trackRowDurationHours": "{count, plural, =1{1 hour} other{{count} hours}}",
+  "@trackRowDurationHours": {
+    "description": "Hours part of a track's length as read by a screen reader, e.g. the '1 hour' of '1 hour 2 minutes 3 seconds'.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trackRowDurationMinutes": "{count, plural, =1{1 minute} other{{count} minutes}}",
+  "@trackRowDurationMinutes": {
+    "description": "Minutes part of a track's length as read by a screen reader, e.g. the '3 minutes' of '3 minutes 41 seconds'.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trackRowDurationSeconds": "{count, plural, =1{1 second} other{{count} seconds}}",
+  "@trackRowDurationSeconds": {
+    "description": "Seconds part of a track's length as read by a screen reader, e.g. the '41 seconds' of '3 minutes 41 seconds'.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "errorViewOffline": "You’re offline",
+  "@errorViewOffline": {
+    "description": "Shown in place of a screen's content when the server could not be reached and nothing is cached."
+  },
+  "errorViewFeatureDisabled": "Not available on this server",
+  "@errorViewFeatureDisabled": {
+    "description": "Shown in place of a screen's content when the server has turned off the feature the screen needs."
+  },
+  "errorViewRateLimited": "Too many requests, try again shortly",
+  "@errorViewRateLimited": {
+    "description": "Shown in place of a screen's content when the server refused the request because too many were sent."
+  },
+  "errorViewServerProblem": "The server ran into a problem",
+  "@errorViewServerProblem": {
+    "description": "Shown in place of a screen's content when the server, or a service it relies on, failed."
+  },
+  "errorViewNotFound": "This item is no longer available",
+  "@errorViewNotFound": {
+    "description": "Shown in place of an album, artist, playlist or other item that no longer exists on the server."
+  },
+  "errorViewGeneric": "Something went wrong",
+  "@errorViewGeneric": {
+    "description": "Shown in place of a screen's content when loading failed for any other reason."
+  },
+  "errorViewRetry": "Retry",
+  "@errorViewRetry": {
+    "description": "Button under a loading error: tries to load the screen again."
+  },
+  "appBannerDismiss": "Dismiss",
+  "@appBannerDismiss": {
+    "description": "Tooltip and accessibility label of the close button of an inline notice at the top of a screen."
   }
 }
