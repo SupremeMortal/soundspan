@@ -13,6 +13,7 @@ import 'package:soundspan/core/auth/probe/server_probe.dart';
 import 'package:soundspan/core/profile/profile_providers.dart';
 import 'package:soundspan/core/profile/profile_runtime.dart';
 import 'package:soundspan/features/album/album.dart';
+import 'package:soundspan/features/artist/artist.dart';
 import 'package:soundspan/features/connect/connect.dart';
 import 'package:soundspan/features/connect/ui/probe_controller.dart';
 import 'package:soundspan/features/playlist/playlist.dart';
@@ -230,7 +231,7 @@ void main() {
     DetailNavigation.openArtist(screen(tester), 'r1');
     await tester.pumpAndSettle();
     expect(location(root), '/home/artist/r1');
-    expect(find.text('Artist'), findsOneWidget);
+    expect(find.byType(ArtistScreen), findsOneWidget);
     DetailNavigation.openPlaylist(screen(tester), 'liked');
     await tester.pumpAndSettle();
     expect(location(root), '/home/playlist/liked');
@@ -331,7 +332,7 @@ void main() {
     expect(location(root), '/home');
     expect(visibleScreen(tester), 'Home');
     expect(find.byType(AlbumScreen), findsNothing);
-    expect(find.text('Artist'), findsNothing);
+    expect(find.byType(ArtistScreen), findsNothing);
     expect(find.byType(PlaylistScreen), findsNothing);
   });
 

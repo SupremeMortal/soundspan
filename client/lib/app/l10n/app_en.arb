@@ -875,6 +875,46 @@
   "@playlistEmpty": {
     "description": "Shown on a playlist page when the playlist has no songs."
   },
+  "artistOverline": "Artist",
+  "@artistOverline": {
+    "description": "Type label above the name on an artist page."
+  },
+  "artistPopular": "Popular",
+  "@artistPopular": {
+    "description": "Title of the section of an artist page listing the artist's most played songs."
+  },
+  "artistShowMore": "Show more",
+  "@artistShowMore": {
+    "description": "Button under the Popular title of an artist page: lists more of the artist's most played songs."
+  },
+  "artistShowLess": "Show less",
+  "@artistShowLess": {
+    "description": "Button on an artist page that collapses the expanded Popular list or biography again."
+  },
+  "artistAlbums": "Albums",
+  "@artistAlbums": {
+    "description": "Title of the shelf of an artist's albums on an artist page."
+  },
+  "artistSinglesAndEps": "Singles and EPs",
+  "@artistSinglesAndEps": {
+    "description": "Title of the shelf of an artist's singles and EPs on an artist page."
+  },
+  "artistSimilar": "Similar Artists",
+  "@artistSimilar": {
+    "description": "Title of the shelf of artists similar to this one on an artist page."
+  },
+  "artistCardSubtitle": "Artist",
+  "@artistCardSubtitle": {
+    "description": "Second line of a similar-artist card on an artist page."
+  },
+  "artistAbout": "About",
+  "@artistAbout": {
+    "description": "Title of the biography section of an artist page."
+  },
+  "artistReadMore": "Read more",
+  "@artistReadMore": {
+    "description": "Button under the collapsed biography of an artist page: shows the whole text in place."
+  },
   "searchFieldHint": "Songs, artists, albums or podcasts",
   "@searchFieldHint": {
     "description": "Placeholder and accessibility label of the field on the Search screen."

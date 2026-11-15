@@ -111,3 +111,57 @@ FakeRepositories albumRepositories(
     ..albumList = [album, ...others];
   return repositories;
 }
+
+/// The biography of the fixture artist: long enough to need more than
+/// three lines on every window size.
+final String fixtureBiography = List.filled(
+  12,
+  'The Artist formed in a small town and played every club on the coast '
+  'before their first record.',
+).join(' ');
+
+/// Artist `ar-1` with [topTracks], [albums], [similar] artists, [genres]
+/// and [biography].
+ArtistDetail fixtureArtistDetail({
+  List<Track> topTracks = const [],
+  List<Album> albums = const [],
+  List<SimilarArtist> similar = const [],
+  List<String> genres = const [],
+  String? biography,
+}) => ArtistDetail(
+  artist: const Artist(
+    id: 'ar-1',
+    name: fixtureArtist,
+    artworkRef: 'face-ar-1',
+  ),
+  topTracks: topTracks,
+  albums: albums,
+  similarArtists: similar,
+  genres: genres,
+  biography: biography,
+);
+
+/// A [FakeRepositories] seeded with artist `ar-1` as [detail].
+FakeRepositories artistRepositories(ArtistDetail detail) {
+  final repositories = FakeRepositories();
+  repositories.library.artistDetails['ar-1'] = detail;
+  return repositories;
+}
+
+/// Artist `ar-1` with all five sections populated.
+ArtistDetail fullArtistDetail() => fixtureArtistDetail(
+  topTracks: [for (var n = 1; n <= 7; n++) fixtureTrack(n)],
+  albums: [
+    fixtureAlbum('al-1', releaseType: 'Album'),
+    fixtureAlbum('al-2', year: 2018),
+    fixtureAlbum('al-3', year: 2021, releaseType: 'Single'),
+    fixtureAlbum('al-4', year: 2022, releaseType: 'EP'),
+  ],
+  similar: const [
+    SimilarArtist(name: 'Kindred', artworkRef: 'face-ar-2', libraryId: 'ar-2'),
+    SimilarArtist(name: 'Elsewhere', artworkRef: 'face-ar-3'),
+    SimilarArtist(name: 'Neighbour', libraryId: 'ar-4'),
+  ],
+  genres: const ['Jazz', 'Soul', 'Funk', 'Disco'],
+  biography: fixtureBiography,
+);

@@ -1207,6 +1207,66 @@ abstract class AppLocalizations {
   /// **'This playlist has no songs yet'**
   String get playlistEmpty;
 
+  /// Type label above the name on an artist page.
+  ///
+  /// In en, this message translates to:
+  /// **'Artist'**
+  String get artistOverline;
+
+  /// Title of the section of an artist page listing the artist's most played songs.
+  ///
+  /// In en, this message translates to:
+  /// **'Popular'**
+  String get artistPopular;
+
+  /// Button under the Popular title of an artist page: lists more of the artist's most played songs.
+  ///
+  /// In en, this message translates to:
+  /// **'Show more'**
+  String get artistShowMore;
+
+  /// Button on an artist page that collapses the expanded Popular list or biography again.
+  ///
+  /// In en, this message translates to:
+  /// **'Show less'**
+  String get artistShowLess;
+
+  /// Title of the shelf of an artist's albums on an artist page.
+  ///
+  /// In en, this message translates to:
+  /// **'Albums'**
+  String get artistAlbums;
+
+  /// Title of the shelf of an artist's singles and EPs on an artist page.
+  ///
+  /// In en, this message translates to:
+  /// **'Singles and EPs'**
+  String get artistSinglesAndEps;
+
+  /// Title of the shelf of artists similar to this one on an artist page.
+  ///
+  /// In en, this message translates to:
+  /// **'Similar Artists'**
+  String get artistSimilar;
+
+  /// Second line of a similar-artist card on an artist page.
+  ///
+  /// In en, this message translates to:
+  /// **'Artist'**
+  String get artistCardSubtitle;
+
+  /// Title of the biography section of an artist page.
+  ///
+  /// In en, this message translates to:
+  /// **'About'**
+  String get artistAbout;
+
+  /// Button under the collapsed biography of an artist page: shows the whole text in place.
+  ///
+  /// In en, this message translates to:
+  /// **'Read more'**
+  String get artistReadMore;
+
   /// Placeholder and accessibility label of the field on the Search screen.
   ///
   /// In en, this message translates to:

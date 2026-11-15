@@ -680,6 +680,36 @@ class AppLocalizationsEn extends AppLocalizations {
   String get playlistEmpty => 'This playlist has no songs yet';
 
   @override
+  String get artistOverline => 'Artist';
+
+  @override
+  String get artistPopular => 'Popular';
+
+  @override
+  String get artistShowMore => 'Show more';
+
+  @override
+  String get artistShowLess => 'Show less';
+
+  @override
+  String get artistAlbums => 'Albums';
+
+  @override
+  String get artistSinglesAndEps => 'Singles and EPs';
+
+  @override
+  String get artistSimilar => 'Similar Artists';
+
+  @override
+  String get artistCardSubtitle => 'Artist';
+
+  @override
+  String get artistAbout => 'About';
+
+  @override
+  String get artistReadMore => 'Read more';
+
+  @override
   String get searchFieldHint => 'Songs, artists, albums or podcasts';
 
   @override
@@ -1453,6 +1483,36 @@ class AppLocalizationsEnXa extends AppLocalizationsEn {
 
   @override
   String get playlistEmpty => '[Ţĥîš þļåýļîšţ ĥåš ñö šöñĝš ýéţ one two three]';
+
+  @override
+  String get artistOverline => '[Åŕţîšţ one]';
+
+  @override
+  String get artistPopular => '[Þöþûļåŕ one]';
+
+  @override
+  String get artistShowMore => '[Šĥöŵ möŕé one]';
+
+  @override
+  String get artistShowLess => '[Šĥöŵ ļéšš one]';
+
+  @override
+  String get artistAlbums => '[Åļbûmš one]';
+
+  @override
+  String get artistSinglesAndEps => '[Šîñĝļéš åñð ÉÞš one two]';
+
+  @override
+  String get artistSimilar => '[Šîmîļåŕ Åŕţîšţš one two]';
+
+  @override
+  String get artistCardSubtitle => '[Åŕţîšţ one]';
+
+  @override
+  String get artistAbout => '[Åböûţ one]';
+
+  @override
+  String get artistReadMore => '[Ŕéåð möŕé one]';
 
   @override
   String get searchFieldHint =>

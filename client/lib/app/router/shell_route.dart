@@ -11,6 +11,7 @@ import 'package:soundspan/app/shell/local_data_too_new_screen.dart';
 import 'package:soundspan/app/shell/shell_history.dart';
 import 'package:soundspan/core/profile/profile_scope.dart';
 import 'package:soundspan/features/album/album.dart';
+import 'package:soundspan/features/artist/artist.dart';
 import 'package:soundspan/features/home/home.dart';
 import 'package:soundspan/features/library/library.dart';
 import 'package:soundspan/features/playlist/playlist.dart';
@@ -27,9 +28,7 @@ List<RouteBase> detailRoutes() => [
         return switch (kind) {
           DetailKind.album => AlbumScreen(albumId: id),
           DetailKind.playlist => PlaylistScreen(playlistId: id),
-          DetailKind.artist => PlaceholderScreen(
-            kind.title(AppLocalizations.of(context)),
-          ),
+          DetailKind.artist => ArtistScreen(artistId: id),
         };
       },
     ),
