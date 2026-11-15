@@ -367,6 +367,89 @@ class AppLocalizationsEn extends AppLocalizations {
   String get shelfScrollForward => 'Scroll forward';
 
   @override
+  String connectSignInHeading(String server) {
+    return 'Sign in to $server';
+  }
+
+  @override
+  String get connectSignInBack => 'Use a different server';
+
+  @override
+  String get connectSignInUsername => 'User name or email';
+
+  @override
+  String get connectSignInPassword => 'Password';
+
+  @override
+  String get connectSignInShowPassword => 'Show password';
+
+  @override
+  String get connectSignInHidePassword => 'Hide password';
+
+  @override
+  String get connectSignInSubmit => 'Sign in';
+
+  @override
+  String get connectSignInInvalidCredentials =>
+      'The user name or password is not correct';
+
+  @override
+  String get connectSignInAuthenticatorPrompt =>
+      'Enter the 6-digit code from your authenticator app.';
+
+  @override
+  String get connectSignInRecoveryPrompt =>
+      'Enter one of your 8-character recovery codes.';
+
+  @override
+  String get connectSignInAuthenticatorCode => 'Authenticator code';
+
+  @override
+  String get connectSignInRecoveryCode => 'Recovery code';
+
+  @override
+  String get connectSignInUseRecovery => 'Use a recovery code instead';
+
+  @override
+  String get connectSignInUseAuthenticator =>
+      'Use an authenticator code instead';
+
+  @override
+  String get connectSignInVerify => 'Verify';
+
+  @override
+  String get connectSignInStartOver => 'Start over';
+
+  @override
+  String get connectSignInInvalidCode => 'That code is not correct';
+
+  @override
+  String connectSignInRateLimited(int seconds) {
+    String _temp0 = intl.Intl.pluralLogic(
+      seconds,
+      locale: localeName,
+      other: 'Too many attempts. Try again in $seconds seconds.',
+      one: 'Too many attempts. Try again in 1 second.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get connectSignInFailed =>
+      'Could not sign in. Check the connection and try again.';
+
+  @override
+  String get connectSignInRetry => 'Retry';
+
+  @override
+  String get connectSignInSecureStorage =>
+      'This device has no secure storage service, so the sign-in cannot be kept. On Linux, install and start a Secret Service provider such as GNOME Keyring or KWallet.';
+
+  @override
+  String get connectSignInNoPassword =>
+      'This server does not offer password sign-in.';
+
+  @override
   String trackRowDurationHours(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -791,6 +874,92 @@ class AppLocalizationsEnXa extends AppLocalizationsEn {
 
   @override
   String get shelfScrollForward => '[Šçŕöļļ föŕŵåŕð one two]';
+
+  @override
+  String connectSignInHeading(String server) {
+    return '[Šîĝñ îñ ţö $server one two]';
+  }
+
+  @override
+  String get connectSignInBack => '[Ûšé å ðîfféŕéñţ šéŕvéŕ one two three]';
+
+  @override
+  String get connectSignInUsername => '[Ûšéŕ ñåmé öŕ émåîļ one two]';
+
+  @override
+  String get connectSignInPassword => '[Þåššŵöŕð one]';
+
+  @override
+  String get connectSignInShowPassword => '[Šĥöŵ þåššŵöŕð one two]';
+
+  @override
+  String get connectSignInHidePassword => '[Ĥîðé þåššŵöŕð one two]';
+
+  @override
+  String get connectSignInSubmit => '[Šîĝñ îñ one]';
+
+  @override
+  String get connectSignInInvalidCredentials =>
+      '[Ţĥé ûšéŕ ñåmé öŕ þåššŵöŕð îš ñöţ çöŕŕéçţ one two three four]';
+
+  @override
+  String get connectSignInAuthenticatorPrompt =>
+      '[Éñţéŕ ţĥé 6-ðîĝîţ çöðé fŕöm ýöûŕ åûţĥéñţîçåţöŕ åþþ. one two three four five]';
+
+  @override
+  String get connectSignInRecoveryPrompt =>
+      '[Éñţéŕ öñé öf ýöûŕ 8-çĥåŕåçţéŕ ŕéçövéŕý çöðéš. one two three four]';
+
+  @override
+  String get connectSignInAuthenticatorCode => '[Åûţĥéñţîçåţöŕ çöðé one two]';
+
+  @override
+  String get connectSignInRecoveryCode => '[Ŕéçövéŕý çöðé one two]';
+
+  @override
+  String get connectSignInUseRecovery =>
+      '[Ûšé å ŕéçövéŕý çöðé îñšţéåð one two three]';
+
+  @override
+  String get connectSignInUseAuthenticator =>
+      '[Ûšé åñ åûţĥéñţîçåţöŕ çöðé îñšţéåð one two three]';
+
+  @override
+  String get connectSignInVerify => '[Véŕîfý one]';
+
+  @override
+  String get connectSignInStartOver => '[Šţåŕţ övéŕ one]';
+
+  @override
+  String get connectSignInInvalidCode =>
+      '[Ţĥåţ çöðé îš ñöţ çöŕŕéçţ one two three]';
+
+  @override
+  String connectSignInRateLimited(int seconds) {
+    String _temp0 = intl.Intl.pluralLogic(
+      seconds,
+      locale: localeName,
+      other:
+          'Ţöö måñý åţţémþţš. Ţŕý åĝåîñ îñ $seconds šéçöñðš. one two three four',
+      one: 'Ţöö måñý åţţémþţš. Ţŕý åĝåîñ îñ 1 šéçöñð. one two three four',
+    );
+    return '[$_temp0]';
+  }
+
+  @override
+  String get connectSignInFailed =>
+      '[Çöûļð ñöţ šîĝñ îñ. Çĥéçķ ţĥé çöññéçţîöñ åñð ţŕý åĝåîñ. one two three four five]';
+
+  @override
+  String get connectSignInRetry => '[Ŕéţŕý one]';
+
+  @override
+  String get connectSignInSecureStorage =>
+      '[Ţĥîš ðévîçé ĥåš ñö šéçûŕé šţöŕåĝé šéŕvîçé, šö ţĥé šîĝñ-îñ çåññöţ bé ķéþţ. Öñ Ļîñûx, îñšţåļļ åñð šţåŕţ å Šéçŕéţ Šéŕvîçé þŕövîðéŕ šûçĥ åš ĜÑÖMÉ Ķéýŕîñĝ öŕ ĶŴåļļéţ. one two three four five six seven eight nine ten one two three four]';
+
+  @override
+  String get connectSignInNoPassword =>
+      '[Ţĥîš šéŕvéŕ ðöéš ñöţ öfféŕ þåššŵöŕð šîĝñ-îñ. one two three four]';
 
   @override
   String trackRowDurationHours(int count) {

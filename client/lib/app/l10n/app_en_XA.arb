@@ -482,6 +482,106 @@
   "@shelfScrollForward": {
     "description": "Arrow button in the header of a horizontal row of cards: scrolls the row forward by one visible width."
   },
+  "connectSignInHeading": "[Šîĝñ îñ ţö {server} one two]",
+  "@connectSignInHeading": {
+    "description": "Heading of the sign-in form; names the server.",
+    "placeholders": {
+      "server": {
+        "type": "String",
+        "example": "https://music.example.com"
+      }
+    }
+  },
+  "connectSignInBack": "[Ûšé å ðîfféŕéñţ šéŕvéŕ one two three]",
+  "@connectSignInBack": {
+    "description": "Back control of the sign-in screen; returns to the address screen."
+  },
+  "connectSignInUsername": "[Ûšéŕ ñåmé öŕ émåîļ one two]",
+  "@connectSignInUsername": {
+    "description": "Label of the user name field on the sign-in form."
+  },
+  "connectSignInPassword": "[Þåššŵöŕð one]",
+  "@connectSignInPassword": {
+    "description": "Label of the password field on the sign-in form."
+  },
+  "connectSignInShowPassword": "[Šĥöŵ þåššŵöŕð one two]",
+  "@connectSignInShowPassword": {
+    "description": "Tooltip of the control that reveals the typed password."
+  },
+  "connectSignInHidePassword": "[Ĥîðé þåššŵöŕð one two]",
+  "@connectSignInHidePassword": {
+    "description": "Tooltip of the control that hides the typed password again."
+  },
+  "connectSignInSubmit": "[Šîĝñ îñ one]",
+  "@connectSignInSubmit": {
+    "description": "Button that submits the user name and password."
+  },
+  "connectSignInInvalidCredentials": "[Ţĥé ûšéŕ ñåmé öŕ þåššŵöŕð îš ñöţ çöŕŕéçţ one two three four]",
+  "@connectSignInInvalidCredentials": {
+    "description": "Inline error when the server rejected the user name or password."
+  },
+  "connectSignInAuthenticatorPrompt": "[Éñţéŕ ţĥé 6-ðîĝîţ çöðé fŕöm ýöûŕ åûţĥéñţîçåţöŕ åþþ. one two three four five]",
+  "@connectSignInAuthenticatorPrompt": {
+    "description": "Instruction on the two-factor step in authenticator mode."
+  },
+  "connectSignInRecoveryPrompt": "[Éñţéŕ öñé öf ýöûŕ 8-çĥåŕåçţéŕ ŕéçövéŕý çöðéš. one two three four]",
+  "@connectSignInRecoveryPrompt": {
+    "description": "Instruction on the two-factor step in recovery-code mode."
+  },
+  "connectSignInAuthenticatorCode": "[Åûţĥéñţîçåţöŕ çöðé one two]",
+  "@connectSignInAuthenticatorCode": {
+    "description": "Label of the code field in authenticator mode."
+  },
+  "connectSignInRecoveryCode": "[Ŕéçövéŕý çöðé one two]",
+  "@connectSignInRecoveryCode": {
+    "description": "Label of the code field in recovery-code mode."
+  },
+  "connectSignInUseRecovery": "[Ûšé å ŕéçövéŕý çöðé îñšţéåð one two three]",
+  "@connectSignInUseRecovery": {
+    "description": "Button that switches the two-factor step to recovery codes."
+  },
+  "connectSignInUseAuthenticator": "[Ûšé åñ åûţĥéñţîçåţöŕ çöðé îñšţéåð one two three]",
+  "@connectSignInUseAuthenticator": {
+    "description": "Button that switches the two-factor step back to authenticator codes."
+  },
+  "connectSignInVerify": "[Véŕîfý one]",
+  "@connectSignInVerify": {
+    "description": "Button that submits the two-factor code."
+  },
+  "connectSignInStartOver": "[Šţåŕţ övéŕ one]",
+  "@connectSignInStartOver": {
+    "description": "Button that leaves the two-factor step and returns to the user name and password."
+  },
+  "connectSignInInvalidCode": "[Ţĥåţ çöðé îš ñöţ çöŕŕéçţ one two three]",
+  "@connectSignInInvalidCode": {
+    "description": "Inline error when the server rejected the two-factor or recovery code."
+  },
+  "connectSignInRateLimited": "[{seconds, plural, =1{Ţöö måñý åţţémþţš. Ţŕý åĝåîñ îñ 1 šéçöñð. one two three four} other{Ţöö måñý åţţémþţš. Ţŕý åĝåîñ îñ {seconds} šéçöñðš. one two three four}}]",
+  "@connectSignInRateLimited": {
+    "description": "Shown after too many sign-in attempts, counting down until the next one is allowed.",
+    "placeholders": {
+      "seconds": {
+        "type": "int",
+        "example": "30"
+      }
+    }
+  },
+  "connectSignInFailed": "[Çöûļð ñöţ šîĝñ îñ. Çĥéçķ ţĥé çöññéçţîöñ åñð ţŕý åĝåîñ. one two three four five]",
+  "@connectSignInFailed": {
+    "description": "Inline error when the sign-in request failed for any other reason."
+  },
+  "connectSignInRetry": "[Ŕéţŕý one]",
+  "@connectSignInRetry": {
+    "description": "Button that sends the failed sign-in again."
+  },
+  "connectSignInSecureStorage": "[Ţĥîš ðévîçé ĥåš ñö šéçûŕé šţöŕåĝé šéŕvîçé, šö ţĥé šîĝñ-îñ çåññöţ bé ķéþţ. Öñ Ļîñûx, îñšţåļļ åñð šţåŕţ å Šéçŕéţ Šéŕvîçé þŕövîðéŕ šûçĥ åš ĜÑÖMÉ Ķéýŕîñĝ öŕ ĶŴåļļéţ. one two three four five six seven eight nine ten one two three four]",
+  "@connectSignInSecureStorage": {
+    "description": "Error when the device cannot store the sign-in securely; nothing was saved."
+  },
+  "connectSignInNoPassword": "[Ţĥîš šéŕvéŕ ðöéš ñöţ öfféŕ þåššŵöŕð šîĝñ-îñ. one two three four]",
+  "@connectSignInNoPassword": {
+    "description": "Shown instead of the form when the server has password sign-in turned off."
+  },
   "trackRowDurationHours": "[{count, plural, =1{1 ĥöûŕ one} other{{count} ĥöûŕš one}}]",
   "@trackRowDurationHours": {
     "description": "Hours part of a track's length as read by a screen reader, e.g. the '1 hour' of '1 hour 2 minutes 3 seconds'.",

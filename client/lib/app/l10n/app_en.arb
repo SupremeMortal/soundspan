@@ -482,6 +482,106 @@
   "@shelfScrollForward": {
     "description": "Arrow button in the header of a horizontal row of cards: scrolls the row forward by one visible width."
   },
+  "connectSignInHeading": "Sign in to {server}",
+  "@connectSignInHeading": {
+    "description": "Heading of the sign-in form; names the server.",
+    "placeholders": {
+      "server": {
+        "type": "String",
+        "example": "https://music.example.com"
+      }
+    }
+  },
+  "connectSignInBack": "Use a different server",
+  "@connectSignInBack": {
+    "description": "Back control of the sign-in screen; returns to the address screen."
+  },
+  "connectSignInUsername": "User name or email",
+  "@connectSignInUsername": {
+    "description": "Label of the user name field on the sign-in form."
+  },
+  "connectSignInPassword": "Password",
+  "@connectSignInPassword": {
+    "description": "Label of the password field on the sign-in form."
+  },
+  "connectSignInShowPassword": "Show password",
+  "@connectSignInShowPassword": {
+    "description": "Tooltip of the control that reveals the typed password."
+  },
+  "connectSignInHidePassword": "Hide password",
+  "@connectSignInHidePassword": {
+    "description": "Tooltip of the control that hides the typed password again."
+  },
+  "connectSignInSubmit": "Sign in",
+  "@connectSignInSubmit": {
+    "description": "Button that submits the user name and password."
+  },
+  "connectSignInInvalidCredentials": "The user name or password is not correct",
+  "@connectSignInInvalidCredentials": {
+    "description": "Inline error when the server rejected the user name or password."
+  },
+  "connectSignInAuthenticatorPrompt": "Enter the 6-digit code from your authenticator app.",
+  "@connectSignInAuthenticatorPrompt": {
+    "description": "Instruction on the two-factor step in authenticator mode."
+  },
+  "connectSignInRecoveryPrompt": "Enter one of your 8-character recovery codes.",
+  "@connectSignInRecoveryPrompt": {
+    "description": "Instruction on the two-factor step in recovery-code mode."
+  },
+  "connectSignInAuthenticatorCode": "Authenticator code",
+  "@connectSignInAuthenticatorCode": {
+    "description": "Label of the code field in authenticator mode."
+  },
+  "connectSignInRecoveryCode": "Recovery code",
+  "@connectSignInRecoveryCode": {
+    "description": "Label of the code field in recovery-code mode."
+  },
+  "connectSignInUseRecovery": "Use a recovery code instead",
+  "@connectSignInUseRecovery": {
+    "description": "Button that switches the two-factor step to recovery codes."
+  },
+  "connectSignInUseAuthenticator": "Use an authenticator code instead",
+  "@connectSignInUseAuthenticator": {
+    "description": "Button that switches the two-factor step back to authenticator codes."
+  },
+  "connectSignInVerify": "Verify",
+  "@connectSignInVerify": {
+    "description": "Button that submits the two-factor code."
+  },
+  "connectSignInStartOver": "Start over",
+  "@connectSignInStartOver": {
+    "description": "Button that leaves the two-factor step and returns to the user name and password."
+  },
+  "connectSignInInvalidCode": "That code is not correct",
+  "@connectSignInInvalidCode": {
+    "description": "Inline error when the server rejected the two-factor or recovery code."
+  },
+  "connectSignInRateLimited": "{seconds, plural, =1{Too many attempts. Try again in 1 second.} other{Too many attempts. Try again in {seconds} seconds.}}",
+  "@connectSignInRateLimited": {
+    "description": "Shown after too many sign-in attempts, counting down until the next one is allowed.",
+    "placeholders": {
+      "seconds": {
+        "type": "int",
+        "example": "30"
+      }
+    }
+  },
+  "connectSignInFailed": "Could not sign in. Check the connection and try again.",
+  "@connectSignInFailed": {
+    "description": "Inline error when the sign-in request failed for any other reason."
+  },
+  "connectSignInRetry": "Retry",
+  "@connectSignInRetry": {
+    "description": "Button that sends the failed sign-in again."
+  },
+  "connectSignInSecureStorage": "This device has no secure storage service, so the sign-in cannot be kept. On Linux, install and start a Secret Service provider such as GNOME Keyring or KWallet.",
+  "@connectSignInSecureStorage": {
+    "description": "Error when the device cannot store the sign-in securely; nothing was saved."
+  },
+  "connectSignInNoPassword": "This server does not offer password sign-in.",
+  "@connectSignInNoPassword": {
+    "description": "Shown instead of the form when the server has password sign-in turned off."
+  },
   "trackRowDurationHours": "{count, plural, =1{1 hour} other{{count} hours}}",
   "@trackRowDurationHours": {
     "description": "Hours part of a track's length as read by a screen reader, e.g. the '1 hour' of '1 hour 2 minutes 3 seconds'.",

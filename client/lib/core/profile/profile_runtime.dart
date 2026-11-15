@@ -5,6 +5,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:soundspan/core/auth/active_profile.dart';
+import 'package:soundspan/core/auth/profile.dart';
 import 'package:soundspan/core/logging/app_logger.dart';
 import 'package:soundspan/core/profile/profile_context.dart';
 import 'package:soundspan/core/profile/profile_disposer.dart';
@@ -121,7 +122,8 @@ class ProfileRuntime {
   /// opened before its id is stored as the active one. A `state.db` written
   /// by a newer app version ends in [ProfileRuntimeLocalDataTooNew]. An id
   /// without a profile record is treated like null. Switching to the active
-  /// profile does nothing.
+  /// profile does nothing while it is signed in; when it is signed out, its
+  /// container is created again, so a new sign-in takes effect.
   Future<void> switchTo(String? profileId) => _serial(() => _switch(profileId));
 
   /// Deletes the `state.db` and the directory trees of [profileId], then
@@ -152,9 +154,11 @@ class ProfileRuntime {
   }
 
   Future<void> _switch(String? profileId) async {
+    final current = _container;
     if (profileId != null &&
         _state.value == ProfileRuntimeActive(profileId) &&
-        _container != null) {
+        current != null &&
+        _signedIn(current)) {
       return;
     }
     _state.value = ProfileRuntimeState.switching;
@@ -209,6 +213,13 @@ class ProfileRuntime {
     await repository.touchLastUsed(profile.id);
     _state.value = ProfileRuntimeActive(profile.id);
   }
+
+  /// Whether the profile of [container] was signed in when the container
+  /// was created and its session still holds a credential.
+  static bool _signedIn(ProviderContainer container) =>
+      container.read(profileContextProvider).profile.state ==
+          ProfileState.active &&
+      container.read(sessionControllerProvider).current != null;
 
   Future<void> _closeCurrent() async {
     final container = _container;
