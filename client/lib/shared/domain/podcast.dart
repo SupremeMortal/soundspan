@@ -29,6 +29,30 @@ abstract class Podcast with _$Podcast {
   factory fromJson(Map<String, Object?> json) => _$PodcastFromJson(json);
 }
 
+/// A podcast as a directory or search lists it; the user may not follow it.
+@freezed
+abstract class PodcastSummary with _$PodcastSummary {
+  /// Creates a podcast summary.
+  // freezed reads only the class-named factory form.
+  // ignore: unnecessary_type_name_in_constructor
+  const factory PodcastSummary({
+    /// The podcast id the server sent.
+    required String id,
+
+    /// The podcast title.
+    required String title,
+
+    /// The author, if known.
+    String? author,
+
+    /// The value to pass to the cover-art endpoint, if any.
+    String? artworkRef,
+  }) = _PodcastSummary;
+
+  /// Decodes a summary written by [PodcastSummary.toJson].
+  factory fromJson(Map<String, Object?> json) => _$PodcastSummaryFromJson(json);
+}
+
 /// One episode of a [Podcast].
 @freezed
 abstract class Episode with _$Episode {

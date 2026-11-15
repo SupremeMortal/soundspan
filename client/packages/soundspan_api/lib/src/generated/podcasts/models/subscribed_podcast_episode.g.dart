@@ -20,22 +20,16 @@ SubscribedPodcastEpisode _$SubscribedPodcastEpisodeFromJson(
       'publishedAt',
       'title',
     ],
-    disallowNullValues: const [
-      'duration',
-      'id',
-      'progress',
-      'publishedAt',
-      'title',
-    ],
+    disallowNullValues: const ['duration', 'id', 'publishedAt', 'title'],
   );
   return SubscribedPodcastEpisode(
     coverUrl: json['coverUrl'] as String?,
     description: json['description'] as String?,
     duration: SubscribedPodcastEpisode._read_duration(json['duration']),
     id: json['id'] as String,
-    progress: EpisodeProgress.fromJson(
-      json['progress'] as Map<String, dynamic>,
-    ),
+    progress: json['progress'] == null
+        ? null
+        : EpisodeProgress.fromJson(json['progress'] as Map<String, dynamic>),
     publishedAt: SubscribedPodcastEpisode._read_publishedAt(
       json['publishedAt'],
     ),
@@ -56,7 +50,7 @@ Map<String, dynamic> _$SubscribedPodcastEpisodeToJson(
   'description': instance.description,
   'duration': ?SubscribedPodcastEpisode._write_duration(instance.duration),
   'id': instance.id,
-  'progress': instance.progress.toJson(),
+  'progress': instance.progress?.toJson(),
   'publishedAt': ?SubscribedPodcastEpisode._write_publishedAt(
     instance.publishedAt,
   ),

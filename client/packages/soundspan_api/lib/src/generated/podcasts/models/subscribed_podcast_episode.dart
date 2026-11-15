@@ -28,8 +28,7 @@ class const SubscribedPodcastEpisode({
 
   @JsonKey(required: true, disallowNullValue: true) required final String id,
 
-  @JsonKey(required: true, disallowNullValue: true)
-  required final EpisodeProgress progress,
+  @JsonKey(required: true) required final EpisodeProgress? progress,
 
   @JsonKey(
     required: true,

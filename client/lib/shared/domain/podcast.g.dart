@@ -20,6 +20,22 @@ Map<String, dynamic> _$PodcastToJson(_Podcast instance) => <String, dynamic>{
   'artworkRef': instance.artworkRef,
 };
 
+_PodcastSummary _$PodcastSummaryFromJson(Map<String, dynamic> json) =>
+    _PodcastSummary(
+      id: json['id'] as String,
+      title: json['title'] as String,
+      author: json['author'] as String?,
+      artworkRef: json['artworkRef'] as String?,
+    );
+
+Map<String, dynamic> _$PodcastSummaryToJson(_PodcastSummary instance) =>
+    <String, dynamic>{
+      'id': instance.id,
+      'title': instance.title,
+      'author': instance.author,
+      'artworkRef': instance.artworkRef,
+    };
+
 _Episode _$EpisodeFromJson(Map<String, dynamic> json) => _Episode(
   id: json['id'] as String,
   podcastId: json['podcastId'] as String,

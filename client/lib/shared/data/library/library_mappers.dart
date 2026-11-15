@@ -18,7 +18,7 @@ Preference preferenceFromWire(api.PreferenceState? state) => switch (state) {
 };
 
 /// A library track of the Songs list.
-Track trackFromLibraryTrack(api.LibraryTrack wire) => _track(
+Track trackFromLibraryTrack(api.LibraryTrack wire) => trackFromParts(
   id: wire.id,
   playbackId: wire.playbackId,
   title: wire.title,
@@ -38,7 +38,7 @@ Track trackFromLibraryTrack(api.LibraryTrack wire) => _track(
 );
 
 /// A track of the liked list; its preference is [Preference.liked].
-Track trackFromLikedTrack(api.LikedTrack wire) => _track(
+Track trackFromLikedTrack(api.LikedTrack wire) => trackFromParts(
   id: wire.id,
   playbackId: wire.playbackId,
   title: wire.title,
@@ -60,28 +60,29 @@ Track trackFromLikedTrack(api.LikedTrack wire) => _track(
 
 /// A track of an album or artist detail. The [fallback] album fills the
 /// album title, artist and artwork the track itself does not carry.
-Track trackFromSummary(api.TrackSummary wire, {Album? fallback}) => _track(
-  id: wire.id,
-  playbackId: wire.playbackId,
-  title: wire.title,
-  artistName: wire.artist?.name ?? wire.album?.artist?.name,
-  albumTitle: wire.album?.title,
-  durationSec: wire.duration,
-  artworkRef: wire.album?.coverArt ?? wire.album?.coverUrl,
-  isrc: wire.isrc,
-  albumId: wire.albumId ?? wire.album?.id,
-  artistId: wire.artist?.id,
-  loudnessLufs: wire.loudnessLufs,
-  truePeakDb: wire.truePeakDb,
-  albumLoudnessLufs: wire.album?.albumLoudnessLufs,
-  albumTruePeakDb: wire.album?.albumTruePeakDb,
-  discNumber: wire.discNo,
-  trackNumber: wire.trackNo,
-  fallback: fallback,
-);
+Track trackFromSummary(api.TrackSummary wire, {Album? fallback}) =>
+    trackFromParts(
+      id: wire.id,
+      playbackId: wire.playbackId,
+      title: wire.title,
+      artistName: wire.artist?.name ?? wire.album?.artist?.name,
+      albumTitle: wire.album?.title,
+      durationSec: wire.duration,
+      artworkRef: wire.album?.coverArt ?? wire.album?.coverUrl,
+      isrc: wire.isrc,
+      albumId: wire.albumId ?? wire.album?.id,
+      artistId: wire.artist?.id,
+      loudnessLufs: wire.loudnessLufs,
+      truePeakDb: wire.truePeakDb,
+      albumLoudnessLufs: wire.album?.albumLoudnessLufs,
+      albumTruePeakDb: wire.album?.albumTruePeakDb,
+      discNumber: wire.discNo,
+      trackNumber: wire.trackNo,
+      fallback: fallback,
+    );
 
 /// A top track of an artist detail.
-Track trackFromTopTrack(api.ArtistTopTrack wire) => _track(
+Track trackFromTopTrack(api.ArtistTopTrack wire) => trackFromParts(
   id: wire.id,
   playbackId: wire.playbackId,
   title: wire.title,
@@ -100,7 +101,10 @@ Track trackFromTopTrack(api.ArtistTopTrack wire) => _track(
   trackNumber: wire.trackNo,
 );
 
-Track _track({
+/// A track built from the fields every wire track shape carries; the
+/// shared core of the track mappers. A null [playbackId] makes the track
+/// not playable, and the [fallback] album fills what the track lacks.
+Track trackFromParts({
   required String id,
   required String? playbackId,
   required String title,

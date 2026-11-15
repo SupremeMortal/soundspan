@@ -51,11 +51,11 @@ abstract mixin class $OnlineUserCopyWith<$Res>  {
   factory $OnlineUserCopyWith(OnlineUser value, $Res Function(OnlineUser) _then) = _$OnlineUserCopyWithImpl;
 @useResult
 $Res call({
-@JsonKey(required: true, disallowNullValue: true) String displayName,@JsonKey(required: true, disallowNullValue: true) bool hasProfilePicture,@JsonKey(required: true, disallowNullValue: true) String id,@JsonKey(required: true, disallowNullValue: true) bool isInListenTogetherGroup,@JsonKey(required: true, disallowNullValue: true, fromJson: OnlineUser._read_lastHeartbeatAt, toJson: OnlineUser._write_lastHeartbeatAt) DateTime lastHeartbeatAt,@JsonKey(required: true, disallowNullValue: true, fromJson: OnlineUser._read_listeningStatus, toJson: OnlineUser._write_listeningStatus) OnlineUserListeningStatus listeningStatus,@JsonKey(required: true, disallowNullValue: true) OnlineUserTrack listeningTrack,@JsonKey(required: true, disallowNullValue: true) String username,@JsonKey(readValue: OnlineUser._extras, fromJson: OnlineUser._readExtras, includeToJson: false) Map<String, Object?> additionalProperties
+@JsonKey(required: true, disallowNullValue: true) String displayName,@JsonKey(required: true, disallowNullValue: true) bool hasProfilePicture,@JsonKey(required: true, disallowNullValue: true) String id,@JsonKey(required: true, disallowNullValue: true) bool isInListenTogetherGroup,@JsonKey(required: true, disallowNullValue: true, fromJson: OnlineUser._read_lastHeartbeatAt, toJson: OnlineUser._write_lastHeartbeatAt) DateTime lastHeartbeatAt,@JsonKey(required: true, disallowNullValue: true, fromJson: OnlineUser._read_listeningStatus, toJson: OnlineUser._write_listeningStatus) OnlineUserListeningStatus listeningStatus,@JsonKey(required: true) OnlineUserTrack? listeningTrack,@JsonKey(required: true, disallowNullValue: true) String username,@JsonKey(readValue: OnlineUser._extras, fromJson: OnlineUser._readExtras, includeToJson: false) Map<String, Object?> additionalProperties
 });
 
 
-$OnlineUserTrackCopyWith<$Res> get listeningTrack;
+$OnlineUserTrackCopyWith<$Res>? get listeningTrack;
 
 }
 /// @nodoc
@@ -68,7 +68,7 @@ class _$OnlineUserCopyWithImpl<$Res>
 
 /// Create a copy of OnlineUser
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? displayName = null,Object? hasProfilePicture = null,Object? id = null,Object? isInListenTogetherGroup = null,Object? lastHeartbeatAt = null,Object? listeningStatus = null,Object? listeningTrack = null,Object? username = null,Object? additionalProperties = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? displayName = null,Object? hasProfilePicture = null,Object? id = null,Object? isInListenTogetherGroup = null,Object? lastHeartbeatAt = null,Object? listeningStatus = null,Object? listeningTrack = freezed,Object? username = null,Object? additionalProperties = null,}) {
   return _then(OnlineUser(
 displayName: null == displayName ? _self.displayName : displayName // ignore: cast_nullable_to_non_nullable
 as String,hasProfilePicture: null == hasProfilePicture ? _self.hasProfilePicture : hasProfilePicture // ignore: cast_nullable_to_non_nullable
@@ -76,8 +76,8 @@ as bool,id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,isInListenTogetherGroup: null == isInListenTogetherGroup ? _self.isInListenTogetherGroup : isInListenTogetherGroup // ignore: cast_nullable_to_non_nullable
 as bool,lastHeartbeatAt: null == lastHeartbeatAt ? _self.lastHeartbeatAt : lastHeartbeatAt // ignore: cast_nullable_to_non_nullable
 as DateTime,listeningStatus: null == listeningStatus ? _self.listeningStatus : listeningStatus // ignore: cast_nullable_to_non_nullable
-as OnlineUserListeningStatus,listeningTrack: null == listeningTrack ? _self.listeningTrack : listeningTrack // ignore: cast_nullable_to_non_nullable
-as OnlineUserTrack,username: null == username ? _self.username : username // ignore: cast_nullable_to_non_nullable
+as OnlineUserListeningStatus,listeningTrack: freezed == listeningTrack ? _self.listeningTrack : listeningTrack // ignore: cast_nullable_to_non_nullable
+as OnlineUserTrack?,username: null == username ? _self.username : username // ignore: cast_nullable_to_non_nullable
 as String,additionalProperties: null == additionalProperties ? _self.additionalProperties : additionalProperties // ignore: cast_nullable_to_non_nullable
 as Map<String, Object?>,
   ));
@@ -86,9 +86,12 @@ as Map<String, Object?>,
 /// with the given fields replaced by the non-null parameter values.
 @override
 @pragma('vm:prefer-inline')
-$OnlineUserTrackCopyWith<$Res> get listeningTrack {
-  
-  return $OnlineUserTrackCopyWith<$Res>(_self.listeningTrack, (value) {
+$OnlineUserTrackCopyWith<$Res>? get listeningTrack {
+    if (_self.listeningTrack == null) {
+    return null;
+  }
+
+  return $OnlineUserTrackCopyWith<$Res>(_self.listeningTrack!, (value) {
     return _then(_self.copyWith(listeningTrack: value));
   });
 }

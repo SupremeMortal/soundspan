@@ -42,8 +42,7 @@ class const OnlineUser({
   )
   required final OnlineUserListeningStatus listeningStatus,
 
-  @JsonKey(required: true, disallowNullValue: true)
-  required final OnlineUserTrack listeningTrack,
+  @JsonKey(required: true) required final OnlineUserTrack? listeningTrack,
 
   @JsonKey(required: true, disallowNullValue: true)
   required final String username,

@@ -12,14 +12,16 @@ LikedTracksPagination _$LikedTracksPaginationFromJson(
   $checkKeys(
     json,
     requiredKeys: const ['hasMore', 'limit', 'nextCursor'],
-    disallowNullValues: const ['hasMore', 'limit', 'nextCursor'],
+    disallowNullValues: const ['hasMore', 'limit'],
   );
   return LikedTracksPagination(
     hasMore: json['hasMore'] as bool,
     limit: LikedTracksPagination._read_limit(json['limit']),
-    nextCursor: LikedTracksCursor.fromJson(
-      json['nextCursor'] as Map<String, dynamic>,
-    ),
+    nextCursor: json['nextCursor'] == null
+        ? null
+        : LikedTracksCursor.fromJson(
+            json['nextCursor'] as Map<String, dynamic>,
+          ),
     additionalProperties:
         LikedTracksPagination._extras(json, 'additionalProperties') == null
         ? const {}
@@ -34,5 +36,5 @@ Map<String, dynamic> _$LikedTracksPaginationToJson(
 ) => <String, dynamic>{
   'hasMore': instance.hasMore,
   'limit': ?LikedTracksPagination._write_limit(instance.limit),
-  'nextCursor': instance.nextCursor.toJson(),
+  'nextCursor': instance.nextCursor?.toJson(),
 };

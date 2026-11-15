@@ -51,11 +51,11 @@ abstract mixin class $DiscoverSearchResponseCopyWith<$Res>  {
   factory $DiscoverSearchResponseCopyWith(DiscoverSearchResponse value, $Res Function(DiscoverSearchResponse) _then) = _$DiscoverSearchResponseCopyWithImpl;
 @useResult
 $Res call({
-@JsonKey(required: true, disallowNullValue: true) DiscoverAliasInfo aliasInfo,@JsonKey(required: true, disallowNullValue: true) List<DiscoverResult> results,@JsonKey(readValue: DiscoverSearchResponse._extras, fromJson: DiscoverSearchResponse._readExtras, includeToJson: false) Map<String, Object?> additionalProperties
+@JsonKey(required: true) DiscoverAliasInfo? aliasInfo,@JsonKey(required: true, disallowNullValue: true) List<DiscoverResult> results,@JsonKey(readValue: DiscoverSearchResponse._extras, fromJson: DiscoverSearchResponse._readExtras, includeToJson: false) Map<String, Object?> additionalProperties
 });
 
 
-$DiscoverAliasInfoCopyWith<$Res> get aliasInfo;
+$DiscoverAliasInfoCopyWith<$Res>? get aliasInfo;
 
 }
 /// @nodoc
@@ -68,10 +68,10 @@ class _$DiscoverSearchResponseCopyWithImpl<$Res>
 
 /// Create a copy of DiscoverSearchResponse
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? aliasInfo = null,Object? results = null,Object? additionalProperties = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? aliasInfo = freezed,Object? results = null,Object? additionalProperties = null,}) {
   return _then(DiscoverSearchResponse(
-aliasInfo: null == aliasInfo ? _self.aliasInfo : aliasInfo // ignore: cast_nullable_to_non_nullable
-as DiscoverAliasInfo,results: null == results ? _self.results : results // ignore: cast_nullable_to_non_nullable
+aliasInfo: freezed == aliasInfo ? _self.aliasInfo : aliasInfo // ignore: cast_nullable_to_non_nullable
+as DiscoverAliasInfo?,results: null == results ? _self.results : results // ignore: cast_nullable_to_non_nullable
 as List<DiscoverResult>,additionalProperties: null == additionalProperties ? _self.additionalProperties : additionalProperties // ignore: cast_nullable_to_non_nullable
 as Map<String, Object?>,
   ));
@@ -80,9 +80,12 @@ as Map<String, Object?>,
 /// with the given fields replaced by the non-null parameter values.
 @override
 @pragma('vm:prefer-inline')
-$DiscoverAliasInfoCopyWith<$Res> get aliasInfo {
-  
-  return $DiscoverAliasInfoCopyWith<$Res>(_self.aliasInfo, (value) {
+$DiscoverAliasInfoCopyWith<$Res>? get aliasInfo {
+    if (_self.aliasInfo == null) {
+    return null;
+  }
+
+  return $DiscoverAliasInfoCopyWith<$Res>(_self.aliasInfo!, (value) {
     return _then(_self.copyWith(aliasInfo: value));
   });
 }

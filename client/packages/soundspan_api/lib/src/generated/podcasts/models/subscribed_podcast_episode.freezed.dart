@@ -51,11 +51,11 @@ abstract mixin class $SubscribedPodcastEpisodeCopyWith<$Res>  {
   factory $SubscribedPodcastEpisodeCopyWith(SubscribedPodcastEpisode value, $Res Function(SubscribedPodcastEpisode) _then) = _$SubscribedPodcastEpisodeCopyWithImpl;
 @useResult
 $Res call({
-@JsonKey(required: true) String? coverUrl,@JsonKey(required: true) String? description,@JsonKey(required: true, disallowNullValue: true, fromJson: SubscribedPodcastEpisode._read_duration, toJson: SubscribedPodcastEpisode._write_duration) int duration,@JsonKey(required: true, disallowNullValue: true) String id,@JsonKey(required: true, disallowNullValue: true) EpisodeProgress progress,@JsonKey(required: true, disallowNullValue: true, fromJson: SubscribedPodcastEpisode._read_publishedAt, toJson: SubscribedPodcastEpisode._write_publishedAt) DateTime publishedAt,@JsonKey(required: true, disallowNullValue: true) String title,@JsonKey(readValue: SubscribedPodcastEpisode._extras, fromJson: SubscribedPodcastEpisode._readExtras, includeToJson: false) Map<String, Object?> additionalProperties
+@JsonKey(required: true) String? coverUrl,@JsonKey(required: true) String? description,@JsonKey(required: true, disallowNullValue: true, fromJson: SubscribedPodcastEpisode._read_duration, toJson: SubscribedPodcastEpisode._write_duration) int duration,@JsonKey(required: true, disallowNullValue: true) String id,@JsonKey(required: true) EpisodeProgress? progress,@JsonKey(required: true, disallowNullValue: true, fromJson: SubscribedPodcastEpisode._read_publishedAt, toJson: SubscribedPodcastEpisode._write_publishedAt) DateTime publishedAt,@JsonKey(required: true, disallowNullValue: true) String title,@JsonKey(readValue: SubscribedPodcastEpisode._extras, fromJson: SubscribedPodcastEpisode._readExtras, includeToJson: false) Map<String, Object?> additionalProperties
 });
 
 
-$EpisodeProgressCopyWith<$Res> get progress;
+$EpisodeProgressCopyWith<$Res>? get progress;
 
 }
 /// @nodoc
@@ -68,14 +68,14 @@ class _$SubscribedPodcastEpisodeCopyWithImpl<$Res>
 
 /// Create a copy of SubscribedPodcastEpisode
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? coverUrl = freezed,Object? description = freezed,Object? duration = null,Object? id = null,Object? progress = null,Object? publishedAt = null,Object? title = null,Object? additionalProperties = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? coverUrl = freezed,Object? description = freezed,Object? duration = null,Object? id = null,Object? progress = freezed,Object? publishedAt = null,Object? title = null,Object? additionalProperties = null,}) {
   return _then(SubscribedPodcastEpisode(
 coverUrl: freezed == coverUrl ? _self.coverUrl : coverUrl // ignore: cast_nullable_to_non_nullable
 as String?,description: freezed == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
 as String?,duration: null == duration ? _self.duration : duration // ignore: cast_nullable_to_non_nullable
 as int,id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
-as String,progress: null == progress ? _self.progress : progress // ignore: cast_nullable_to_non_nullable
-as EpisodeProgress,publishedAt: null == publishedAt ? _self.publishedAt : publishedAt // ignore: cast_nullable_to_non_nullable
+as String,progress: freezed == progress ? _self.progress : progress // ignore: cast_nullable_to_non_nullable
+as EpisodeProgress?,publishedAt: null == publishedAt ? _self.publishedAt : publishedAt // ignore: cast_nullable_to_non_nullable
 as DateTime,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
 as String,additionalProperties: null == additionalProperties ? _self.additionalProperties : additionalProperties // ignore: cast_nullable_to_non_nullable
 as Map<String, Object?>,
@@ -85,9 +85,12 @@ as Map<String, Object?>,
 /// with the given fields replaced by the non-null parameter values.
 @override
 @pragma('vm:prefer-inline')
-$EpisodeProgressCopyWith<$Res> get progress {
-  
-  return $EpisodeProgressCopyWith<$Res>(_self.progress, (value) {
+$EpisodeProgressCopyWith<$Res>? get progress {
+    if (_self.progress == null) {
+    return null;
+  }
+
+  return $EpisodeProgressCopyWith<$Res>(_self.progress!, (value) {
     return _then(_self.copyWith(progress: value));
   });
 }

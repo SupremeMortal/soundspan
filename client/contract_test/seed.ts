@@ -344,7 +344,46 @@ async function main(): Promise<void> {
     );
     ok(`listener's playlist ${playlist.id} holds 5 tracks`);
 
-    // 8. A playbackId of a disabled source. The seed is server-side fixture
+    // 8. Three liked tracks and one recorded play for listener, so the liked
+    // list pages and Continue Listening is not empty.
+    const likedPage = await expectOk(
+        "GET",
+        "/api/library/tracks?limit=3&offset=5",
+        { token: listenerToken },
+    );
+    const likedIds: string[] = likedPage.tracks.map(
+        (track: any) => track.playbackId,
+    );
+    assert(
+        likedIds.length === 3 && likedIds.every((id) => typeof id === "string"),
+        "three more tracks with a playbackId",
+    );
+    for (const playbackId of likedIds) {
+        const liked = await expectOk("POST", "/api/library/preferences", {
+            token: listenerToken,
+            body: { playbackId, signal: "thumbs_up" },
+        });
+        assert(liked.state === "liked", `${playbackId} is liked`);
+    }
+    const likedTotal = await total("/api/library/liked?limit=1", listenerToken);
+    assert(likedTotal === 3, `3 liked tracks (found ${likedTotal})`);
+    ok("listener likes 3 tracks");
+    await expectOk("POST", "/api/plays", {
+        token: listenerToken,
+        body: { playbackId: playbackIds[0], listenedMs: 30_000 },
+    });
+    const recent = await expectOk(
+        "GET",
+        "/api/library/recently-listened?limit=5",
+        { token: listenerToken },
+    );
+    assert(
+        Array.isArray(recent.items) && recent.items.length > 0,
+        `recently listened is not empty (found ${JSON.stringify(recent.items)})`,
+    );
+    ok("listener has a recorded play; recently listened is not empty");
+
+    // 9. A playbackId of a disabled source. The seed is server-side fixture
     // code and may compose it; client code treats playbackIds as opaque.
     let unavailablePlaybackId: string | null = null;
     const probe = await call("GET", "/api/playback/stream/td.1", {
@@ -360,7 +399,7 @@ async function main(): Promise<void> {
         );
     }
 
-    // 9. Credentials for the tests.
+    // 10. Credentials for the tests.
     const credentials = {
         baseUrl,
         admin,

@@ -25,7 +25,6 @@ PodcastEpisode _$PodcastEpisodeFromJson(Map<String, dynamic> json) {
       'duration',
       'id',
       'isDownloaded',
-      'progress',
       'publishedAt',
       'title',
     ],
@@ -37,9 +36,9 @@ PodcastEpisode _$PodcastEpisodeFromJson(Map<String, dynamic> json) {
     id: json['id'] as String,
     imageUrl: json['imageUrl'] as String?,
     isDownloaded: json['isDownloaded'] as bool,
-    progress: EpisodeProgress.fromJson(
-      json['progress'] as Map<String, dynamic>,
-    ),
+    progress: json['progress'] == null
+        ? null
+        : EpisodeProgress.fromJson(json['progress'] as Map<String, dynamic>),
     publishedAt: PodcastEpisode._read_publishedAt(json['publishedAt']),
     season: PodcastEpisode._read_season(json['season']),
     title: json['title'] as String,
@@ -61,7 +60,7 @@ Map<String, dynamic> _$PodcastEpisodeToJson(
   'id': instance.id,
   'imageUrl': instance.imageUrl,
   'isDownloaded': instance.isDownloaded,
-  'progress': instance.progress.toJson(),
+  'progress': instance.progress?.toJson(),
   'publishedAt': ?PodcastEpisode._write_publishedAt(instance.publishedAt),
   'season': PodcastEpisode._write_season(instance.season),
   'title': instance.title,

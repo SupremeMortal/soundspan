@@ -138,12 +138,13 @@ final class LibraryRemoteSource {
     return api.KeysetPage(
       items: [for (final track in response.tracks) trackFromLikedTrack(track)],
       hasMore: pagination.hasMore,
-      nextCursor: pagination.hasMore
-          ? LikedCursor(
-              likedAt: pagination.nextCursor.likedAt.toUtc(),
-              trackId: pagination.nextCursor.trackId,
-            )
-          : null,
+      nextCursor: switch (pagination.nextCursor) {
+        final next? when pagination.hasMore => LikedCursor(
+          likedAt: next.likedAt.toUtc(),
+          trackId: next.trackId,
+        ),
+        _ => null,
+      },
       total: response.total,
     );
   }
