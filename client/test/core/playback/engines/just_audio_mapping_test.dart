@@ -296,6 +296,30 @@ void main() {
       );
     });
 
+    test('is unknown at the end of an item with a next item loaded', () {
+      for (final raw in [duration, const Duration(milliseconds: 3040)]) {
+        expect(
+          reportedPosition(
+            raw: raw,
+            duration: duration,
+            ended: false,
+            hasNext: true,
+          ),
+          isNull,
+          reason: '$raw',
+        );
+      }
+      expect(
+        reportedPosition(
+          raw: const Duration(milliseconds: 2990),
+          duration: duration,
+          ended: false,
+          hasNext: true,
+        ),
+        const Duration(milliseconds: 2990),
+      );
+    });
+
     test('trusts the player again a second after a transition', () {
       expect(
         reportedPosition(

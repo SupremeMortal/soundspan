@@ -421,10 +421,13 @@ final class JustAudioEngine implements PlayerEngine {
         duration: duration,
         ended: _ended,
         sinceAdvance: _sinceAdvance?.elapsed,
+        hasNext: _next != null,
       );
       if (reported == null) {
-        // The player still reports the previous item's end; hold the state
-        // until it reports the new item's own position.
+        // The player is between items: it still reports the previous
+        // item's end, or has run past the current item's end without
+        // reporting the index change. Hold the state until it reports a
+        // position of the item it plays.
         _recheck ??= Timer(_recheckDelay, () {
           _recheck = null;
           _report();

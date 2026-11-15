@@ -120,14 +120,19 @@ const Duration _staleMargin = Duration(milliseconds: 150);
 /// change can arrive before the position reset, so for a second after a
 /// transition a position further ahead than the time since it is still the
 /// previous item's end, and null is returned until the player reports the
-/// new item's own position. No position is invented.
+/// new item's own position. Likewise, while a next item is loaded
+/// ([hasNext]) a position at or past [duration] means the player is moving
+/// to it but has not reported the index change yet, so it is null rather
+/// than pinned to the end. No position is invented.
 Duration? reportedPosition({
   required Duration raw,
   required Duration? duration,
   required bool ended,
   Duration? sinceAdvance,
+  bool hasNext = false,
 }) {
   if (ended && duration != null) return duration;
+  if (hasNext && duration != null && raw >= duration) return null;
   var position = raw < Duration.zero ? Duration.zero : raw;
   if (duration != null && position > duration) position = duration;
   if (sinceAdvance != null &&
