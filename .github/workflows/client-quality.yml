@@ -8,6 +8,7 @@ on:
       - "backend/src/openapi/**"
       - ".github/workflows/client-*.yml"
       - ".github/actions/client-flutter/**"
+      - "CHANGELOG.md"
   push:
     branches: [main]
     paths:
@@ -32,6 +33,7 @@ jobs:
       web_storage: ${{ steps.diff.outputs.web_storage }}
       desktop: ${{ steps.diff.outputs.desktop }}
       release_build: ${{ steps.diff.outputs.release_build }}
+      release_notes: ${{ steps.diff.outputs.release_notes }}
       version: ${{ steps.version.outputs.version }}
     steps:
       - name: Checkout code
@@ -55,6 +57,7 @@ jobs:
               echo "web_storage=true"
               echo "desktop=true"
               echo "release_build=true"
+              echo "release_notes=true"
             } >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -72,6 +75,7 @@ jobs:
             echo "web_storage=$(has '^(client/lib/platform/|client/web/|client/integration_test/web/|client/pubspec\.lock$|\.github/workflows/client-quality\.yml$)')"
             echo "desktop=$(has '^(client/linux/|client/windows/|client/lib/platform/desktop_shell/|client/lib/app/shell/window_state_controller\.dart$|client/integration_test/desktop/|client/tool/ci/|\.github/workflows/client-quality\.yml$)')"
             echo "release_build=$(has '^(\.github/workflows/client-(build|release)\.yml$|client/tool/release/|client/pubspec\.(yaml|lock)$|client/config/|client/(android|ios|linux|macos|windows|web)/)')"
+            echo "release_notes=$(has '^(\.github/workflows/client-(build|release)\.yml$|client/tool/release/|client/pubspec\.(yaml|lock)$|client/config/|client/(android|ios|linux|macos|windows|web)/|CHANGELOG\.md$)')"
           } | tee -a "$GITHUB_OUTPUT"
 
       - name: Read the client version
@@ -413,3 +417,63 @@ jobs:
     with:
       version: ${{ needs.changes.outputs.version }}
       build-number: "${{ github.run_number }}"
+
+  # The release workflow's tag validation and notes, without a tag: the
+  # pubspec version as the tag and the notes against main's changelog.
+  client-release-dry-run:
+    name: client-release-dry-run
+    needs: changes
+    if: needs.changes.outputs.release_notes == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      VERSION: ${{ needs.changes.outputs.version }}
+      ACTIONLINT_VERSION: "1.7.12"
+      ACTIONLINT_SHA256: 8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Set up Flutter
+        uses: ./.github/actions/client-flutter
+
+      - name: Validate the tag client-v<pubspec version>
+        working-directory: client
+        run: dart run tool/release/validate_tag.dart --tag "client-v$VERSION" --pubspec pubspec.yaml
+
+      - name: Write the release notes against main's changelog
+        working-directory: client
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin main
+          git show origin/main:CHANGELOG.md > "$RUNNER_TEMP/main-CHANGELOG.md"
+          mkdir -p "$RUNNER_TEMP/client-release-notes"
+          dart run tool/release/release_notes.dart \
+            --changelog ../CHANGELOG.md \
+            --previous-changelog "$RUNNER_TEMP/main-CHANGELOG.md" \
+            --version "$VERSION" --repository "$GITHUB_REPOSITORY" \
+            --out "$RUNNER_TEMP/client-release-notes/release-notes.md"
+
+      - name: Upload the release notes
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: client-release-notes
+          path: ${{ runner.temp }}/client-release-notes/release-notes.md
+          if-no-files-found: error
+          retention-days: 7
+
+      # Checks the syntax and expressions of the client workflows, the tag
+      # workflow included, without running them.
+      - name: actionlint
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz"
+          curl -sSfL -o "$RUNNER_TEMP/$archive" \
+            "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/$archive"
+          echo "$ACTIONLINT_SHA256  $RUNNER_TEMP/$archive" | sha256sum --check --strict
+          tar -xzf "$RUNNER_TEMP/$archive" -C "$RUNNER_TEMP" actionlint
+          "$RUNNER_TEMP/actionlint" -color .github/workflows/client-*.yml

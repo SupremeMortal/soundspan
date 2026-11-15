@@ -120,7 +120,7 @@ npm --prefix frontend install
 
 **Backend Tests + Coverage**, **Backend Typecheck**, **Frontend Typecheck**, **Python Quality**, **Enforcement Gates**, and **Enforcement Gates Build** do not use `continue-on-error`; a failure always fails the workflow run. The four Visibility jobs set `continue-on-error` unless the repo variable `CI_NON_BLOCKING_TEST_VISIBILITY` is `false`; with the variable unset or set to any other value, their failures do not fail the workflow run.
 
-Client gates (`client-quality.yml`). They run on pull requests that touch `client/**`, `backend/src/routes/**`, `backend/src/openapi/**`, the `client-*` workflows, or `.github/actions/client-flutter/**`, and on pushes to `main` that touch `client/**`; a `changes` job skips them when nothing under `client/` (or the client workflows) changed. `npm run verify` and `npm run verify:ci` do not include them; client work runs `npm run verify:client`, which needs the Flutter release pinned in `client/.fvmrc`.
+Client gates (`client-quality.yml`). They run on pull requests that touch `client/**`, `backend/src/routes/**`, `backend/src/openapi/**`, the `client-*` workflows, `.github/actions/client-flutter/**` or `CHANGELOG.md`, and on pushes to `main` that touch `client/**`; a `changes` job skips them when nothing under `client/` (or the client workflows) changed. `npm run verify` and `npm run verify:ci` do not include them; client work runs `npm run verify:client`, which needs the Flutter release pinned in `client/.fvmrc`.
 
 | CI job (`client-quality.yml`) | Blocking? | Local command | Catches |
 | --- | --- | --- | --- |
