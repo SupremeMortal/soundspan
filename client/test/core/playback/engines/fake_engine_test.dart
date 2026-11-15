@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:soundspan/core/playback/engines/fake_engine.dart';
 import 'package:soundspan/core/playback/engines/player_engine.dart';
 import 'package:soundspan/core/playback/engines/player_engine_provider.dart';
+import 'package:soundspan/platform/player_engine/player_engine_factory.dart';
 
 final Uri _a = Uri.parse('https://music.test/a');
 final Uri _b = Uri.parse('https://music.test/b');
@@ -265,12 +266,12 @@ void main() {
   group('playerEngineBuilderProvider', () {
     setUp(() => attach(FakeEngine()));
 
-    test('throws UnsupportedError by default', () {
+    test('defaults to the platform factory', () {
       final container = ProviderContainer.test();
 
       final build = container.read(playerEngineBuilderProvider);
 
-      expect(build, throwsUnsupportedError);
+      expect(build, createPlayerEngine);
     });
 
     test('returns the override when overridden', () {

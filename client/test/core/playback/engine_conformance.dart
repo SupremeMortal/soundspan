@@ -97,8 +97,13 @@ abstract class EngineHarness {
   /// A tone in a local file.
   EngineSource localFile(String queueItemId);
 
-  /// The headers the server saw on the last request for [queueItemId].
-  Map<String, String> headersSeenFor(String queueItemId);
+  /// The credentials [source] carries to the server: its headers natively,
+  /// its `token` query value on the web.
+  Map<String, String> credentialsOf(EngineSource source);
+
+  /// The credentials the server saw on the last request for [queueItemId],
+  /// in the shape of [credentialsOf]; header names in any case.
+  Future<Map<String, String>> credentialsSeenFor(String queueItemId);
 
   /// Makes the network unreachable for the rest of the test.
   Future<void> disableNetwork();
@@ -120,9 +125,23 @@ abstract class EngineHarness {
   Future<void> dispose();
 }
 
+/// Declares one test of the suite named [description] running [body].
+typedef ConformanceTest = void Function(
+  String description,
+  Future<void> Function() body,
+);
+
 /// Registers every [ConformanceCase] in a group called [name], each with a
 /// fresh harness from [createHarness].
-void runEngineConformance(String name, EngineHarness Function() createHarness) {
+///
+/// [declare] declares each case; `test` when omitted. On devices it is
+/// `testWidgets`, whose results `flutter drive` reports.
+void runEngineConformance(
+  String name,
+  EngineHarness Function() createHarness, {
+  ConformanceTest? declare,
+}) {
+  final declareTest = declare ?? test;
   group('engine conformance: $name', () {
     late EngineHarness harness;
     late PlayerEngine engine;
@@ -160,7 +179,7 @@ void runEngineConformance(String name, EngineHarness Function() createHarness) {
         s.playing && s.status == EngineStatus.ready;
 
     void conformance(ConformanceCase c, Future<void> Function() body) {
-      test(c.description, () async {
+      declareTest(c.description, () async {
         if (harness.skipped.contains(c)) {
           markTestSkipped('${c.name} is skipped on $name');
           return;
@@ -354,18 +373,18 @@ void runEngineConformance(String name, EngineHarness Function() createHarness) {
 
     conformance(ConformanceCase.headers, () async {
       final source = harness.tone('a');
+      final sent = harness.credentialsOf(source);
       expect(
-        source.headers,
+        sent,
         isNotEmpty,
-        reason: 'the harness tone carries headers to check',
+        reason: 'the harness tone carries credentials to check',
       );
       await engine.load(source);
       await waitFor(isPlaying, reason: 'playing');
 
-      final seen = harness
-          .headersSeenFor('a')
+      final seen = (await harness.credentialsSeenFor('a'))
           .map((k, v) => MapEntry(k.toLowerCase(), v));
-      for (final MapEntry(:key, :value) in source.headers.entries) {
+      for (final MapEntry(:key, :value) in sent.entries) {
         expect(seen[key.toLowerCase()], value, reason: 'header $key');
       }
     });

@@ -89,10 +89,14 @@ final class FakeEngineHarness implements EngineHarness {
   }
 
   @override
-  Map<String, String> headersSeenFor(String queueItemId) => _engines
-      .expand((e) => e.requested)
-      .lastWhere((s) => s.queueItemId == queueItemId)
-      .headers;
+  Map<String, String> credentialsOf(EngineSource source) => source.headers;
+
+  @override
+  Future<Map<String, String>> credentialsSeenFor(String queueItemId) async =>
+      _engines
+          .expand((e) => e.requested)
+          .lastWhere((s) => s.queueItemId == queueItemId)
+          .headers;
 
   @override
   Future<void> disableNetwork() async {

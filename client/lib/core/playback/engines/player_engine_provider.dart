@@ -2,15 +2,13 @@
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:soundspan/core/playback/engines/player_engine.dart';
+import 'package:soundspan/platform/player_engine/player_engine_factory.dart';
 
 /// Builds the [PlayerEngine] of the current platform.
 typedef PlayerEngineBuilder = PlayerEngine Function();
 
-PlayerEngine _unsupported() =>
-    throw UnsupportedError('No PlayerEngine for this platform');
-
-/// The root-scope [PlayerEngineBuilder]. The default throws
-/// [UnsupportedError] when called; the app overrides it with the engine of
-/// its platform and tests with `FakeEngine.new`.
+/// The root-scope [PlayerEngineBuilder]. The default is the platform
+/// factory, `createPlayerEngine`, which throws [UnsupportedError] on a
+/// platform without an engine; tests override it with `FakeEngine.new`.
 final Provider<PlayerEngineBuilder> playerEngineBuilderProvider =
-    Provider<PlayerEngineBuilder>((ref) => _unsupported);
+    Provider<PlayerEngineBuilder>((ref) => createPlayerEngine);

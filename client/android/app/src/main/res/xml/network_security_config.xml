@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Cleartext is permitted globally: the "http only for LAN hosts, or after
+     an explicit warning" rule is enforced in Dart (doc 10, Cleartext HTTP).
+     User-installed certificate authorities are trusted for self-hosted
+     servers with a private CA. -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system"/>
+            <certificates src="user"/>
+        </trust-anchors>
+    </base-config>
+</network-security-config>
