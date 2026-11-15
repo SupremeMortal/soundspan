@@ -14,6 +14,11 @@ class FakeReachability implements ReachabilityController {
   final StreamController<Reachability> _changes =
       StreamController<Reachability>.broadcast(sync: true);
 
+  /// The kind of network reported; tests set it. [ConnectionType.wifi] by
+  /// default.
+  @override
+  ConnectionType connectionType = ConnectionType.wifi;
+
   /// The outcomes passed to [reportCallOutcome], in order.
   final List<bool> outcomes = [];
 

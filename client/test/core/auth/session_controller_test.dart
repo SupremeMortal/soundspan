@@ -98,6 +98,7 @@ void main() {
     final controller = SessionController(
       profileId: profile.id,
       repository: repo,
+      clock: clock,
     );
     addTearDown(controller.dispose);
     await controller.load();
@@ -125,6 +126,7 @@ void main() {
     final controller = SessionController(
       profileId: profile.id,
       repository: repo,
+      clock: clock,
     );
     addTearDown(controller.dispose);
     expect(controller.current, isNull);

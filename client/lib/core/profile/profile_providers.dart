@@ -6,8 +6,10 @@ import 'package:soundspan/core/auth/session_controller.dart';
 import 'package:soundspan/core/profile/profile_context.dart';
 import 'package:soundspan/core/profile/profile_disposer.dart';
 import 'package:soundspan/core/storage/providers.dart';
+import 'package:soundspan/core/storage/state/device_settings_dao.dart';
 import 'package:soundspan/core/storage/state/state_database.dart';
 import 'package:soundspan/platform/database_opener/database_opener.dart';
+import 'package:soundspan/shared/clock.dart';
 import 'package:soundspan_api/soundspan_api.dart';
 
 /// The `User-Agent` of API requests: `soundspan-client/<version> (<os>)`.
@@ -23,6 +25,7 @@ final Provider<SessionController> sessionControllerProvider =
       final controller = SessionController(
         profileId: ref.watch(profileContextProvider).profile.id,
         repository: ref.watch(profileRepositoryProvider),
+        clock: ref.watch(clockProvider),
       );
       ref.onDispose(controller.dispose);
       return controller;
@@ -55,3 +58,10 @@ final Provider<StateDatabase> stateDatabaseProvider = Provider<StateDatabase>((
   ref.watch(profileDisposerProvider).register(database.close);
   return database;
 }, dependencies: [profileContextProvider, profileDisposerProvider]);
+
+/// The [DeviceSettingsDao] over the profile's `state.db`.
+final Provider<DeviceSettingsDao> deviceSettingsDaoProvider =
+    Provider<DeviceSettingsDao>(
+      (ref) => DeviceSettingsDao(ref.watch(stateDatabaseProvider)),
+      dependencies: [stateDatabaseProvider],
+    );

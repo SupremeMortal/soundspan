@@ -139,6 +139,7 @@ Runs at start-up when online, after sign-in, and at most every 6 hours.
 ## Reachability and Offline Mode
 
 `ReachabilityController` (root scope, per active profile) produces one of `online`, `serverUnreachable`, `noNetwork`, `forcedOffline`.
+It also reports `connectionType` (`wifi`, `cellular`, `other`, `none`), from which the stream quality setting is chosen (doc 06, Source Resolution).
 
 - Inputs: `connectivity_plus` (interface up/down and type), the outcome of real API calls (any `Offline` exception counts as a failure, any response as a success), and the `offline.forced` setting.
 - After 2 consecutive failures within 30 s the state becomes `serverUnreachable`. A probe of `GET /api/health/live` then runs with backoff 5 s, 15 s, 30 s, 60 s (cap) and on every connectivity change; one success returns to `online`.

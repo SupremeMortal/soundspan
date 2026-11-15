@@ -7,6 +7,10 @@ import 'package:soundspan/core/profile/api_provider.dart';
 import 'package:soundspan/core/profile/profile_providers.dart';
 import 'package:soundspan/core/profile/profile_runtime.dart';
 import 'package:soundspan/core/sync/sync_providers.dart';
+import 'package:soundspan/shared/domain/playback_id.dart';
+import 'package:soundspan/shared/domain/queue_item.dart';
+import 'package:soundspan/shared/domain/track.dart';
+import 'package:soundspan_api/soundspan_api.dart';
 
 import 'profile_harness.dart';
 
@@ -20,6 +24,8 @@ void main() {
       playbackInfoRepositoryProvider,
       playsRepositoryProvider,
       playbackStateRepositoryProvider,
+      sourceResolverProvider,
+      streamQualityPolicyProvider,
     ]) {
       expect(() => harness.root.read(provider), throwsA(anything));
     }
@@ -58,6 +64,39 @@ void main() {
     expect(
       b.read(playbackStateRepositoryProvider),
       isNot(same(repositories[2])),
+    );
+  });
+
+  test('the source resolver streams from the profile server with its '
+      'credential', () async {
+    final harness = await ProfileHarness.create();
+    final runtime = harness.root.read(profileRuntimeProvider);
+    addTearDown(runtime.dispose);
+
+    await runtime.switchTo(harness.b);
+    final scope = runtime.container!;
+    final source = await scope
+        .read(sourceResolverProvider)
+        .resolve(
+          const QueueItem.track(
+            queueItemId: 'q1',
+            track: Track(
+              meta: TrackMeta(
+                title: 'Song',
+                artist: 'Artist',
+                album: 'Album',
+                durationSec: 200,
+              ),
+              playbackId: PlaybackId('p1'),
+            ),
+            context: QueueContext(kind: QueueContextKind.single),
+          ),
+        );
+    expect(source.uri.host, 'b.example.com');
+    expect(source.uri.path, '/api/playback/stream/p1');
+    expect(
+      source.headers,
+      authHeaders(scope.read(sessionControllerProvider).current!),
     );
   });
 }

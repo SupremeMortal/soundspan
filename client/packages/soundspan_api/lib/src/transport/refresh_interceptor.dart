@@ -148,6 +148,22 @@ class RefreshInterceptor extends Interceptor {
     }
   }
 
+  /// Renews the JWT session now and returns the new credential.
+  ///
+  /// Joins a renewal already in flight, so a call made while a 401 is being
+  /// handled shares its request and its
+  /// [CredentialProvider.onTokensRotated] write. Fails as a renewal does
+  /// (see the class comment); throws [Unauthenticated] when the current
+  /// credential is not a JWT session.
+  Future<JwtCredentials> refreshSession() {
+    if (_inFlight case final inFlight?) return inFlight;
+    final current = credentials?.current;
+    if (current is! JwtCredentials) {
+      return Future.error(const Unauthenticated());
+    }
+    return _refresh(current);
+  }
+
   Future<JwtCredentials> _refresh(JwtCredentials stale) =>
       _inFlight ??= _doRefresh(stale).whenComplete(() => _inFlight = null);
 

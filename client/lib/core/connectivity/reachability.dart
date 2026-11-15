@@ -18,6 +18,22 @@ enum Reachability {
   forcedOffline,
 }
 
+/// The kind of network the device is on; stream quality follows it (doc 06,
+/// Source Resolution).
+enum ConnectionType {
+  /// Wi-Fi.
+  wifi,
+
+  /// A mobile data connection.
+  cellular,
+
+  /// Ethernet, VPN or another kind the platform reports.
+  other,
+
+  /// No network interface is up.
+  none,
+}
+
 /// Tracks [Reachability] for the active profile. In any state but
 /// [Reachability.online], repositories serve the cache and skip refreshes.
 abstract interface class ReachabilityController {
@@ -29,6 +45,9 @@ abstract interface class ReachabilityController {
 
   /// Whether [current] is [Reachability.online].
   bool get isOnline;
+
+  /// The kind of network the device is on now.
+  ConnectionType get connectionType;
 
   /// Reports the outcome of a real API call: any response is a success, an
   /// `Offline` exception a failure.
@@ -49,6 +68,10 @@ class AlwaysOnlineReachability implements ReachabilityController {
 
   @override
   bool get isOnline => true;
+
+  /// Always [ConnectionType.wifi].
+  @override
+  ConnectionType get connectionType => ConnectionType.wifi;
 
   @override
   void reportCallOutcome({required bool success}) {}

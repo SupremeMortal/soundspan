@@ -5,6 +5,7 @@ library;
 
 import 'package:dio/dio.dart';
 import 'package:soundspan_api/src/config.dart';
+import 'package:soundspan_api/src/errors.dart';
 import 'package:soundspan_api/src/generated/anonymous_operations.g.dart';
 import 'package:soundspan_api/src/generated/soundspan_rest_client.dart';
 import 'package:soundspan_api/src/operations.dart';
@@ -12,6 +13,7 @@ import 'package:soundspan_api/src/server_version.dart';
 import 'package:soundspan_api/src/transport/dio_factory.dart';
 import 'package:soundspan_api/src/transport/error_mapper.dart';
 import 'package:soundspan_api/src/transport/log_interceptor.dart';
+import 'package:soundspan_api/src/transport/refresh_interceptor.dart';
 import 'package:soundspan_api/src/transport/replay.dart';
 
 /// The `User-Agent` of [SoundspanApi.anonymous] when none is given.
@@ -92,6 +94,17 @@ class SoundspanApi {
   /// `version` of `GET /api/health`. A missing value and the literal
   /// `unknown` give null; other failures propagate as an `ApiException`.
   Future<String?> fetchServerVersion() => fetchServerVersionWith(_dio, rest);
+
+  /// Renews the JWT session through the transport's single-flight renewal
+  /// and returns the new credential, which the credential provider has
+  /// stored by then.
+  ///
+  /// A renewal already started by a 401 or by an aging token is joined, not
+  /// repeated. Throws [Unauthenticated] when the session is rejected (after
+  /// the provider's `onUnauthenticated`) or the credential is not a JWT
+  /// session, and the renewal's own `ApiException` otherwise.
+  Future<JwtCredentials> refreshSession() =>
+      _dio.interceptors.whereType<RefreshInterceptor>().single.refreshSession();
 
   /// Closes the HTTP adapter and its open connections.
   void close() => _dio.close(force: true);

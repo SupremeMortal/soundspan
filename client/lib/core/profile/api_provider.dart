@@ -25,13 +25,16 @@ final Provider<SoundspanApiFactory> soundspanApiFactoryProvider =
 /// The [SoundspanApi] of the profile scope, built from [apiConfigProvider]
 /// with the [sessionControllerProvider] as its credential provider, and
 /// closed through the [ProfileDisposer] when the scope ends. Every
-/// repository uses it.
+/// repository uses it. Its single-flight session renewal becomes the
+/// session controller's refresher.
 final Provider<SoundspanApi> soundspanApiProvider = Provider<SoundspanApi>(
   (ref) {
+    final session = ref.watch(sessionControllerProvider);
     final api = ref.watch(soundspanApiFactoryProvider)(
       ref.watch(apiConfigProvider),
-      ref.watch(sessionControllerProvider),
+      session,
     );
+    session.refresher = api.refreshSession;
     ref.watch(profileDisposerProvider).register(() async => api.close());
     return api;
   },
