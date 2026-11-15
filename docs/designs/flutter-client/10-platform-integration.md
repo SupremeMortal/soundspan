@@ -20,7 +20,7 @@ What each target needs beyond shared Dart code. Identifier everywhere: `io.sound
 | `CAMERA` | QR scanner; requested when the scanner opens; `<uses-feature android:required="false">` |
 | `MainActivity` extends `AudioServiceActivity`, `launchMode="singleTask"` | `audio_service` |
 | `<service android:name="com.ryanheise.audioservice.AudioService" android:foregroundServiceType="mediaPlayback" android:exported="true">` with the `MediaBrowserService` intent filter | Playback, Bluetooth, Android Auto |
-| `<receiver android:name="com.ryanheise.audioservice.MediaButtonReceiver">` | Headset buttons |
+| `<receiver android:name="com.ryanheise.audioservice.MediaButtonReceiver" android:exported="true">` with the `MEDIA_BUTTON` intent filter | Headset buttons; restarts playback from a media button after the process is killed |
 | Intent filter `VIEW` / `BROWSABLE` / scheme `soundspan` | Deep links |
 | `android:networkSecurityConfig="@xml/network_security_config"` | Cleartext policy |
 | `android:dataExtractionRules`, `android:fullBackupContent` | Exclude `profiles/*/media`, databases, and secure storage from backup |

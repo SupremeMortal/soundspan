@@ -362,6 +362,23 @@ The position gap across the 20 natural transitions was at most 6.7 ms on Linux a
 
 Because question 2 is answered no on both platforms and the fallback also fails it, the `MediaKitEngine` design is not rewritten to the fallback. The choice between keeping prefetch on (shared credential headers, which the transport already guarantees) and turning it off (own headers per item) is made when `MediaKitEngine` is built, using this evidence.
 
+## Spike S3 finding
+
+A minimal Android app was built with the structure this document and [02](02-architecture.md) describe: `main()` creates one `AudioPlayer` and a controller object in the main isolate, then `AudioService.init` registers a `BaseAudioHandler` that holds no state, forwards `play`, `pause`, `stop` and `seek` to the controller and mirrors the player's state to `playbackState` and `mediaItem`. The manifest and `AudioServiceConfig` were those of [10](10-platform-integration.md) (Android, Playback service): `MainActivity` extends `AudioServiceActivity` with `launchMode="singleTask"`, the `AudioService` service with `foregroundServiceType="mediaPlayback"`, the `MediaButtonReceiver`, channel `io.soundspan.app.playback` named "Playback", `androidNotificationOngoing: true`, `androidStopForegroundOnPause: true`, icon `drawable/ic_stat_soundspan`. A bundled 5-second tone played on a loop (no network). Once a second the app logged its process id, a start counter persisted in a file, the playing flag, the accumulated played time and whether the engine was created under an activity or by the playback service; an `adb` driver read those lines. Every question ran on two emulator images.
+
+| Question | Android 14 (API 34, x86_64, `google_apis`) | Android 13 (API 33, x86_64, `google_apis`) |
+|---|---|---|
+| 1. Playback continues with the screen off, battery unplugged and the device forced into deep idle, engine owned outside the handler | Yes: deep idle state `IDLE` throughout; same process; foreground service still listed; 600.002 s played in 600.000 s; longest stall 9 ms | Yes: deep idle state `IDLE` throughout; same process; foreground service still listed; 600.001 s played in 599.999 s; longest stall 1 ms |
+| 2. After a pause (the service leaves the foreground) and a kill of the process (`kill -9`), a media button (`cmd media_session dispatch play`) restarts playback | Yes, 3/3: each time a new process created the engine with no activity, the handler received `play` 17–27 ms after the engine was created, and the position advanced | Yes, 3/3: each time a new process created the engine with no activity, the handler received `play` 8–9 ms after the engine was created, and the position advanced |
+| 3. Playback continues when the task is removed while playing (`am stack remove`) | Yes: same process, 59.996 s played in a 60 s window | Yes: same process, 58.986 s played in a 60 s window |
+
+- The media button reached the killed app through the media session service's last media-button receiver on the first try every time; the key-event fallback was never needed. The app never restarted on its own after a kill.
+- In a process started by the media button, `main()` runs with no activity and no view. The harness called `AudioService.init` from `main()` before `runApp`, so the handler was registered before any frame; bootstrap step 8 runs it after the first frame, which a process with no view does not produce.
+- Package versions: Flutter 3.50.0 (Dart 3.14.0), `audio_service` 0.18.19, `just_audio` 0.10.6, `audio_session` 0.2.4. The debug APK ran without the Flutter tool attached.
+- One hour of playback with the screen off on real hardware (vendor battery managers) and a restart by tapping play in the media notification itself cannot be measured on CI and are human checklist rows.
+
+Because questions 1 to 3 are answered yes on both images, the design stands: the engine and `PlaybackController` stay outside the handler, and the handler holds no state.
+
 ## Spike S4 finding
 
 A minimal Flutter Windows app (app user model id `io.soundspan.app` set in `main.cpp` as [10](10-platform-integration.md) describes) ran an integration test against `smtc_windows` on a `windows-latest` runner (Visual Studio 18 Build Tools). The test initialised the plugin, enabled play, pause, next and previous, set the playback status to playing, updated metadata (title, artist, album, album artist), the timeline (start 0, end 215 s, position 42 s, seek range 0–215 s, then a position update to 43 s) and a thumbnail given as a `file:///` URI of a local PNG, and subscribed to the button-event stream. A Windows PowerShell 5.1 script then read every session back through `Windows.Media.Control.GlobalSystemMediaTransportControlsSessionManager`.
