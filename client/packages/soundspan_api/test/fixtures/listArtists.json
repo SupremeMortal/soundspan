@@ -2,10 +2,10 @@
   "artists": [
     {
       "albumCount": 2,
-      "coverArt": null,
-      "heroUrl": null,
-      "id": "cmwhdx9fe000x07tessr3bzm3",
-      "mbid": null,
+      "coverArt": "native:artists/cmwhfq88g000y07l9a1qi9zi9.jpg",
+      "heroUrl": "native:artists/cmwhfq88g000y07l9a1qi9zi9.jpg",
+      "id": "cmwhfq88g000y07l9a1qi9zi9",
+      "mbid": "484a4e90-6899-4e4b-a948-a2255d365340",
       "name": "Contract Aurora",
       "trackCount": 14
     },
@@ -13,8 +13,8 @@
       "albumCount": 2,
       "coverArt": null,
       "heroUrl": null,
-      "id": "cmwhdx964000i07teg8mj46nf",
-      "mbid": null,
+      "id": "cmwhfq7sz000g07l98lw8n9cp",
+      "mbid": "40f85f99-766f-4cde-986e-d3d8abdcffde",
       "name": "Contract Basalt",
       "trackCount": 14
     },
@@ -22,14 +22,14 @@
       "albumCount": 2,
       "coverArt": null,
       "heroUrl": null,
-      "id": "cmwhdx8wf000307te6a41006z",
-      "mbid": null,
+      "id": "cmwhfq7g8000307l9drua3jcd",
+      "mbid": "680b8b24-1e11-4748-b961-32293ee3fd3b",
       "name": "Contract Cinder",
       "trackCount": 12
     }
   ],
   "limit": 3,
-  "nextCursor": "cmwhdx8wf000307te6a41006z",
+  "nextCursor": "cmwhfq7g8000307l9drua3jcd",
   "offset": 0,
   "total": 3
 }

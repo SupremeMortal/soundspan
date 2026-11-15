@@ -1,15 +1,15 @@
 {
   "groupType": "host-follower",
-  "hostUserId": "cmwhdx8n4000107teqfjj1bol",
-  "id": "cmwhe0xq2002a07te35012l5e",
+  "hostUserId": "cmwhfq75r000107l99vpcqcqw",
+  "id": "cmwhfqr8f002a07l9qbu86pg0",
   "isActive": true,
-  "joinCode": "4RZJ2P",
+  "joinCode": "AFVR5X",
   "members": [
     {
       "isConnected": false,
       "isHost": true,
-      "joinedAt": "2026-11-15T05:22:08.185Z",
-      "userId": "cmwhdx8n4000107teqfjj1bol",
+      "joinedAt": "2026-11-15T06:10:12.445Z",
+      "userId": "cmwhfq75r000107l99vpcqcqw",
       "username": "listener"
     }
   ],
@@ -24,21 +24,21 @@
         "album": {
           "albumLoudnessLufs": null,
           "albumTruePeakDb": null,
-          "coverArt": null,
-          "id": "cmwhdx9au000q07tetrh44224",
+          "coverArt": "native:cmwhfq80b000p07l9lhk1awb2.jpg",
+          "id": "cmwhfq80b000p07l9lhk1awb2",
           "title": "Quiet Fault"
         },
         "artist": {
-          "id": "cmwhdx964000i07teg8mj46nf",
+          "id": "cmwhfq7sz000g07l98lw8n9cp",
           "name": "Contract Basalt"
         },
         "duration": 3,
-        "id": "cmwhdx9g1000z07te6kx4vrgh",
-        "localTrackId": "cmwhdx9g1000z07te6kx4vrgh",
+        "id": "cmwhfq888000x07l976fptlcm",
+        "localTrackId": "cmwhfq888000x07l976fptlcm",
         "loudnessLufs": null,
         "mediaSource": "local",
         "originSource": "local",
-        "playbackId": "t.cmwhdx9g1000z07te6kx4vrgh",
+        "playbackId": "t.cmwhfq888000x07l976fptlcm",
         "provider": {
           "source": "local"
         },
@@ -49,21 +49,21 @@
         "album": {
           "albumLoudnessLufs": null,
           "albumTruePeakDb": null,
-          "coverArt": null,
-          "id": "cmwhdx9kb001607teqiqkblth",
+          "coverArt": "native:cmwhfq8fl001607l9bc6nd9nw.jpg",
+          "id": "cmwhfq8fl001607l9bc6nd9nw",
           "title": "First Light"
         },
         "artist": {
-          "id": "cmwhdx9fe000x07tessr3bzm3",
+          "id": "cmwhfq88g000y07l9a1qi9zi9",
           "name": "Contract Aurora"
         },
         "duration": 30,
-        "id": "cmwhdx9m4001907teuojd1j3v",
-        "localTrackId": "cmwhdx9m4001907teuojd1j3v",
+        "id": "cmwhfq8il001a07l9ez59crtp",
+        "localTrackId": "cmwhfq8il001a07l9ez59crtp",
         "loudnessLufs": null,
         "mediaSource": "local",
         "originSource": "local",
-        "playbackId": "t.cmwhdx9m4001907teuojd1j3v",
+        "playbackId": "t.cmwhfq8il001a07l9ez59crtp",
         "provider": {
           "source": "local"
         },
@@ -74,21 +74,21 @@
         "album": {
           "albumLoudnessLufs": null,
           "albumTruePeakDb": null,
-          "coverArt": null,
-          "id": "cmwhdx9kb001607teqiqkblth",
+          "coverArt": "native:cmwhfq8fl001607l9bc6nd9nw.jpg",
+          "id": "cmwhfq8fl001607l9bc6nd9nw",
           "title": "First Light"
         },
         "artist": {
-          "id": "cmwhdx9fe000x07tessr3bzm3",
+          "id": "cmwhfq88g000y07l9a1qi9zi9",
           "name": "Contract Aurora"
         },
         "duration": 3,
-        "id": "cmwhdx9mn001a07teq4kgnmot",
-        "localTrackId": "cmwhdx9mn001a07teq4kgnmot",
+        "id": "cmwhfq8id001907l9rl1s5cp7",
+        "localTrackId": "cmwhfq8id001907l9rl1s5cp7",
         "loudnessLufs": null,
         "mediaSource": "local",
         "originSource": "local",
-        "playbackId": "t.cmwhdx9mn001a07teq4kgnmot",
+        "playbackId": "t.cmwhfq8id001907l9rl1s5cp7",
         "provider": {
           "source": "local"
         },
@@ -96,9 +96,9 @@
         "truePeakDb": null
       }
     ],
-    "serverTime": 1794720128197,
+    "serverTime": 1794723012466,
     "stateVersion": 0,
-    "trackId": "cmwhdx9g1000z07te6kx4vrgh"
+    "trackId": "cmwhfq888000x07l976fptlcm"
   },
   "readyDeadlineMs": null,
   "readyUserIds": [],

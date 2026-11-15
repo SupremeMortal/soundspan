@@ -2,16 +2,16 @@
   "dependencies": {
     "checkIntervalMs": 5000,
     "checkTimeoutMs": 2000,
-    "lastCheckedAt": 1794720127333,
+    "lastCheckedAt": 1794723011561,
     "overallHealthy": true,
     "postgres": {
       "error": null,
-      "latencyMs": 2,
+      "latencyMs": 1,
       "ok": true
     },
     "redis": {
       "error": null,
-      "latencyMs": 2,
+      "latencyMs": 1,
       "ok": true
     },
     "required": true
@@ -20,6 +20,6 @@
   "role": "all",
   "startupComplete": true,
   "status": "ok",
-  "uptimeSeconds": 189,
+  "uptimeSeconds": 31,
   "version": "unknown"
 }

@@ -1,24 +1,24 @@
 [
   {
-    "createdAt": "2026-11-15T05:22:08.012Z",
-    "id": "cmwhe0xl8002707tegp2thwg7",
+    "createdAt": "2026-11-15T06:10:12.227Z",
+    "id": "cmwhfqr2b002707l94le3ldu0",
     "isHidden": false,
     "isOwner": true,
     "isPublic": false,
     "items": [
       {
-        "id": "cmwhe0xmj002907tec1pszn7y",
+        "id": "cmwhfqr3j002907l95nhglsax",
         "track": {
           "album": {
-            "coverArt": null
+            "coverArt": "native:cmwhfq8fl001607l9bc6nd9nw.jpg"
           }
         }
       },
       {
-        "id": "cmwhe0xlr002807teuqiysxa7",
+        "id": "cmwhfqr2t002807l9ucl6vpt8",
         "track": {
           "album": {
-            "coverArt": null
+            "coverArt": "native:cmwhfq80b000p07l9lhk1awb2.jpg"
           }
         }
       }
@@ -28,56 +28,56 @@
     "spotifyPlaylistId": null,
     "spotifyPlaylistUrl": null,
     "trackCount": 2,
-    "updatedAt": "2026-11-15T05:22:08.074Z",
+    "updatedAt": "2026-11-15T06:10:12.285Z",
     "user": {
       "username": "listener"
     },
-    "userId": "cmwhdx8n4000107teqfjj1bol"
+    "userId": "cmwhfq75r000107l99vpcqcqw"
   },
   {
-    "createdAt": "2026-11-15T05:19:18.196Z",
-    "id": "cmwhdxak4001h07telmelo95j",
+    "createdAt": "2026-11-15T06:09:48.932Z",
+    "id": "cmwhfq938001h07l9kgruj44m",
     "isHidden": false,
     "isOwner": true,
     "isPublic": false,
     "items": [
       {
-        "id": "cmwhdxako001i07tesxb6c1ez",
+        "id": "cmwhfq93r001i07l96oweas8h",
         "track": {
           "album": {
-            "coverArt": null
+            "coverArt": "native:cmwhfq80b000p07l9lhk1awb2.jpg"
           }
         }
       },
       {
-        "id": "cmwhdxal3001j07te9r3rqxln",
+        "id": "cmwhfq946001j07l9vucjqa1p",
         "track": {
           "album": {
-            "coverArt": null
+            "coverArt": "native:cmwhfq8fl001607l9bc6nd9nw.jpg"
           }
         }
       },
       {
-        "id": "cmwhdxalj001k07tew8wwklpj",
+        "id": "cmwhfq94j001k07l9s93rxy67",
         "track": {
           "album": {
-            "coverArt": null
+            "coverArt": "native:cmwhfq8fl001607l9bc6nd9nw.jpg"
           }
         }
       },
       {
-        "id": "cmwhdxam1001l07te845a8e9a",
+        "id": "cmwhfq94t001l07l9iltnkhqj",
         "track": {
           "album": {
-            "coverArt": null
+            "coverArt": "native:cmwhfq80b000p07l9lhk1awb2.jpg"
           }
         }
       },
       {
-        "id": "cmwhdxamj001m07teg5nrz2ua",
+        "id": "cmwhfq953001m07l96vvi2bgt",
         "track": {
           "album": {
-            "coverArt": null
+            "coverArt": "native:cmwhfq8fl001607l9bc6nd9nw.jpg"
           }
         }
       }
@@ -87,10 +87,10 @@
     "spotifyPlaylistId": null,
     "spotifyPlaylistUrl": null,
     "trackCount": 5,
-    "updatedAt": "2026-11-15T05:19:18.286Z",
+    "updatedAt": "2026-11-15T06:09:49.001Z",
     "user": {
       "username": "listener"
     },
-    "userId": "cmwhdx8n4000107teqfjj1bol"
+    "userId": "cmwhfq75r000107l99vpcqcqw"
   }
 ]
