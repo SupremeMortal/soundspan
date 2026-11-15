@@ -197,6 +197,10 @@ extension PumpSoundspanApp on WidgetTester {
     ))!;
     addTearDown(() async {
       await pumpWidget(const SizedBox.shrink());
+      // drift keeps a cancelled watch query for one event-loop turn with a
+      // zero-duration timer, and closing `cache.db` waits for that timer.
+      // Fake time only moves when pumped with a duration, so let it fire.
+      await pump(Duration.zero);
       await runAsync(root.dispose);
     });
     await pumpWidget(

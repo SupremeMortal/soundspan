@@ -139,6 +139,26 @@ void main() {
     expect(enabled(tester, 'Back'), isFalse);
   });
 
+  testWidgets('a stacked detail tears down under the default harness', (
+    tester,
+  ) async {
+    final root = await tester.pumpSoundspanApp(
+      stored: StoredProfile.signedIn,
+      size: TestSizes.expanded,
+    );
+    DetailNavigation.openAlbum(screen(tester), 'a1');
+    await tester.pumpAndSettle();
+    DetailNavigation.openArtist(screen(tester), 'r1');
+    await tester.pumpAndSettle();
+    expect(locationOf(root), '/home/artist/r1');
+
+    await tapButton(tester, 'Back');
+    expect(locationOf(root), '/home/album/a1');
+
+    await tapButton(tester, 'Back');
+    expect(locationOf(root), '/home');
+  });
+
   testWidgets('Forward belongs to the branch it was left in', (tester) async {
     final root = await tester.pumpSoundspanApp(
       stored: StoredProfile.signedIn,
