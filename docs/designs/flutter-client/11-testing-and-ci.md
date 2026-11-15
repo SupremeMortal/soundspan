@@ -82,14 +82,15 @@ on:
       - "backend/src/openapi/**"
       - ".github/workflows/client-*.yml"
       - ".github/actions/client-flutter/**"
+      - "CHANGELOG.md"
   push:
     branches: [main]
     paths: ["client/**"]
 ```
 
-Server-only PRs do not trigger it, except route and `backend/src/openapi/**` changes, which run the spec check and the contract job only.
+Server-only PRs do not trigger it, except route and `backend/src/openapi/**` changes, which run the spec check and the contract job only, and `CHANGELOG.md` changes, which run the release dry run only.
 
-A first job, `changes`, diffs the pull request against the merge base with its base branch using plain `git diff --name-only` and sets six outputs: `client` (`client/**`, the client workflows, or the composite action changed), `apple` (`client/ios/**`, `client/macos/**`, `client/pubspec.lock`, `client/lib/platform/**`, `client-quality.yml`, or the composite action), `api_surface` (`client/packages/soundspan_api/**`, `backend/src/routes/**`, `backend/src/openapi/**`), `web_storage` (`client/lib/platform/**`, `client/web/**`, `client/integration_test/web/**`, `client/pubspec.lock`, or `client-quality.yml`), and `desktop` (`client/linux/**`, `client/windows/**`, `client/lib/platform/desktop_shell/**`, `client/lib/app/shell/window_state_controller.dart`, `client/integration_test/desktop/**`, `client/tool/ci/**`, or `client-quality.yml`), and `release_build` (`client-build.yml`, `client-release.yml`, `client/tool/release/**`, `client/pubspec.yaml`, `client/pubspec.lock`, `client/config/**`, or any of `client/android/**`, `client/ios/**`, `client/linux/**`, `client/macos/**`, `client/windows/**`, `client/web/**`). It also outputs `version`, the `version` of `client/pubspec.yaml` without its build number. On `push` every output is true. Because the diff is against the base branch and not the previous push, a job that failed on an earlier push cannot be skipped on a later one. The analyze, test, golden, Android, Linux, web, and Windows jobs run when `client` is true; the Apple job runs when `apple` is true; the web integration job runs when `web_storage` is true; the desktop Linux job runs when `desktop` is true; `client-build-dry-run` runs when `release_build` is true.
+A first job, `changes`, diffs the pull request against the merge base with its base branch using plain `git diff --name-only` and sets seven outputs: `client` (`client/**`, the client workflows, or the composite action changed), `apple` (`client/ios/**`, `client/macos/**`, `client/pubspec.lock`, `client/lib/platform/**`, `client-quality.yml`, or the composite action), `api_surface` (`client/packages/soundspan_api/**`, `backend/src/routes/**`, `backend/src/openapi/**`), `web_storage` (`client/lib/platform/**`, `client/web/**`, `client/integration_test/web/**`, `client/pubspec.lock`, or `client-quality.yml`), and `desktop` (`client/linux/**`, `client/windows/**`, `client/lib/platform/desktop_shell/**`, `client/lib/app/shell/window_state_controller.dart`, `client/integration_test/desktop/**`, `client/tool/ci/**`, or `client-quality.yml`), and `release_build` (`client-build.yml`, `client-release.yml`, `client/tool/release/**`, `client/pubspec.yaml`, `client/pubspec.lock`, `client/config/**`, or any of `client/android/**`, `client/ios/**`, `client/linux/**`, `client/macos/**`, `client/windows/**`, `client/web/**`), and `release_notes` (the `release_build` paths plus `CHANGELOG.md`). It also outputs `version`, the `version` of `client/pubspec.yaml` without its build number. On `push` every output is true. Because the diff is against the base branch and not the previous push, a job that failed on an earlier push cannot be skipped on a later one. The analyze, test, golden, Android, Linux, web, and Windows jobs run when `client` is true; the Apple job runs when `apple` is true; the web integration job runs when `web_storage` is true; the desktop Linux job runs when `desktop` is true; `client-build-dry-run` runs when `release_build` is true; `client-release-dry-run` runs when `release_notes` is true.
 
 Every client job sets Flutter up with the composite action `.github/actions/client-flutter`: on Linux it installs the build packages of [01](01-toolchain-and-repository.md) (plugin native-asset hooks run during `flutter test` and need GTK and X11 headers), then it reads the version from `client/.fvmrc` with `jq`, installs it with `subosito/flutter-action`, caches Flutter on `.fvmrc` and pub on `.fvmrc` plus both `pubspec.lock` files, and runs `flutter pub get` in `client/` and `dart pub get` in the API package.
 
@@ -108,6 +109,7 @@ Every client job sets Flutter up with the composite action `.github/actions/clie
 | `client-desktop-linux` | ubuntu | Yes whenever it runs | Linux build packages plus `xvfb`, `openbox`, `dbus` and `xdotool`; starts a D-Bus session, Xvfb and `openbox`; `flutter test integration_test/desktop/window_test.dart -d linux` (minimum size, bounds persisted and restored by a new controller, shell navigation at the restored size); `flutter build linux --release`; `tool/ci/single_instance_linux.sh` starts the app with `XDG_DATA_HOME` and `XDG_CACHE_HOME` in a temporary directory, starts it again with a `soundspan://link` argument, and fails unless the second process exits 0 within 10 s, one app process and one top-level window remain, and the first instance's log has the second-launch entry |
 | `client-build-macos-ios` | macos | Yes whenever it runs | `flutter build macos --release`; `flutter build ios --release --no-codesign` |
 | `client-build-dry-run` | calls `client-build.yml` | Yes whenever it runs | `version` from `changes`, `build-number` the workflow run number; every release artifact and `SHA256SUMS`, kept 7 days, nothing published |
+| `client-release-dry-run` | ubuntu | Yes whenever it runs | `tool/release/validate_tag.dart --tag client-v<pubspec version>`; `tool/release/release_notes.dart` over the branch's `CHANGELOG.md` with `origin/main`'s as the previous changelog, uploaded as `client-release-notes` (kept 7 days); `actionlint` (one pinned release, checksum-verified) over `.github/workflows/client-*.yml`, which checks the tag workflow's syntax and expressions without running it |
 
 Every build job except the dry run passes `--dart-define-from-file=config/dev.json`.
 
@@ -142,14 +144,20 @@ Engine conformance on Linux, Windows, macOS, and an Android emulator; Patrol on 
 
 ### `client-release.yml`
 
-Trigger: tag `client-v*`.
+Trigger: a pushed tag `client-v*`. `permissions: contents: read` at the top, one concurrency group per tag that is never cancelled, actions pinned by commit SHA.
 
-1. Validate the tag against `pubspec.yaml` `version`.
-2. Build all targets by calling `client-build.yml` with the tag's version and the run number as the build number; it builds with `--dart-define-from-file=config/release.json`.
-3. The artifacts that call produces are marked `-unsigned`. Signing steps are added when signing is set up.
-4. The same call writes `SHA256SUMS`; this workflow adds build-provenance attestations.
-5. Create a **draft** GitHub release with artifacts and notes from the `### Client` changelog sections.
-6. Manual approval (environment protection) publishes the release as a **pre-release**, pushes the web image to GHCR as `ghcr.io/<repo>-client-web:<version>`, and updates desktop appcasts (M5).
+| Job | Does |
+|---|---|
+| `validate` | Checkout with full history; `dart run tool/release/validate_tag.dart --tag <ref name> --pubspec pubspec.yaml`; outputs `version` |
+| `build` | Calls `client-build.yml` with that version and the workflow run number as the build number; it builds with `--dart-define-from-file=config/release.json` and writes `SHA256SUMS`. Its artifacts are marked `-unsigned`; signing steps are added when signing is set up |
+| `draft-release` | Fails without changing anything when a release for the tag exists. Finds the previous tag (`git describe --tags --abbrev=0 --match 'client-v*' <tag>^`) and takes its `CHANGELOG.md` with `git show`; `tool/release/release_notes.dart` writes the notes; downloads `client-release-files`, checks `SHA256SUMS`, creates build-provenance attestations for every file, and runs `gh release create <tag> --draft --prerelease --title "soundspan client <version>"` with the notes and every file. Only this job has `contents: write`, `id-token: write` and `attestations: write` |
+| `publish` | Runs in the `client-release` environment, whose required reviewers are the manual approval; `gh release edit <tag> --draft=false --prerelease` publishes the draft as a **pre-release** |
+
+`validate_tag.dart` accepts `client-v<version>` where `<version>` is `MAJOR.MINOR.PATCH` with an optional pre-release (`-rc.1`) and no build metadata, equal to the `pubspec.yaml` `version` without its `+build` suffix; it prints the version, or both values and exit code 1.
+
+`release_notes.dart` collects every bullet under every `### Client` subsection of the changelog, in order, leaves out the bullets that appear word for word in the previous tag's changelog (with no previous tag, every bullet is included), and writes fixed English text: a paragraph saying these are unsigned test builds (Windows SmartScreen and macOS ask for confirmation, the debug-signed Android build must be uninstalled before a later signed build installs, there is no iOS build), "Works with soundspan server `<minServer>` to `<maxTestedServer>`" from `BuildConfig`, a "Changes" list or "No user-visible client changes.", and a "Verify downloads" line naming `SHA256SUMS` and `gh attestation verify`.
+
+A tag trigger cannot run from a pull request, so `client-release-dry-run` in `client-quality.yml` runs both scripts and `actionlint` instead. Pushing the web image to GHCR as `ghcr.io/<repo>-client-web:<version>`, installers and packages, and desktop appcasts (M5) are not part of this workflow yet.
 
 ### Local Equivalents
 
