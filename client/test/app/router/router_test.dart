@@ -9,6 +9,7 @@ import 'package:soundspan/app/router/routes.dart';
 import 'package:soundspan/app/shell/adaptive_shell.dart';
 import 'package:soundspan/core/profile/profile_providers.dart';
 import 'package:soundspan/core/profile/profile_runtime.dart';
+import 'package:soundspan/features/connect/connect.dart';
 import 'package:soundspan_api/soundspan_api.dart';
 
 import '../../helpers/test_root.dart';
@@ -72,7 +73,7 @@ void main() {
   testWidgets('no active profile lands on /connect', (tester) async {
     final root = await tester.pumpSoundspanApp();
     expect(location(root), '/connect');
-    expect(find.text('Add server'), findsOneWidget);
+    expect(find.byType(AddressScreen), findsOneWidget);
   });
 
   testWidgets('signed-out profile lands on /connect/sign-in with its id', (
@@ -323,7 +324,7 @@ void main() {
     final root = await tester.pumpSoundspanApp(stored: StoredProfile.signedIn);
     await go(tester, root, '/connect');
     expect(location(root), '/connect');
-    expect(find.text('Add server'), findsOneWidget);
+    expect(find.byType(AddressScreen), findsOneWidget);
   });
 
   testWidgets('settings opens on the root navigator', (tester) async {
@@ -371,6 +372,6 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(location(root), '/connect');
-    expect(GoRouter.of(screen(tester)), isNotNull);
+    expect(GoRouter.of(tester.element(find.byType(AddressScreen))), isNotNull);
   });
 }

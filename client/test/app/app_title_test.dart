@@ -6,6 +6,7 @@ import 'package:soundspan/app/app.dart';
 import 'package:soundspan/app/l10n/generated/app_localizations.dart';
 import 'package:soundspan/core/storage/app/app_settings_store.dart';
 import 'package:soundspan/core/storage/providers.dart';
+import 'package:soundspan/features/connect/connect.dart';
 
 import '../helpers/test_root.dart';
 
@@ -14,7 +15,7 @@ void main() {
     await tester.pumpSoundspanApp();
 
     final app = tester.widget<MaterialApp>(find.byType(MaterialApp));
-    final context = tester.element(find.text('Add server'));
+    final context = tester.element(find.byType(AddressScreen));
     expect(app.onGenerateTitle!(context), 'soundspan');
     expect(AppLocalizations.of(context).appTitle, 'soundspan');
   });
