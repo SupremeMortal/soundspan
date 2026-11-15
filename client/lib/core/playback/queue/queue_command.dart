@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 
+import 'package:soundspan/core/playback/queue/queue_state.dart';
 import 'package:soundspan/shared/domain/queue_item.dart';
 
 /// A change to the play queue, applied by `QueueReducer` (doc 06, Queue
@@ -76,6 +77,35 @@ final class JumpTo extends QueueCommand {
 final class Next extends QueueCommand {
   /// Creates a next command.
   const new();
+}
+
+/// Goes back: restarts the current entry when it has played for more than
+/// `QueueReducer.previousRestartThreshold`, else moves to the previous entry
+/// in play order.
+final class Previous extends QueueCommand {
+  /// Creates a previous command.
+  const new(this.position);
+
+  /// How far the current entry has played.
+  final Duration position;
+}
+
+/// Turns shuffle on or off.
+final class SetShuffle extends QueueCommand {
+  /// Creates a shuffle command.
+  const new(this.enabled);
+
+  /// Whether the play order is shuffled.
+  final bool enabled;
+}
+
+/// Sets the repeat mode.
+final class SetRepeat extends QueueCommand {
+  /// Creates a repeat command.
+  const new(this.mode);
+
+  /// The new repeat mode.
+  final RepeatMode mode;
 }
 
 /// Empties the queue.
