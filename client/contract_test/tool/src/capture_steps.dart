@@ -146,8 +146,7 @@ final List<CaptureStep> captureSteps = [
     c.values['likedPlaybackId'] = playbackId;
     return response;
   }),
-  // A page with a next cursor: a `nextCursor` of null does not decode yet
-  // (#222 adds the last page).
+  // Two liked tracks and a page of one, so the page carries a next cursor.
   CaptureStep('listLikedTracks', (c) async {
     final listener = c.listener;
     final liked = [c.values['likedPlaybackId'], _playbackId(c, 1)];
