@@ -65,6 +65,17 @@ void main() {
       expect(sent.headers.containsKey('X-API-Key'), isFalse);
     });
 
+    test('the anonymous API takes connect and receive timeouts', () {
+      final api = SoundspanApi.anonymous(
+        Uri.parse('https://h'),
+        connectTimeout: const Duration(seconds: 4),
+        receiveTimeout: const Duration(seconds: 5),
+      );
+      addTearDown(api.close);
+      expect(api.config.connectTimeout, const Duration(seconds: 4));
+      expect(api.config.receiveTimeout, const Duration(seconds: 5));
+    });
+
     test('a base with a path prefix keeps it', () async {
       final server = ScriptedServer((_) => const HttpReply(200, _health));
       final api = SoundspanApi.anonymous(

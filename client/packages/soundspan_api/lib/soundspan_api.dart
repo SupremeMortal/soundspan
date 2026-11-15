@@ -9,6 +9,7 @@ export 'src/client.dart';
 export 'src/config.dart';
 export 'src/errors.dart';
 export 'src/generated/soundspan_rest_client.dart';
+export 'src/probe.dart';
 export 'src/transport/adapter.dart';
 export 'src/transport/dio_factory.dart';
 export 'src/transport/error_mapper.dart' show guardDecode;

@@ -103,9 +103,12 @@ Rules:
 | Timeout | `timeout` | The server did not answer |
 | `HandshakeException`, `TlsException`, certificate verify failed | `tls` | The server's certificate is not trusted by this device |
 | HTTP 401 or 403 on `/api/health` | `blockedByProxy` | Something in front of the server requires its own login |
-| HTTP 404 or non-JSON 200 | `notSoundspan` | That address is not a soundspan server (check the path) |
-| HTTP 5xx without a health body | `serverError` | |
+| HTTP 404, any other 4xx, a 3xx that is not followed, a 200 without a health body, or a final URL that does not end in `/api/health` | `notSoundspan` | That address is not a soundspan server (check the path) |
+| HTTP 5xx without a health body, or still 503 after 30 s | `serverError` | |
+| A fourth redirect, a redirect to a scheme other than `http(s)`, or from `https` to `http` | `redirectRefused` | |
 | Web only: `DioExceptionType.connectionError` with no response | `corsOrNetwork` | Shows `ALLOWED_ORIGINS` instructions with this app's origin |
+
+`dart:io` and `dio` error types are inspected only in `soundspan_api` (`ProbeClient`, which reports a `TransportFailure`); `classifyProbeFailure` in `lib/core/auth/probe/` maps that or the status to the class. A native transport failure of no recognised kind counts as `timeout`. When `/api/auth/config` or `/api/onboarding/status` fails, the class follows the `ApiException`: `Unauthenticated` and `Forbidden` are `blockedByProxy`, `ServerError` and `Upstream` are `serverError`, `Offline` is `corsOrNetwork` on web and `timeout` elsewhere, and anything else is `notSoundspan`. When every candidate fails, the reported failure is the first that received an HTTP response, or else the first candidate's.
 
 On web a CORS rejection is indistinguishable from a network failure in the Fetch API, so the web message covers both and puts the origin string in a copyable field.
 

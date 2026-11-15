@@ -28,13 +28,22 @@ class SoundspanApi {
   }) : this._(config, credentials, log, adapter);
 
   /// For probe calls made before sign-in: no credential is ever attached.
+  ///
+  /// [connectTimeout] and [receiveTimeout] default to those of [ApiConfig].
   new anonymous(
     Uri baseUrl, {
     String userAgent = _defaultUserAgent,
+    Duration connectTimeout = const Duration(seconds: 10),
+    Duration receiveTimeout = const Duration(seconds: 30),
     ApiLogSink? log,
     HttpClientAdapter? adapter,
   }) : this._(
-         ApiConfig(baseUrl: baseUrl, userAgent: userAgent),
+         ApiConfig(
+           baseUrl: baseUrl,
+           userAgent: userAgent,
+           connectTimeout: connectTimeout,
+           receiveTimeout: receiveTimeout,
+         ),
          null,
          log,
          adapter,
