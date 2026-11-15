@@ -474,6 +474,222 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Try again'**
   String get licensesRetry;
+
+  /// Label of the text field where the user types the address of their soundspan server.
+  ///
+  /// In en, this message translates to:
+  /// **'Server address'**
+  String get connectAddressLabel;
+
+  /// Example addresses shown in the empty server address field.
+  ///
+  /// In en, this message translates to:
+  /// **'music.example.com or 192.168.1.20:3030'**
+  String get connectAddressHint;
+
+  /// Primary button that checks the server address the user typed.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect'**
+  String get connectAddressSubmit;
+
+  /// Tooltip of the back control on the address screen, shown when a server is already set up.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get connectAddressBack;
+
+  /// Shown under the address field when it was submitted empty.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the address of your soundspan server.'**
+  String get connectAddressEmpty;
+
+  /// Shown under the address field when the address names another scheme, such as ftp://.
+  ///
+  /// In en, this message translates to:
+  /// **'Use an address that starts with http:// or https://.'**
+  String get connectAddressUnsupportedScheme;
+
+  /// Shown under the address field when the address cannot be used.
+  ///
+  /// In en, this message translates to:
+  /// **'That is not a server address. Check it and try again.'**
+  String get connectAddressInvalid;
+
+  /// Title of the dialog shown before connecting to a public server over plain http.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection not encrypted'**
+  String get connectCleartextTitle;
+
+  /// Body of the dialog shown before connecting to a public server over plain http, on platforms that allow it.
+  ///
+  /// In en, this message translates to:
+  /// **'{address} uses http, so your password and music travel unencrypted and can be read on the way. Use https if the server offers it.'**
+  String connectCleartextBody(String address);
+
+  /// Body of the dialog shown when the user enters a public plain-http address on a platform that blocks such connections.
+  ///
+  /// In en, this message translates to:
+  /// **'{address} uses http. This device blocks unencrypted connections to public servers, so use the server’s https address.'**
+  String connectCleartextBlockedBody(String address);
+
+  /// Dialog button that closes the unencrypted-connection warning without connecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get connectCleartextCancel;
+
+  /// Dialog button that connects to a public server over plain http despite the warning.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect anyway'**
+  String get connectCleartextConnectAnyway;
+
+  /// Shown while the app contacts the server.
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting to {address}'**
+  String connectProbeResolving(String address);
+
+  /// Shown when the server answered that it is still starting up.
+  ///
+  /// In en, this message translates to:
+  /// **'The server is starting'**
+  String get connectProbeStarting;
+
+  /// Countdown to the next attempt while the server is starting.
+  ///
+  /// In en, this message translates to:
+  /// **'{seconds, plural, =1{Trying again in 1 second} other{Trying again in {seconds} seconds}}'**
+  String connectProbeStartingRetry(int seconds);
+
+  /// Button that stops contacting the server and returns to the address screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get connectProbeCancel;
+
+  /// Shown when the server moved the app to another address, which is the one that will be used.
+  ///
+  /// In en, this message translates to:
+  /// **'Using {address}'**
+  String connectProbeUsing(String address);
+
+  /// Shown on the result of a successful check of a server reached without encryption.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected to {address}'**
+  String connectProbeConnected(String address);
+
+  /// Warning chip on a server reached over plain http on the local network.
+  ///
+  /// In en, this message translates to:
+  /// **'Not encrypted'**
+  String get connectProbeNotEncrypted;
+
+  /// Button that continues to sign-in after the server was found.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get connectProbeContinue;
+
+  /// Button that returns to the address screen with the typed address kept.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit address'**
+  String get connectProbeEditAddress;
+
+  /// Button that contacts the server again.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get connectProbeTryAgain;
+
+  /// The address the app tried, shown on a failure.
+  ///
+  /// In en, this message translates to:
+  /// **'Address tried: {address}'**
+  String connectProbeTried(String address);
+
+  /// Shown when the server has no account yet and must be set up in its web interface.
+  ///
+  /// In en, this message translates to:
+  /// **'This server has not been set up yet. Open it in a browser, create the first account there, then try again.'**
+  String get connectProbeNeedsSetup;
+
+  /// Button that opens the server’s web interface in the system browser.
+  ///
+  /// In en, this message translates to:
+  /// **'Open in browser'**
+  String get connectProbeOpenInBrowser;
+
+  /// Failure: the server’s host name could not be found.
+  ///
+  /// In en, this message translates to:
+  /// **'Address not found'**
+  String get connectProbeDns;
+
+  /// Failure: the connection was refused.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing is listening at that address and port'**
+  String get connectProbeRefused;
+
+  /// Failure: the server did not answer in time.
+  ///
+  /// In en, this message translates to:
+  /// **'The server did not answer'**
+  String get connectProbeTimeout;
+
+  /// Failure: the secure connection failed because the certificate is not trusted.
+  ///
+  /// In en, this message translates to:
+  /// **'The server’s certificate is not trusted by this device'**
+  String get connectProbeTls;
+
+  /// Failure: a proxy or gateway in front of the server asked for its own login.
+  ///
+  /// In en, this message translates to:
+  /// **'Something in front of the server requires its own login'**
+  String get connectProbeBlockedByProxy;
+
+  /// Failure: the address answered, but not as a soundspan server.
+  ///
+  /// In en, this message translates to:
+  /// **'That address is not a soundspan server (check the path)'**
+  String get connectProbeNotSoundspan;
+
+  /// Failure: the server answered with an error.
+  ///
+  /// In en, this message translates to:
+  /// **'The server reported an error'**
+  String get connectProbeServerError;
+
+  /// Failure: the server redirected too often, to another scheme, or from https to http.
+  ///
+  /// In en, this message translates to:
+  /// **'The server redirected to an address this app will not follow'**
+  String get connectProbeRedirectRefused;
+
+  /// Failure in the browser app: the server is unreachable or does not allow this app’s origin. ALLOWED_ORIGINS is a setting name and is not translated.
+  ///
+  /// In en, this message translates to:
+  /// **'The server could not be reached. If it is running, it must allow this app’s address: add the address below to the server’s ALLOWED_ORIGINS setting, restart it and try again.'**
+  String get connectProbeCorsOrNetwork;
+
+  /// Label of the read-only field showing the web app’s origin.
+  ///
+  /// In en, this message translates to:
+  /// **'This app’s address'**
+  String get connectProbeOrigin;
+
+  /// Button that copies the web app’s origin to the clipboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy'**
+  String get connectProbeCopyOrigin;
 }
 
 class _AppLocalizationsDelegate

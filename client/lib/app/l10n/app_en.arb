@@ -279,5 +279,191 @@
   "licensesRetry": "Try again",
   "@licensesRetry": {
     "description": "Button on the licences screen that collects the licences again after a failure."
+  },
+  "connectAddressLabel": "Server address",
+  "@connectAddressLabel": {
+    "description": "Label of the text field where the user types the address of their soundspan server."
+  },
+  "connectAddressHint": "music.example.com or 192.168.1.20:3030",
+  "@connectAddressHint": {
+    "description": "Example addresses shown in the empty server address field."
+  },
+  "connectAddressSubmit": "Connect",
+  "@connectAddressSubmit": {
+    "description": "Primary button that checks the server address the user typed."
+  },
+  "connectAddressBack": "Back",
+  "@connectAddressBack": {
+    "description": "Tooltip of the back control on the address screen, shown when a server is already set up."
+  },
+  "connectAddressEmpty": "Enter the address of your soundspan server.",
+  "@connectAddressEmpty": {
+    "description": "Shown under the address field when it was submitted empty."
+  },
+  "connectAddressUnsupportedScheme": "Use an address that starts with http:// or https://.",
+  "@connectAddressUnsupportedScheme": {
+    "description": "Shown under the address field when the address names another scheme, such as ftp://."
+  },
+  "connectAddressInvalid": "That is not a server address. Check it and try again.",
+  "@connectAddressInvalid": {
+    "description": "Shown under the address field when the address cannot be used."
+  },
+  "connectCleartextTitle": "Connection not encrypted",
+  "@connectCleartextTitle": {
+    "description": "Title of the dialog shown before connecting to a public server over plain http."
+  },
+  "connectCleartextBody": "{address} uses http, so your password and music travel unencrypted and can be read on the way. Use https if the server offers it.",
+  "@connectCleartextBody": {
+    "description": "Body of the dialog shown before connecting to a public server over plain http, on platforms that allow it.",
+    "placeholders": {
+      "address": {
+        "type": "String",
+        "example": "http://music.example.com"
+      }
+    }
+  },
+  "connectCleartextBlockedBody": "{address} uses http. This device blocks unencrypted connections to public servers, so use the server’s https address.",
+  "@connectCleartextBlockedBody": {
+    "description": "Body of the dialog shown when the user enters a public plain-http address on a platform that blocks such connections.",
+    "placeholders": {
+      "address": {
+        "type": "String",
+        "example": "http://music.example.com"
+      }
+    }
+  },
+  "connectCleartextCancel": "Cancel",
+  "@connectCleartextCancel": {
+    "description": "Dialog button that closes the unencrypted-connection warning without connecting."
+  },
+  "connectCleartextConnectAnyway": "Connect anyway",
+  "@connectCleartextConnectAnyway": {
+    "description": "Dialog button that connects to a public server over plain http despite the warning."
+  },
+  "connectProbeResolving": "Connecting to {address}",
+  "@connectProbeResolving": {
+    "description": "Shown while the app contacts the server.",
+    "placeholders": {
+      "address": {
+        "type": "String",
+        "example": "https://music.example.com"
+      }
+    }
+  },
+  "connectProbeStarting": "The server is starting",
+  "@connectProbeStarting": {
+    "description": "Shown when the server answered that it is still starting up."
+  },
+  "connectProbeStartingRetry": "{seconds, plural, =1{Trying again in 1 second} other{Trying again in {seconds} seconds}}",
+  "@connectProbeStartingRetry": {
+    "description": "Countdown to the next attempt while the server is starting.",
+    "placeholders": {
+      "seconds": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "connectProbeCancel": "Cancel",
+  "@connectProbeCancel": {
+    "description": "Button that stops contacting the server and returns to the address screen."
+  },
+  "connectProbeUsing": "Using {address}",
+  "@connectProbeUsing": {
+    "description": "Shown when the server moved the app to another address, which is the one that will be used.",
+    "placeholders": {
+      "address": {
+        "type": "String",
+        "example": "https://music.example.com"
+      }
+    }
+  },
+  "connectProbeConnected": "Connected to {address}",
+  "@connectProbeConnected": {
+    "description": "Shown on the result of a successful check of a server reached without encryption.",
+    "placeholders": {
+      "address": {
+        "type": "String",
+        "example": "http://192.168.1.20:3030"
+      }
+    }
+  },
+  "connectProbeNotEncrypted": "Not encrypted",
+  "@connectProbeNotEncrypted": {
+    "description": "Warning chip on a server reached over plain http on the local network."
+  },
+  "connectProbeContinue": "Continue",
+  "@connectProbeContinue": {
+    "description": "Button that continues to sign-in after the server was found."
+  },
+  "connectProbeEditAddress": "Edit address",
+  "@connectProbeEditAddress": {
+    "description": "Button that returns to the address screen with the typed address kept."
+  },
+  "connectProbeTryAgain": "Try again",
+  "@connectProbeTryAgain": {
+    "description": "Button that contacts the server again."
+  },
+  "connectProbeTried": "Address tried: {address}",
+  "@connectProbeTried": {
+    "description": "The address the app tried, shown on a failure.",
+    "placeholders": {
+      "address": {
+        "type": "String",
+        "example": "https://music.example.com"
+      }
+    }
+  },
+  "connectProbeNeedsSetup": "This server has not been set up yet. Open it in a browser, create the first account there, then try again.",
+  "@connectProbeNeedsSetup": {
+    "description": "Shown when the server has no account yet and must be set up in its web interface."
+  },
+  "connectProbeOpenInBrowser": "Open in browser",
+  "@connectProbeOpenInBrowser": {
+    "description": "Button that opens the server’s web interface in the system browser."
+  },
+  "connectProbeDns": "Address not found",
+  "@connectProbeDns": {
+    "description": "Failure: the server’s host name could not be found."
+  },
+  "connectProbeRefused": "Nothing is listening at that address and port",
+  "@connectProbeRefused": {
+    "description": "Failure: the connection was refused."
+  },
+  "connectProbeTimeout": "The server did not answer",
+  "@connectProbeTimeout": {
+    "description": "Failure: the server did not answer in time."
+  },
+  "connectProbeTls": "The server’s certificate is not trusted by this device",
+  "@connectProbeTls": {
+    "description": "Failure: the secure connection failed because the certificate is not trusted."
+  },
+  "connectProbeBlockedByProxy": "Something in front of the server requires its own login",
+  "@connectProbeBlockedByProxy": {
+    "description": "Failure: a proxy or gateway in front of the server asked for its own login."
+  },
+  "connectProbeNotSoundspan": "That address is not a soundspan server (check the path)",
+  "@connectProbeNotSoundspan": {
+    "description": "Failure: the address answered, but not as a soundspan server."
+  },
+  "connectProbeServerError": "The server reported an error",
+  "@connectProbeServerError": {
+    "description": "Failure: the server answered with an error."
+  },
+  "connectProbeRedirectRefused": "The server redirected to an address this app will not follow",
+  "@connectProbeRedirectRefused": {
+    "description": "Failure: the server redirected too often, to another scheme, or from https to http."
+  },
+  "connectProbeCorsOrNetwork": "The server could not be reached. If it is running, it must allow this app’s address: add the address below to the server’s ALLOWED_ORIGINS setting, restart it and try again.",
+  "@connectProbeCorsOrNetwork": {
+    "description": "Failure in the browser app: the server is unreachable or does not allow this app’s origin. ALLOWED_ORIGINS is a setting name and is not translated."
+  },
+  "connectProbeOrigin": "This app’s address",
+  "@connectProbeOrigin": {
+    "description": "Label of the read-only field showing the web app’s origin."
+  },
+  "connectProbeCopyOrigin": "Copy",
+  "@connectProbeCopyOrigin": {
+    "description": "Button that copies the web app’s origin to the clipboard."
   }
 }

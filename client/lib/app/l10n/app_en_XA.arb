@@ -279,5 +279,191 @@
   "licensesRetry": "[Ţŕý åĝåîñ one]",
   "@licensesRetry": {
     "description": "Button on the licences screen that collects the licences again after a failure."
+  },
+  "connectAddressLabel": "[Šéŕvéŕ åððŕéšš one two]",
+  "@connectAddressLabel": {
+    "description": "Label of the text field where the user types the address of their soundspan server."
+  },
+  "connectAddressHint": "[mûšîç.éxåmþļé.çöm öŕ 192.168.1.20:3030 one two three four]",
+  "@connectAddressHint": {
+    "description": "Example addresses shown in the empty server address field."
+  },
+  "connectAddressSubmit": "[Çöññéçţ one]",
+  "@connectAddressSubmit": {
+    "description": "Primary button that checks the server address the user typed."
+  },
+  "connectAddressBack": "[Båçķ one]",
+  "@connectAddressBack": {
+    "description": "Tooltip of the back control on the address screen, shown when a server is already set up."
+  },
+  "connectAddressEmpty": "[Éñţéŕ ţĥé åððŕéšš öf ýöûŕ šöûñðšþåñ šéŕvéŕ. one two three four]",
+  "@connectAddressEmpty": {
+    "description": "Shown under the address field when it was submitted empty."
+  },
+  "connectAddressUnsupportedScheme": "[Ûšé åñ åððŕéšš ţĥåţ šţåŕţš ŵîţĥ ĥţţþ:// öŕ ĥţţþš://. one two three four five]",
+  "@connectAddressUnsupportedScheme": {
+    "description": "Shown under the address field when the address names another scheme, such as ftp://."
+  },
+  "connectAddressInvalid": "[Ţĥåţ îš ñöţ å šéŕvéŕ åððŕéšš. Çĥéçķ îţ åñð ţŕý åĝåîñ. one two three four five]",
+  "@connectAddressInvalid": {
+    "description": "Shown under the address field when the address cannot be used."
+  },
+  "connectCleartextTitle": "[Çöññéçţîöñ ñöţ éñçŕýþţéð one two three]",
+  "@connectCleartextTitle": {
+    "description": "Title of the dialog shown before connecting to a public server over plain http."
+  },
+  "connectCleartextBody": "[{address} ûšéš ĥţţþ, šö ýöûŕ þåššŵöŕð åñð mûšîç ţŕåvéļ ûñéñçŕýþţéð åñð çåñ bé ŕéåð öñ ţĥé ŵåý. Ûšé ĥţţþš îf ţĥé šéŕvéŕ öfféŕš îţ. one two three four five six seven eight nine ten]",
+  "@connectCleartextBody": {
+    "description": "Body of the dialog shown before connecting to a public server over plain http, on platforms that allow it.",
+    "placeholders": {
+      "address": {
+        "type": "String",
+        "example": "http://music.example.com"
+      }
+    }
+  },
+  "connectCleartextBlockedBody": "[{address} ûšéš ĥţţþ. Ţĥîš ðévîçé bļöçķš ûñéñçŕýþţéð çöññéçţîöñš ţö þûbļîç šéŕvéŕš, šö ûšé ţĥé šéŕvéŕ’š ĥţţþš åððŕéšš. one two three four five six seven eight nine]",
+  "@connectCleartextBlockedBody": {
+    "description": "Body of the dialog shown when the user enters a public plain-http address on a platform that blocks such connections.",
+    "placeholders": {
+      "address": {
+        "type": "String",
+        "example": "http://music.example.com"
+      }
+    }
+  },
+  "connectCleartextCancel": "[Çåñçéļ one]",
+  "@connectCleartextCancel": {
+    "description": "Dialog button that closes the unencrypted-connection warning without connecting."
+  },
+  "connectCleartextConnectAnyway": "[Çöññéçţ åñýŵåý one two]",
+  "@connectCleartextConnectAnyway": {
+    "description": "Dialog button that connects to a public server over plain http despite the warning."
+  },
+  "connectProbeResolving": "[Çöññéçţîñĝ ţö {address} one two]",
+  "@connectProbeResolving": {
+    "description": "Shown while the app contacts the server.",
+    "placeholders": {
+      "address": {
+        "type": "String",
+        "example": "https://music.example.com"
+      }
+    }
+  },
+  "connectProbeStarting": "[Ţĥé šéŕvéŕ îš šţåŕţîñĝ one two three]",
+  "@connectProbeStarting": {
+    "description": "Shown when the server answered that it is still starting up."
+  },
+  "connectProbeStartingRetry": "[{seconds, plural, =1{Ţŕýîñĝ åĝåîñ îñ 1 šéçöñð one two three} other{Ţŕýîñĝ åĝåîñ îñ {seconds} šéçöñðš one two three}}]",
+  "@connectProbeStartingRetry": {
+    "description": "Countdown to the next attempt while the server is starting.",
+    "placeholders": {
+      "seconds": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "connectProbeCancel": "[Çåñçéļ one]",
+  "@connectProbeCancel": {
+    "description": "Button that stops contacting the server and returns to the address screen."
+  },
+  "connectProbeUsing": "[Ûšîñĝ {address} one]",
+  "@connectProbeUsing": {
+    "description": "Shown when the server moved the app to another address, which is the one that will be used.",
+    "placeholders": {
+      "address": {
+        "type": "String",
+        "example": "https://music.example.com"
+      }
+    }
+  },
+  "connectProbeConnected": "[Çöññéçţéð ţö {address} one two]",
+  "@connectProbeConnected": {
+    "description": "Shown on the result of a successful check of a server reached without encryption.",
+    "placeholders": {
+      "address": {
+        "type": "String",
+        "example": "http://192.168.1.20:3030"
+      }
+    }
+  },
+  "connectProbeNotEncrypted": "[Ñöţ éñçŕýþţéð one two]",
+  "@connectProbeNotEncrypted": {
+    "description": "Warning chip on a server reached over plain http on the local network."
+  },
+  "connectProbeContinue": "[Çöñţîñûé one]",
+  "@connectProbeContinue": {
+    "description": "Button that continues to sign-in after the server was found."
+  },
+  "connectProbeEditAddress": "[Éðîţ åððŕéšš one two]",
+  "@connectProbeEditAddress": {
+    "description": "Button that returns to the address screen with the typed address kept."
+  },
+  "connectProbeTryAgain": "[Ţŕý åĝåîñ one]",
+  "@connectProbeTryAgain": {
+    "description": "Button that contacts the server again."
+  },
+  "connectProbeTried": "[Åððŕéšš ţŕîéð: {address} one two]",
+  "@connectProbeTried": {
+    "description": "The address the app tried, shown on a failure.",
+    "placeholders": {
+      "address": {
+        "type": "String",
+        "example": "https://music.example.com"
+      }
+    }
+  },
+  "connectProbeNeedsSetup": "[Ţĥîš šéŕvéŕ ĥåš ñöţ bééñ šéţ ûþ ýéţ. Öþéñ îţ îñ å bŕöŵšéŕ, çŕéåţé ţĥé fîŕšţ åççöûñţ ţĥéŕé, ţĥéñ ţŕý åĝåîñ. one two three four five six seven eight nine]",
+  "@connectProbeNeedsSetup": {
+    "description": "Shown when the server has no account yet and must be set up in its web interface."
+  },
+  "connectProbeOpenInBrowser": "[Öþéñ îñ bŕöŵšéŕ one two]",
+  "@connectProbeOpenInBrowser": {
+    "description": "Button that opens the server’s web interface in the system browser."
+  },
+  "connectProbeDns": "[Åððŕéšš ñöţ föûñð one two]",
+  "@connectProbeDns": {
+    "description": "Failure: the server’s host name could not be found."
+  },
+  "connectProbeRefused": "[Ñöţĥîñĝ îš ļîšţéñîñĝ åţ ţĥåţ åððŕéšš åñð þöŕţ one two three four]",
+  "@connectProbeRefused": {
+    "description": "Failure: the connection was refused."
+  },
+  "connectProbeTimeout": "[Ţĥé šéŕvéŕ ðîð ñöţ åñšŵéŕ one two three]",
+  "@connectProbeTimeout": {
+    "description": "Failure: the server did not answer in time."
+  },
+  "connectProbeTls": "[Ţĥé šéŕvéŕ’š çéŕţîfîçåţé îš ñöţ ţŕûšţéð bý ţĥîš ðévîçé one two three four five]",
+  "@connectProbeTls": {
+    "description": "Failure: the secure connection failed because the certificate is not trusted."
+  },
+  "connectProbeBlockedByProxy": "[Šöméţĥîñĝ îñ fŕöñţ öf ţĥé šéŕvéŕ ŕéqûîŕéš îţš öŵñ ļöĝîñ one two three four five]",
+  "@connectProbeBlockedByProxy": {
+    "description": "Failure: a proxy or gateway in front of the server asked for its own login."
+  },
+  "connectProbeNotSoundspan": "[Ţĥåţ åððŕéšš îš ñöţ å šöûñðšþåñ šéŕvéŕ (çĥéçķ ţĥé þåţĥ) one two three four five]",
+  "@connectProbeNotSoundspan": {
+    "description": "Failure: the address answered, but not as a soundspan server."
+  },
+  "connectProbeServerError": "[Ţĥé šéŕvéŕ ŕéþöŕţéð åñ éŕŕöŕ one two three]",
+  "@connectProbeServerError": {
+    "description": "Failure: the server answered with an error."
+  },
+  "connectProbeRedirectRefused": "[Ţĥé šéŕvéŕ ŕéðîŕéçţéð ţö åñ åððŕéšš ţĥîš åþþ ŵîļļ ñöţ föļļöŵ one two three four five]",
+  "@connectProbeRedirectRefused": {
+    "description": "Failure: the server redirected too often, to another scheme, or from https to http."
+  },
+  "connectProbeCorsOrNetwork": "[Ţĥé šéŕvéŕ çöûļð ñöţ bé ŕéåçĥéð. Îf îţ îš ŕûññîñĝ, îţ mûšţ åļļöŵ ţĥîš åþþ’š åððŕéšš: åðð ţĥé åððŕéšš béļöŵ ţö ţĥé šéŕvéŕ’š ÅĻĻÖŴÉÐ_ÖŔÎĜÎÑŠ šéţţîñĝ, ŕéšţåŕţ îţ åñð ţŕý åĝåîñ. one two three four five six seven eight nine ten one two three four five]",
+  "@connectProbeCorsOrNetwork": {
+    "description": "Failure in the browser app: the server is unreachable or does not allow this app’s origin. ALLOWED_ORIGINS is a setting name and is not translated."
+  },
+  "connectProbeOrigin": "[Ţĥîš åþþ’š åððŕéšš one two]",
+  "@connectProbeOrigin": {
+    "description": "Label of the read-only field showing the web app’s origin."
+  },
+  "connectProbeCopyOrigin": "[Çöþý one]",
+  "@connectProbeCopyOrigin": {
+    "description": "Button that copies the web app’s origin to the clipboard."
   }
 }
