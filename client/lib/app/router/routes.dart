@@ -11,6 +11,7 @@ import 'package:soundspan/app/router/placeholder_screen.dart';
 import 'package:soundspan/app/router/shell_route.dart';
 import 'package:soundspan/app/shell/shell_history.dart';
 import 'package:soundspan/core/profile/profile_runtime.dart';
+import 'package:soundspan/features/connect/connect.dart';
 import 'package:soundspan/features/settings/settings.dart';
 
 /// The fixed paths of the router (doc 02, Routing).
@@ -214,14 +215,15 @@ GoRouter createRouter(
       GoRoute(path: '/', redirect: (_, _) => RoutePaths.home),
       GoRoute(
         path: RoutePaths.connect,
-        builder: (context, _) =>
-            PlaceholderScreen(AppLocalizations.of(context).screenConnect),
+        builder: (_, state) => AddressScreen.fromExtra(state.extra),
         routes: [
           GoRoute(
             path: 'probe',
-            builder: (context, _) => PlaceholderScreen(
-              AppLocalizations.of(context).screenConnectProbe,
-            ),
+            // The request is lost on a web reload: start again at /connect.
+            redirect: (_, state) =>
+                state.extra is ProbeRequest ? null : RoutePaths.connect,
+            builder: (_, state) =>
+                ProbeScreen(request: state.extra! as ProbeRequest),
           ),
           GoRoute(
             path: 'sign-in',

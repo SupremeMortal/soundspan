@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:soundspan/app/theme/extensions.dart';
 import 'package:soundspan/app/theme/theme.dart';
+import 'package:soundspan/features/connect/connect.dart';
 
 import '../../helpers/test_root.dart';
 
@@ -67,7 +68,7 @@ void main() {
 
     await tester.pumpSoundspanApp();
 
-    final context = tester.element(find.text('Add server'));
+    final context = tester.element(find.byType(AddressScreen));
     expect(context.colors.line, SoundspanColors.darkHighContrast.line);
     expect(context.colors.line.toARGB32(), 0xFF333333);
   });
@@ -78,7 +79,7 @@ void main() {
 
     await tester.pumpSoundspanApp();
 
-    final context = tester.element(find.text('Add server'));
+    final context = tester.element(find.byType(AddressScreen));
     expect(context.colors, SoundspanColors.light);
   });
 

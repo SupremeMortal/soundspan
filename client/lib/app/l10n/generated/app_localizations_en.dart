@@ -215,6 +215,144 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get licensesRetry => 'Try again';
+
+  @override
+  String get connectAddressLabel => 'Server address';
+
+  @override
+  String get connectAddressHint => 'music.example.com or 192.168.1.20:3030';
+
+  @override
+  String get connectAddressSubmit => 'Connect';
+
+  @override
+  String get connectAddressBack => 'Back';
+
+  @override
+  String get connectAddressEmpty =>
+      'Enter the address of your soundspan server.';
+
+  @override
+  String get connectAddressUnsupportedScheme =>
+      'Use an address that starts with http:// or https://.';
+
+  @override
+  String get connectAddressInvalid =>
+      'That is not a server address. Check it and try again.';
+
+  @override
+  String get connectCleartextTitle => 'Connection not encrypted';
+
+  @override
+  String connectCleartextBody(String address) {
+    return '$address uses http, so your password and music travel unencrypted and can be read on the way. Use https if the server offers it.';
+  }
+
+  @override
+  String connectCleartextBlockedBody(String address) {
+    return '$address uses http. This device blocks unencrypted connections to public servers, so use the server’s https address.';
+  }
+
+  @override
+  String get connectCleartextCancel => 'Cancel';
+
+  @override
+  String get connectCleartextConnectAnyway => 'Connect anyway';
+
+  @override
+  String connectProbeResolving(String address) {
+    return 'Connecting to $address';
+  }
+
+  @override
+  String get connectProbeStarting => 'The server is starting';
+
+  @override
+  String connectProbeStartingRetry(int seconds) {
+    String _temp0 = intl.Intl.pluralLogic(
+      seconds,
+      locale: localeName,
+      other: 'Trying again in $seconds seconds',
+      one: 'Trying again in 1 second',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get connectProbeCancel => 'Cancel';
+
+  @override
+  String connectProbeUsing(String address) {
+    return 'Using $address';
+  }
+
+  @override
+  String connectProbeConnected(String address) {
+    return 'Connected to $address';
+  }
+
+  @override
+  String get connectProbeNotEncrypted => 'Not encrypted';
+
+  @override
+  String get connectProbeContinue => 'Continue';
+
+  @override
+  String get connectProbeEditAddress => 'Edit address';
+
+  @override
+  String get connectProbeTryAgain => 'Try again';
+
+  @override
+  String connectProbeTried(String address) {
+    return 'Address tried: $address';
+  }
+
+  @override
+  String get connectProbeNeedsSetup =>
+      'This server has not been set up yet. Open it in a browser, create the first account there, then try again.';
+
+  @override
+  String get connectProbeOpenInBrowser => 'Open in browser';
+
+  @override
+  String get connectProbeDns => 'Address not found';
+
+  @override
+  String get connectProbeRefused =>
+      'Nothing is listening at that address and port';
+
+  @override
+  String get connectProbeTimeout => 'The server did not answer';
+
+  @override
+  String get connectProbeTls =>
+      'The server’s certificate is not trusted by this device';
+
+  @override
+  String get connectProbeBlockedByProxy =>
+      'Something in front of the server requires its own login';
+
+  @override
+  String get connectProbeNotSoundspan =>
+      'That address is not a soundspan server (check the path)';
+
+  @override
+  String get connectProbeServerError => 'The server reported an error';
+
+  @override
+  String get connectProbeRedirectRefused =>
+      'The server redirected to an address this app will not follow';
+
+  @override
+  String get connectProbeCorsOrNetwork =>
+      'The server could not be reached. If it is running, it must allow this app’s address: add the address below to the server’s ALLOWED_ORIGINS setting, restart it and try again.';
+
+  @override
+  String get connectProbeOrigin => 'This app’s address';
+
+  @override
+  String get connectProbeCopyOrigin => 'Copy';
 }
 
 /// The translations for English (`en_XA`).
@@ -431,4 +569,145 @@ class AppLocalizationsEnXa extends AppLocalizationsEn {
 
   @override
   String get licensesRetry => '[Ţŕý åĝåîñ one]';
+
+  @override
+  String get connectAddressLabel => '[Šéŕvéŕ åððŕéšš one two]';
+
+  @override
+  String get connectAddressHint =>
+      '[mûšîç.éxåmþļé.çöm öŕ 192.168.1.20:3030 one two three four]';
+
+  @override
+  String get connectAddressSubmit => '[Çöññéçţ one]';
+
+  @override
+  String get connectAddressBack => '[Båçķ one]';
+
+  @override
+  String get connectAddressEmpty =>
+      '[Éñţéŕ ţĥé åððŕéšš öf ýöûŕ šöûñðšþåñ šéŕvéŕ. one two three four]';
+
+  @override
+  String get connectAddressUnsupportedScheme =>
+      '[Ûšé åñ åððŕéšš ţĥåţ šţåŕţš ŵîţĥ ĥţţþ:// öŕ ĥţţþš://. one two three four five]';
+
+  @override
+  String get connectAddressInvalid =>
+      '[Ţĥåţ îš ñöţ å šéŕvéŕ åððŕéšš. Çĥéçķ îţ åñð ţŕý åĝåîñ. one two three four five]';
+
+  @override
+  String get connectCleartextTitle =>
+      '[Çöññéçţîöñ ñöţ éñçŕýþţéð one two three]';
+
+  @override
+  String connectCleartextBody(String address) {
+    return '[$address ûšéš ĥţţþ, šö ýöûŕ þåššŵöŕð åñð mûšîç ţŕåvéļ ûñéñçŕýþţéð åñð çåñ bé ŕéåð öñ ţĥé ŵåý. Ûšé ĥţţþš îf ţĥé šéŕvéŕ öfféŕš îţ. one two three four five six seven eight nine ten]';
+  }
+
+  @override
+  String connectCleartextBlockedBody(String address) {
+    return '[$address ûšéš ĥţţþ. Ţĥîš ðévîçé bļöçķš ûñéñçŕýþţéð çöññéçţîöñš ţö þûbļîç šéŕvéŕš, šö ûšé ţĥé šéŕvéŕ’š ĥţţþš åððŕéšš. one two three four five six seven eight nine]';
+  }
+
+  @override
+  String get connectCleartextCancel => '[Çåñçéļ one]';
+
+  @override
+  String get connectCleartextConnectAnyway => '[Çöññéçţ åñýŵåý one two]';
+
+  @override
+  String connectProbeResolving(String address) {
+    return '[Çöññéçţîñĝ ţö $address one two]';
+  }
+
+  @override
+  String get connectProbeStarting => '[Ţĥé šéŕvéŕ îš šţåŕţîñĝ one two three]';
+
+  @override
+  String connectProbeStartingRetry(int seconds) {
+    String _temp0 = intl.Intl.pluralLogic(
+      seconds,
+      locale: localeName,
+      other: 'Ţŕýîñĝ åĝåîñ îñ $seconds šéçöñðš one two three',
+      one: 'Ţŕýîñĝ åĝåîñ îñ 1 šéçöñð one two three',
+    );
+    return '[$_temp0]';
+  }
+
+  @override
+  String get connectProbeCancel => '[Çåñçéļ one]';
+
+  @override
+  String connectProbeUsing(String address) {
+    return '[Ûšîñĝ $address one]';
+  }
+
+  @override
+  String connectProbeConnected(String address) {
+    return '[Çöññéçţéð ţö $address one two]';
+  }
+
+  @override
+  String get connectProbeNotEncrypted => '[Ñöţ éñçŕýþţéð one two]';
+
+  @override
+  String get connectProbeContinue => '[Çöñţîñûé one]';
+
+  @override
+  String get connectProbeEditAddress => '[Éðîţ åððŕéšš one two]';
+
+  @override
+  String get connectProbeTryAgain => '[Ţŕý åĝåîñ one]';
+
+  @override
+  String connectProbeTried(String address) {
+    return '[Åððŕéšš ţŕîéð: $address one two]';
+  }
+
+  @override
+  String get connectProbeNeedsSetup =>
+      '[Ţĥîš šéŕvéŕ ĥåš ñöţ bééñ šéţ ûþ ýéţ. Öþéñ îţ îñ å bŕöŵšéŕ, çŕéåţé ţĥé fîŕšţ åççöûñţ ţĥéŕé, ţĥéñ ţŕý åĝåîñ. one two three four five six seven eight nine]';
+
+  @override
+  String get connectProbeOpenInBrowser => '[Öþéñ îñ bŕöŵšéŕ one two]';
+
+  @override
+  String get connectProbeDns => '[Åððŕéšš ñöţ föûñð one two]';
+
+  @override
+  String get connectProbeRefused =>
+      '[Ñöţĥîñĝ îš ļîšţéñîñĝ åţ ţĥåţ åððŕéšš åñð þöŕţ one two three four]';
+
+  @override
+  String get connectProbeTimeout => '[Ţĥé šéŕvéŕ ðîð ñöţ åñšŵéŕ one two three]';
+
+  @override
+  String get connectProbeTls =>
+      '[Ţĥé šéŕvéŕ’š çéŕţîfîçåţé îš ñöţ ţŕûšţéð bý ţĥîš ðévîçé one two three four five]';
+
+  @override
+  String get connectProbeBlockedByProxy =>
+      '[Šöméţĥîñĝ îñ fŕöñţ öf ţĥé šéŕvéŕ ŕéqûîŕéš îţš öŵñ ļöĝîñ one two three four five]';
+
+  @override
+  String get connectProbeNotSoundspan =>
+      '[Ţĥåţ åððŕéšš îš ñöţ å šöûñðšþåñ šéŕvéŕ (çĥéçķ ţĥé þåţĥ) one two three four five]';
+
+  @override
+  String get connectProbeServerError =>
+      '[Ţĥé šéŕvéŕ ŕéþöŕţéð åñ éŕŕöŕ one two three]';
+
+  @override
+  String get connectProbeRedirectRefused =>
+      '[Ţĥé šéŕvéŕ ŕéðîŕéçţéð ţö åñ åððŕéšš ţĥîš åþþ ŵîļļ ñöţ föļļöŵ one two three four five]';
+
+  @override
+  String get connectProbeCorsOrNetwork =>
+      '[Ţĥé šéŕvéŕ çöûļð ñöţ bé ŕéåçĥéð. Îf îţ îš ŕûññîñĝ, îţ mûšţ åļļöŵ ţĥîš åþþ’š åððŕéšš: åðð ţĥé åððŕéšš béļöŵ ţö ţĥé šéŕvéŕ’š ÅĻĻÖŴÉÐ_ÖŔÎĜÎÑŠ šéţţîñĝ, ŕéšţåŕţ îţ åñð ţŕý åĝåîñ. one two three four five six seven eight nine ten one two three four five]';
+
+  @override
+  String get connectProbeOrigin => '[Ţĥîš åþþ’š åððŕéšš one two]';
+
+  @override
+  String get connectProbeCopyOrigin => '[Çöþý one]';
 }
