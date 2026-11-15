@@ -169,7 +169,7 @@ After every reducer step the controller compares the new `upNext` with what the 
 
 `SourceResolver.resolve(QueueItem) → Future<EngineSource>`:
 
-1. `DownloadStore.completedFile(itemKey)` → `file://` URI, no headers. The file's existence is checked; a missing file marks the download `missing` and falls through.
+1. `DownloadStore.completedFile(itemKey)` → the absolute path of a `completed` item's file (a path, because `dart:io` stays under `lib/platform/`), played as a `file://` URI with no headers. The file's existence is checked; a missing file marks the download `missing` and falls through.
 2. Offline (forced or unreachable) and no file → throws `NotAvailableOffline`; the controller skips the item.
 3. Otherwise a stream URL:
    - Track: `StreamUrls.track(playbackId, quality: q, reportPlay: false)` where `q` is `quality.wifi` or `quality.cellular` from device settings according to the current connection type, or null for "server default".

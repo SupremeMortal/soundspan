@@ -10,7 +10,7 @@ Status: design phase.
 ├── logs/app.0.log … app.4.log
 └── profiles/<profileId>/
     ├── state.db                                # StateDatabase: durable user state
-    ├── media/<sha1(playbackId)[0:2]>/<sha1(playbackId)>.<ext>
+    ├── media/<sha1(itemKey)[0:2]>/<sha1(itemKey)>.<ext>
     ├── media/<…>.part                          # Transfer in progress
     └── art/<sha1(ref)>.img                     # Artwork pinned for downloaded items and OS media controls
 
@@ -20,7 +20,7 @@ Status: design phase.
     └── images/                                 # flutter_cache_manager store
 ```
 
-- File names are derived from a hash because a `playbackId` is opaque and must never be interpreted, even as a file name. The extension comes from the response `Content-Type` (`audio/mpeg` → `mp3`, `audio/flac` → `flac`, `audio/mp4` → `m4a`, `audio/ogg` → `ogg`, `audio/webm` → `webm`, otherwise `bin`); engines sniff content, so the extension is a convenience for debugging.
+- File names are derived from a hash because a `playbackId` is opaque and must never be interpreted, even as a file name. The hash is the lower-case hex SHA-1 of the item's `itemKey` (`t:<playbackId>` or `e:<podcastId>:<episodeId>`, see `download_items`), so tracks and episodes share one scheme, and the same hash is the transfer's task id. The extension comes from the response `Content-Type` (`audio/mpeg` → `mp3`, `audio/flac` → `flac`, `audio/mp4` → `m4a`, `audio/ogg` → `ogg`, `audio/webm` → `webm`, otherwise `bin`); engines sniff content, so the extension is a convenience for debugging.
 - The two-character fan-out keeps directories small on large libraries.
 - `media/` is excluded from cloud backup: iOS and macOS set `NSURLIsExcludedFromBackupKey` on the directory; Android lists it under `<exclude>` in `data_extraction_rules.xml`.
 - On web there are no files. `app.db` and both profile databases are drift WASM databases named `app`, `p_<profileId>_state`, `p_<profileId>_cache`.
