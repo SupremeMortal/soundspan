@@ -1,13 +1,19 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:soundspan/core/connectivity/reachability.dart';
 import 'package:soundspan/core/playback/data/playback_info_repository.dart';
+import 'package:soundspan/core/playback/engines/player_engine_provider.dart';
+import 'package:soundspan/core/playback/playback_controller.dart';
 import 'package:soundspan/core/playback/source_resolver.dart';
 import 'package:soundspan/core/playback/stream_quality_policy.dart';
 import 'package:soundspan/core/profile/api_provider.dart';
+import 'package:soundspan/core/profile/profile_disposer.dart';
 import 'package:soundspan/core/profile/profile_providers.dart';
 import 'package:soundspan/platform/stream_auth/stream_auth.dart';
+import 'package:soundspan/shared/clock.dart';
 import 'package:soundspan_api/soundspan_api.dart';
 
 /// The [PlaybackInfoRepository] of the profile scope; its cache lives as
@@ -53,3 +59,17 @@ final Provider<SourceResolver> sourceResolverProvider =
         streamQualityPolicyProvider,
       ],
     );
+
+/// The [PlaybackController] of the profile scope, alive as long as the
+/// scope. Ending the scope stops playback and disposes the engine.
+final Provider<PlaybackController> playbackControllerProvider =
+    Provider<PlaybackController>((ref) {
+      final controller = PlaybackController(
+        engine: ref.watch(playerEngineBuilderProvider)(),
+        resolver: ref.watch(sourceResolverProvider),
+        clock: ref.watch(clockProvider),
+      );
+      ref.watch(profileDisposerProvider).register(controller.dispose);
+      ref.onDispose(() => unawaited(controller.dispose()));
+      return controller;
+    }, dependencies: [sourceResolverProvider, profileDisposerProvider]);
