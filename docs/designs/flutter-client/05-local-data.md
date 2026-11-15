@@ -192,13 +192,14 @@ Offline, every cached value is shown regardless of age.
 
 ### Pruning
 
-Runs at start-up after the first frame and when `cache.db` exceeds 64 MB (`(page_count − freelist_count) × page_size`): in one transaction, delete `lists` not read for 30 days with their entries and `blobs` not fetched for 30 days, then every entity row no `list_entries` row references. A blob never keeps an entity alive by itself; data that needs its entities kept stores them as a list. If `cache.db` is still above 64 MB, the least recently read lists are deleted 50 at a time, with the entities they leave unreferenced, until it is under the limit or no list is left. The image store is capped at 500 MB and 30 days by the cache manager configuration.
+Runs at start-up after the first frame and when `cache.db` exceeds 64 MB (`(page_count − freelist_count) × page_size`): in one transaction, delete `lists` not read for 30 days with their entries and `blobs` not fetched for 30 days, then every entity row no `list_entries` row references. A blob never keeps an entity alive by itself; data that needs its entities kept stores them as a list. If `cache.db` is still above 64 MB, the least recently read lists are deleted 50 at a time, with the entities they leave unreferenced, until it is under the limit or no list is left. The image store is capped at about 500 MB (as 10,000 images, see Image Cache) and 30 days by the cache manager configuration.
 
 ## Image Cache
 
 `cached_network_image` with a per-profile `CacheManager`:
 
-- Store directory `…/profiles/<id>/images`. Cache key = `sha1(ref) + ":" + size`, independent of the URL, so a rotated `?token=` on web does not miss.
+- Store directory `…/profiles/<id>/images`, which also holds the store's index (`index.json`); on web the package's default store. The store expires an image 30 days after it was fetched. `flutter_cache_manager` limits a store by object count, not bytes, so the 500 MB cap is `maxNrOfCacheObjects: 10000` (about 50 KB per cover).
+- Cache key = `sha1(ref) + ":" + size`, independent of the URL, so a rotated `?token=` on web does not miss.
 - Requests carry `authHeaders` on native targets. On web the URL carries `?token=`.
 - `memCacheWidth` is set to the same snapped pixel size requested from the server. `PaintingBinding.instance.imageCache` is capped at 100 MB and 300 images on desktop, 60 MB and 200 images on mobile.
 - Artwork for downloaded items and for the current track's OS media controls is copied to `profiles/<id>/art/`, which is not purgeable.

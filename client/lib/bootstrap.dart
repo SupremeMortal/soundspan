@@ -20,10 +20,12 @@ import 'package:soundspan/core/profile/profile_runtime.dart';
 import 'package:soundspan/core/storage/app/app_database.dart';
 import 'package:soundspan/core/storage/app/app_settings_store.dart';
 import 'package:soundspan/core/storage/providers.dart';
+import 'package:soundspan/platform/capabilities/capabilities.dart';
 import 'package:soundspan/platform/database_opener/database_opener.dart';
 import 'package:soundspan/platform/log_sink/log_sink.dart';
 import 'package:soundspan/platform/paths/paths.dart';
 import 'package:soundspan/platform/secrets/secrets.dart';
+import 'package:soundspan/shared/providers/images.dart';
 
 final AppLogger _log = AppLogger.scope('App');
 
@@ -35,8 +37,8 @@ typedef PostFirstFrameTask = Future<void> Function(ProviderContainer root);
 /// features append theirs.
 final List<PostFirstFrameTask> postFirstFrameTasks = [];
 
-/// Starts the app (doc 02, Bootstrap Sequence): error hooks, the bundled
-/// licences (read only when the licences screen asks), paths,
+/// Starts the app (doc 02, Bootstrap Sequence): error hooks, the decoded-image
+/// memory cache limits, the bundled licences (read only when the licences screen asks), paths,
 /// logging, `app.db`, the root container and the active profile, the
 /// desktop window, then `runApp` and the [postFirstFrameTasks].
 Future<void> bootstrap() async {
@@ -44,6 +46,9 @@ Future<void> bootstrap() async {
     () async {
       WidgetsFlutterBinding.ensureInitialized();
       installErrorHooks();
+      configureImageMemoryCache(
+        isDesktop: currentPlatformCapabilities().isDesktop,
+      );
       registerBundledLicenses(rootBundle);
       if (kIsWeb) usePathUrlStrategy();
       final paths = await resolveAppPaths();

@@ -355,6 +355,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get connectProbeCopyOrigin => 'Copy';
 
   @override
+  String get mediaCardPlay => 'Play';
+
+  @override
+  String get shelfShowAll => 'Show all';
+
+  @override
+  String get shelfScrollBack => 'Scroll back';
+
+  @override
+  String get shelfScrollForward => 'Scroll forward';
+
+  @override
   String connectSignInHeading(String server) {
     return 'Sign in to $server';
   }
@@ -793,6 +805,18 @@ class AppLocalizationsEnXa extends AppLocalizationsEn {
 
   @override
   String get connectProbeCopyOrigin => '[Çöþý one]';
+
+  @override
+  String get mediaCardPlay => '[Þļåý one]';
+
+  @override
+  String get shelfShowAll => '[Šĥöŵ åļļ one]';
+
+  @override
+  String get shelfScrollBack => '[Šçŕöļļ båçķ one two]';
+
+  @override
+  String get shelfScrollForward => '[Šçŕöļļ föŕŵåŕð one two]';
 
   @override
   String connectSignInHeading(String server) {
