@@ -112,6 +112,7 @@ dependencies:
   cached_network_image: ^4.0.0
   collection: ^1.19.0
   connectivity_plus: ^7.3.0
+  crypto: ^3.0.6                 # SHA-1 of download item keys
   drift: ^2.35.0
   drift_flutter: ^0.3.0
   dynamic_color: ^2.1.0          # Only to read the platform contrast setting; palette is fixed
