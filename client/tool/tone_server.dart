@@ -4,7 +4,7 @@
 /// of `integration_test/engine_conformance_test.dart`, which cannot host a
 /// server in the page. Every origin is allowed.
 ///
-///   dart run tool/tone_server.dart [--port <port>]
+///   dart tool/tone_server.dart [--port <port>]
 ///
 /// Prints `TONE_SERVER=<address>` once listening and serves until killed.
 library;

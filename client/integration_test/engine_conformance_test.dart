@@ -6,7 +6,7 @@
 //
 //   flutter test integration_test/engine_conformance_test.dart -d <device>
 //
-// and on the web, with `dart run tool/tone_server.dart` running:
+// and on the web, with `dart tool/tone_server.dart` running:
 //
 //   flutter drive --driver=test_driver/integration_test.dart \
 //     --target=integration_test/engine_conformance_test.dart -d chrome \

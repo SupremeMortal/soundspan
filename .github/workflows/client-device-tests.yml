@@ -114,8 +114,8 @@ jobs:
       - name: Start the tone server
         working-directory: client
         run: |
-          dart run tool/tone_server.dart --port 8765 > "$RUNNER_TEMP/tone_server.log" 2>&1 &
-          for _ in $(seq 1 60); do
+          dart tool/tone_server.dart --port 8765 > "$RUNNER_TEMP/tone_server.log" 2>&1 &
+          for _ in $(seq 1 300); do
             grep -q '^TONE_SERVER=' "$RUNNER_TEMP/tone_server.log" && exit 0
             sleep 1
           done

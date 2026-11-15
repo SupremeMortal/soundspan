@@ -111,7 +111,7 @@ final class JustAudioEngine implements PlayerEngine {
     EngineSource current, {
     EngineSource? next,
     bool autoPlay = true,
-  }) {
+  }) async {
     _checkNotDisposed();
     final generation = ++_generation;
     _failure = null;
@@ -122,7 +122,7 @@ final class JustAudioEngine implements PlayerEngine {
     _loading = true;
     _sinceAdvance = null;
     _report();
-    return _run(() async {
+    await _run(() async {
       try {
         if (!autoPlay) await _player.pause();
         await _player.setAudioSources(
@@ -145,13 +145,13 @@ final class JustAudioEngine implements PlayerEngine {
   }
 
   @override
-  Future<void> setNext(EngineSource? next) {
+  Future<void> setNext(EngineSource? next) async {
     _checkNotDisposed();
     _next = next;
     final current = _current;
-    if (current == null || _error != null) return Future<void>.value();
+    if (current == null || _error != null) return;
     final generation = _generation;
-    return _run(() async {
+    await _run(() async {
       if (generation != _generation || _next != next) return;
       try {
         if (reloadOnSetNext) {
@@ -200,7 +200,7 @@ final class JustAudioEngine implements PlayerEngine {
   }
 
   @override
-  Future<void> stop() {
+  Future<void> stop() async {
     _checkNotDisposed();
     _generation++;
     _failure = null;
@@ -211,22 +211,22 @@ final class JustAudioEngine implements PlayerEngine {
     _ended = false;
     _sinceAdvance = null;
     _report();
-    return _run(() async {
+    await _run(() async {
       await _player.stop();
       await _player.clearAudioSources();
     });
   }
 
   @override
-  Future<void> setVolume(double linear) {
+  Future<void> setVolume(double linear) async {
     _checkNotDisposed();
-    return _player.setVolume(linear.clamp(0.0, 1.0));
+    await _player.setVolume(linear.clamp(0.0, 1.0));
   }
 
   @override
-  Future<void> setSpeed(double speed) {
+  Future<void> setSpeed(double speed) async {
     _checkNotDisposed();
-    return _player.setSpeed(speed.clamp(0.5, 3.0));
+    await _player.setSpeed(speed.clamp(0.5, 3.0));
   }
 
   @override
