@@ -196,6 +196,7 @@ Where each read is stored (`CacheStore`, `lib/shared/data/cache_store.dart`):
 
 - Album, artist and playlist detail: the whole detail as the blob `album:<id>`, `artist:<id>` or `playlist:<id>`, read back from it, together with an upsert of the entity row with `detailFetchedAt` and, for albums and playlists, a page write of the tracks as the list `album:<id>:tracks` or `playlist:<id>`, in one transaction.
 - Home shelves: one blob per shelf, `home:<shelf>`.
+- Subscribed podcasts: a page write of the podcast rows as the list `podcasts:subscribed`. Podcast detail: the podcast row and a page write of the episode rows as the list `podcast:<id>:episodes`, in one transaction; the detail is a cache miss when the podcast row is gone or an episode row fails to decode. Subscribing and unsubscribing mark `podcasts:subscribed` stale (its `fetchedAt` set to the epoch) so the next read fetches it; posted episode progress is written into the cached episode row.
 - Search results: one blob per query and scope, `search:<query>:<scope>`, so a result is served offline only for that exact query and scope.
 - Library list pages: page writes into `lists` and `list_entries`; reading a list marks it read for pruning.
 

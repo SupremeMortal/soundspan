@@ -134,6 +134,7 @@ final Map<String, FixtureDecoder> fixtureDecoders = {
     PlaylistDetail.fromJson,
     (model) => model.toJson(),
   ),
+  'getPodcast.json': _object(PodcastDetail.fromJson, (model) => model.toJson()),
   'getRadio.json': _object(RadioResponse.fromJson, (model) => model.toJson()),
   'getRecommendationsForYou.json': _object(
     RecommendationsForYou.fromJson,
@@ -255,6 +256,18 @@ final Map<String, FixtureDecoder> fixtureDecoders = {
   ),
   'setTrackPreference.json': _object(
     TrackPreferenceResponse.fromJson,
+    (model) => model.toJson(),
+  ),
+  'subscribePodcast.json': _object(
+    SubscribePodcastResponse.fromJson,
+    (model) => model.toJson(),
+  ),
+  'unsubscribePodcast.json': _object(
+    UnsubscribePodcastResponse.fromJson,
+    (model) => model.toJson(),
+  ),
+  'updateEpisodeProgress.json': _object(
+    UpdateEpisodeProgressResponse.fromJson,
     (model) => model.toJson(),
   ),
   'updatePlaylist.json': _object(

@@ -395,8 +395,44 @@ final List<CaptureStep> captureSteps = [
     ),
   ),
 
-  // Podcasts and social.
-  CaptureStep('listPodcasts', (c) => c.listener.get('/podcasts')),
+  // Podcasts: the seeded subscription; unsubscribing and subscribing again
+  // restores it.
+  CaptureStep('listPodcasts', (c) async {
+    final response = await c.listener.get<String>('/podcasts');
+    final podcast = (c.decode(response)! as List<Object?>).first!;
+    c.values['podcastId'] = (podcast as Map<String, Object?>)['id'];
+    return response;
+  }),
+  CaptureStep('getPodcast', (c) async {
+    final response = await c.listener.get<String>(
+      '/podcasts/${c.values['podcastId']}',
+    );
+    c.values['episodeId'] = _firstId(c.decode(response), 'episodes');
+    c.values['feedUrl'] =
+        (c.decode(response)! as Map<String, Object?>)['feedUrl'];
+    return response;
+  }),
+  CaptureStep(
+    'updateEpisodeProgress',
+    (c) => c.listener.post(
+      '/podcasts/${c.values['podcastId']}/episodes/${c.values['episodeId']}'
+      '/progress',
+      data: {'currentTime': 2, 'duration': 8, 'isFinished': false},
+    ),
+  ),
+  CaptureStep(
+    'unsubscribePodcast',
+    (c) => c.listener.delete('/podcasts/${c.values['podcastId']}/unsubscribe'),
+  ),
+  CaptureStep(
+    'subscribePodcast',
+    (c) => c.listener.post(
+      '/podcasts/subscribe',
+      data: {'feedUrl': c.values['feedUrl']},
+    ),
+  ),
+
+  // Social.
   CaptureStep(
     'sendPresenceHeartbeat',
     (c) => c.listener.post('/social/presence/heartbeat'),

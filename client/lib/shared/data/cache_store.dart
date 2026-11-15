@@ -15,8 +15,8 @@ typedef CacheEntry<T> = ({T value, DateTime fetchedAt});
 
 /// A cached list: its entities in position order and the list's metadata.
 ///
-/// `items` are domain values: [Track], [Album], [Artist] or
-/// [PlaylistSummary]. An entry whose entity is missing or cannot be decoded
+/// `items` are domain values: [Track], [Album], [Artist], [PlaylistSummary],
+/// [Podcast] or [Episode]. An entry whose entity is missing or cannot be decoded
 /// is left out. `positions` holds the list position of each item of
 /// `items`, so a list cached with gaps between its pages keeps them, and
 /// `itemFetchedAt` when each item's entity was last stored, which dates the
@@ -139,6 +139,71 @@ class CacheStore {
     );
   }
 
+  /// Stores [podcasts], replacing rows with the same id.
+  Future<void> upsertPodcasts(Iterable<Podcast> podcasts) {
+    final now = _clock.now();
+    return _db.batch(
+      (batch) => batch.insertAllOnConflictUpdate(_db.podcasts, [
+        for (final podcast in podcasts)
+          PodcastsCompanion.insert(
+            id: podcast.id,
+            json: jsonEncode(podcast),
+            fetchedAt: now,
+          ),
+      ]),
+    );
+  }
+
+  /// Stores [episodes], replacing rows with the same id.
+  Future<void> upsertEpisodes(Iterable<Episode> episodes) {
+    final now = _clock.now();
+    return _db.batch(
+      (batch) => batch.insertAllOnConflictUpdate(_db.episodes, [
+        for (final episode in episodes)
+          EpisodesCompanion.insert(
+            id: episode.id,
+            podcastId: episode.podcastId,
+            json: jsonEncode(episode),
+            fetchedAt: now,
+          ),
+      ]),
+    );
+  }
+
+  /// The podcast [id] as stored now, or null when it is missing or fails to
+  /// decode.
+  Future<CacheEntry<Podcast>?> readPodcast(String id) async {
+    final row = await (_db.select(
+      _db.podcasts,
+    )..where((p) => p.id.equals(id))).getSingleOrNull();
+    return _entry(row?.json, row?.fetchedAt, Podcast.fromJson);
+  }
+
+  /// Replaces the cached episode [id] with what [change] makes of it,
+  /// keeping its fetch time. Answers false, changing nothing, when the
+  /// episode is not cached or fails to decode.
+  Future<bool> updateEpisode(String id, Episode Function(Episode) change) =>
+      _db.transaction(() async {
+        final row = await (_db.select(
+          _db.episodes,
+        )..where((e) => e.id.equals(id))).getSingleOrNull();
+        final episode = row == null
+            ? null
+            : _decode(row.json, Episode.fromJson);
+        if (episode == null) return false;
+        await (_db.update(_db.episodes)..where((e) => e.id.equals(id))).write(
+          EpisodesCompanion(json: Value(jsonEncode(change(episode)))),
+        );
+        return true;
+      });
+
+  /// Marks the list [listKey] as fetched at the epoch, so the next read
+  /// fetches it whatever its TTL. Its entries stay for offline reads.
+  Future<void> markListStale(String listKey) async {
+    await (_db.update(_db.lists)..where((l) => l.listKey.equals(listKey)))
+        .write(ListsCompanion(fetchedAt: Value(DateTime.utc(1970))));
+  }
+
   /// The track stored under [key], or null.
   Stream<CacheEntry<Track>?> watchTrack(String key) =>
       (_db.select(_db.tracks)..where((t) => t.key.equals(key)))
@@ -225,7 +290,8 @@ class CacheStore {
       .distinct();
 
   /// Writes one page of the list [listKey]: upserts [items] ([Track],
-  /// [Album], [Artist] or [PlaylistSummary]) and replaces the entries from
+  /// [Album], [Artist], [PlaylistSummary], [Podcast] or [Episode]) and
+  /// replaces the entries from
   /// [offset] to `offset + items.length`, in one transaction.
   ///
   /// The list records [total], [complete] and the fetch time; when [total]
@@ -243,6 +309,8 @@ class CacheStore {
     final albums = <Album>[];
     final artists = <Artist>[];
     final playlists = <PlaylistSummary>[];
+    final podcasts = <Podcast>[];
+    final episodes = <Episode>[];
     for (final item in items) {
       switch (item) {
         case final Track track:
@@ -257,6 +325,12 @@ class CacheStore {
         case final PlaylistSummary playlist:
           playlists.add(playlist);
           refs.add((CacheEntityKind.playlist, playlist.id));
+        case final Podcast podcast:
+          podcasts.add(podcast);
+          refs.add((CacheEntityKind.podcast, podcast.id));
+        case final Episode episode:
+          episodes.add(episode);
+          refs.add((CacheEntityKind.episode, episode.id));
         default:
           throw ArgumentError.value(item, 'items', 'not a cacheable entity');
       }
@@ -265,6 +339,8 @@ class CacheStore {
     await upsertAlbums(albums);
     await upsertArtists(artists);
     await upsertPlaylists(playlists);
+    await upsertPodcasts(podcasts);
+    await upsertEpisodes(episodes);
 
     await _db
         .into(_db.lists)
@@ -319,6 +395,8 @@ class CacheStore {
             _db.albums,
             _db.artists,
             _db.playlists,
+            _db.podcasts,
+            _db.episodes,
           },
         )
         .watch()
@@ -393,6 +471,26 @@ class CacheStore {
         (row) => row.json,
         (row) => row.fetchedAt,
         PlaylistSummary.fromJson,
+      );
+    }
+    if (keysByKind[CacheEntityKind.podcast] case final keys?) {
+      await load(
+        CacheEntityKind.podcast,
+        (_db.select(_db.podcasts)..where((p) => p.id.isIn(keys))).get(),
+        (row) => row.id,
+        (row) => row.json,
+        (row) => row.fetchedAt,
+        Podcast.fromJson,
+      );
+    }
+    if (keysByKind[CacheEntityKind.episode] case final keys?) {
+      await load(
+        CacheEntityKind.episode,
+        (_db.select(_db.episodes)..where((e) => e.id.isIn(keys))).get(),
+        (row) => row.id,
+        (row) => row.json,
+        (row) => row.fetchedAt,
+        Episode.fromJson,
       );
     }
     final items = <Object>[];

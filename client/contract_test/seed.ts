@@ -399,7 +399,32 @@ async function main(): Promise<void> {
         );
     }
 
-    // 10. Credentials for the tests.
+    // 10. The fixture podcast for listener: compose.yaml's podcast-feed
+    // serves the feed and its two episodes.
+    const podcastFeedUrl = "http://podcast-feed/feed.xml";
+    const subscribed = await expectOk("POST", "/api/podcasts/subscribe", {
+        token: listenerToken,
+        body: { feedUrl: podcastFeedUrl },
+    });
+    assert(
+        typeof subscribed.podcast?.id === "string",
+        "the subscribed podcast has an id",
+    );
+    const podcastDetail = await expectOk(
+        "GET",
+        `/api/podcasts/${encodeURIComponent(subscribed.podcast.id)}`,
+        { token: listenerToken },
+    );
+    const episodes: unknown[] = podcastDetail.episodes ?? [];
+    assert(
+        episodes.length >= 2,
+        `the podcast has at least 2 episodes (found ${episodes.length})`,
+    );
+    ok(
+        `listener subscribes ${podcastFeedUrl} with ${episodes.length} episodes`,
+    );
+
+    // 11. Credentials for the tests.
     const credentials = {
         baseUrl,
         admin,

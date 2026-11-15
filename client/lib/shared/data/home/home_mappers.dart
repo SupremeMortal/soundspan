@@ -54,11 +54,14 @@ MixSummary mixSummaryFromWire(api.MixSummary wire) => MixSummary(
   coverRefs: wire.coverUrls,
 );
 
-/// A podcast of the directory's top list.
+/// A podcast of the directory's top list, with the feed URL and iTunes id
+/// a subscribe request names it by.
 PodcastSummary podcastSummaryFromWire(api.PodcastSummary wire) =>
     PodcastSummary(
       id: wire.id,
       title: wire.title,
       author: wire.author,
       artworkRef: wire.coverUrl,
+      feedUrl: wire.feedUrl,
+      itunesId: '${wire.itunesId}',
     );

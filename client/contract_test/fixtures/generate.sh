@@ -2,9 +2,12 @@
 # Writes the contract suite's fixture music library under
 # client/contract_test/.fixtures/music: one tagged FLAC sine tone per track of
 # fixtures/library.json, at the frequency and length listed there, each with
-# the same embedded 600x600 PNG front cover so albums have cover art. The output
-# depends only on library.json and the ffmpeg build, so every run writes the
-# same library. Needs ffmpeg and jq.
+# the same embedded 600x600 PNG front cover so albums have cover art. Also
+# writes the fixture podcast under client/contract_test/.fixtures/podcast:
+# fixtures/podcast/feed.xml and one MP3 sine tone per episode it lists, served
+# by the podcast-feed service of compose.yaml. The output depends only on
+# library.json, feed.xml and the ffmpeg build, so every run writes the same
+# files. Needs ffmpeg and jq.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -71,3 +74,17 @@ if [[ "$count" -ne "$expected" ]]; then
   exit 1
 fi
 echo "generate.sh: wrote $count tracks to $out"
+
+podcast=.fixtures/podcast
+rm -rf "$podcast"
+mkdir -p "$podcast"
+cp fixtures/podcast/feed.xml "$podcast/feed.xml"
+# The episode files feed.xml names, with the lengths of its itunes:duration.
+for episode in "1 6 330" "2 8 550"; do
+  read -r number seconds freq <<<"$episode"
+  ffmpeg -nostdin -hide_banner -loglevel error -y \
+    -f lavfi -i "sine=frequency=$freq:duration=$seconds:sample_rate=44100" \
+    -ac 1 -c:a libmp3lame -b:a 64k -fflags +bitexact -flags:a +bitexact \
+    "$podcast/episode-$number.mp3"
+done
+echo "generate.sh: wrote the fixture podcast to $podcast"

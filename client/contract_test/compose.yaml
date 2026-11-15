@@ -3,6 +3,11 @@
 # Redis. Services extend the root docker-compose.yml; the variables that file
 # marks required come from .env next to this file (throwaway values).
 #
+# podcast-feed serves the fixture podcast (fixtures/generate.sh) at
+# http://podcast-feed/feed.xml. The backend refuses feed and enclosure hosts
+# that resolve to private addresses, so the network uses a subnet outside the
+# ranges it blocks; production rules are unchanged.
+#
 #   docker compose -f compose.yaml up -d --build --wait
 #   docker compose -f compose.yaml down -v
 name: soundspan-contract
@@ -29,6 +34,20 @@ services:
                 condition: service_healthy
             redis:
                 condition: service_healthy
+            podcast-feed:
+                condition: service_healthy
+
+    podcast-feed:
+        image: nginx:1.27-alpine
+        container_name: soundspan-contract-podcast-feed
+        volumes:
+            - ./.fixtures/podcast:/usr/share/nginx/html:ro
+        restart: "no"
+        healthcheck:
+            test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1/feed.xml"]
+            interval: 2s
+            timeout: 2s
+            retries: 15
 
     postgres:
         extends:
@@ -45,6 +64,12 @@ services:
         container_name: soundspan-contract-redis
         ports: !reset []
         restart: "no"
+
+networks:
+    default:
+        ipam:
+            config:
+                - subnet: 11.86.0.0/24
 
 volumes:
     postgres_data:

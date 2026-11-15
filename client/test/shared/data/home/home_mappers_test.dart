@@ -193,8 +193,27 @@ void main() {
           title: 'Top show',
           author: 'Network',
           artworkRef: 'http://img/top',
+          itunesId: '1234',
         ),
       );
+    });
+
+    test('a directory podcast with a feed URL carries it', () {
+      final podcast = podcastSummaryFromWire(
+        api.PodcastSummary.fromJson({
+          'id': '1234',
+          'title': 'Top show',
+          'author': 'Network',
+          'episodeCount': 0,
+          'feedUrl': 'https://example.com/top.xml',
+          'genres': ['News'],
+          'isExternal': true,
+          'itunesId': 1234,
+        }),
+      );
+
+      expect(podcast.feedUrl, 'https://example.com/top.xml');
+      expect(podcast.itunesId, '1234');
     });
   });
 }

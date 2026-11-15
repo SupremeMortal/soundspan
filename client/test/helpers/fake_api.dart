@@ -9,6 +9,9 @@ import 'package:soundspan_api/soundspan_api.dart' as api;
 final class FakeApi {
   /// The offline resource: `rest.offline`.
   final FakeOfflineClient offline = FakeOfflineClient();
+
+  /// The podcasts resource: `rest.podcasts`.
+  final FakePodcastsClient podcasts = FakePodcastsClient();
 }
 
 /// One file a device reported as written.
@@ -221,5 +224,234 @@ final class FakeOfflineClient implements api.OfflineClient {
               trackCount: held.length,
             ),
     );
+  }
+}
+
+/// One episode of a [FakePodcast].
+typedef FakeEpisode = ({
+  String id,
+  String title,
+  int durationSec,
+  DateTime publishedAt,
+});
+
+/// One podcast the fake server knows, subscribed or not.
+final class FakePodcast {
+  /// Creates a podcast at [feedUrl] with [episodes], newest first.
+  new({
+    required this.id,
+    required this.title,
+    required this.feedUrl,
+    this.itunesId,
+    this.author,
+    this.episodes = const [],
+  });
+
+  /// The server's podcast id.
+  final String id;
+
+  /// The title; tests change it to see a refresh land.
+  String title;
+
+  /// The RSS feed URL.
+  final String feedUrl;
+
+  /// The iTunes directory id, if the directory knows the podcast.
+  final String? itunesId;
+
+  /// The author.
+  final String? author;
+
+  /// The episodes, newest first.
+  List<FakeEpisode> episodes;
+}
+
+/// An in-memory model of the server's podcast API: known podcasts, the
+/// user's subscriptions (most recent first) and episode progress. Every
+/// call is counted in [calls]; an exception in [failures] is thrown by the
+/// call of that name instead of answering.
+final class FakePodcastsClient implements api.PodcastsClient {
+  /// Every podcast the server knows, by id.
+  final Map<String, FakePodcast> podcasts = {};
+
+  /// The ids of the subscribed podcasts, most recently subscribed first.
+  final List<String> subscriptions = [];
+
+  /// The user's progress, by episode id.
+  final Map<String, api.UpdateEpisodeProgressRequest> progress = {};
+
+  /// Calls by operation name.
+  final Map<String, int> calls = {};
+
+  /// Exceptions to throw, by operation name.
+  final Map<String, Exception> failures = {};
+
+  /// Adds [podcast] to the server and subscribes the user to it.
+  void addSubscribed(FakePodcast podcast) {
+    podcasts[podcast.id] = podcast;
+    subscriptions.insert(0, podcast.id);
+  }
+
+  void _call(String name) {
+    calls.update(name, (n) => n + 1, ifAbsent: () => 1);
+    if (failures[name] case final error?) throw error;
+  }
+
+  FakePodcast _subscribed(String id) {
+    if (!subscriptions.contains(id)) {
+      throw const api.NotFound(status: 404, code: 'NOT_FOUND');
+    }
+    return podcasts[id]!;
+  }
+
+  api.EpisodeProgress? _progressOf(String episodeId) {
+    final saved = progress[episodeId];
+    if (saved == null) return null;
+    return api.EpisodeProgress(
+      currentTime: saved.currentTime,
+      isFinished: saved.isFinished ?? false,
+      lastPlayedAt: DateTime.utc(2024),
+      progress: saved.duration == 0
+          ? 0
+          : saved.currentTime / saved.duration * 100,
+    );
+  }
+
+  @override
+  Future<List<api.SubscribedPodcast>> listPodcasts({
+    Map<String, Object?> extra = const {},
+    CancelToken? cancelToken,
+    Options? options,
+  }) async {
+    _call('listPodcasts');
+    return [
+      for (final id in subscriptions)
+        api.SubscribedPodcast(
+          id: id,
+          title: podcasts[id]!.title,
+          author: podcasts[id]!.author,
+          coverUrl: '/podcasts/$id/cover',
+          description: null,
+          autoDownloadEpisodes: false,
+          episodeCount: podcasts[id]!.episodes.length,
+          episodes: const [],
+        ),
+    ];
+  }
+
+  @override
+  Future<api.PodcastDetail> getPodcast({
+    required String id,
+    Map<String, Object?> extra = const {},
+    CancelToken? cancelToken,
+    Options? options,
+  }) async {
+    _call('getPodcast');
+    final podcast = _subscribed(id);
+    return api.PodcastDetail(
+      id: id,
+      title: podcast.title,
+      author: podcast.author,
+      coverUrl: '/podcasts/$id/cover',
+      description: null,
+      feedUrl: podcast.feedUrl,
+      genres: const [],
+      isSubscribed: true,
+      autoDownloadEpisodes: false,
+      episodes: [
+        for (final episode in podcast.episodes)
+          api.PodcastEpisode(
+            id: episode.id,
+            title: episode.title,
+            description: null,
+            duration: episode.durationSec,
+            publishedAt: episode.publishedAt,
+            episodeNumber: null,
+            season: null,
+            imageUrl: null,
+            isDownloaded: false,
+            progress: _progressOf(episode.id),
+          ),
+      ],
+    );
+  }
+
+  @override
+  Future<api.SubscribePodcastResponse> subscribePodcast({
+    required api.SubscribePodcastRequest body,
+    Map<String, Object?> extra = const {},
+    CancelToken? cancelToken,
+    Options? options,
+  }) async {
+    _call('subscribePodcast');
+    final podcast = podcasts.values.firstWhere(
+      (p) => body.feedUrl != null
+          ? p.feedUrl == body.feedUrl
+          : p.itunesId != null && p.itunesId == body.itunesId,
+      orElse: () => throw const api.NotFound(status: 404),
+    );
+    final already = subscriptions.contains(podcast.id);
+    if (!already) subscriptions.insert(0, podcast.id);
+    return api.SubscribePodcastResponse(
+      success: true,
+      message: already ? 'Already subscribed' : 'Subscribed',
+      podcast: api.SubscribedPodcastRef(id: podcast.id, title: podcast.title),
+    );
+  }
+
+  @override
+  Future<api.UnsubscribePodcastResponse> unsubscribePodcast({
+    required String id,
+    Map<String, Object?> extra = const {},
+    CancelToken? cancelToken,
+    Options? options,
+  }) async {
+    _call('unsubscribePodcast');
+    final podcast = _subscribed(id);
+    subscriptions.remove(id);
+    for (final episode in podcast.episodes) {
+      progress.remove(episode.id);
+    }
+    return const api.UnsubscribePodcastResponse(
+      success: true,
+      message: 'Unsubscribed',
+    );
+  }
+
+  @override
+  Future<api.UpdateEpisodeProgressResponse> updateEpisodeProgress({
+    required String podcastId,
+    required String episodeId,
+    required api.UpdateEpisodeProgressRequest body,
+    Map<String, Object?> extra = const {},
+    CancelToken? cancelToken,
+    Options? options,
+  }) async {
+    _call('updateEpisodeProgress');
+    final podcast = _subscribed(podcastId);
+    if (!podcast.episodes.any((e) => e.id == episodeId)) {
+      throw const api.NotFound(status: 404);
+    }
+    progress[episodeId] = body;
+    final saved = _progressOf(episodeId)!;
+    return api.UpdateEpisodeProgressResponse(
+      success: true,
+      progress: api.SavedEpisodeProgress(
+        currentTime: saved.currentTime,
+        isFinished: saved.isFinished,
+        progress: saved.progress,
+      ),
+    );
+  }
+
+  @override
+  Future<List<api.PodcastSummary>> listTopPodcasts({
+    int? limit,
+    Map<String, Object?> extra = const {},
+    CancelToken? cancelToken,
+    Options? options,
+  }) async {
+    _call('listTopPodcasts');
+    return const [];
   }
 }
