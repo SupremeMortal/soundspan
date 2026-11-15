@@ -123,6 +123,14 @@ final class LibraryRemoteSource {
     );
   }
 
+  /// Up to [limit] library tracks in random order
+  /// (`GET /library/tracks/shuffle`); the server's default count when
+  /// [limit] is null.
+  Future<List<Track>> shuffledTracks({int? limit}) async {
+    final response = await _client.listShuffledTracks(limit: limit);
+    return [for (final track in response.tracks) trackFromSummary(track)];
+  }
+
   /// One page of liked tracks, newest first (`GET /library/liked`); pass the
   /// page's next cursor back as [cursor] for the following page.
   Future<api.KeysetPage<Track, LikedCursor>> liked({

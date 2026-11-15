@@ -324,6 +324,34 @@ void main() {
     });
   });
 
+  test('shuffledTracks passes limit and maps the tracks in order', () async {
+    when(() => client.listShuffledTracks(limit: any(named: 'limit')))
+        .thenAnswer(
+          (_) async => api.ShuffledTracksResponse.fromJson({
+            'tracks': [_trackJson('t-2'), _trackJson('t-1')],
+            'total': 40,
+          }),
+        );
+
+    final tracks = await source.shuffledTracks(limit: 2);
+
+    verify(() => client.listShuffledTracks(limit: 2)).called(1);
+    expect([for (final t in tracks) t.meta.title], ['Song t-2', 'Song t-1']);
+    expect(tracks.first.playbackId, const PlaybackId('pb-t-2'));
+  });
+
+  test('shuffledTracks without limit uses the server default', () async {
+    when(() => client.listShuffledTracks()).thenAnswer(
+      (_) async => api.ShuffledTracksResponse.fromJson({
+        'tracks': <Object?>[],
+        'total': 0,
+      }),
+    );
+
+    expect(await source.shuffledTracks(), isEmpty);
+    verify(() => client.listShuffledTracks()).called(1);
+  });
+
   test('an ApiException propagates unchanged', () async {
     const error = api.NotFound(status: 404, serverMessage: 'Album not found');
     when(

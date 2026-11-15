@@ -289,4 +289,62 @@ void main() {
       expect(features.loudnessTargetLufs, isA<num>());
     });
   });
+
+  group('settings', () {
+    // The admin account: no other contract test reads its settings.
+    test('settings decode, loudnessMode and playbackQuality round-trip, and '
+        'the original values are restored', () async {
+      final api = await signedInApi(credentials, credentials.admin);
+      final original = await api.send((rest) => rest.session.getSettings());
+      addTearDown(
+        () => api.send(
+          (rest) => rest.session.updateSettings(
+            body: UpdateSettingsRequest(
+              loudnessMode: original.loudnessMode,
+              playbackQuality: original.playbackQuality,
+            ),
+          ),
+        ),
+      );
+      expect(original.maxCacheSizeMb, isA<int>());
+
+      final loudness = original.loudnessMode == LoudnessMode.track
+          ? LoudnessMode.album
+          : LoudnessMode.track;
+      final afterLoudness = await api.send(
+        (rest) => rest.session.updateSettings(
+          body: UpdateSettingsRequest(loudnessMode: loudness),
+        ),
+      );
+      expect(afterLoudness.loudnessMode, loudness);
+      expect(
+        (await api.send((rest) => rest.session.getSettings())).loudnessMode,
+        loudness,
+      );
+
+      final quality = original.playbackQuality == PlaybackQuality.low
+          ? PlaybackQuality.medium
+          : PlaybackQuality.low;
+      final afterQuality = await api.send(
+        (rest) => rest.session.updateSettings(
+          body: UpdateSettingsRequest(playbackQuality: quality),
+        ),
+      );
+      expect(afterQuality.playbackQuality, quality);
+      final readBack = await api.send((rest) => rest.session.getSettings());
+      expect(readBack.playbackQuality, quality);
+      expect(readBack.loudnessMode, loudness);
+
+      final restored = await api.send(
+        (rest) => rest.session.updateSettings(
+          body: UpdateSettingsRequest(
+            loudnessMode: original.loudnessMode,
+            playbackQuality: original.playbackQuality,
+          ),
+        ),
+      );
+      expect(restored.loudnessMode, original.loudnessMode);
+      expect(restored.playbackQuality, original.playbackQuality);
+    });
+  });
 }

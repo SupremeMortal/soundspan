@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:soundspan/core/profile/api_provider.dart';
 import 'package:soundspan/core/sync/data/playback_state_repository.dart';
 import 'package:soundspan/core/sync/data/plays_repository.dart';
+import 'package:soundspan/core/sync/data/preference_repository.dart';
 
 /// The [PlaysRepository] of the profile scope.
 final Provider<PlaysRepository> playsRepositoryProvider =
@@ -18,5 +19,13 @@ final Provider<PlaybackStateRepository> playbackStateRepositoryProvider =
       (ref) => PlaybackStateRepository(
         ref.watch(soundspanApiProvider).rest.playback,
       ),
+      dependencies: [soundspanApiProvider],
+    );
+
+/// The [PreferenceRepository] of the profile scope.
+final Provider<PreferenceRepository> preferenceRepositoryProvider =
+    Provider<PreferenceRepository>(
+      (ref) =>
+          PreferenceRepository(ref.watch(soundspanApiProvider).rest.library2),
       dependencies: [soundspanApiProvider],
     );

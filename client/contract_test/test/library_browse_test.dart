@@ -189,6 +189,21 @@ void main() {
       }
     });
 
+    test(
+      'shuffle returns at most limit tracks, each with a playbackId',
+      () async {
+        final shuffled = await api.send(
+          (rest) => rest.library2.listShuffledTracks(limit: 3),
+        );
+
+        expect(shuffled.tracks.length, lessThanOrEqualTo(3));
+        expect(shuffled.tracks, isNotEmpty);
+        for (final track in shuffled.tracks) {
+          expect(track.playbackId, isNotNull);
+        }
+      },
+    );
+
     test('liked: keyset paging with limit 2 returns all three tracks across '
         'two pages with hasMore false at the end', () async {
       final first = await api.send(
@@ -365,6 +380,191 @@ void main() {
       );
 
       expect(results.results, isA<List<DiscoverResult>>());
+    });
+  });
+
+  group('writes', () {
+    // The admin account: no other contract test reads its likes, album
+    // preferences or playlists, so these writes cannot race the listener's
+    // seeded state.
+    late SoundspanApi admin;
+
+    setUp(
+      () async => admin = await signedInApi(credentials, credentials.admin),
+    );
+
+    Future<List<String>> playbackIds(int count) async {
+      final page = await admin.send(
+        (rest) => rest.library2.listTracks(limit: count, offset: 10),
+      );
+      return [for (final track in page.tracks) track.playbackId!];
+    }
+
+    Future<List<String>> likedPlaybackIds() async {
+      final liked = await admin.send(
+        (rest) => rest.library2.listLikedTracks(limit: 100),
+      );
+      return [for (final track in liked.tracks) ?track.playbackId];
+    }
+
+    Future<TrackPreferenceResponse> setTrackPreference(
+      String playbackId,
+      PreferenceSignal signal,
+    ) => admin.send(
+      (rest) => rest.library2.setTrackPreference(
+        body: TrackPreferenceRequest(playbackId: playbackId, signal: signal),
+      ),
+    );
+
+    test('a track liked by playbackId is listed as liked; cleared, it is '
+        'gone', () async {
+      final playbackId = (await playbackIds(1)).single;
+      addTearDown(() => setTrackPreference(playbackId, PreferenceSignal.clear));
+
+      final liked = await setTrackPreference(
+        playbackId,
+        PreferenceSignal.thumbsUp,
+      );
+      expect(liked.state, PreferenceState.liked);
+      expect(liked.likedAt, isNotNull);
+      expect(await likedPlaybackIds(), contains(playbackId));
+
+      final cleared = await setTrackPreference(
+        playbackId,
+        PreferenceSignal.clear,
+      );
+      expect(cleared.state, PreferenceState.neutral);
+      expect(await likedPlaybackIds(), isNot(contains(playbackId)));
+    });
+
+    test('an album preference answers the state it set', () async {
+      final album = await fixtureAlbum(_multiDiscAlbum);
+      Future<AlbumPreferenceResponse> setAlbum(PreferenceSignal signal) =>
+          admin.send(
+            (rest) => rest.library2.setAlbumPreference(
+              id: album.id,
+              body: AlbumPreferenceRequest(signal: signal),
+            ),
+          );
+      addTearDown(() => setAlbum(PreferenceSignal.clear));
+
+      final liked = await setAlbum(PreferenceSignal.thumbsUp);
+      expect(liked.albumId, album.id);
+      expect(liked.state, PreferenceState.liked);
+
+      final cleared = await setAlbum(PreferenceSignal.clear);
+      expect(cleared.state, PreferenceState.neutral);
+    });
+
+    test('a playlist is created, renamed, filled, reordered and emptied by '
+        'playbackId, then deleted', () async {
+      final ids = await playbackIds(3);
+      final created = await admin.send(
+        (rest) => rest.playlists.createPlaylist(
+          body: const CreatePlaylistRequest(name: 'Contract writes'),
+        ),
+      );
+      var deleted = false;
+      addTearDown(() async {
+        if (!deleted) {
+          await admin.send(
+            (rest) => rest.playlists.deletePlaylist(id: created.id),
+          );
+        }
+      });
+      expect(created.name, 'Contract writes');
+      expect(created.isPublic, isFalse);
+
+      final renamed = await admin.send(
+        (rest) => rest.playlists.updatePlaylist(
+          id: created.id,
+          body: const UpdatePlaylistRequest(name: 'Contract renamed'),
+        ),
+      );
+      expect(renamed.name, 'Contract renamed');
+
+      for (final playbackId in ids) {
+        final added = await admin.send(
+          (rest) => rest.playlists.addPlaylistItem(
+            id: created.id,
+            body: AddPlaylistItemRequest(playbackId: playbackId),
+          ),
+        );
+        expect(added.asPlaylistItem?.track.playbackId, playbackId);
+      }
+
+      Future<List<String?>> order() async {
+        final detail = await admin.send(
+          (rest) => rest.playlists.getPlaylist(id: created.id),
+        );
+        expect(detail.name, 'Contract renamed');
+        final items = [...detail.items]
+          ..sort((a, b) => a.sort.compareTo(b.sort));
+        return [for (final item in items) item.track.playbackId];
+      }
+
+      expect(await order(), ids);
+
+      final reordered = [ids[2], ids[0], ids[1]];
+      await admin.send(
+        (rest) => rest.playlists.reorderPlaylistItems(
+          id: created.id,
+          body: ReorderPlaylistItemsRequest(playbackIds: reordered),
+        ),
+      );
+      expect(await order(), reordered);
+
+      await admin.send(
+        (rest) => rest.playlists.removePlaylistItem(
+          id: created.id,
+          playbackId: Uri.encodeComponent(ids[0]),
+        ),
+      );
+      expect(await order(), [ids[2], ids[1]]);
+
+      await admin.send((rest) => rest.playlists.deletePlaylist(id: created.id));
+      deleted = true;
+      await expectLater(
+        admin.send((rest) => rest.playlists.getPlaylist(id: created.id)),
+        throwsA(isA<NotFound>()),
+      );
+    });
+
+    test('adding an unknown playbackId with metadata is NotFound '
+        'TRACK_NOT_FOUND', () async {
+      final created = await admin.send(
+        (rest) => rest.playlists.createPlaylist(
+          body: const CreatePlaylistRequest(name: 'Contract unknown track'),
+        ),
+      );
+      addTearDown(
+        () =>
+            admin.send((rest) => rest.playlists.deletePlaylist(id: created.id)),
+      );
+
+      await expectLater(
+        admin.send(
+          (rest) => rest.playlists.addPlaylistItem(
+            id: created.id,
+            body: const AddPlaylistItemRequest(
+              playbackId: 't.contract-unknown-track',
+              metadata: PlaybackMetadata(
+                title: 'Missing',
+                artist: 'Nobody',
+                album: 'Nowhere',
+                durationSec: 30,
+              ),
+            ),
+          ),
+        ),
+        throwsA(
+          isA<NotFound>().having(
+            (error) => error.code,
+            'code',
+            'TRACK_NOT_FOUND',
+          ),
+        ),
+      );
     });
   });
 }
