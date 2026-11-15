@@ -138,7 +138,7 @@ Riverpod's scoped-provider rule applies: every provider that depends on a scoped
 
 `bootstrap()` runs these steps in order. Steps 1–6 complete before the first frame; the budget is 300 ms on a mid-range Android device.
 
-1. `WidgetsFlutterBinding.ensureInitialized()`.
+1. `WidgetsFlutterBinding.ensureInitialized()`, then cap the decoded-image memory cache (`configureImageMemoryCache`, [05](05-local-data.md#image-cache)).
 2. Install error hooks: `FlutterError.onError`, `PlatformDispatcher.instance.onError`, and a guarded zone. All route to `AppLogger`. Nothing is sent off the device.
 3. Resolve `AppPaths` (`getApplicationSupportDirectory`, `getApplicationCacheDirectory`); on web this is a no-op.
 4. Open `AppDatabase` and read `AppSettings` and the active profile id.
