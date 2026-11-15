@@ -12,11 +12,11 @@ SimilarTracksResponse _$SimilarTracksResponseFromJson(
   $checkKeys(
     json,
     requiredKeys: const ['sourceFeatures', 'sourceTrackId', 'tracks'],
-    disallowNullValues: const ['sourceFeatures', 'sourceTrackId', 'tracks'],
+    disallowNullValues: const ['sourceTrackId', 'tracks'],
   );
   return SimilarTracksResponse(
-    sourceFeatures: VibeAudioFeatures.fromJson(
-      json['sourceFeatures'] as Map<String, dynamic>,
+    sourceFeatures: SimilarTracksResponse._read_sourceFeatures(
+      json['sourceFeatures'],
     ),
     sourceTrackId: json['sourceTrackId'] as String,
     tracks: (json['tracks'] as List<dynamic>)
@@ -34,7 +34,9 @@ SimilarTracksResponse _$SimilarTracksResponseFromJson(
 Map<String, dynamic> _$SimilarTracksResponseToJson(
   SimilarTracksResponse instance,
 ) => <String, dynamic>{
-  'sourceFeatures': instance.sourceFeatures.toJson(),
+  'sourceFeatures': SimilarTracksResponse._write_sourceFeatures(
+    instance.sourceFeatures,
+  ),
   'sourceTrackId': instance.sourceTrackId,
   'tracks': instance.tracks.map((e) => e.toJson()).toList(),
 };

@@ -229,6 +229,30 @@ void main() {
     },
   );
 
+  test('addItem answering an item without a track is an InvalidResponse '
+      'naming track', () async {
+    when(
+      () => client.addPlaylistItem(
+        id: any(named: 'id'),
+        body: any(named: 'body'),
+      ),
+    ).thenAnswer(
+      (_) async => api.AddPlaylistItemResponse200.fromJson({
+        ..._itemJson('i-8'),
+        'track': null,
+      }),
+    );
+
+    await expectLater(
+      source.addItem('pl-1', const PlaybackId('p-1'), meta: _meta),
+      throwsA(
+        isA<api.InvalidResponse>()
+            .having((e) => e.operationId, 'operationId', 'addPlaylistItem')
+            .having((e) => e.key, 'key', 'track'),
+      ),
+    );
+  });
+
   test(
     'removeItem sends the playbackId as one percent-encoded segment',
     () async {

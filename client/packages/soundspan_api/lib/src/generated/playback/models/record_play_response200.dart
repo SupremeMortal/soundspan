@@ -16,8 +16,8 @@ class RecordPlayResponse200 with _$RecordPlayResponse200 {
   );
 
   factory RecordPlayResponse200.fromJson(Object? json) {
-    final hasPlayRecord = _matches72(json);
-    final hasPlayNotRecorded = _matches78(json);
+    final hasPlayRecord = _matches78(json);
+    final hasPlayNotRecorded = _matches84(json);
     if (!(hasPlayRecord || hasPlayNotRecorded)) {
       throw const FormatException("No matching RecordPlayResponse200 variant.");
     }
@@ -53,41 +53,41 @@ class RecordPlayResponse200 with _$RecordPlayResponse200 {
   Object? toJson() => _copyJson(_json);
 }
 
-bool _matches72(Object? value) => (_matches73(value));
-bool _matches73(Object? value) =>
+bool _matches78(Object? value) => (_matches79(value));
+bool _matches79(Object? value) =>
     (value is! Map<String, Object?> || value.containsKey("id")) &&
     (value is! Map<String, Object?> || value.containsKey("listenedMs")) &&
     (value is! Map<String, Object?> || value.containsKey("playedAt")) &&
     (value is! Map<String, Object?> || value.containsKey("source")) &&
     (value is! Map<String, Object?> ||
         !value.containsKey("id") ||
-        _matches74(value["id"])) &&
+        _matches80(value["id"])) &&
     (value is! Map<String, Object?> ||
         !value.containsKey("listenedMs") ||
-        _matches75(value["listenedMs"])) &&
+        _matches81(value["listenedMs"])) &&
     (value is! Map<String, Object?> ||
         !value.containsKey("playedAt") ||
-        _matches76(value["playedAt"])) &&
+        _matches82(value["playedAt"])) &&
     (value is! Map<String, Object?> ||
         !value.containsKey("source") ||
-        _matches77(value["source"])) &&
+        _matches83(value["source"])) &&
     ((value is Map<String, Object?>));
-bool _matches74(Object? value) => ((value is String));
-bool _matches75(Object? value) =>
+bool _matches80(Object? value) => ((value is String));
+bool _matches81(Object? value) =>
     (value is! num || (value >= -9007199254740991)) &&
     (value is! num || (value <= 9007199254740991)) &&
     ((value is num &&
             (value is int ||
                 (value.isFinite && value == value.truncateToDouble()))) ||
         (value == null));
-bool _matches76(Object? value) =>
+bool _matches82(Object? value) =>
     (value is! String ||
         (RegExp(
           "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))\$",
           unicode: true,
         ).hasMatch(value))) &&
     ((value is String));
-bool _matches77(Object? value) =>
+bool _matches83(Object? value) =>
     (const <Object?>[
       "LIBRARY",
       "DISCOVERY",
@@ -96,14 +96,14 @@ bool _matches77(Object? value) =>
       "YOUTUBE_MUSIC",
     ].contains(value)) &&
     ((value is String));
-bool _matches78(Object? value) => (_matches79(value));
-bool _matches79(Object? value) =>
+bool _matches84(Object? value) => (_matches85(value));
+bool _matches85(Object? value) =>
     (value is! Map<String, Object?> || value.containsKey("recorded")) &&
     (value is! Map<String, Object?> ||
         !value.containsKey("recorded") ||
-        _matches80(value["recorded"])) &&
+        _matches86(value["recorded"])) &&
     ((value is Map<String, Object?>));
-bool _matches80(Object? value) =>
+bool _matches86(Object? value) =>
     (const <Object?>[false].contains(value)) && ((value is bool));
 Object? _copyJson(Object? value) {
   return switch (value) {

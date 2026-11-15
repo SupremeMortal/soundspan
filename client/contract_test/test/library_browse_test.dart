@@ -336,7 +336,7 @@ void main() {
 
       final items = [...detail.items]..sort((a, b) => a.sort.compareTo(b.sort));
       expect(
-        [for (final item in items) item.track.playbackId],
+        [for (final item in items) item.track?.playbackId],
         [for (final track in tracks.tracks) track.playbackId],
       );
       for (final item in items) {
@@ -487,7 +487,7 @@ void main() {
             body: AddPlaylistItemRequest(playbackId: playbackId),
           ),
         );
-        expect(added.asPlaylistItem?.track.playbackId, playbackId);
+        expect(added.asPlaylistItem?.track?.playbackId, playbackId);
       }
 
       Future<List<String?>> order() async {
@@ -497,7 +497,7 @@ void main() {
         expect(detail.name, 'Contract renamed');
         final items = [...detail.items]
           ..sort((a, b) => a.sort.compareTo(b.sort));
-        return [for (final item in items) item.track.playbackId];
+        return [for (final item in items) item.track?.playbackId];
       }
 
       expect(await order(), ids);

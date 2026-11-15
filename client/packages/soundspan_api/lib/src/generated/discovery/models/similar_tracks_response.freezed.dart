@@ -51,11 +51,11 @@ abstract mixin class $SimilarTracksResponseCopyWith<$Res>  {
   factory $SimilarTracksResponseCopyWith(SimilarTracksResponse value, $Res Function(SimilarTracksResponse) _then) = _$SimilarTracksResponseCopyWithImpl;
 @useResult
 $Res call({
-@JsonKey(required: true, disallowNullValue: true) VibeAudioFeatures sourceFeatures,@JsonKey(required: true, disallowNullValue: true) String sourceTrackId,@JsonKey(required: true, disallowNullValue: true) List<SimilarTrack> tracks,@JsonKey(readValue: SimilarTracksResponse._extras, fromJson: SimilarTracksResponse._readExtras, includeToJson: false) Map<String, Object?> additionalProperties
+@JsonKey(required: true, fromJson: SimilarTracksResponse._read_sourceFeatures, toJson: SimilarTracksResponse._write_sourceFeatures) NullableVibeAudioFeatures? sourceFeatures,@JsonKey(required: true, disallowNullValue: true) String sourceTrackId,@JsonKey(required: true, disallowNullValue: true) List<SimilarTrack> tracks,@JsonKey(readValue: SimilarTracksResponse._extras, fromJson: SimilarTracksResponse._readExtras, includeToJson: false) Map<String, Object?> additionalProperties
 });
 
 
-$VibeAudioFeaturesCopyWith<$Res> get sourceFeatures;
+$VibeAudioFeaturesCopyWith<$Res>? get sourceFeatures;
 
 }
 /// @nodoc
@@ -68,10 +68,10 @@ class _$SimilarTracksResponseCopyWithImpl<$Res>
 
 /// Create a copy of SimilarTracksResponse
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? sourceFeatures = null,Object? sourceTrackId = null,Object? tracks = null,Object? additionalProperties = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? sourceFeatures = freezed,Object? sourceTrackId = null,Object? tracks = null,Object? additionalProperties = null,}) {
   return _then(SimilarTracksResponse(
-sourceFeatures: null == sourceFeatures ? _self.sourceFeatures : sourceFeatures // ignore: cast_nullable_to_non_nullable
-as VibeAudioFeatures,sourceTrackId: null == sourceTrackId ? _self.sourceTrackId : sourceTrackId // ignore: cast_nullable_to_non_nullable
+sourceFeatures: freezed == sourceFeatures ? _self.sourceFeatures : sourceFeatures // ignore: cast_nullable_to_non_nullable
+as NullableVibeAudioFeatures?,sourceTrackId: null == sourceTrackId ? _self.sourceTrackId : sourceTrackId // ignore: cast_nullable_to_non_nullable
 as String,tracks: null == tracks ? _self.tracks : tracks // ignore: cast_nullable_to_non_nullable
 as List<SimilarTrack>,additionalProperties: null == additionalProperties ? _self.additionalProperties : additionalProperties // ignore: cast_nullable_to_non_nullable
 as Map<String, Object?>,
@@ -81,9 +81,12 @@ as Map<String, Object?>,
 /// with the given fields replaced by the non-null parameter values.
 @override
 @pragma('vm:prefer-inline')
-$VibeAudioFeaturesCopyWith<$Res> get sourceFeatures {
-  
-  return $VibeAudioFeaturesCopyWith<$Res>(_self.sourceFeatures, (value) {
+$VibeAudioFeaturesCopyWith<$Res>? get sourceFeatures {
+    if (_self.sourceFeatures == null) {
+    return null;
+  }
+
+  return $VibeAudioFeaturesCopyWith<$Res>(_self.sourceFeatures!, (value) {
     return _then(_self.copyWith(sourceFeatures: value));
   });
 }

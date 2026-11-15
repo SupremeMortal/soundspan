@@ -71,7 +71,8 @@ class PlaylistRemoteSource {
   /// Appends the track [playbackId] to the playlist [id]
   /// (`POST /playlists/:id/items`) with [meta] as its `metadata`, and
   /// answers the new item, or the existing one when the track was already
-  /// in the playlist.
+  /// in the playlist. An answered item without a track is an
+  /// [api.InvalidResponse] naming `track`.
   Future<PlaylistItem> addItem(
     String id,
     PlaybackId playbackId, {
@@ -84,9 +85,16 @@ class PlaylistRemoteSource {
         metadata: playbackMetadataFromMeta(meta),
       ),
     );
-    return playlistItemFromWire(
+    final item = playlistItemFromWire(
       response.asPlaylistItemDuplicate?.item ?? response.asPlaylistItem!,
     );
+    if (item == null) {
+      throw const api.InvalidResponse(
+        operationId: 'addPlaylistItem',
+        key: 'track',
+      );
+    }
+    return item;
   }
 
   /// Removes the track [playbackId] from the playlist [id]

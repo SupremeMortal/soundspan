@@ -98,8 +98,8 @@ class const LoginTwoFactorChallenge({
 sealed class LoginResponse200 {
   factory LoginResponse200.fromJson(Object? json) {
     final matches = <String>[
-      if (_matches3(json)) "LoginTokenResponse",
-      if (_matches13(json)) "LoginTwoFactorChallenge",
+      if (_matches47(json)) "LoginTokenResponse",
+      if (_matches57(json)) "LoginTwoFactorChallenge",
     ];
     if (matches.length != 1) {
       throw FormatException(
@@ -116,58 +116,58 @@ sealed class LoginResponse200 {
   Object? toJson();
 }
 
-bool _matches3(Object? value) => (_matches4(value));
-bool _matches4(Object? value) =>
+bool _matches47(Object? value) => (_matches48(value));
+bool _matches48(Object? value) =>
     (value is! Map<String, Object?> || value.containsKey("refreshToken")) &&
     (value is! Map<String, Object?> || value.containsKey("token")) &&
     (value is! Map<String, Object?> || value.containsKey("user")) &&
     (value is! Map<String, Object?> ||
         !value.containsKey("refreshToken") ||
-        _matches5(value["refreshToken"])) &&
+        _matches49(value["refreshToken"])) &&
     (value is! Map<String, Object?> ||
         !value.containsKey("token") ||
-        _matches6(value["token"])) &&
+        _matches50(value["token"])) &&
     (value is! Map<String, Object?> ||
         !value.containsKey("user") ||
-        _matches7(value["user"])) &&
+        _matches51(value["user"])) &&
     ((value is Map<String, Object?>));
-bool _matches5(Object? value) => ((value is String));
-bool _matches6(Object? value) => ((value is String));
-bool _matches7(Object? value) => (_matches8(value));
-bool _matches8(Object? value) =>
+bool _matches49(Object? value) => ((value is String));
+bool _matches50(Object? value) => ((value is String));
+bool _matches51(Object? value) => (_matches52(value));
+bool _matches52(Object? value) =>
     (value is! Map<String, Object?> || value.containsKey("displayName")) &&
     (value is! Map<String, Object?> || value.containsKey("id")) &&
     (value is! Map<String, Object?> || value.containsKey("role")) &&
     (value is! Map<String, Object?> || value.containsKey("username")) &&
     (value is! Map<String, Object?> ||
         !value.containsKey("displayName") ||
-        _matches9(value["displayName"])) &&
+        _matches53(value["displayName"])) &&
     (value is! Map<String, Object?> ||
         !value.containsKey("id") ||
-        _matches10(value["id"])) &&
+        _matches54(value["id"])) &&
     (value is! Map<String, Object?> ||
         !value.containsKey("role") ||
-        _matches11(value["role"])) &&
+        _matches55(value["role"])) &&
     (value is! Map<String, Object?> ||
         !value.containsKey("username") ||
-        _matches12(value["username"])) &&
+        _matches56(value["username"])) &&
     ((value is Map<String, Object?>));
-bool _matches9(Object? value) => ((value is String) || (value == null));
-bool _matches10(Object? value) => ((value is String));
-bool _matches11(Object? value) =>
+bool _matches53(Object? value) => ((value is String) || (value == null));
+bool _matches54(Object? value) => ((value is String));
+bool _matches55(Object? value) =>
     (const <Object?>["user", "admin"].contains(value)) && ((value is String));
-bool _matches12(Object? value) => ((value is String));
-bool _matches13(Object? value) => (_matches14(value));
-bool _matches14(Object? value) =>
+bool _matches56(Object? value) => ((value is String));
+bool _matches57(Object? value) => (_matches58(value));
+bool _matches58(Object? value) =>
     (value is! Map<String, Object?> || value.containsKey("message")) &&
     (value is! Map<String, Object?> || value.containsKey("requires2FA")) &&
     (value is! Map<String, Object?> ||
         !value.containsKey("message") ||
-        _matches15(value["message"])) &&
+        _matches59(value["message"])) &&
     (value is! Map<String, Object?> ||
         !value.containsKey("requires2FA") ||
-        _matches16(value["requires2FA"])) &&
+        _matches60(value["requires2FA"])) &&
     ((value is Map<String, Object?>));
-bool _matches15(Object? value) => ((value is String));
-bool _matches16(Object? value) =>
+bool _matches59(Object? value) => ((value is String));
+bool _matches60(Object? value) =>
     (const <Object?>[true].contains(value)) && ((value is bool));

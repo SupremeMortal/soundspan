@@ -51,11 +51,11 @@ abstract mixin class $PlaylistItemCopyWith<$Res>  {
   factory $PlaylistItemCopyWith(PlaylistItem value, $Res Function(PlaylistItem) _then) = _$PlaylistItemCopyWithImpl;
 @useResult
 $Res call({
-@JsonKey(required: true, disallowNullValue: true) String id,@JsonKey(required: true, disallowNullValue: true) PlaylistItemPlayback playback,@JsonKey(required: true, disallowNullValue: true) String playlistId,@JsonKey(required: true, disallowNullValue: true, fromJson: PlaylistItem._read_sort, toJson: PlaylistItem._write_sort) int sort,@JsonKey(required: true, disallowNullValue: true) LibraryTrack track,@JsonKey(required: true, disallowNullValue: true, fromJson: PlaylistItem._read_type, toJson: PlaylistItem._write_type) PlaylistItemType type,@JsonKey(readValue: PlaylistItem._extras, fromJson: PlaylistItem._readExtras, includeToJson: false) Map<String, Object?> additionalProperties
+@JsonKey(required: true, disallowNullValue: true) String id,@JsonKey(required: true, disallowNullValue: true) PlaylistItemPlayback playback,@JsonKey(required: true, disallowNullValue: true) String playlistId,@JsonKey(required: true, disallowNullValue: true, fromJson: PlaylistItem._read_sort, toJson: PlaylistItem._write_sort) int sort,@JsonKey(required: true, fromJson: PlaylistItem._read_track, toJson: PlaylistItem._write_track) NullableLibraryTrack? track,@JsonKey(required: true, disallowNullValue: true, fromJson: PlaylistItem._read_type, toJson: PlaylistItem._write_type) PlaylistItemType type,@JsonKey(readValue: PlaylistItem._extras, fromJson: PlaylistItem._readExtras, includeToJson: false) Map<String, Object?> additionalProperties
 });
 
 
-$PlaylistItemPlaybackCopyWith<$Res> get playback;$LibraryTrackCopyWith<$Res> get track;
+$PlaylistItemPlaybackCopyWith<$Res> get playback;$LibraryTrackCopyWith<$Res>? get track;
 
 }
 /// @nodoc
@@ -68,14 +68,14 @@ class _$PlaylistItemCopyWithImpl<$Res>
 
 /// Create a copy of PlaylistItem
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? playback = null,Object? playlistId = null,Object? sort = null,Object? track = null,Object? type = null,Object? additionalProperties = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? playback = null,Object? playlistId = null,Object? sort = null,Object? track = freezed,Object? type = null,Object? additionalProperties = null,}) {
   return _then(PlaylistItem(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,playback: null == playback ? _self.playback : playback // ignore: cast_nullable_to_non_nullable
 as PlaylistItemPlayback,playlistId: null == playlistId ? _self.playlistId : playlistId // ignore: cast_nullable_to_non_nullable
 as String,sort: null == sort ? _self.sort : sort // ignore: cast_nullable_to_non_nullable
-as int,track: null == track ? _self.track : track // ignore: cast_nullable_to_non_nullable
-as LibraryTrack,type: null == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
+as int,track: freezed == track ? _self.track : track // ignore: cast_nullable_to_non_nullable
+as NullableLibraryTrack?,type: null == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
 as PlaylistItemType,additionalProperties: null == additionalProperties ? _self.additionalProperties : additionalProperties // ignore: cast_nullable_to_non_nullable
 as Map<String, Object?>,
   ));
@@ -93,9 +93,12 @@ $PlaylistItemPlaybackCopyWith<$Res> get playback {
 /// with the given fields replaced by the non-null parameter values.
 @override
 @pragma('vm:prefer-inline')
-$LibraryTrackCopyWith<$Res> get track {
-  
-  return $LibraryTrackCopyWith<$Res>(_self.track, (value) {
+$LibraryTrackCopyWith<$Res>? get track {
+    if (_self.track == null) {
+    return null;
+  }
+
+  return $LibraryTrackCopyWith<$Res>(_self.track!, (value) {
     return _then(_self.copyWith(track: value));
   });
 }

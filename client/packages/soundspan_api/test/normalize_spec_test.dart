@@ -62,7 +62,8 @@ void main() {
     expect(_schemas(spec)['Response'], isNot(contains('nullable')));
   });
 
-  test('a component also referenced without nullable is unchanged', () {
+  test('a component also referenced without nullable keeps its schema; '
+      'its nullable uses move to an alias', () {
     final input = {
       'components': {
         'schemas': {
@@ -82,7 +83,16 @@ void main() {
       },
     };
 
-    expect(normalizeSpec(input), input);
+    final schemas = _schemas(normalizeSpec(input));
+    expect(schemas['Track'], _object());
+    expect(schemas['Peer'], _object());
+    final item = schemas['Item']! as Map<String, Object?>;
+    expect(item['properties'], {
+      'maybe': _nullableRef('NullableTrack'),
+      'always': _ref('Track'),
+      'inArray': {'type': 'array', 'items': _ref('Peer')},
+      'peer': _nullableRef('NullablePeer'),
+    });
   });
 
   test('references from optional properties do not keep a component '
@@ -113,7 +123,8 @@ void main() {
     expect(_schemas(spec)['Peer'], {..._object(), 'nullable': true});
   });
 
-  test('a required or array reference keeps a component non-null', () {
+  test('a required or array reference keeps a component non-null and '
+      'gives it a nullable alias', () {
     final input = {
       'components': {
         'schemas': {
@@ -140,7 +151,11 @@ void main() {
       },
     };
 
-    expect(normalizeSpec(input), input);
+    final schemas = _schemas(normalizeSpec(input));
+    expect(schemas['Peer'], _object());
+    expect(schemas['Other'], _object());
+    expect(schemas['NullablePeer'], {..._object(), 'nullable': true});
+    expect(schemas['NullableOther'], {..._object(), 'nullable': true});
   });
 
   test('allOf with more than a reference, or several parts, is not a '
@@ -228,5 +243,80 @@ void main() {
     };
 
     expect(normalizeSpec(input), input);
+  });
+
+  test('a component used both nullable and non-null gets a nullable alias '
+      'that its nullable uses point at', () {
+    final spec = normalizeSpec({
+      'paths': {
+        '/similar': {
+          'get': {
+            'responses': {
+              '200': {
+                'content': {
+                  'application/json': {'schema': _nullableRef('Track')},
+                },
+              },
+            },
+          },
+        },
+      },
+      'components': {
+        'schemas': {
+          'Item': {
+            'type': 'object',
+            'required': ['maybe', 'always'],
+            'properties': {
+              'maybe': {..._nullableRef('Track'), 'description': 'Gone?'},
+              'always': _ref('Track'),
+            },
+          },
+          'Track': _object(),
+        },
+      },
+    });
+
+    final schemas = _schemas(spec);
+    expect(nullableAliasName('Track'), 'NullableTrack');
+    expect(schemas['Track'], _object());
+    expect(schemas['NullableTrack'], {..._object(), 'nullable': true});
+    final item = schemas['Item']! as Map<String, Object?>;
+    final properties = item['properties']! as Map<String, Object?>;
+    expect(properties['maybe'], {
+      ..._nullableRef('NullableTrack'),
+      'description': 'Gone?',
+    });
+    expect(properties['always'], _ref('Track'));
+    expect(
+      ((((spec['paths']! as Map)['/similar'] as Map)['get'] as Map)['responses']
+          as Map)['200'],
+      {
+        'content': {
+          'application/json': {'schema': _nullableRef('NullableTrack')},
+        },
+      },
+    );
+  });
+
+  test('an alias name already taken by a component fails', () {
+    expect(
+      () => normalizeSpec({
+        'components': {
+          'schemas': {
+            'Item': {
+              'type': 'object',
+              'required': ['always'],
+              'properties': {
+                'maybe': _nullableRef('Track'),
+                'always': _ref('Track'),
+              },
+            },
+            'Track': _object(),
+            'NullableTrack': _object(),
+          },
+        },
+      }),
+      throwsStateError,
+    );
   });
 }

@@ -34,23 +34,90 @@ Map<String, Object?> normalizeSpec(Map<String, Object?> spec) {
   final plainRefs = <String>{};
   _collect(spec, nullableRefs, plainRefs);
   final onlyNullable = nullableRefs.difference(plainRefs);
+  final mixed = nullableRefs.intersection(plainRefs);
   final components = spec['components'];
   if (components is! Map<String, Object?>) return spec;
   final schemas = components['schemas'];
   if (schemas is! Map<String, Object?>) return spec;
+  final aliases = <String, String>{
+    for (final ref in mixed)
+      if (ref.startsWith(_componentPrefix) &&
+          schemas[ref.substring(_componentPrefix.length)] is Map)
+        ref:
+            '$_componentPrefix${nullableAliasName(ref.substring(_componentPrefix.length))}',
+  };
+  for (final alias in aliases.values) {
+    if (schemas.containsKey(alias.substring(_componentPrefix.length))) {
+      throw StateError('The spec already has a component named $alias.');
+    }
+  }
   return {
-    ...spec,
+    for (final MapEntry(:key, :value) in spec.entries)
+      if (key != 'components') key: _rewrite(value, aliases),
     'components': {
-      ...components,
+      for (final MapEntry(:key, :value) in components.entries)
+        if (key != 'schemas') key: value,
       'schemas': {
         for (final MapEntry(:key, :value) in schemas.entries)
           key:
               onlyNullable.contains('$_componentPrefix$key') &&
                   value is Map<String, Object?>
-              ? {...value, 'nullable': true}
-              : value,
+              ? {..._rewriteMap(value, aliases), 'nullable': true}
+              : _rewrite(value, aliases),
+        for (final MapEntry(key: ref, value: alias) in aliases.entries)
+          alias.substring(_componentPrefix.length): {
+            ...schemas[ref.substring(_componentPrefix.length)]!
+                as Map<String, Object?>,
+            'nullable': true,
+          },
       },
     },
+  };
+}
+
+/// The name of the component that stands for a nullable use of
+/// [component] when [component] is also used non-null (doc 03). The
+/// generator configuration maps it back to [component]'s Dart type.
+String nullableAliasName(String component) => 'Nullable$component';
+
+/// [value] with every nullable single-reference `allOf` schema whose target
+/// is a key of [aliases] pointed at the alias instead.
+Object? _rewrite(Object? value, Map<String, String> aliases) {
+  if (aliases.isEmpty) return value;
+  return switch (value) {
+    final List<Object?> items => [
+      for (final item in items) _rewrite(item, aliases),
+    ],
+    final Map<String, Object?> map => _rewriteMap(map, aliases),
+    _ => value,
+  };
+}
+
+Map<String, Object?> _rewriteMap(
+  Map<String, Object?> value,
+  Map<String, String> aliases,
+) {
+  if (aliases.isEmpty) return value;
+  if (value
+      case {
+        'nullable': true,
+        'allOf': [
+          {r'$ref': final String ref} && final Map<String, Object?> part,
+        ],
+      }
+      when part.length == 1 && aliases.containsKey(ref)) {
+    return {
+      for (final MapEntry(:key, value: child) in value.entries)
+        key: key == 'allOf'
+            ? [
+                {r'$ref': aliases[ref]},
+              ]
+            : _rewrite(child, aliases),
+    };
+  }
+  return {
+    for (final MapEntry(:key, value: child) in value.entries)
+      key: _rewrite(child, aliases),
   };
 }
 

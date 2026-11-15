@@ -149,4 +149,26 @@ void main() {
     expect(detail.summary.id, 'pl-1');
     expect(detail.summary.trackCount, 6);
   });
+
+  test('an item whose track is null is left out of the detail', () {
+    final detail = playlistDetailFromWire(
+      api.PlaylistDetail.fromJson(
+        _detailJson([
+          _itemJson('i-1', sort: 0),
+          {..._itemJson('i-2', sort: 1), 'track': null},
+        ]),
+      ),
+    );
+
+    expect([for (final item in detail.items) item.id], ['i-1']);
+  });
+
+  test('an item without a track maps to null', () {
+    final wire = api.PlaylistItem.fromJson({
+      ..._itemJson('i-1', sort: 0),
+      'track': null,
+    });
+
+    expect(playlistItemFromWire(wire), isNull);
+  });
 }

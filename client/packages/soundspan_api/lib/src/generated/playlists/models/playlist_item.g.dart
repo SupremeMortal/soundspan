@@ -17,14 +17,7 @@ PlaylistItem _$PlaylistItemFromJson(Map<String, dynamic> json) {
       'track',
       'type',
     ],
-    disallowNullValues: const [
-      'id',
-      'playback',
-      'playlistId',
-      'sort',
-      'track',
-      'type',
-    ],
+    disallowNullValues: const ['id', 'playback', 'playlistId', 'sort', 'type'],
   );
   return PlaylistItem(
     id: json['id'] as String,
@@ -33,7 +26,7 @@ PlaylistItem _$PlaylistItemFromJson(Map<String, dynamic> json) {
     ),
     playlistId: json['playlistId'] as String,
     sort: PlaylistItem._read_sort(json['sort']),
-    track: LibraryTrack.fromJson(json['track'] as Map<String, dynamic>),
+    track: PlaylistItem._read_track(json['track']),
     type: PlaylistItem._read_type(json['type']),
     additionalProperties:
         PlaylistItem._extras(json, 'additionalProperties') == null
@@ -50,6 +43,6 @@ Map<String, dynamic> _$PlaylistItemToJson(PlaylistItem instance) =>
       'playback': instance.playback.toJson(),
       'playlistId': instance.playlistId,
       'sort': ?PlaylistItem._write_sort(instance.sort),
-      'track': instance.track.toJson(),
+      'track': PlaylistItem._write_track(instance.track),
       'type': ?PlaylistItem._write_type(instance.type),
     };

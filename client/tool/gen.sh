@@ -8,6 +8,8 @@ cd "$(dirname "$0")/.."
   normalized="$(mktemp -d)/soundspan-client.json"
   dart run tool/normalize_spec.dart openapi/soundspan-client.json "$normalized"
   dart run swagger_parser --schema_path "$normalized"
+  # freezed needs an unprefixed import where a nullable alias is used.
+  dart run tool/import_nullable_references.dart
   # Anonymous operations and operation ids, read from the same spec.
   dart run tool/gen_anonymous_operations.dart
   dart format lib/src/generated/anonymous_operations.g.dart

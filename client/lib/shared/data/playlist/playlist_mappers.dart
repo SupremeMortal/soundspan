@@ -26,19 +26,25 @@ PlaylistSummary playlistSummaryFromWire(api.PlaylistSummary wire) =>
     );
 
 /// One playlist entry; [PlaylistItem.isPlayable] and
-/// [PlaylistItem.message] are the server's `playback` values.
-PlaylistItem playlistItemFromWire(api.PlaylistItem wire) => PlaylistItem(
-  id: wire.id,
-  sort: wire.sort,
-  track: trackFromLibraryTrack(wire.track),
-  isPlayable: wire.playback.isPlayable,
-  message: wire.playback.message,
-);
+/// [PlaylistItem.message] are the server's `playback` values. An entry the
+/// server sends without a track (it no longer has a track source) maps to
+/// `null`.
+PlaylistItem? playlistItemFromWire(api.PlaylistItem wire) {
+  final track = wire.track;
+  if (track == null) return null;
+  return PlaylistItem(
+    id: wire.id,
+    sort: wire.sort,
+    track: trackFromLibraryTrack(track),
+    isPlayable: wire.playback.isPlayable,
+    message: wire.playback.message,
+  );
+}
 
-/// A playlist with its items in ascending sort order. Its summary carries
-/// the covers of its first four items.
+/// A playlist with its items in ascending sort order, leaving out items
+/// without a track. Its summary carries the covers of its first four items.
 PlaylistDetail playlistDetailFromWire(api.PlaylistDetail wire) {
-  final items = [for (final item in wire.items) playlistItemFromWire(item)]
+  final items = [for (final item in wire.items) ?playlistItemFromWire(item)]
     ..sort((a, b) => a.sort.compareTo(b.sort));
   return PlaylistDetail(
     summary: PlaylistSummary(
