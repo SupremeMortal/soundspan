@@ -71,7 +71,7 @@ jobs:
           {
             echo "client=$(has '^(client/|\.github/workflows/client-[^/]*\.yml$|\.github/actions/client-flutter/)')"
             echo "apple=$(has '^(client/ios/|client/macos/|client/pubspec\.lock$|client/lib/platform/|\.github/workflows/client-quality\.yml$|\.github/actions/client-flutter/)')"
-            echo "api_surface=$(has '^(client/packages/soundspan_api/|backend/src/routes/|backend/src/openapi/)')"
+            echo "api_surface=$(has '^(client/packages/soundspan_api/|client/tool/specs/|client/tool/spec_compat\.dart$|backend/src/routes/|backend/src/openapi/|\.github/workflows/client-quality\.yml$)')"
             echo "web_storage=$(has '^(client/lib/platform/|client/web/|client/integration_test/web/|client/pubspec\.lock$|\.github/workflows/client-quality\.yml$)')"
             echo "desktop=$(has '^(client/linux/|client/windows/|client/lib/platform/desktop_shell/|client/lib/app/shell/window_state_controller\.dart$|client/integration_test/desktop/|client/tool/ci/|\.github/workflows/client-quality\.yml$)')"
             echo "release_build=$(has '^(\.github/workflows/client-(build|release)\.yml$|client/tool/release/|client/pubspec\.(yaml|lock)$|client/config/|client/(android|ios|linux|macos|windows|web)/)')"
@@ -158,6 +158,50 @@ jobs:
       - name: Coverage floor
         working-directory: client
         run: dart run tool/coverage_floor.dart
+
+  client-spec:
+    name: client-spec
+    needs: changes
+    if: needs.changes.outputs.api_surface == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+          cache: "npm"
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install and build media metadata contract
+        working-directory: packages/media-metadata-contract
+        run: |
+          npm ci
+          npm run build
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Generate Prisma client
+        working-directory: backend
+        run: npx prisma generate
+
+      - name: Emit the client-surface spec
+        run: npm --prefix backend run openapi:emit-client
+
+      - name: Committed spec is current
+        run: git diff --exit-code -- client/packages/soundspan_api/openapi
+
+      - name: Set up Flutter
+        uses: ./.github/actions/client-flutter
+
+      - name: Spec is compatible with minServer
+        working-directory: client
+        run: dart run tool/spec_compat.dart
 
   client-golden:
     name: client-golden

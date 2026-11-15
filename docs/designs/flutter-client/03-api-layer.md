@@ -57,7 +57,7 @@ The generator follows the spec exactly, so two spec constructs decide how tolera
 - pagination helpers;
 - `SoundspanApi`, the facade that owns `dio` and exposes the generated clients.
 
-**Server versions.** One generated client serves every server from `minServer` to the newest. P9 requires response fields added after `minServer` to be optional, so they decode as `null` from an older server. `tool/spec_compat.dart` compares the committed spec with the snapshot of the `minServer` release in `tool/specs/` and fails when an operation was removed or a response field became required; that is the signal to raise `minServer`.
+**Server versions.** One generated client serves every server from `minServer` to the newest. P9 requires response fields added after `minServer` to be optional, so they decode as `null` from an older server. `tool/spec_compat.dart` compares the committed spec with the snapshot of the `minServer` release, `tool/specs/min-server.json`, and fails on three kinds of break: `operation-removed` (an `operationId` of the snapshot is absent or its method or path changed), `response-field-required` (a property of a 2xx JSON response is required now but was optional or absent in the snapshot) and `response-type-changed` (a response property changed `type` or lost nullability). New operations, new optional response properties, new enum values and any change to request schemas or parameters are not breaks. A break is the signal to raise `minServer`.
 
 ## Package Layout
 

@@ -108,6 +108,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Client
 
+- Pull requests that change the client-surface spec, the API package or the backend routes now fail when the spec stops being compatible with the oldest supported server: an operation was removed or moved, a response field became required, or a response field changed type or lost nullability. The comparison is `client/tool/spec_compat.dart` against the snapshot `client/tool/specs/min-server.json`, run by the `client-spec` job and by `npm run verify:client`.
 - The repository contains the scaffold of a first-party Flutter client under `client/` for Android, iOS, Linux, macOS, Windows and the web. It is not released yet.
 - The client logs through one redacting logger: tokens, API keys, passwords, `?token=` query values and the server's base URL are removed before anything is written. Native targets keep the log in five rolling files of 1 MB under `logs/`; the web keeps the last 500 entries in memory. Nothing is sent off the device.
 - The client has the soundspan colour palette in dark, light and high-contrast variants. It follows the system's light or dark setting and switches to the high-contrast variant when the system asks for more contrast. Every text colour meets WCAG contrast (4.5:1, 3:1 for disabled text) on the surfaces it is used on.
