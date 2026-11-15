@@ -196,12 +196,15 @@ Runs after sign-in, on every app start, and on resume after more than one hour i
 
 ```dart
 class ServerCapabilities {
-  final Version serverVersion;
+  final Version? serverVersion;                                  // null: unknown
   final bool audioAnalysis, discovery, autoPlaylists, federation, vibe;
-  final double loudnessTargetLufs;
+  final double loudnessTargetLufs;                               // -18 when absent
   final bool hasP6SelfRevoke, hasP7PlayMarker, hasP8PlayedAt;   // derived from version
+  final DateTime? fetchedAt;                                     // null: never refreshed
 }
 ```
+
+- The version and feature notices described below appear only once a refresh has run (`fetchedAt` set), so a profile that has just signed in shows no "version unknown" notice before its first refresh returns.
 
 - `GET /api/docs.json` is requested with `Accept: application/json` and decoded with a streaming JSON reader that stops after `info.version`, because the document is large. A 401/403/404 here (docs disabled by a proxy) falls back to `GET /api/health` → `version`, and if that is `unknown` the client proceeds as "version unknown" with a dismissible warning.
 - `Version` is parsed as semver; pre-release tags compare lower than the release.

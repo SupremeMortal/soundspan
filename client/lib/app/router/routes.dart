@@ -12,6 +12,7 @@ import 'package:soundspan/app/router/shell_route.dart';
 import 'package:soundspan/app/shell/shell_history.dart';
 import 'package:soundspan/core/auth/probe/server_probe.dart';
 import 'package:soundspan/core/profile/profile_runtime.dart';
+import 'package:soundspan/core/profile/version_gate.dart';
 import 'package:soundspan/features/connect/connect.dart';
 import 'package:soundspan/features/settings/settings.dart';
 
@@ -207,6 +208,7 @@ GoRouter createRouter(
         state.uri,
         gate.state,
         signedOut: gate.signedOut,
+        belowMin: gate.belowMin,
       );
       if (guarded != null) return guarded;
       location.update(state.uri);
@@ -221,10 +223,18 @@ GoRouter createRouter(
           GoRoute(
             path: 'probe',
             // The request is lost on a web reload: start again at /connect.
+            // `?profile=<id>` instead says that profile's server is too old.
             redirect: (_, state) =>
-                state.extra is ProbeRequest ? null : RoutePaths.connect,
-            builder: (_, state) =>
-                ProbeScreen(request: state.extra! as ProbeRequest),
+                state.extra is ProbeRequest ||
+                    state.uri.queryParameters.containsKey('profile')
+                ? null
+                : RoutePaths.connect,
+            builder: (_, state) => switch (state.extra) {
+              final ProbeRequest request => ProbeScreen(request: request),
+              _ => ServerTooOldScreen(
+                profileId: state.uri.queryParameters['profile']!,
+              ),
+            },
           ),
           GoRoute(
             path: 'sign-in',
@@ -279,7 +289,10 @@ GoRouter createRouter(
 
 /// The app's router, following the [ProfileRuntime].
 final Provider<GoRouter> routerProvider = Provider<GoRouter>((ref) {
-  final gate = AuthGateState(ref.watch(profileRuntimeProvider));
+  final gate = AuthGateState(
+    ref.watch(profileRuntimeProvider),
+    ref.watch(versionGateProvider),
+  );
   final router = createRouter(gate);
   ref.onDispose(() {
     router.dispose();
