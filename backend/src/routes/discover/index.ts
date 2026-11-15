@@ -83,20 +83,6 @@ router.post("/generate", handleModernGenerate);
  */
 router.get("/generate/status/:jobId", handleGenerateStatus);
 
-/**
- * @openapi
- * /api/discover/current:
- *   get:
- *     summary: Get current week's Discover Weekly playlist
- *     tags: [Discover]
- *     security:
- *       - apiKeyAuth: []
- *     responses:
- *       200:
- *         description: Current discovery playlist with tracks and unavailable albums
- *       401:
- *         description: Not authenticated
- */
 router.get("/current", handleModernCurrent);
 
 /**
@@ -223,27 +209,6 @@ router.get("/config", handleGetDiscoverConfig);
  */
 router.patch("/config", handleUpdateDiscoverConfig);
 
-/**
- * @openapi
- * /api/discover/popular-artists:
- *   get:
- *     summary: Get popular artists from Last.fm charts
- *     tags: [Discover]
- *     security:
- *       - apiKeyAuth: []
- *     parameters:
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *           default: 20
- *         description: Maximum number of artists to return
- *     responses:
- *       200:
- *         description: List of popular chart artists
- *       401:
- *         description: Not authenticated
- */
 router.get("/popular-artists", handlePopularArtists);
 
 /**

@@ -55,6 +55,7 @@ import { prisma } from "../../utils/db";
 import { lastFmService } from "../../services/lastfm";
 import { redisClient } from "../../utils/redis";
 import { createMockJsonResponse } from "./helpers/mockJsonResponse";
+import { withClientSurfaceValidation } from "./helpers/expectClientSurfaceResponse";
 
 const mockPlayFindMany = prisma.play.findMany as jest.Mock;
 const mockSimilarArtistFindMany = prisma.similarArtist.findMany as jest.Mock;
@@ -80,7 +81,10 @@ function getGetHandler(path: string) {
 const createRes = createMockJsonResponse;
 
 describe("recommendations routes runtime", () => {
-    const getForYou = getGetHandler("/for-you");
+    const getForYou = withClientSurfaceValidation(
+        "getRecommendationsForYou",
+        getGetHandler("/for-you"),
+    );
     const getRecommendations = getGetHandler("/");
     const getAlbumRecommendations = getGetHandler("/albums");
     const getTrackRecommendations = getGetHandler("/tracks");

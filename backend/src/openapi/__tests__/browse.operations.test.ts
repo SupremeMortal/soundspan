@@ -52,7 +52,21 @@ describe("playlist, search and home-shelf operations in the emitted client spec"
             ],
         ],
         ["search", ["search", "searchDiscover"]],
-        ["discovery", ["listMixes"]],
+        [
+            "discovery",
+            [
+                "getCurrentDiscover",
+                "getMix",
+                "getRadio",
+                "getRecommendationsForYou",
+                "getSimilarTracks",
+                "listMixes",
+                "listPopularArtists",
+                "listRadioDecades",
+                "listRadioGenres",
+                "searchVibe",
+            ],
+        ],
         [
             "podcasts",
             [

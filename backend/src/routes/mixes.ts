@@ -870,64 +870,6 @@ router.post("/:id/save", async (req, res) => {
     }
 });
 
-/**
- * @openapi
- * /api/mixes/{id}:
- *   get:
- *     summary: Get a specific mix with full track details
- *     tags: [Mixes]
- *     security:
- *       - apiKeyAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: Mix ID (e.g., "era-2000", "genre-rock", "top-tracks")
- *     responses:
- *       200:
- *         description: Mix with full track details
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 id:
- *                   type: string
- *                 type:
- *                   type: string
- *                 name:
- *                   type: string
- *                 description:
- *                   type: string
- *                 trackIds:
- *                   type: array
- *                   items:
- *                     type: string
- *                 coverUrls:
- *                   type: array
- *                   items:
- *                     type: string
- *                 trackCount:
- *                   type: integer
- *                 tracks:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/Track'
- *       404:
- *         description: Mix not found
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *       401:
- *         description: Not authenticated
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- */
 router.get("/:id", async (req, res) => {
     try {
         const userId = getRequestUserId(req);

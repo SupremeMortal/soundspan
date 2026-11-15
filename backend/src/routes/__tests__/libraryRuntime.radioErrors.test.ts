@@ -159,6 +159,10 @@ import {
     expectBoundedRandomQuery,
     expectNoUnboundedIdPoolFetch,
 } from "./libraryRuntime.helpers";
+import {
+    expectClientSurfaceResponse,
+    withClientSurfaceValidation,
+} from "./helpers/expectClientSurfaceResponse";
 
 describe("library catalog list runtime coverage", () => {
     const recentlyListenedHandler = getHandler("get", "/recently-listened");
@@ -187,9 +191,18 @@ describe("library catalog list runtime coverage", () => {
     const deleteTrackHandler = getHandler("delete", "/tracks/:id", 1);
     const deleteAlbumHandler = getHandler("delete", "/albums/:id", 1);
     const deleteArtistHandler = getHandler("delete", "/artists/:id", 1);
-    const genresHandler = getHandler("get", "/genres");
-    const decadesHandler = getHandler("get", "/decades");
-    const radioHandler = getHandler("get", "/radio");
+    const genresHandler = withClientSurfaceValidation(
+        "listRadioGenres",
+        getHandler("get", "/genres"),
+    );
+    const decadesHandler = withClientSurfaceValidation(
+        "listRadioDecades",
+        getHandler("get", "/decades"),
+    );
+    const radioHandler = withClientSurfaceValidation(
+        "getRadio",
+        getHandler("get", "/radio"),
+    );
 
     beforeEach(() => {
         jest.clearAllMocks();
@@ -598,6 +611,7 @@ describe("library catalog list runtime coverage", () => {
         const errRes = createRes();
         await invokeWithErrorHandler(genresHandler, req, errRes);
         expect(errRes.statusCode).toBe(500);
+        expectClientSurfaceResponse("listRadioGenres", errRes);
     });
 
     it("returns decades based on effective year and minimum track threshold", async () => {
@@ -620,6 +634,7 @@ describe("library catalog list runtime coverage", () => {
         const errRes = createRes();
         await invokeWithErrorHandler(decadesHandler, req, errRes);
         expect(errRes.statusCode).toBe(500);
+        expectClientSurfaceResponse("listRadioDecades", errRes);
     });
 
     it("validates radio type and handles discovery unplayed and least-played fallback flows", async () => {
@@ -1630,6 +1645,7 @@ describe("library catalog list runtime coverage", () => {
         const errorRes = createRes();
         await invokeWithErrorHandler(radioHandler, errorReq, errorRes);
         expect(errorRes.statusCode).toBe(500);
+        expectClientSurfaceResponse("getRadio", errorRes);
     });
 });
 

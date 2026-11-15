@@ -450,7 +450,10 @@ function makeHydratedTrack(id: string, artistId = "artist-x") {
 }
 
 describe("library branch coverage focus", () => {
-    const radioHandler = getGetHandler("/radio");
+    const radioHandler = withClientSurfaceValidation(
+        "getRadio",
+        getGetHandler("/radio"),
+    );
     const likedHandler = getGetHandler("/liked");
     const trackPreferenceGetHandler = getGetHandler("/tracks/:id/preference");
     const trackPreferencePostHandler = flattenLibraryRouteLayers(router).find(

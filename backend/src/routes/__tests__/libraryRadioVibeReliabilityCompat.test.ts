@@ -214,6 +214,10 @@ import router from "../library";
 import { flattenLibraryRouteLayers } from "./libraryRouteTestUtils";
 import { errorHandler } from "../../middleware/errorHandler";
 import { prisma } from "../../utils/db";
+import {
+    expectClientSurfaceResponse,
+    withClientSurfaceValidation,
+} from "./helpers/expectClientSurfaceResponse";
 
 const mockTrackFindUnique = prisma.track.findUnique as jest.Mock;
 const mockTrackFindMany = prisma.track.findMany as jest.Mock;
@@ -267,7 +271,11 @@ async function invokeWithErrorHandler(handler: any, req: any, res: any) {
 }
 
 describe("library vibe radio reliability compatibility", () => {
-    const radioHandler = getGetHandler("/radio");
+    const unvalidatedRadioHandler = getGetHandler("/radio");
+    const radioHandler = withClientSurfaceValidation(
+        "getRadio",
+        unvalidatedRadioHandler,
+    );
 
     beforeEach(() => {
         jest.clearAllMocks();
@@ -596,6 +604,7 @@ describe("library vibe radio reliability compatibility", () => {
             valence: null,
             arousal: null,
             danceability: null,
+            keyScale: null,
             instrumentalness: null,
             moodHappy: null,
             moodSad: null,
@@ -701,7 +710,9 @@ describe("library vibe radio reliability compatibility", () => {
         } as any;
         const res = createRes();
 
-        await radioHandler(req, res);
+        // An artist id is never null in the database; this defensive branch
+        // is exercised without response validation so the schema stays strict.
+        await unvalidatedRadioHandler(req, res);
 
         expect(res.statusCode).toBe(200);
         expect(res.body).toEqual({
@@ -744,5 +755,6 @@ describe("library vibe radio reliability compatibility", () => {
         await invokeWithErrorHandler(radioHandler, req, res);
 
         expect(res.statusCode).toBe(500);
+        expectClientSurfaceResponse("getRadio", res);
     });
 });

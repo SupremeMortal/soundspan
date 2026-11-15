@@ -164,6 +164,7 @@ jest.mock("../../services/vibeVocabulary", () => ({
 }));
 
 import router from "../vibe";
+import { withClientSurfaceValidation } from "./helpers/expectClientSurfaceResponse";
 import { prisma } from "../../utils/db";
 import { findSimilarTracks } from "../../services/hybridSimilarity";
 import { runAnnQuery } from "../../utils/annQuery";
@@ -225,9 +226,15 @@ function createRes() {
 
 describe("vibe search transport compatibility", () => {
     const mapHandler = getGetHandler("/map");
-    const similarHandler = getGetHandler("/similar/:trackId");
+    const similarHandler = withClientSurfaceValidation(
+        "getSimilarTracks",
+        getGetHandler("/similar/:trackId"),
+    );
     const statusHandler = getGetHandler("/status");
-    const searchHandler = getPostHandler("/search");
+    const searchHandler = withClientSurfaceValidation(
+        "searchVibe",
+        getPostHandler("/search"),
+    );
 
     beforeEach(() => {
         jest.clearAllMocks();
@@ -370,6 +377,7 @@ describe("vibe search transport compatibility", () => {
             {
                 id: "t-2",
                 title: "Related",
+                duration: 200,
                 distance: 0.2,
                 similarity: 0.9,
                 albumId: "a-1",
@@ -377,6 +385,10 @@ describe("vibe search transport compatibility", () => {
                 albumCoverUrl: null,
                 artistId: "ar-1",
                 artistName: "Artist 1",
+                energy: null,
+                valence: null,
+                danceability: null,
+                arousal: null,
                 loudnessLufs: -16.8,
                 truePeakDb: -1.2,
                 albumLoudnessLufs: -17.9,
@@ -436,6 +448,7 @@ describe("vibe search transport compatibility", () => {
             {
                 id: "track-disliked",
                 title: "Disliked",
+                duration: 200,
                 distance: 0.18,
                 similarity: 0.86,
                 albumId: "a-1",
@@ -443,10 +456,15 @@ describe("vibe search transport compatibility", () => {
                 albumCoverUrl: null,
                 artistId: "ar-1",
                 artistName: "Artist 1",
+                energy: null,
+                valence: null,
+                danceability: null,
+                arousal: null,
             },
             {
                 id: "track-liked",
                 title: "Liked",
+                duration: 200,
                 distance: 0.2,
                 similarity: 0.85,
                 albumId: "a-2",
@@ -454,6 +472,10 @@ describe("vibe search transport compatibility", () => {
                 albumCoverUrl: null,
                 artistId: "ar-2",
                 artistName: "Artist 2",
+                energy: null,
+                valence: null,
+                danceability: null,
+                arousal: null,
             },
         ]);
         mockLikedTrackFindMany.mockResolvedValueOnce([

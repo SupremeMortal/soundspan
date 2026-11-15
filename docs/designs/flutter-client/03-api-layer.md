@@ -351,7 +351,7 @@ The complete set of server operations the client calls. This list is the **clien
 | `GET /mixes`, `GET /mixes/:id` | `autoPlaylists` | M0 (home shelf), M4 (detail) |
 | `GET /recommendations/for-you` | `discovery` | M4 |
 | `GET /discover/current`, `GET /discover/popular-artists` | `discovery` | M4 |
-| `GET /library/radio`, `/library/radio/genres`, `/library/radio/decades` | none | M4 |
+| `GET /library/radio`, `GET /library/genres`, `GET /library/decades` | none | M4 |
 | `GET /vibe/similar/:trackId`, `POST /vibe/search` | `audioAnalysis` | M4 |
 | `POST /listen-together`, `POST /listen-together/join`, `GET /listen-together/discover`, `GET /listen-together/mine`, `POST /listen-together/:id/leave`, `POST /listen-together/:id/end` | none | M4 |
 | `POST /social/presence/heartbeat`, `GET /social/online` | none | M4 |

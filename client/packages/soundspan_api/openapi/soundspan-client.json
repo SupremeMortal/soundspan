@@ -989,6 +989,45 @@
         ],
         "type": "object"
       },
+      "DiscoverCurrent": {
+        "additionalProperties": false,
+        "properties": {
+          "totalCount": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "tracks": {
+            "items": {
+              "$ref": "#/components/schemas/DiscoverTrack"
+            },
+            "type": "array"
+          },
+          "unavailableCount": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "weekEnd": {
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+            "type": "string"
+          },
+          "weekStart": {
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "totalCount",
+          "tracks",
+          "unavailableCount",
+          "weekEnd",
+          "weekStart"
+        ],
+        "type": "object"
+      },
       "DiscoverResult": {
         "additionalProperties": false,
         "properties": {
@@ -1106,6 +1145,91 @@
         "required": [
           "aliasInfo",
           "results"
+        ],
+        "type": "object"
+      },
+      "DiscoverTrack": {
+        "additionalProperties": false,
+        "properties": {
+          "album": {
+            "type": "string"
+          },
+          "albumId": {
+            "type": "string"
+          },
+          "albumLoudnessLufs": {
+            "nullable": true,
+            "type": "number"
+          },
+          "albumTruePeakDb": {
+            "nullable": true,
+            "type": "number"
+          },
+          "artist": {
+            "type": "string"
+          },
+          "available": {
+            "type": "boolean"
+          },
+          "coverUrl": {
+            "nullable": true,
+            "type": "string"
+          },
+          "duration": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "id": {
+            "type": "string"
+          },
+          "isLiked": {
+            "type": "boolean"
+          },
+          "likedAt": {
+            "format": "date-time",
+            "nullable": true,
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+            "type": "string"
+          },
+          "loudnessLufs": {
+            "nullable": true,
+            "type": "number"
+          },
+          "similarity": {
+            "type": "number"
+          },
+          "sourceType": {
+            "enum": [
+              "local"
+            ],
+            "type": "string"
+          },
+          "tier": {
+            "$ref": "#/components/schemas/RecommendationTier"
+          },
+          "title": {
+            "type": "string"
+          },
+          "truePeakDb": {
+            "nullable": true,
+            "type": "number"
+          }
+        },
+        "required": [
+          "album",
+          "albumId",
+          "artist",
+          "available",
+          "coverUrl",
+          "duration",
+          "id",
+          "isLiked",
+          "likedAt",
+          "similarity",
+          "sourceType",
+          "tier",
+          "title"
         ],
         "type": "object"
       },
@@ -1665,6 +1789,61 @@
         },
         "required": [
           "message"
+        ],
+        "type": "object"
+      },
+      "MixDetail": {
+        "additionalProperties": false,
+        "properties": {
+          "color": {
+            "type": "string"
+          },
+          "coverUrls": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "description": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "trackCount": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "trackIds": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "tracks": {
+            "items": {
+              "$ref": "#/components/schemas/TrackSummary"
+            },
+            "type": "array"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "color",
+          "coverUrls",
+          "description",
+          "id",
+          "name",
+          "trackCount",
+          "trackIds",
+          "tracks",
+          "type"
         ],
         "type": "object"
       },
@@ -2668,6 +2847,60 @@
         ],
         "type": "object"
       },
+      "PopularArtist": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "image": {
+            "nullable": true,
+            "type": "string"
+          },
+          "listeners": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "mbid": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "playCount": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "url": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "image",
+          "listeners",
+          "name",
+          "playCount"
+        ],
+        "type": "object"
+      },
+      "PopularArtistsResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "artists": {
+            "items": {
+              "$ref": "#/components/schemas/PopularArtist"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "artists"
+        ],
+        "type": "object"
+      },
       "PreferenceSignal": {
         "enum": [
           "thumbs_up",
@@ -2681,6 +2914,277 @@
           "liked",
           "disliked",
           "neutral"
+        ],
+        "type": "string"
+      },
+      "RadioAudioFeatures": {
+        "additionalProperties": false,
+        "properties": {
+          "analysisMode": {
+            "nullable": true,
+            "type": "string"
+          },
+          "arousal": {
+            "nullable": true,
+            "type": "number"
+          },
+          "bpm": {
+            "nullable": true,
+            "type": "number"
+          },
+          "danceability": {
+            "nullable": true,
+            "type": "number"
+          },
+          "energy": {
+            "nullable": true,
+            "type": "number"
+          },
+          "instrumentalness": {
+            "nullable": true,
+            "type": "number"
+          },
+          "keyScale": {
+            "nullable": true,
+            "type": "string"
+          },
+          "moodAcoustic": {
+            "nullable": true,
+            "type": "number"
+          },
+          "moodAggressive": {
+            "nullable": true,
+            "type": "number"
+          },
+          "moodElectronic": {
+            "nullable": true,
+            "type": "number"
+          },
+          "moodHappy": {
+            "nullable": true,
+            "type": "number"
+          },
+          "moodParty": {
+            "nullable": true,
+            "type": "number"
+          },
+          "moodRelaxed": {
+            "nullable": true,
+            "type": "number"
+          },
+          "moodSad": {
+            "nullable": true,
+            "type": "number"
+          },
+          "valence": {
+            "nullable": true,
+            "type": "number"
+          }
+        },
+        "required": [
+          "analysisMode",
+          "arousal",
+          "bpm",
+          "danceability",
+          "energy",
+          "instrumentalness",
+          "keyScale",
+          "moodAcoustic",
+          "moodAggressive",
+          "moodElectronic",
+          "moodHappy",
+          "moodParty",
+          "moodRelaxed",
+          "moodSad",
+          "valence"
+        ],
+        "type": "object"
+      },
+      "RadioDecade": {
+        "additionalProperties": false,
+        "properties": {
+          "count": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "decade": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "count",
+          "decade"
+        ],
+        "type": "object"
+      },
+      "RadioDecadesResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "decades": {
+            "items": {
+              "$ref": "#/components/schemas/RadioDecade"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "decades"
+        ],
+        "type": "object"
+      },
+      "RadioGenre": {
+        "additionalProperties": false,
+        "properties": {
+          "count": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "genre": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "count",
+          "genre"
+        ],
+        "type": "object"
+      },
+      "RadioGenresResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "genres": {
+            "items": {
+              "$ref": "#/components/schemas/RadioGenre"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "genres"
+        ],
+        "type": "object"
+      },
+      "RadioResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "sourceFeatures": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RadioAudioFeatures"
+              }
+            ]
+          },
+          "tracks": {
+            "items": {
+              "$ref": "#/components/schemas/RadioTrack"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "tracks"
+        ],
+        "type": "object"
+      },
+      "RadioTrack": {
+        "additionalProperties": false,
+        "properties": {
+          "album": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TrackAlbumRef"
+              }
+            ]
+          },
+          "albumId": {
+            "type": "string"
+          },
+          "artist": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TrackArtistRef"
+              }
+            ]
+          },
+          "audioFeatures": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RadioAudioFeatures"
+              }
+            ]
+          },
+          "discNo": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "duration": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "id": {
+            "type": "string"
+          },
+          "isrc": {
+            "nullable": true,
+            "type": "string"
+          },
+          "loudnessLufs": {
+            "nullable": true,
+            "type": "number"
+          },
+          "peer": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PeerRef"
+              }
+            ]
+          },
+          "playbackId": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "trackNo": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "truePeakDb": {
+            "nullable": true,
+            "type": "number"
+          }
+        },
+        "required": [
+          "duration",
+          "id",
+          "playbackId",
+          "title",
+          "trackNo"
+        ],
+        "type": "object"
+      },
+      "RadioType": {
+        "enum": [
+          "all",
+          "liked",
+          "discovery",
+          "favorites",
+          "decade",
+          "genre",
+          "mood",
+          "workout",
+          "artist",
+          "artist-name",
+          "vibe",
+          "playlist",
+          "tracks"
         ],
         "type": "string"
       },
@@ -2800,6 +3304,67 @@
         },
         "required": [
           "items"
+        ],
+        "type": "object"
+      },
+      "RecommendationTier": {
+        "enum": [
+          "high",
+          "medium",
+          "explore",
+          "wildcard"
+        ],
+        "type": "string"
+      },
+      "RecommendationsForYou": {
+        "additionalProperties": false,
+        "properties": {
+          "artists": {
+            "items": {
+              "$ref": "#/components/schemas/RecommendedArtist"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "artists"
+        ],
+        "type": "object"
+      },
+      "RecommendedArtist": {
+        "additionalProperties": false,
+        "properties": {
+          "albumCount": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "coverArt": {
+            "nullable": true,
+            "type": "string"
+          },
+          "heroUrl": {
+            "nullable": true,
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "mbid": {
+            "nullable": true,
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "albumCount",
+          "coverArt",
+          "heroUrl",
+          "id",
+          "mbid",
+          "name"
         ],
         "type": "object"
       },
@@ -3548,6 +4113,118 @@
         ],
         "type": "object"
       },
+      "SimilarTrack": {
+        "additionalProperties": false,
+        "properties": {
+          "album": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TrackAlbumRef"
+              }
+            ]
+          },
+          "albumId": {
+            "type": "string"
+          },
+          "artist": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TrackArtistRef"
+              }
+            ]
+          },
+          "audioFeatures": {
+            "$ref": "#/components/schemas/VibeAudioFeatures"
+          },
+          "discNo": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "distance": {
+            "type": "number"
+          },
+          "duration": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "id": {
+            "type": "string"
+          },
+          "isrc": {
+            "nullable": true,
+            "type": "string"
+          },
+          "loudnessLufs": {
+            "nullable": true,
+            "type": "number"
+          },
+          "peer": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PeerRef"
+              }
+            ]
+          },
+          "playbackId": {
+            "type": "string"
+          },
+          "similarity": {
+            "type": "number"
+          },
+          "title": {
+            "type": "string"
+          },
+          "trackNo": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "nullable": true,
+            "type": "integer"
+          },
+          "truePeakDb": {
+            "nullable": true,
+            "type": "number"
+          }
+        },
+        "required": [
+          "audioFeatures",
+          "distance",
+          "duration",
+          "id",
+          "similarity",
+          "title"
+        ],
+        "type": "object"
+      },
+      "SimilarTracksResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "sourceFeatures": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/VibeAudioFeatures"
+              }
+            ],
+            "nullable": true
+          },
+          "sourceTrackId": {
+            "type": "string"
+          },
+          "tracks": {
+            "items": {
+              "$ref": "#/components/schemas/SimilarTrack"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "sourceFeatures",
+          "sourceTrackId",
+          "tracks"
+        ],
+        "type": "object"
+      },
       "StreamInfo": {
         "additionalProperties": false,
         "properties": {
@@ -4150,6 +4827,169 @@
           "ytMusicQuality"
         ],
         "type": "object"
+      },
+      "VibeAudioFeatures": {
+        "additionalProperties": false,
+        "properties": {
+          "arousal": {
+            "nullable": true,
+            "type": "number"
+          },
+          "danceability": {
+            "nullable": true,
+            "type": "number"
+          },
+          "energy": {
+            "nullable": true,
+            "type": "number"
+          },
+          "valence": {
+            "nullable": true,
+            "type": "number"
+          }
+        },
+        "required": [
+          "arousal",
+          "danceability",
+          "energy",
+          "valence"
+        ],
+        "type": "object"
+      },
+      "VibeSearchRequest": {
+        "properties": {
+          "limit": {
+            "description": "Defaults to 20.",
+            "maximum": 100,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "minSimilarity": {
+            "description": "Defaults to 0.6.",
+            "maximum": 1,
+            "minimum": 0,
+            "type": "number"
+          },
+          "query": {
+            "description": "Natural language, for example `chill acoustic guitar`; at least 2 characters after trimming.",
+            "maxLength": 512,
+            "minLength": 2,
+            "type": "string"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "type": "object"
+      },
+      "VibeSearchResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "minSimilarity": {
+            "type": "number"
+          },
+          "query": {
+            "type": "string"
+          },
+          "totalAboveThreshold": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "tracks": {
+            "items": {
+              "$ref": "#/components/schemas/VibeSearchTrack"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "minSimilarity",
+          "query",
+          "totalAboveThreshold",
+          "tracks"
+        ],
+        "type": "object"
+      },
+      "VibeSearchTrack": {
+        "additionalProperties": false,
+        "properties": {
+          "album": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TrackAlbumRef"
+              }
+            ]
+          },
+          "albumId": {
+            "type": "string"
+          },
+          "artist": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TrackArtistRef"
+              }
+            ]
+          },
+          "discNo": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "distance": {
+            "type": "number"
+          },
+          "duration": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "id": {
+            "type": "string"
+          },
+          "isrc": {
+            "nullable": true,
+            "type": "string"
+          },
+          "loudnessLufs": {
+            "nullable": true,
+            "type": "number"
+          },
+          "peer": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PeerRef"
+              }
+            ]
+          },
+          "playbackId": {
+            "type": "string"
+          },
+          "similarity": {
+            "type": "number"
+          },
+          "title": {
+            "type": "string"
+          },
+          "trackNo": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "truePeakDb": {
+            "nullable": true,
+            "type": "number"
+          }
+        },
+        "required": [
+          "distance",
+          "duration",
+          "id",
+          "similarity",
+          "title",
+          "trackNo"
+        ],
+        "type": "object"
       }
     }
   },
@@ -4619,6 +5459,143 @@
         "summary": "Exchange a device link code for an API key",
         "tags": [
           "session"
+        ]
+      }
+    },
+    "/api/discover/current": {
+      "get": {
+        "description": "404 with code `FEATURE_DISABLED` when discovery is turned off.",
+        "operationId": "getCurrentDiscover",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscoverCurrent"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "The current week's Discover playlist",
+        "tags": [
+          "discovery"
+        ]
+      }
+    },
+    "/api/discover/popular-artists": {
+      "get": {
+        "description": "404 with code `FEATURE_DISABLED` when discovery is turned off.",
+        "operationId": "listPopularArtists",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "description": "Defaults to 20.",
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PopularArtistsResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Popular artists from the Last.fm chart",
+        "tags": [
+          "discovery"
         ]
       }
     },
@@ -5257,6 +6234,108 @@
         ]
       }
     },
+    "/api/library/decades": {
+      "get": {
+        "operationId": "listRadioDecades",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RadioDecadesResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Library decades with track counts, for decade radio",
+        "tags": [
+          "discovery"
+        ]
+      }
+    },
+    "/api/library/genres": {
+      "get": {
+        "operationId": "listRadioGenres",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RadioGenresResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Library genres with track counts, for genre radio",
+        "tags": [
+          "discovery"
+        ]
+      }
+    },
     "/api/library/liked": {
       "get": {
         "description": "Library and streaming likes merged, newest first, with duplicates of one recording collapsed. `cursorLikedAt` and `cursorTrackId` must be sent together (400 otherwise, or when `cursorLikedAt` is not a timestamp).",
@@ -5438,6 +6517,118 @@
         "summary": "Like, dislike or clear the preference of any track",
         "tags": [
           "library"
+        ]
+      }
+    },
+    "/api/library/radio": {
+      "get": {
+        "description": "Any other `type` is treated as `all`. 400 when `type` is missing or a type that needs `value` has none. 401 for `liked`, or `playlist` radio of the My Liked playlist, without a user. 403 for another user's private playlist. 404 when the `vibe` seed track or the playlist does not exist.",
+        "operationId": "getRadio",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "type",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/RadioType"
+            }
+          },
+          {
+            "in": "query",
+            "name": "value",
+            "required": false,
+            "schema": {
+              "description": "The station seed: a decade (`1990`), genre, mood, artist id, artist name, track id (`vibe`), playlist id, or comma-separated track ids (`tracks`).",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "description": "Defaults to 50; at most 100 (`liked`: the library maximum).",
+              "maximum": 9007199254740991,
+              "minimum": -9007199254740991,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RadioResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "A radio queue built from the library",
+        "tags": [
+          "discovery"
         ]
       }
     },
@@ -5918,6 +7109,79 @@
           }
         },
         "summary": "The user's generated mixes",
+        "tags": [
+          "discovery"
+        ]
+      }
+    },
+    "/api/mixes/{id}": {
+      "get": {
+        "description": "Answered from the hour-long mix cache. 404 when the user has no mix with this id, and with code `FEATURE_DISABLED` when automatic playlists are turned off.",
+        "operationId": "getMix",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "description": "Mix id, for example \"era-2000\" or \"top-tracks\".",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MixDetail"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "A generated mix with its tracks",
         "tags": [
           "discovery"
         ]
@@ -7932,6 +9196,81 @@
         ]
       }
     },
+    "/api/recommendations/for-you": {
+      "get": {
+        "description": "404 with code `FEATURE_DISABLED` when discovery is turned off.",
+        "operationId": "getRecommendationsForYou",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "description": "Defaults to 10.",
+              "maximum": 9007199254740991,
+              "minimum": -9007199254740991,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecommendationsForYou"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Artists similar to the ones the user plays most",
+        "tags": [
+          "discovery"
+        ]
+      }
+    },
     "/api/search": {
       "get": {
         "description": "A blank `q` returns every group empty. `type` defaults to `all`, which ignores `offset`; `limit` defaults to 20 and is clamped to 1 to 100 per group. `source` limits library results to local files or federated peers. `remoteTracks` and `remoteAlbums` (liked streaming tracks and albums that are not in the library) are loaded per user, are not cached, and are filled only for `source=all` without `genre`: `type=all` returns up to 5 remote tracks and 6 remote albums, and the first page of `type=tracks` or `type=albums` returns its own group. 400 for an unknown `type` or `source`, or a `q` over 500 characters.",
@@ -8319,6 +9658,191 @@
         "summary": "Feature flags and detected capabilities",
         "tags": [
           "session"
+        ]
+      }
+    },
+    "/api/vibe/search": {
+      "post": {
+        "description": "A `limit` or `minSimilarity` out of range is clamped. 400 for a query shorter than 2 or longer than 512 characters. 502 when the text embedding provider answers with an invalid response, 503 when it is unavailable, 504 when it times out. 404 with code `FEATURE_DISABLED` when audio analysis is turned off.",
+        "operationId": "searchVibe",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VibeSearchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VibeSearchResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Bad Gateway"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Gateway Timeout"
+          }
+        },
+        "summary": "Tracks matching a natural-language description",
+        "tags": [
+          "discovery"
+        ]
+      }
+    },
+    "/api/vibe/similar/{trackId}": {
+      "get": {
+        "description": "404 when no similar track is found. 404 with code `FEATURE_DISABLED` when audio analysis is turned off.",
+        "operationId": "getSimilarTracks",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "trackId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "description": "Defaults to 20.",
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimilarTracksResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Tracks that sound like a track",
+        "tags": [
+          "discovery"
         ]
       }
     }

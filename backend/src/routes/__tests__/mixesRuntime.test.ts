@@ -104,7 +104,10 @@ describe("mixes route runtime", () => {
     const backfillMoodBuckets = getHandler("/mood/buckets/backfill", "post");
     const refreshMixes = getHandler("/refresh", "post");
     const saveMixAsPlaylist = getHandler("/:id/save", "post");
-    const getSingleMix = getHandler("/:id", "get");
+    const getSingleMix = withClientSurfaceValidation(
+        "getMix",
+        getHandler("/:id", "get"),
+    );
 
     beforeEach(() => {
         jest.clearAllMocks();
@@ -451,11 +454,35 @@ describe("mixes route runtime", () => {
             JSON.stringify([
                 {
                     id: "mix-1",
+                    type: "era",
                     name: "Mix One",
+                    description: "Music from one era",
                     trackIds: ["t-2", "t-1"],
+                    coverUrls: ["/covers/a.jpg"],
                     trackCount: 2,
+                    color: "linear-gradient(to bottom, #000, #111)",
                 },
             ]),
+        );
+        prisma.track.findMany.mockResolvedValueOnce(
+            ["t-1", "t-2"].map((id, index) => ({
+                id,
+                albumId: "al-1",
+                title: `Track ${index + 1}`,
+                trackNo: index + 1,
+                discNo: 1,
+                duration: 200 + index,
+                loudnessLufs: null,
+                truePeakDb: null,
+                album: {
+                    id: "al-1",
+                    title: "Album One",
+                    coverUrl: "/covers/a.jpg",
+                    albumLoudnessLufs: null,
+                    albumTruePeakDb: null,
+                    artist: { id: "ar-1", name: "A1", mbid: null },
+                },
+            })),
         );
         const singleReq = {
             user: { id: "u1" },
@@ -468,5 +495,14 @@ describe("mixes route runtime", () => {
             "t-2",
             "t-1",
         ]);
+
+        redisClient.get.mockRejectedValueOnce(new Error("redis down"));
+        const singleFailRes = createRes();
+        await getSingleMix(
+            { user: { id: "u1" }, params: { id: "mix-1" } } as any,
+            singleFailRes,
+        );
+        expect(singleFailRes.statusCode).toBe(500);
+        expect(singleFailRes.body).toEqual({ error: "Failed to get mix" });
     });
 });

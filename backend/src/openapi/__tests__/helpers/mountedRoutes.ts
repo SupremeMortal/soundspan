@@ -10,6 +10,7 @@ export const CLIENT_SURFACE_MOUNTS: Record<string, () => Router> = {
     "/api/api-keys": () => require("../../../routes/apiKeys").default,
     "/api/auth": () => require("../../../routes/auth").default,
     "/api/device-link": () => require("../../../routes/deviceLink").default,
+    "/api/discover": () => require("../../../routes/discover").default,
     "/api/library": () => require("../../../routes/library").default,
     "/api/mixes": () => require("../../../routes/mixes").default,
     "/api/lyrics": () => require("../../../routes/lyrics").default,
@@ -21,9 +22,12 @@ export const CLIENT_SURFACE_MOUNTS: Record<string, () => Router> = {
     "/api/playlists": () => require("../../../routes/playlists").default,
     "/api/plays": () => require("../../../routes/plays").default,
     "/api/podcasts": () => require("../../../routes/podcasts").default,
+    "/api/recommendations": () =>
+        require("../../../routes/recommendations").default,
     "/api/search": () => require("../../../routes/search").default,
     "/api/settings": () => require("../../../routes/settings").default,
     "/api/system": () => require("../../../routes/system").default,
+    "/api/vibe": () => require("../../../routes/vibe").default,
 };
 
 /** Operations declared on `app` itself in `backend/src/index.ts`. */
