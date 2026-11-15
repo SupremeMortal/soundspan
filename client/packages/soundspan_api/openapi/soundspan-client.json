@@ -22,7 +22,6 @@
         "type": "object"
       },
       "AlbumDetail": {
-        "additionalProperties": false,
         "properties": {
           "artist": {
             "$ref": "#/components/schemas/ArtistRef"
@@ -104,7 +103,6 @@
         "type": "object"
       },
       "AlbumListResponse": {
-        "additionalProperties": false,
         "properties": {
           "albums": {
             "items": {
@@ -148,7 +146,6 @@
         "type": "object"
       },
       "AlbumPreferenceResponse": {
-        "additionalProperties": false,
         "properties": {
           "albumId": {
             "type": "string"
@@ -203,7 +200,6 @@
         "type": "object"
       },
       "AlbumSummary": {
-        "additionalProperties": false,
         "properties": {
           "artist": {
             "$ref": "#/components/schemas/ArtistRef"
@@ -266,10 +262,8 @@
         "type": "object"
       },
       "ApiDocumentInfo": {
-        "additionalProperties": false,
         "properties": {
           "info": {
-            "additionalProperties": false,
             "properties": {
               "version": {
                 "type": "string"
@@ -287,7 +281,6 @@
         "type": "object"
       },
       "ApiError": {
-        "additionalProperties": false,
         "properties": {
           "code": {
             "type": "string"
@@ -302,7 +295,6 @@
         "type": "object"
       },
       "ApiKeyListResponse": {
-        "additionalProperties": false,
         "properties": {
           "apiKeys": {
             "items": {
@@ -317,7 +309,6 @@
         "type": "object"
       },
       "ApiKeySummary": {
-        "additionalProperties": false,
         "properties": {
           "createdAt": {
             "format": "date-time",
@@ -352,7 +343,6 @@
         "type": "object"
       },
       "ArtistAlbum": {
-        "additionalProperties": false,
         "properties": {
           "artistId": {
             "type": "string"
@@ -430,7 +420,6 @@
         "type": "object"
       },
       "ArtistDetail": {
-        "additionalProperties": false,
         "properties": {
           "albums": {
             "items": {
@@ -505,7 +494,6 @@
         "type": "object"
       },
       "ArtistListResponse": {
-        "additionalProperties": false,
         "properties": {
           "artists": {
             "items": {
@@ -543,7 +531,6 @@
         "type": "object"
       },
       "ArtistRef": {
-        "additionalProperties": false,
         "properties": {
           "id": {
             "type": "string"
@@ -563,7 +550,6 @@
         "type": "object"
       },
       "ArtistSummary": {
-        "additionalProperties": false,
         "properties": {
           "albumCount": {
             "maximum": 9007199254740991,
@@ -621,7 +607,6 @@
         "type": "object"
       },
       "ArtistTopTrack": {
-        "additionalProperties": false,
         "properties": {
           "album": {
             "allOf": [
@@ -708,7 +693,6 @@
         "type": "object"
       },
       "AuthConfig": {
-        "additionalProperties": false,
         "properties": {
           "localLoginEnabled": {
             "type": "boolean"
@@ -728,7 +712,6 @@
         "type": "object"
       },
       "CacheLimitExceededError": {
-        "additionalProperties": false,
         "properties": {
           "cacheLimitBytes": {
             "maximum": 9007199254740991,
@@ -761,7 +744,6 @@
         "type": "object"
       },
       "ClearPlaybackStateResponse": {
-        "additionalProperties": false,
         "properties": {
           "success": {
             "type": "boolean"
@@ -807,7 +789,6 @@
         "type": "object"
       },
       "CompletedOfflineItem": {
-        "additionalProperties": false,
         "properties": {
           "playbackId": {
             "type": "string"
@@ -918,7 +899,6 @@
         "type": "object"
       },
       "DeleteOfflineItemsResponse": {
-        "additionalProperties": false,
         "properties": {
           "deletedCount": {
             "maximum": 9007199254740991,
@@ -946,7 +926,6 @@
         "type": "object"
       },
       "DeviceLinkVerifyResponse": {
-        "additionalProperties": false,
         "properties": {
           "apiKey": {
             "type": "string"
@@ -966,7 +945,6 @@
         "type": "object"
       },
       "DeviceOfflineItem": {
-        "additionalProperties": false,
         "properties": {
           "playbackId": {
             "type": "string"
@@ -999,7 +977,6 @@
         "type": "object"
       },
       "DeviceOfflineItemsResponse": {
-        "additionalProperties": false,
         "properties": {
           "items": {
             "items": {
@@ -1014,7 +991,6 @@
         "type": "object"
       },
       "DiscoverAliasInfo": {
-        "additionalProperties": false,
         "properties": {
           "canonical": {
             "type": "string"
@@ -1033,7 +1009,6 @@
         "type": "object"
       },
       "DiscoverCurrent": {
-        "additionalProperties": false,
         "properties": {
           "totalCount": {
             "maximum": 9007199254740991,
@@ -1072,7 +1047,6 @@
         "type": "object"
       },
       "DiscoverResult": {
-        "additionalProperties": false,
         "properties": {
           "album": {
             "nullable": true,
@@ -1168,7 +1142,6 @@
         "type": "object"
       },
       "DiscoverSearchResponse": {
-        "additionalProperties": false,
         "properties": {
           "aliasInfo": {
             "allOf": [
@@ -1192,7 +1165,6 @@
         "type": "object"
       },
       "DiscoverTrack": {
-        "additionalProperties": false,
         "properties": {
           "album": {
             "type": "string"
@@ -1277,7 +1249,6 @@
         "type": "object"
       },
       "EndListenGroupResponse": {
-        "additionalProperties": false,
         "properties": {
           "success": {
             "type": "boolean"
@@ -1289,7 +1260,6 @@
         "type": "object"
       },
       "EpisodeProgress": {
-        "additionalProperties": false,
         "properties": {
           "currentTime": {
             "type": "number"
@@ -1315,7 +1285,6 @@
         "type": "object"
       },
       "HealthStatus": {
-        "additionalProperties": false,
         "properties": {
           "draining": {
             "type": "boolean"
@@ -1367,7 +1336,6 @@
         "type": "object"
       },
       "LeaveListenGroupResponse": {
-        "additionalProperties": false,
         "properties": {
           "ended": {
             "type": "boolean"
@@ -1389,7 +1357,6 @@
         "type": "object"
       },
       "LibraryTrack": {
-        "additionalProperties": false,
         "properties": {
           "album": {
             "$ref": "#/components/schemas/LibraryTrackAlbum"
@@ -1464,7 +1431,6 @@
         "type": "object"
       },
       "LibraryTrackAlbum": {
-        "additionalProperties": false,
         "properties": {
           "albumLoudnessLufs": {
             "nullable": true,
@@ -1516,7 +1482,6 @@
         "type": "object"
       },
       "LibraryTrackArtist": {
-        "additionalProperties": false,
         "properties": {
           "id": {
             "nullable": true,
@@ -1533,7 +1498,6 @@
         "type": "object"
       },
       "LibraryTrackListResponse": {
-        "additionalProperties": false,
         "properties": {
           "limit": {
             "maximum": 9007199254740991,
@@ -1566,7 +1530,6 @@
         "type": "object"
       },
       "LikedPlaylistInfo": {
-        "additionalProperties": false,
         "properties": {
           "description": {
             "type": "string"
@@ -1586,7 +1549,6 @@
         "type": "object"
       },
       "LikedTrack": {
-        "additionalProperties": false,
         "properties": {
           "album": {
             "$ref": "#/components/schemas/LibraryTrackAlbum"
@@ -1667,7 +1629,6 @@
         "type": "object"
       },
       "LikedTracksCursor": {
-        "additionalProperties": false,
         "properties": {
           "likedAt": {
             "format": "date-time",
@@ -1685,7 +1646,6 @@
         "type": "object"
       },
       "LikedTracksPagination": {
-        "additionalProperties": false,
         "properties": {
           "hasMore": {
             "type": "boolean"
@@ -1712,7 +1672,6 @@
         "type": "object"
       },
       "LikedTracksResponse": {
-        "additionalProperties": false,
         "properties": {
           "pagination": {
             "$ref": "#/components/schemas/LikedTracksPagination"
@@ -1741,7 +1700,6 @@
         "type": "object"
       },
       "ListenGroupMember": {
-        "additionalProperties": false,
         "properties": {
           "isConnected": {
             "description": "Whether the member has a live socket connection.",
@@ -1772,7 +1730,6 @@
         "type": "object"
       },
       "ListenGroupPlayback": {
-        "additionalProperties": false,
         "properties": {
           "currentIndex": {
             "maximum": 9007199254740991,
@@ -1818,7 +1775,6 @@
         "type": "object"
       },
       "ListenGroupSnapshot": {
-        "additionalProperties": false,
         "properties": {
           "groupType": {
             "enum": [
@@ -1900,10 +1856,8 @@
         "type": "object"
       },
       "ListenGroupSummary": {
-        "additionalProperties": false,
         "properties": {
           "currentTrack": {
-            "additionalProperties": false,
             "nullable": true,
             "properties": {
               "artistName": {
@@ -1931,7 +1885,6 @@
             "type": "string"
           },
           "host": {
-            "additionalProperties": false,
             "properties": {
               "id": {
                 "type": "string"
@@ -1990,10 +1943,8 @@
         "type": "object"
       },
       "ListenQueueItem": {
-        "additionalProperties": false,
         "properties": {
           "album": {
-            "additionalProperties": false,
             "properties": {
               "coverArt": {
                 "nullable": true,
@@ -2014,7 +1965,6 @@
             "type": "object"
           },
           "artist": {
-            "additionalProperties": false,
             "properties": {
               "id": {
                 "type": "string"
@@ -2097,7 +2047,6 @@
         "type": "object"
       },
       "LoginTokenResponse": {
-        "additionalProperties": false,
         "properties": {
           "refreshToken": {
             "type": "string"
@@ -2117,7 +2066,6 @@
         "type": "object"
       },
       "LoginTwoFactorChallenge": {
-        "additionalProperties": false,
         "properties": {
           "message": {
             "type": "string"
@@ -2136,7 +2084,6 @@
         "type": "object"
       },
       "LoginUser": {
-        "additionalProperties": false,
         "properties": {
           "displayName": {
             "nullable": true,
@@ -2174,7 +2121,6 @@
         "type": "string"
       },
       "Lyrics": {
-        "additionalProperties": false,
         "properties": {
           "plainLyrics": {
             "nullable": true,
@@ -2206,7 +2152,6 @@
         "type": "object"
       },
       "MessageResponse": {
-        "additionalProperties": false,
         "properties": {
           "message": {
             "type": "string"
@@ -2218,7 +2163,6 @@
         "type": "object"
       },
       "MixDetail": {
-        "additionalProperties": false,
         "properties": {
           "color": {
             "type": "string"
@@ -2273,7 +2217,6 @@
         "type": "object"
       },
       "MixSummary": {
-        "additionalProperties": false,
         "properties": {
           "color": {
             "type": "string"
@@ -2321,7 +2264,6 @@
         "type": "object"
       },
       "OfflineItem": {
-        "additionalProperties": false,
         "properties": {
           "contentType": {
             "nullable": true,
@@ -2370,7 +2312,6 @@
         "type": "object"
       },
       "OfflineItemsResponse": {
-        "additionalProperties": false,
         "properties": {
           "cacheLimitBytes": {
             "maximum": 9007199254740991,
@@ -2403,13 +2344,11 @@
         "type": "object"
       },
       "OfflineStats": {
-        "additionalProperties": false,
         "properties": {
           "availableMb": {
             "type": "number"
           },
           "device": {
-            "additionalProperties": false,
             "description": "Totals of the requested device; present only with `deviceId`.",
             "properties": {
               "deviceId": {
@@ -2458,7 +2397,6 @@
         "type": "object"
       },
       "OnboardingStatus": {
-        "additionalProperties": false,
         "properties": {
           "hasAccount": {
             "type": "boolean"
@@ -2474,7 +2412,6 @@
         "type": "object"
       },
       "OnlineUser": {
-        "additionalProperties": false,
         "properties": {
           "displayName": {
             "type": "string"
@@ -2526,7 +2463,6 @@
         "type": "object"
       },
       "OnlineUserTrack": {
-        "additionalProperties": false,
         "properties": {
           "albumId": {
             "nullable": true,
@@ -2574,7 +2510,6 @@
         "type": "object"
       },
       "OnlineUsersResponse": {
-        "additionalProperties": false,
         "properties": {
           "users": {
             "items": {
@@ -2589,7 +2524,6 @@
         "type": "object"
       },
       "PeerRef": {
-        "additionalProperties": false,
         "properties": {
           "id": {
             "type": "string"
@@ -2609,7 +2543,6 @@
         "type": "object"
       },
       "PlayNotRecorded": {
-        "additionalProperties": false,
         "properties": {
           "recorded": {
             "enum": [
@@ -2624,7 +2557,6 @@
         "type": "object"
       },
       "PlayRecord": {
-        "additionalProperties": false,
         "properties": {
           "id": {
             "type": "string"
@@ -2706,10 +2638,8 @@
         "type": "string"
       },
       "PlaybackQueueItem": {
-        "additionalProperties": false,
         "properties": {
           "album": {
-            "additionalProperties": false,
             "nullable": true,
             "properties": {
               "coverArt": {
@@ -2731,7 +2661,6 @@
             "type": "object"
           },
           "artist": {
-            "additionalProperties": false,
             "nullable": true,
             "properties": {
               "id": {
@@ -2789,7 +2718,6 @@
         "type": "object"
       },
       "PlaybackState": {
-        "additionalProperties": false,
         "properties": {
           "audiobookId": {
             "nullable": true,
@@ -2868,7 +2796,6 @@
         "type": "object"
       },
       "PlaylistCoverAlbum": {
-        "additionalProperties": false,
         "properties": {
           "coverArt": {
             "nullable": true,
@@ -2881,13 +2808,11 @@
         "type": "object"
       },
       "PlaylistCoverItem": {
-        "additionalProperties": false,
         "properties": {
           "id": {
             "type": "string"
           },
           "track": {
-            "additionalProperties": false,
             "nullable": true,
             "properties": {
               "album": {
@@ -2907,7 +2832,6 @@
         "type": "object"
       },
       "PlaylistDetail": {
-        "additionalProperties": false,
         "properties": {
           "createdAt": {
             "format": "date-time",
@@ -2989,7 +2913,6 @@
         "type": "object"
       },
       "PlaylistItem": {
-        "additionalProperties": false,
         "properties": {
           "id": {
             "type": "string"
@@ -3031,7 +2954,6 @@
         "type": "object"
       },
       "PlaylistItemDuplicate": {
-        "additionalProperties": false,
         "properties": {
           "duplicated": {
             "enum": [
@@ -3054,7 +2976,6 @@
         "type": "object"
       },
       "PlaylistItemPlayback": {
-        "additionalProperties": false,
         "properties": {
           "isPlayable": {
             "type": "boolean"
@@ -3076,7 +2997,6 @@
         "type": "object"
       },
       "PlaylistOwner": {
-        "additionalProperties": false,
         "properties": {
           "username": {
             "type": "string"
@@ -3088,7 +3008,6 @@
         "type": "object"
       },
       "PlaylistRecord": {
-        "additionalProperties": false,
         "properties": {
           "createdAt": {
             "format": "date-time",
@@ -3139,7 +3058,6 @@
         "type": "object"
       },
       "PlaylistSummary": {
-        "additionalProperties": false,
         "properties": {
           "createdAt": {
             "format": "date-time",
@@ -3205,7 +3123,6 @@
         "type": "object"
       },
       "PlaylistWriteResult": {
-        "additionalProperties": false,
         "properties": {
           "message": {
             "type": "string"
@@ -3217,7 +3134,6 @@
         "type": "object"
       },
       "PodcastDetail": {
-        "additionalProperties": false,
         "properties": {
           "author": {
             "nullable": true,
@@ -3274,7 +3190,6 @@
         "type": "object"
       },
       "PodcastEpisode": {
-        "additionalProperties": false,
         "properties": {
           "description": {
             "nullable": true,
@@ -3339,7 +3254,6 @@
         "type": "object"
       },
       "PodcastSummary": {
-        "additionalProperties": false,
         "properties": {
           "author": {
             "type": "string"
@@ -3388,7 +3302,6 @@
         "type": "object"
       },
       "PopularArtist": {
-        "additionalProperties": false,
         "properties": {
           "id": {
             "type": "string"
@@ -3427,7 +3340,6 @@
         "type": "object"
       },
       "PopularArtistsResponse": {
-        "additionalProperties": false,
         "properties": {
           "artists": {
             "items": {
@@ -3458,7 +3370,6 @@
         "type": "string"
       },
       "PresenceHeartbeatResponse": {
-        "additionalProperties": false,
         "properties": {
           "success": {
             "type": "boolean"
@@ -3477,7 +3388,6 @@
         "type": "object"
       },
       "RadioAudioFeatures": {
-        "additionalProperties": false,
         "properties": {
           "analysisMode": {
             "nullable": true,
@@ -3560,7 +3470,6 @@
         "type": "object"
       },
       "RadioDecade": {
-        "additionalProperties": false,
         "properties": {
           "count": {
             "maximum": 9007199254740991,
@@ -3580,7 +3489,6 @@
         "type": "object"
       },
       "RadioDecadesResponse": {
-        "additionalProperties": false,
         "properties": {
           "decades": {
             "items": {
@@ -3595,7 +3503,6 @@
         "type": "object"
       },
       "RadioGenre": {
-        "additionalProperties": false,
         "properties": {
           "count": {
             "maximum": 9007199254740991,
@@ -3613,7 +3520,6 @@
         "type": "object"
       },
       "RadioGenresResponse": {
-        "additionalProperties": false,
         "properties": {
           "genres": {
             "items": {
@@ -3628,7 +3534,6 @@
         "type": "object"
       },
       "RadioResponse": {
-        "additionalProperties": false,
         "properties": {
           "sourceFeatures": {
             "allOf": [
@@ -3650,7 +3555,6 @@
         "type": "object"
       },
       "RadioTrack": {
-        "additionalProperties": false,
         "properties": {
           "album": {
             "allOf": [
@@ -3748,7 +3652,6 @@
         "type": "string"
       },
       "RecentlyAddedArtist": {
-        "additionalProperties": false,
         "properties": {
           "albumCount": {
             "maximum": 9007199254740991,
@@ -3780,7 +3683,6 @@
         "type": "object"
       },
       "RecentlyAddedResponse": {
-        "additionalProperties": false,
         "properties": {
           "artists": {
             "items": {
@@ -3795,7 +3697,6 @@
         "type": "object"
       },
       "RecentlyListenedItem": {
-        "additionalProperties": false,
         "properties": {
           "albumCount": {
             "maximum": 9007199254740991,
@@ -3852,7 +3753,6 @@
         "type": "object"
       },
       "RecentlyListenedResponse": {
-        "additionalProperties": false,
         "properties": {
           "items": {
             "items": {
@@ -3876,7 +3776,6 @@
         "type": "string"
       },
       "RecommendationsForYou": {
-        "additionalProperties": false,
         "properties": {
           "artists": {
             "items": {
@@ -3891,7 +3790,6 @@
         "type": "object"
       },
       "RecommendedArtist": {
-        "additionalProperties": false,
         "properties": {
           "albumCount": {
             "maximum": 9007199254740991,
@@ -4115,7 +4013,6 @@
         "type": "object"
       },
       "SavedEpisodeProgress": {
-        "additionalProperties": false,
         "properties": {
           "currentTime": {
             "type": "number"
@@ -4135,7 +4032,6 @@
         "type": "object"
       },
       "SearchAlbum": {
-        "additionalProperties": false,
         "properties": {
           "artist": {
             "$ref": "#/components/schemas/ArtistRef"
@@ -4186,7 +4082,6 @@
         "type": "object"
       },
       "SearchArtist": {
-        "additionalProperties": false,
         "properties": {
           "heroUrl": {
             "nullable": true,
@@ -4235,7 +4130,6 @@
         "type": "object"
       },
       "SearchEpisode": {
-        "additionalProperties": false,
         "properties": {
           "audioUrl": {
             "type": "string"
@@ -4284,7 +4178,6 @@
         "type": "object"
       },
       "SearchPodcast": {
-        "additionalProperties": false,
         "properties": {
           "author": {
             "nullable": true,
@@ -4324,7 +4217,6 @@
         "type": "object"
       },
       "SearchRemoteAlbum": {
-        "additionalProperties": false,
         "properties": {
           "artist": {
             "$ref": "#/components/schemas/ArtistRef"
@@ -4374,7 +4266,6 @@
         "type": "object"
       },
       "SearchRemoteTrack": {
-        "additionalProperties": false,
         "properties": {
           "album": {
             "$ref": "#/components/schemas/LibraryTrackAlbum"
@@ -4451,7 +4342,6 @@
         "type": "object"
       },
       "SearchResponse": {
-        "additionalProperties": false,
         "properties": {
           "albums": {
             "items": {
@@ -4508,7 +4398,6 @@
         "type": "object"
       },
       "SearchTrack": {
-        "additionalProperties": false,
         "properties": {
           "album": {
             "allOf": [
@@ -4589,7 +4478,6 @@
         "type": "object"
       },
       "SessionTokens": {
-        "additionalProperties": false,
         "properties": {
           "refreshToken": {
             "type": "string"
@@ -4605,7 +4493,6 @@
         "type": "object"
       },
       "ShuffledTracksResponse": {
-        "additionalProperties": false,
         "properties": {
           "total": {
             "description": "Library tracks to sample from",
@@ -4627,7 +4514,6 @@
         "type": "object"
       },
       "SimilarArtist": {
-        "additionalProperties": false,
         "properties": {
           "albumCount": {
             "maximum": 9007199254740991,
@@ -4673,7 +4559,6 @@
         "type": "object"
       },
       "SimilarTrack": {
-        "additionalProperties": false,
         "properties": {
           "album": {
             "allOf": [
@@ -4757,7 +4642,6 @@
         "type": "object"
       },
       "SimilarTracksResponse": {
-        "additionalProperties": false,
         "properties": {
           "sourceFeatures": {
             "allOf": [
@@ -4785,7 +4669,6 @@
         "type": "object"
       },
       "StreamInfo": {
-        "additionalProperties": false,
         "properties": {
           "bitDepth": {
             "nullable": true,
@@ -4861,7 +4744,6 @@
         "type": "object"
       },
       "SubscribePodcastResponse": {
-        "additionalProperties": false,
         "properties": {
           "message": {
             "type": "string"
@@ -4881,7 +4763,6 @@
         "type": "object"
       },
       "SubscribedPodcast": {
-        "additionalProperties": false,
         "properties": {
           "author": {
             "nullable": true,
@@ -4929,7 +4810,6 @@
         "type": "object"
       },
       "SubscribedPodcastEpisode": {
-        "additionalProperties": false,
         "properties": {
           "coverUrl": {
             "nullable": true,
@@ -4976,7 +4856,6 @@
         "type": "object"
       },
       "SubscribedPodcastRef": {
-        "additionalProperties": false,
         "properties": {
           "id": {
             "type": "string"
@@ -4992,7 +4871,6 @@
         "type": "object"
       },
       "SystemFeatures": {
-        "additionalProperties": false,
         "properties": {
           "audioAnalysis": {
             "type": "boolean"
@@ -5024,7 +4902,6 @@
         "type": "object"
       },
       "TrackAlbumRef": {
-        "additionalProperties": false,
         "properties": {
           "albumLoudnessLufs": {
             "nullable": true,
@@ -5062,7 +4939,6 @@
         "type": "object"
       },
       "TrackArtistRef": {
-        "additionalProperties": false,
         "properties": {
           "id": {
             "type": "string"
@@ -5101,7 +4977,6 @@
         "type": "object"
       },
       "TrackPreferenceResponse": {
-        "additionalProperties": false,
         "properties": {
           "dislikedAt": {
             "format": "date-time",
@@ -5163,7 +5038,6 @@
         "type": "string"
       },
       "TrackSummary": {
-        "additionalProperties": false,
         "properties": {
           "album": {
             "allOf": [
@@ -5235,7 +5109,6 @@
         "type": "object"
       },
       "UnsubscribePodcastResponse": {
-        "additionalProperties": false,
         "properties": {
           "message": {
             "type": "string"
@@ -5269,7 +5142,6 @@
         "type": "object"
       },
       "UpdateEpisodeProgressResponse": {
-        "additionalProperties": false,
         "properties": {
           "progress": {
             "$ref": "#/components/schemas/SavedEpisodeProgress"
@@ -5322,7 +5194,6 @@
         "type": "object"
       },
       "UserSettings": {
-        "additionalProperties": false,
         "properties": {
           "displayName": {
             "nullable": true,
@@ -5388,7 +5259,6 @@
         "type": "object"
       },
       "VibeAudioFeatures": {
-        "additionalProperties": false,
         "properties": {
           "arousal": {
             "nullable": true,
@@ -5442,7 +5312,6 @@
         "type": "object"
       },
       "VibeSearchResponse": {
-        "additionalProperties": false,
         "properties": {
           "minSimilarity": {
             "type": "number"
@@ -5471,7 +5340,6 @@
         "type": "object"
       },
       "VibeSearchTrack": {
-        "additionalProperties": false,
         "properties": {
           "album": {
             "allOf": [

@@ -38,6 +38,17 @@ function rewriteRefs(value: unknown): unknown {
 }
 
 /**
+ * Keeps a response object open: zod's output mode closes every object with
+ * `additionalProperties: false`, and a client generated from a closed object
+ * rejects the keys a newer server adds.
+ */
+function openResponseObject(context: { jsonSchema: JsonSchema }): void {
+    if (context.jsonSchema.additionalProperties === false) {
+        delete context.jsonSchema.additionalProperties;
+    }
+}
+
+/**
  * Converts every schema in one zod 4 `toJSONSchema` pass so a component id
  * shared by two different schemas is rejected, and hoists named schemas.
  */
@@ -52,7 +63,11 @@ function convertAll(
         shape[`s${index}`] = schema;
     });
     const converted = rewriteRefs(
-        z.toJSONSchema(z.object(shape), { target: "openapi-3.0", io }),
+        z.toJSONSchema(z.object(shape), {
+            target: "openapi-3.0",
+            io,
+            ...(io === "output" ? { override: openResponseObject } : {}),
+        }),
     ) as JsonRecord;
     const definitions = (converted.definitions ?? {}) as Record<
         string,

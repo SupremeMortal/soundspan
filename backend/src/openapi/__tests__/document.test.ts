@@ -7,6 +7,7 @@ import {
     mergeClientSurface,
 } from "../document";
 import { ApiError, standardErrors } from "../schemas/common";
+import { closedResponseObjects } from "./helpers/closedResponseObjects";
 
 jest.mock("../../config", () => ({ config: { port: 3006 } }));
 
@@ -100,7 +101,6 @@ describe("buildClientSurfaceDocument", () => {
                 code: { type: "string" },
             },
             required: ["error"],
-            additionalProperties: false,
         });
         expect(operation.operationId).toBe("getAlbum");
         expect(operation.tags).toEqual(["library"]);
@@ -194,6 +194,37 @@ describe("buildClientSurfaceDocument", () => {
         expect(
             document.paths["/api/library/albums/{id}"].get,
         ).not.toHaveProperty("security");
+    });
+
+    test("response objects are open and request bodies keep their form", () => {
+        const Strict = z
+            .strictObject({ id: z.string() })
+            .meta({ id: "DocumentTestStrict" });
+        const strictWrite = defineOperation({
+            method: "post",
+            path: "/api/library/strict",
+            operationId: "writeStrict",
+            tag: "library",
+            summary: "Strict request and response",
+            body: z.strictObject({ name: z.string() }),
+            responses: {
+                200: z.object({ item: Strict, items: z.array(Strict) }),
+                400: ApiError,
+            },
+        });
+        const document = build(listAlbums, getAlbum, login, strictWrite);
+
+        expect(closedResponseObjects(document)).toEqual([]);
+        expect(
+            document.paths["/api/library/strict"].post.requestBody.content[
+                "application/json"
+            ].schema.additionalProperties,
+        ).toBe(false);
+        expect(
+            document.paths["/api/auth/login"].post.requestBody.content[
+                "application/json"
+            ].schema,
+        ).not.toHaveProperty("additionalProperties");
     });
 
     test("two different schemas with the same component id throw", () => {
@@ -295,6 +326,26 @@ describe("mergeClientSurface", () => {
         expect(JSON.stringify(merged)).toBe(
             JSON.stringify(swagger.commentDocument),
         );
+    });
+
+    test("the served document has no closed object in a registered response", () => {
+        const swagger = require("../../config/swagger");
+        const { clientSurfaceOperations } = require("../clientSurface");
+        const paths: Record<string, Record<string, unknown>> = {};
+        for (const operation of clientSurfaceOperations) {
+            paths[operation.path] = {
+                ...paths[operation.path],
+                [operation.method]:
+                    swagger.swaggerSpec.paths[operation.path][operation.method],
+            };
+        }
+
+        expect(
+            closedResponseObjects({
+                paths,
+                components: swagger.swaggerSpec.components,
+            }),
+        ).toEqual([]);
     });
 
     test("the served document carries every registered operation", () => {

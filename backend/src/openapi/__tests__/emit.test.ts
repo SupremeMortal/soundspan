@@ -1,8 +1,9 @@
 import { z } from "zod";
-import { createClientSurface } from "../clientSurface";
+import { clientSurfaceOperations, createClientSurface } from "../clientSurface";
 import { defineOperation } from "../defineOperation";
 import { renderClientSurfaceSpec } from "../emit";
 import { ApiError, standardErrors } from "../schemas/common";
+import { closedResponseObjects } from "./helpers/closedResponseObjects";
 
 type JsonObject = Record<string, any>;
 
@@ -181,5 +182,12 @@ describe("renderClientSurfaceSpec", () => {
         expect(text.endsWith("}\n")).toBe(true);
         expect(text.endsWith("\n\n")).toBe(false);
         expect(text).toBe(`${JSON.stringify(parse(text), null, 2)}\n`);
+    });
+
+    it("emits every registered response object open", () => {
+        const document = parse(
+            renderClientSurfaceSpec(clientSurfaceOperations, VERSION),
+        );
+        expect(closedResponseObjects(document)).toEqual([]);
     });
 });

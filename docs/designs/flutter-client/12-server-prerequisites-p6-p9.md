@@ -1,6 +1,6 @@
 # 12. Server Prerequisites P6–P9
 
-Status: shipped (partial: P6, P7, P8, P9a to P9f; open response objects in the emitted spec pending).
+Status: shipped (partial: P6, P7, P8, P9a to P9f).
 
 Four additive server changes the client needs beyond the Unified Playback API (P1–P5, `docs/designs/unified-playback-api.md`). They follow that document's rules: no existing route, field, or behaviour changes; each is its own PR (P9 is a series) with tests against real PostgreSQL where data is involved, OpenAPI annotations, and a `CHANGELOG.md` entry. Work stream **S1**. The release that contains P1–P9 is the client's `minServer`.
 
@@ -168,7 +168,7 @@ defineOperation({
 | Enum columns | `z.enum([...])`; clients must tolerate values added later |
 | Integers that are counts, sizes, or durations | `z.number().int()` |
 | Fields added after the `minServer` release | `.optional()` in responses, so one generated client decodes both server versions |
-| Response objects | Open in the emitted spec: no `additionalProperties: false`. The generated client rejects unknown keys of a closed object, so a closed response object breaks every client older than the server that adds a field |
+| Response objects | Open in the emitted spec: no `additionalProperties: false`. The generated client rejects unknown keys of a closed object, so a closed response object breaks every client older than the server that adds a field. zod's output mode closes every object, so `document.ts` removes `additionalProperties: false` from each object while it converts response schemas; registry schemas stay plain `z.object` and every current and future response object is open with no per-schema markup. Request schemas convert in input mode and keep their form |
 
 ### What Does Not Change
 
