@@ -13,7 +13,6 @@ import 'package:soundspan/core/profile/profile_providers.dart';
 import 'package:soundspan/core/profile/profile_runtime.dart';
 import 'package:soundspan/features/connect/connect.dart';
 import 'package:soundspan/features/connect/ui/probe_controller.dart';
-import 'package:soundspan/features/library/library.dart';
 import 'package:soundspan_api/soundspan_api.dart';
 
 import '../../features/connect/connect_harness.dart';
@@ -53,13 +52,8 @@ void main() {
     matching: find.text(label),
   );
 
-  // The routing tests stay on the Library tab that reads no repository:
-  // the full app has no server to answer one.
-  Finder screens() => find.byWidgetPredicate(
-    (widget) => widget is PlaceholderScreen || widget is LibraryScreen,
-  );
-
-  BuildContext screen(WidgetTester tester) => tester.element(screens().last);
+  BuildContext screen(WidgetTester tester) =>
+      tester.element(find.byType(RouteTitle).last);
 
   int selectedIndex(WidgetTester tester) =>
       tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex;
@@ -70,10 +64,7 @@ void main() {
   }
 
   String visibleScreen(WidgetTester tester) =>
-      switch (tester.widgetList(screens()).last) {
-        final PlaceholderScreen placeholder => placeholder.name,
-        _ => 'Library',
-      };
+      tester.widgetList<RouteTitle>(find.byType(RouteTitle)).last.screen;
 
   List<String> recordTitles(WidgetTester tester) {
     final titles = <String>[];

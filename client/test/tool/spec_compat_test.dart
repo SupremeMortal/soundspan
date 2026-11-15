@@ -5,6 +5,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:soundspan/app/build_config.dart';
+
 import '../../tool/spec_compat.dart';
 
 Map<String, Object?> _spec({
@@ -243,5 +245,13 @@ void main() {
       read('packages/soundspan_api/openapi/soundspan-client.json'),
     );
     expect(breaks, isEmpty);
+  });
+
+  test('the snapshot is the spec of BuildConfig.minServer', () {
+    final snapshot = jsonDecode(
+      File('tool/specs/min-server.json').readAsStringSync(),
+    ) as Map<String, Object?>;
+    final info = snapshot['info']! as Map<String, Object?>;
+    expect(info['version'], BuildConfig.minServer);
   });
 }

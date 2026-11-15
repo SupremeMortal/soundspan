@@ -7,6 +7,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:soundspan/app/theme/extensions.dart';
 import 'package:soundspan/shared/widgets/artwork.dart';
 import 'package:soundspan/shared/widgets/media_card.dart';
+import 'package:soundspan/shared/widgets/mosaic_artwork.dart';
 
 import '../../helpers/guidelines.dart';
 import '../../helpers/pump_app.dart';
@@ -206,5 +207,29 @@ void main() {
       tester.widget<Artwork>(find.byType(Artwork)).shape,
       ArtworkShape.circle,
     );
+  });
+
+  testWidgets('mosaicRefs show a mosaic of the covers in place of artworkRef', (
+    tester,
+  ) async {
+    const refs = ['c1', 'c2', 'c3', 'c4'];
+    await tester.pumpApp(
+      const Center(
+        child: SizedBox(
+          width: 160,
+          child: MediaCard(
+            title: 'Road trip',
+            subtitle: '12 songs',
+            artworkRef: null,
+            mosaicRefs: refs,
+          ),
+        ),
+      ),
+    );
+
+    final mosaic = tester.widget<MosaicArtwork>(find.byType(MosaicArtwork));
+    expect(mosaic.refs, refs);
+    expect(mosaic.size, 160 - MediaCard.padding * 2);
+    expect(find.byType(Artwork), findsNWidgets(4));
   });
 }

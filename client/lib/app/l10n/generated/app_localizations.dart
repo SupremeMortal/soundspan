@@ -1038,6 +1038,102 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Artist'**
   String get libraryArtistCardSubtitle;
+
+  /// Greeting at the top of Home before 12:00 local time.
+  ///
+  /// In en, this message translates to:
+  /// **'Good morning'**
+  String get homeGreetingMorning;
+
+  /// Greeting at the top of Home from 12:00 to 17:59 local time.
+  ///
+  /// In en, this message translates to:
+  /// **'Good afternoon'**
+  String get homeGreetingAfternoon;
+
+  /// Greeting at the top of Home from 18:00 local time.
+  ///
+  /// In en, this message translates to:
+  /// **'Good evening'**
+  String get homeGreetingEvening;
+
+  /// Title of the Home row of artists and podcasts the user listened to recently.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue Listening'**
+  String get homeShelfContinueListening;
+
+  /// Title of the Home row of artists recently added to the library.
+  ///
+  /// In en, this message translates to:
+  /// **'Recently Added'**
+  String get homeShelfRecentlyAdded;
+
+  /// Title of the Home row with Liked Songs and the mixes generated for the user.
+  ///
+  /// In en, this message translates to:
+  /// **'Made For You'**
+  String get homeShelfMadeForYou;
+
+  /// Title of the Home row of the user's playlists.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Playlists'**
+  String get homeShelfYourPlaylists;
+
+  /// Title of the Home row of podcasts popular in the podcast directory.
+  ///
+  /// In en, this message translates to:
+  /// **'Popular Podcasts'**
+  String get homeShelfPopularPodcasts;
+
+  /// Title of the card that opens the tracks the user liked.
+  ///
+  /// In en, this message translates to:
+  /// **'Liked Songs'**
+  String get homeLikedSongs;
+
+  /// Second line of the Liked Songs card: what kind of item it is.
+  ///
+  /// In en, this message translates to:
+  /// **'Playlist'**
+  String get homeLikedSongsSubtitle;
+
+  /// Second line of a card of an artist on Home: what kind of item it is.
+  ///
+  /// In en, this message translates to:
+  /// **'Artist'**
+  String get homeCardArtist;
+
+  /// Second line of a card of a podcast on Home when the podcast has no author.
+  ///
+  /// In en, this message translates to:
+  /// **'Podcast'**
+  String get homeCardPodcast;
+
+  /// Notice at the top of Home when the server runs a version newer than the newest one this app was tested against.
+  ///
+  /// In en, this message translates to:
+  /// **'This server is newer than this app was tested with'**
+  String get homeNoticeNewerThanTested;
+
+  /// Notice at the top of Home when the server did not say which version it runs.
+  ///
+  /// In en, this message translates to:
+  /// **'This server’s version could not be read'**
+  String get homeNoticeVersionUnknown;
+
+  /// Shown on Home in place of the rows when every row loaded and none has anything in it.
+  ///
+  /// In en, this message translates to:
+  /// **'Your library is empty'**
+  String get homeEmptyLibrary;
+
+  /// Second line of a playlist card on Home: how many songs the playlist has.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 song} other{{count} songs}}'**
+  String homePlaylistSongs(int count);
 }
 
 class _AppLocalizationsDelegate

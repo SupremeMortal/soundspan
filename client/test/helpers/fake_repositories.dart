@@ -142,14 +142,31 @@ mixin _FakeReads {
   /// refresh throws it.
   final Map<String, Exception> errors = {};
 
+  /// Refresh errors by method name: a read of that method answers its
+  /// seeded value as cached but failed to refresh with this error.
+  final Map<String, ApiException> refreshErrors = {};
+
   /// Refresh calls by method name, such as `refreshAlbum`.
   final Map<String, int> refreshCalls = {};
 
+  /// Read calls by method name, such as `album`.
+  final Map<String, int> readCalls = {};
+
   Stream<Cached<V>> _read<V>(String method, V? value) {
+    readCalls.update(method, (n) => n + 1, ifAbsent: () => 1);
     if (errors[method] case final error?) return Stream.error(error);
     if (value == null) return Stream.error(const NotFound());
-    return Stream.value(Cached(value: value, fetchedAt: fetchedAt));
+    return Stream.value(
+      Cached(
+        value: value,
+        fetchedAt: fetchedAt,
+        refreshError: refreshErrors[method],
+      ),
+    );
   }
+
+  /// How many times [method] was read.
+  int readCount(String method) => readCalls[method] ?? 0;
 
   Future<void> _refresh(String method) async {
     refreshCalls.update(method, (n) => n + 1, ifAbsent: () => 1);
@@ -247,6 +264,12 @@ class FakePlaylistRepository with _FakeReads implements PlaylistRepository {
   /// The playlists every [playlists] call lists.
   List<PlaylistSummary> playlistList = [];
 
+  /// The pages of [playlistList] that fail to load.
+  Set<int> failingPages = {};
+
+  /// The error a failing page of [playlistList] reports.
+  ApiException failure = const NotFound();
+
   /// The paged sources handed out, in order.
   final List<FakePagedSource<PlaylistSummary>> sources = [];
 
@@ -259,7 +282,11 @@ class FakePlaylistRepository with _FakeReads implements PlaylistRepository {
 
   @override
   PagedSource<PlaylistSummary> playlists() {
-    final source = FakePagedSource(items: playlistList);
+    final source = FakePagedSource(
+      items: playlistList,
+      failingPages: {...failingPages},
+      failure: failure,
+    );
     sources.add(source);
     return source;
   }

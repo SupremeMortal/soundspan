@@ -27,5 +27,11 @@ void main() {
       }
       expect(comparison, lessThanOrEqualTo(0));
     });
+
+    test('minServer is not the scaffold placeholder', () {
+      // 2.6.1 is the last release without P6 to P9; it stood in for
+      // minServer until the server release containing them was named.
+      expect(BuildConfig.minServer, isNot('2.6.1'));
+    });
   });
 }

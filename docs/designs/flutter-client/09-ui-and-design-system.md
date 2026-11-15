@@ -146,7 +146,7 @@ Described in [04](04-auth-and-server-profiles.md). Layout: centred column, max w
 
 ### Home (M0; M4 additions)
 
-Greeting (`headline`), then shelves in this order, each hidden when empty or disabled: Continue Listening (`/library/recently-listened`), Recently Added (`/library/recently-added`), Made For You (Liked Songs + `/mixes`; `autoPlaylists`), Your Playlists, Popular Podcasts (`/podcasts/discover/top`). M4 adds Recommended For You and Popular Artists (`discovery`) and the Explore entry. Banners (offline, link expiring) sit above the greeting. Pull to refresh on touch; F5 / Ctrl+R on desktop.
+Greeting (`headline`), then shelves in this order, each hidden when empty or disabled: Continue Listening (`/library/recently-listened`), Recently Added (`/library/recently-added`), Made For You (Liked Songs + `/mixes`; `autoPlaylists`), Your Playlists, Popular Podcasts (`/podcasts/discover/top`). M4 adds Recommended For You and Popular Artists (`discovery`) and the Explore entry. Banners (offline, link expiring) sit above the greeting. Pull to refresh on touch; F5 on desktop.
 
 ### Search (M0)
 

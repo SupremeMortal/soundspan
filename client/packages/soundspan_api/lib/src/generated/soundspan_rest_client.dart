@@ -23,7 +23,7 @@ final class SoundspanRestClient {
   static const String title = "soundspan client surface";
 
   /// API version from info.version.
-  static const String apiVersion = "2.6.1";
+  static const String apiVersion = "2.7.0";
 
   /// Exact Swagger or OpenAPI version.
   static const String specVersion = "3.0.0";

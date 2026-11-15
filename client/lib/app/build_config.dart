@@ -13,8 +13,8 @@ abstract final class BuildConfig {
   );
 
   /// The oldest server version this client supports.
-  static const String minServer = '2.6.1';
+  static const String minServer = '2.7.0';
 
   /// The newest server version this client was tested against.
-  static const String maxTestedServer = '2.6.1';
+  static const String maxTestedServer = '2.7.0';
 }

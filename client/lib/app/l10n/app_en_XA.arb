@@ -734,5 +734,74 @@
   "libraryArtistCardSubtitle": "[Åŕţîšţ one]",
   "@libraryArtistCardSubtitle": {
     "description": "Second line of an artist card in the library grid, under the artist's name."
+  },
+  "homeGreetingMorning": "[Ĝööð möŕñîñĝ one two]",
+  "@homeGreetingMorning": {
+    "description": "Greeting at the top of Home before 12:00 local time."
+  },
+  "homeGreetingAfternoon": "[Ĝööð åfţéŕñööñ one two]",
+  "@homeGreetingAfternoon": {
+    "description": "Greeting at the top of Home from 12:00 to 17:59 local time."
+  },
+  "homeGreetingEvening": "[Ĝööð évéñîñĝ one two]",
+  "@homeGreetingEvening": {
+    "description": "Greeting at the top of Home from 18:00 local time."
+  },
+  "homeShelfContinueListening": "[Çöñţîñûé Ļîšţéñîñĝ one two]",
+  "@homeShelfContinueListening": {
+    "description": "Title of the Home row of artists and podcasts the user listened to recently."
+  },
+  "homeShelfRecentlyAdded": "[Ŕéçéñţļý Åððéð one two]",
+  "@homeShelfRecentlyAdded": {
+    "description": "Title of the Home row of artists recently added to the library."
+  },
+  "homeShelfMadeForYou": "[Måðé Föŕ Ýöû one two]",
+  "@homeShelfMadeForYou": {
+    "description": "Title of the Home row with Liked Songs and the mixes generated for the user."
+  },
+  "homeShelfYourPlaylists": "[Ýöûŕ Þļåýļîšţš one two]",
+  "@homeShelfYourPlaylists": {
+    "description": "Title of the Home row of the user's playlists."
+  },
+  "homeShelfPopularPodcasts": "[Þöþûļåŕ Þöðçåšţš one two]",
+  "@homeShelfPopularPodcasts": {
+    "description": "Title of the Home row of podcasts popular in the podcast directory."
+  },
+  "homeLikedSongs": "[Ļîķéð Šöñĝš one two]",
+  "@homeLikedSongs": {
+    "description": "Title of the card that opens the tracks the user liked."
+  },
+  "homeLikedSongsSubtitle": "[Þļåýļîšţ one]",
+  "@homeLikedSongsSubtitle": {
+    "description": "Second line of the Liked Songs card: what kind of item it is."
+  },
+  "homeCardArtist": "[Åŕţîšţ one]",
+  "@homeCardArtist": {
+    "description": "Second line of a card of an artist on Home: what kind of item it is."
+  },
+  "homeCardPodcast": "[Þöðçåšţ one]",
+  "@homeCardPodcast": {
+    "description": "Second line of a card of a podcast on Home when the podcast has no author."
+  },
+  "homeNoticeNewerThanTested": "[Ţĥîš šéŕvéŕ îš ñéŵéŕ ţĥåñ ţĥîš åþþ ŵåš ţéšţéð ŵîţĥ one two three four five]",
+  "@homeNoticeNewerThanTested": {
+    "description": "Notice at the top of Home when the server runs a version newer than the newest one this app was tested against."
+  },
+  "homeNoticeVersionUnknown": "[Ţĥîš šéŕvéŕ’š véŕšîöñ çöûļð ñöţ bé ŕéåð one two three four]",
+  "@homeNoticeVersionUnknown": {
+    "description": "Notice at the top of Home when the server did not say which version it runs."
+  },
+  "homeEmptyLibrary": "[Ýöûŕ ļîbŕåŕý îš émþţý one two three]",
+  "@homeEmptyLibrary": {
+    "description": "Shown on Home in place of the rows when every row loaded and none has anything in it."
+  },
+  "homePlaylistSongs": "[{count, plural, =1{1 šöñĝ one} other{{count} šöñĝš one}}]",
+  "@homePlaylistSongs": {
+    "description": "Second line of a playlist card on Home: how many songs the playlist has.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   }
 }
