@@ -17,9 +17,14 @@ typedef CacheEntry<T> = ({T value, DateTime fetchedAt});
 ///
 /// `items` are domain values: [Track], [Album], [Artist] or
 /// [PlaylistSummary]. An entry whose entity is missing or cannot be decoded
-/// is left out.
+/// is left out. `positions` holds the list position of each item of
+/// `items`, so a list cached with gaps between its pages keeps them, and
+/// `itemFetchedAt` when each item's entity was last stored, which dates the
+/// page that holds it.
 typedef CacheListSnapshot = ({
   List<Object> items,
+  List<int> positions,
+  List<DateTime> itemFetchedAt,
   int? total,
   DateTime fetchedAt,
   bool complete,
@@ -318,17 +323,18 @@ class CacheStore {
     for (final entry in entries) {
       (keysByKind[entry.entityKind] ??= {}).add(entry.entityKey);
     }
-    final decoded = <(CacheEntityKind, String), Object>{};
+    final decoded = <(CacheEntityKind, String), (Object, DateTime)>{};
     Future<void> load<R>(
       CacheEntityKind kind,
       Future<List<R>> rows,
       String Function(R row) key,
       String Function(R row) json,
+      DateTime Function(R row) fetchedAt,
       Object Function(Map<String, Object?> json) decode,
     ) async {
       for (final row in await rows) {
         final value = _decode(json(row), decode);
-        if (value != null) decoded[(kind, key(row))] = value;
+        if (value != null) decoded[(kind, key(row))] = (value, fetchedAt(row));
       }
     }
 
@@ -338,6 +344,7 @@ class CacheStore {
         (_db.select(_db.tracks)..where((t) => t.key.isIn(keys))).get(),
         (row) => row.key,
         (row) => row.json,
+        (row) => row.fetchedAt,
         Track.fromJson,
       );
     }
@@ -347,6 +354,7 @@ class CacheStore {
         (_db.select(_db.albums)..where((a) => a.id.isIn(keys))).get(),
         (row) => row.id,
         (row) => row.json,
+        (row) => row.fetchedAt,
         Album.fromJson,
       );
     }
@@ -356,6 +364,7 @@ class CacheStore {
         (_db.select(_db.artists)..where((a) => a.id.isIn(keys))).get(),
         (row) => row.id,
         (row) => row.json,
+        (row) => row.fetchedAt,
         Artist.fromJson,
       );
     }
@@ -365,14 +374,27 @@ class CacheStore {
         (_db.select(_db.playlists)..where((p) => p.id.isIn(keys))).get(),
         (row) => row.id,
         (row) => row.json,
+        (row) => row.fetchedAt,
         PlaylistSummary.fromJson,
       );
     }
+    final items = <Object>[];
+    final positions = <int>[];
+    final fetchedAts = <DateTime>[];
+    for (final entry in entries) {
+      if (decoded[(entry.entityKind, entry.entityKey)] case (
+        final item,
+        final fetchedAt,
+      )) {
+        items.add(item);
+        positions.add(entry.position);
+        fetchedAts.add(fetchedAt);
+      }
+    }
     return (
-      items: [
-        for (final entry in entries)
-          ?decoded[(entry.entityKind, entry.entityKey)],
-      ],
+      items: items,
+      positions: positions,
+      itemFetchedAt: fetchedAts,
       total: list.total,
       fetchedAt: list.fetchedAt,
       complete: list.complete,
@@ -384,6 +406,11 @@ class CacheStore {
     return a.total == b.total &&
         a.fetchedAt == b.fetchedAt &&
         a.complete == b.complete &&
+        const ListEquality<int>().equals(a.positions, b.positions) &&
+        const ListEquality<DateTime>().equals(
+          a.itemFetchedAt,
+          b.itemFetchedAt,
+        ) &&
         const ListEquality<Object>().equals(a.items, b.items);
   }
 

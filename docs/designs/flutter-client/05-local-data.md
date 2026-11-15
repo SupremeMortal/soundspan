@@ -199,9 +199,18 @@ Where each read is stored (`CacheStore`, `lib/shared/data/cache_store.dart`):
 - Search results: one blob per query and scope, `search:<query>:<scope>`, so a result is served offline only for that exact query and scope.
 - Library list pages: page writes into `lists` and `list_entries`; reading a list marks it read for pruning.
 
+Library lists are read through `PagedSource<T>` (`lib/shared/domain/paged_source.dart`, implemented by `CachedPagedSource` in `lib/shared/data/paged_source_impl.dart`), not `Stream<Cached<T>>`:
+
+- Each source watches its list in the cache. The cached `total` and items are emitted first; an item is placed by its `list_entries.position`, so a list cached with gaps keeps them, and an index with no entry reads as not loaded.
+- `ensureVisible(first, last)` loads the pages from the one holding `first` to the one after the one holding `last`, skipping pages past the known end, pages in flight, and fresh pages. A page is as old as the oldest `fetchedAt` of the entity rows it holds (an empty list is as old as its `lists.fetchedAt`), so a page written later does not make an earlier one look fresh. Pages are fetched only while the server is reachable, and every outcome goes to `reportCallOutcome`.
+- A failed page sets `refreshError` and keeps what is loaded. `refresh()` fetches the pages covering the last visible range whatever their age; offline it sets `refreshError` to `Offline` and fetches nothing.
+- Without a server `total`, the last page's end becomes the total; an empty page past the end leaves the known total as it is.
+- Offset lists pass a `nextCursor` the server sent back with the next page (artists). The keyset list (liked tracks) holds its cursors in memory and loads pages in order from the last page whose cursor is known.
+- List keys: the query types `AlbumQuery`, `ArtistQuery` and `TrackQuery` build them from their non-null parameters in a fixed order (`albums?artistId=…&filter=…&sort=…&origin=…`, `artists?filter=…&sort=…&origin=…`, `tracks?albumId=…&sort=…&origin=…`); liked tracks are `liked` and the playlists list `playlists`.
+
 ### Pruning
 
-Runs at start-up after the first frame and when `cache.db` exceeds 64 MB (`(page_count − freelist_count) × page_size`): in one transaction, delete `lists` not read for 30 days with their entries and `blobs` not fetched for 30 days, then every entity row no `list_entries` row references. A blob never keeps an entity alive by itself; data that needs its entities kept stores them as a list. If `cache.db` is still above 64 MB, the least recently read lists are deleted 50 at a time, with the entities they leave unreferenced, until it is under the limit or no list is left. The image store is capped at about 500 MB (as 10,000 images, see Image Cache) and 30 days by the cache manager configuration.
+Runs at start-up after the first frame (the post-first-frame task `startCachePruning` prunes each profile container's `cache.db` once, when the container becomes active) and when `cache.db` exceeds 64 MB (`(page_count − freelist_count) × page_size`): in one transaction, delete `lists` not read for 30 days with their entries and `blobs` not fetched for 30 days, then every entity row no `list_entries` row references. A blob never keeps an entity alive by itself; data that needs its entities kept stores them as a list. If `cache.db` is still above 64 MB, the least recently read lists are deleted 50 at a time, with the entities they leave unreferenced, until it is under the limit or no list is left. The image store is capped at about 500 MB (as 10,000 images, see Image Cache) and 30 days by the cache manager configuration.
 
 ## Image Cache
 

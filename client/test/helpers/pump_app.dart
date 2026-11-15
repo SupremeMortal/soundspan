@@ -14,6 +14,7 @@ import 'package:soundspan/shared/providers/images.dart';
 
 import 'fake_clock.dart';
 import 'fake_reachability.dart';
+import 'fake_repositories.dart';
 import 'in_memory_database_opener.dart';
 import 'in_memory_secret_store.dart';
 import 'placeholder_image_provider.dart';
@@ -41,9 +42,11 @@ extension PumpApp on WidgetTester {
   /// platform values are reset when the test ends. The clock is a
   /// [FakeClock] ([clock], or a new one), the database opener an
   /// [InMemoryDatabaseOpener], reachability a [FakeReachability], the secret
-  /// store an [InMemorySecretStore] and
-  /// artwork a [PlaceholderImageProvider] of its ref; [overrides] are applied
-  /// after the defaults and win over them.
+  /// store an [InMemorySecretStore],
+  /// artwork a [PlaceholderImageProvider] of its ref, and the library,
+  /// playlist, home and search repositories new [FakeRepositories] (read
+  /// them back from the returned container); [overrides] are applied after
+  /// the defaults and win over them.
   ///
   /// [locale] picks the app's messages when the app has them (`en`,
   /// `en_XA`). For a locale it has none for, such as `ar`, the framework's
@@ -78,6 +81,7 @@ extension PumpApp on WidgetTester {
       artworkImageProvider.overrideWithValue(
         (request) => PlaceholderImageProvider(request.ref),
       ),
+      ...FakeRepositories().overrides,
     ];
     final container = ProviderContainer(
       overrides: [

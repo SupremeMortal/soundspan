@@ -76,6 +76,7 @@ import {
     rankPlaybackSource,
 } from "../../services/playbackSourcePriority";
 import { streamLibraryTrack } from "../../services/playback/streamLibraryTrack";
+import { encodePlaybackId } from "../../services/playback/playbackId";
 import { bumpSearchCacheVersion } from "../../services/searchCacheVersion";
 import {
     loadLibrarySongsPage,
@@ -746,6 +747,7 @@ export async function handleGetShuffledTracks(req: Request, res: Response) {
     // Add coverArt field to albums
     const tracks = tracksData.slice(0, limit).map((track) => ({
         ...track,
+        playbackId: encodePlaybackId({ kind: "t", trackId: track.id }),
         album: {
             ...track.album,
             coverArt: track.album.coverUrl,

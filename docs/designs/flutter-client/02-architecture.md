@@ -130,6 +130,8 @@ Everything that touches a server depends, directly or transitively, on `profileC
 
 Riverpod's scoped-provider rule applies: every provider that depends on a scoped provider declares it in `dependencies:`. Profile-scoped providers are declared by hand with `dependencies:` listing every scoped provider they read.
 
+The UI reads repositories through the profile-scoped providers in `lib/shared/providers/repositories.dart` (`libraryRepositoryProvider`, `playlistRepositoryProvider`, `homeRepositoryProvider`, `searchRepositoryProvider`), typed by the repository interface. They are `FutureProvider`s because the profile's `cache.db` opens asynchronously.
+
 `ProfileContext` carries `profile` (id, base URL, user id, auth kind, device id), `paths` (the profile's directories), and nothing mutable.
 
 ### Background Entry Points
@@ -153,6 +155,7 @@ Riverpod's scoped-provider rule applies: every provider that depends on a scoped
    - `Reachability.start()`.
    - Capability refresh for the active profile ([04](04-auth-and-server-profiles.md)).
    - Outbox replay and download reconciliation.
+   - Cache pruning of the active profile's `cache.db` ([05](05-local-data.md#pruning)).
    - Deep-link listener (`app_links`), including the link that launched the app.
 
 Playback restore (showing the last queue, paused) reads only `state.db`, so the mini player appears on the first frame without network.

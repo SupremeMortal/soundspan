@@ -125,3 +125,101 @@ abstract class LikedCursor with _$LikedCursor {
     required String trackId,
   }) = _LikedCursor;
 }
+
+/// Builds a list key: [name], then `?` and the non-null [params] in the
+/// given order.
+String _listKey(String name, List<(String, String?)> params) {
+  final present = [
+    for (final (key, value) in params)
+      if (value != null) '$key=${Uri.encodeQueryComponent(value)}',
+  ];
+  return present.isEmpty ? name : '$name?${present.join('&')}';
+}
+
+/// What the albums list shows (`GET /library/albums`).
+@freezed
+abstract class AlbumQuery with _$AlbumQuery {
+  /// Creates a query; null fields take the server's defaults.
+  // freezed reads only the class-named factory form.
+  // ignore: unnecessary_type_name_in_constructor
+  const factory AlbumQuery({
+    /// Only the albums of this artist.
+    String? artistId,
+
+    /// Which albums.
+    AlbumFilter? filter,
+
+    /// The order.
+    AlbumSort? sortBy,
+
+    /// Which part of the library.
+    LibraryOrigin? origin,
+  }) = _AlbumQuery;
+
+  const new _();
+
+  /// The cache key of the list (doc 05, `listKey`); two different queries
+  /// never share one.
+  String get listKey => _listKey('albums', [
+    ('artistId', artistId),
+    ('filter', filter?.value),
+    ('sort', sortBy?.value),
+    ('origin', origin?.value),
+  ]);
+}
+
+/// What the artists list shows (`GET /library/artists`).
+@freezed
+abstract class ArtistQuery with _$ArtistQuery {
+  /// Creates a query; null fields take the server's defaults.
+  // freezed reads only the class-named factory form.
+  // ignore: unnecessary_type_name_in_constructor
+  const factory ArtistQuery({
+    /// Which artists.
+    ArtistFilter? filter,
+
+    /// The order.
+    ArtistSort? sortBy,
+
+    /// Which part of the library.
+    LibraryOrigin? origin,
+  }) = _ArtistQuery;
+
+  const new _();
+
+  /// The cache key of the list (doc 05, `listKey`); two different queries
+  /// never share one.
+  String get listKey => _listKey('artists', [
+    ('filter', filter?.value),
+    ('sort', sortBy?.value),
+    ('origin', origin?.value),
+  ]);
+}
+
+/// What the songs list shows (`GET /library/tracks`).
+@freezed
+abstract class TrackQuery with _$TrackQuery {
+  /// Creates a query; null fields take the server's defaults.
+  // freezed reads only the class-named factory form.
+  // ignore: unnecessary_type_name_in_constructor
+  const factory TrackQuery({
+    /// Only the tracks of this album.
+    String? albumId,
+
+    /// The order.
+    TrackSort? sortBy,
+
+    /// Which part of the library.
+    LibraryOrigin? origin,
+  }) = _TrackQuery;
+
+  const new _();
+
+  /// The cache key of the list (doc 05, `listKey`); two different queries
+  /// never share one.
+  String get listKey => _listKey('tracks', [
+    ('albumId', albumId),
+    ('sort', sortBy?.value),
+    ('origin', origin?.value),
+  ]);
+}

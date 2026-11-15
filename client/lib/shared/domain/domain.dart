@@ -10,6 +10,7 @@ export 'package:soundspan/shared/domain/home_repository.dart';
 export 'package:soundspan/shared/domain/library_query.dart';
 export 'package:soundspan/shared/domain/library_repository.dart';
 export 'package:soundspan/shared/domain/mix.dart';
+export 'package:soundspan/shared/domain/paged_source.dart';
 export 'package:soundspan/shared/domain/playback_id.dart';
 export 'package:soundspan/shared/domain/playlist.dart';
 export 'package:soundspan/shared/domain/playlist_repository.dart';
