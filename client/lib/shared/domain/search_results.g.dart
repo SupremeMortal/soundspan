@@ -103,3 +103,21 @@ _DiscoverResults _$DiscoverResultsFromJson(Map<String, dynamic> json) =>
 
 Map<String, dynamic> _$DiscoverResultsToJson(_DiscoverResults instance) =>
     <String, dynamic>{'hits': instance.hits, 'aliasInfo': instance.aliasInfo};
+
+_SearchResults _$SearchResultsFromJson(Map<String, dynamic> json) =>
+    _SearchResults(
+      library: json['library'] == null
+          ? null
+          : LibrarySearchResults.fromJson(
+              json['library'] as Map<String, dynamic>,
+            ),
+      discover: json['discover'] == null
+          ? null
+          : DiscoverResults.fromJson(json['discover'] as Map<String, dynamic>),
+    );
+
+Map<String, dynamic> _$SearchResultsToJson(_SearchResults instance) =>
+    <String, dynamic>{
+      'library': instance.library,
+      'discover': instance.discover,
+    };

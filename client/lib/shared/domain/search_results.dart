@@ -155,3 +155,37 @@ abstract class DiscoverResults with _$DiscoverResults {
   factory fromJson(Map<String, Object?> json) =>
       _$DiscoverResultsFromJson(json);
 }
+
+/// What a search covers: the filter chips of the Search screen.
+enum SearchScope {
+  /// The library and catalogues outside it.
+  all,
+
+  /// The library only.
+  library,
+
+  /// Catalogues outside the library only.
+  discover,
+
+  /// Podcasts of the library search only.
+  podcasts,
+}
+
+/// The results of one search: the library search, the catalogue search, or
+/// both, by [SearchScope].
+@freezed
+abstract class SearchResults with _$SearchResults {
+  /// Creates search results.
+  // freezed reads only the class-named factory form.
+  // ignore: unnecessary_type_name_in_constructor
+  const factory SearchResults({
+    /// The library search, when the scope includes it.
+    LibrarySearchResults? library,
+
+    /// The catalogue search, when the scope includes it.
+    DiscoverResults? discover,
+  }) = _SearchResults;
+
+  /// Decodes results written by [SearchResults.toJson].
+  factory fromJson(Map<String, Object?> json) => _$SearchResultsFromJson(json);
+}

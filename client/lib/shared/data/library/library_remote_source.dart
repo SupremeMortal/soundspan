@@ -7,7 +7,7 @@ import 'package:soundspan_api/soundspan_api.dart' as api;
 /// The network half of the library repositories: calls the generated
 /// `LibraryClient` and returns domain values. `ApiException`
 /// propagates unchanged.
-final class LibraryRemoteSource {
+class LibraryRemoteSource {
   /// Creates a source over the generated library client.
   new(this._client);
 

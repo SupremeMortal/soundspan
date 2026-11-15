@@ -8,7 +8,7 @@ import 'package:soundspan_api/soundspan_api.dart' as api;
 /// discovery and podcasts clients and returns domain values.
 /// `ApiException` propagates unchanged, including `FeatureDisabled` from
 /// [mixes].
-final class HomeRemoteSource {
+class HomeRemoteSource {
   /// Creates a source over the generated clients.
   new({
     required api.LibraryClient libraryClient,

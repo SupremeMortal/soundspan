@@ -190,6 +190,15 @@ class Cached<T> {
 
 Offline, every cached value is shown regardless of age.
 
+`Swr` (`lib/shared/data/swr.dart`) implements these rules once for every `Stream<Cached<T>>`. While a fetch runs, the cached value is emitted with `refreshing: true`; concurrent listeners of one key share one fetch; every fetch outcome goes to `ReachabilityController.reportCallOutcome` (an `Offline` failure is a failed call, any other outcome a response). When the server is not reachable and nothing is cached, the stream errors with `Offline`. Each read has a `refresh…` method for pull-to-refresh that fetches whatever the age and throws `Offline` while the server is not reachable.
+
+Where each read is stored (`CacheStore`, `lib/shared/data/cache_store.dart`):
+
+- Album, artist and playlist detail: the whole detail as the blob `album:<id>`, `artist:<id>` or `playlist:<id>`, read back from it, together with an upsert of the entity row with `detailFetchedAt` and, for albums and playlists, a page write of the tracks as the list `album:<id>:tracks` or `playlist:<id>`, in one transaction.
+- Home shelves: one blob per shelf, `home:<shelf>`.
+- Search results: one blob per query and scope, `search:<query>:<scope>`, so a result is served offline only for that exact query and scope.
+- Library list pages: page writes into `lists` and `list_entries`; reading a list marks it read for pruning.
+
 ### Pruning
 
 Runs at start-up after the first frame and when `cache.db` exceeds 64 MB (`(page_count − freelist_count) × page_size`): in one transaction, delete `lists` not read for 30 days with their entries and `blobs` not fetched for 30 days, then every entity row no `list_entries` row references. A blob never keeps an entity alive by itself; data that needs its entities kept stores them as a list. If `cache.db` is still above 64 MB, the least recently read lists are deleted 50 at a time, with the entities they leave unreferenced, until it is under the limit or no list is left. The image store is capped at about 500 MB (as 10,000 images, see Image Cache) and 30 days by the cache manager configuration.
