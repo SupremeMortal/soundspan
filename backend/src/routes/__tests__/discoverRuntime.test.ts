@@ -347,6 +347,7 @@ describe("discover route runtime behavior", () => {
                     truePeakDb: -0.4,
                     albumLoudnessLufs: null,
                     albumTruePeakDb: null,
+                    playbackId: "pb-t-1",
                 },
             ],
             unavailable: [],
@@ -362,6 +363,7 @@ describe("discover route runtime behavior", () => {
         expect(mockGetCurrentPlaylist).toHaveBeenCalledWith("user-1");
         expect(res.statusCode).toBe(200);
         expect(res.body.tracks).toHaveLength(1);
+        expect(res.body.tracks[0].playbackId).toBe("pb-t-1");
     });
 
     it("returns an empty current playlist before the week's playlist exists", async () => {

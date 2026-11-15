@@ -18,6 +18,7 @@ import {
 } from "../../utils/musicIds";
 import { separateArtists } from "../../utils/separateArtists";
 import { applyArtistCap } from "../programmaticPlaylistArtistCap";
+import { encodePlaybackId } from "../playback/playbackId";
 
 /**
  * Weekly score multiplier for recently featured artists so fresh candidates
@@ -74,6 +75,7 @@ interface CurrentPlaylistTrack {
     truePeakDb?: number | null;
     albumLoudnessLufs?: number | null;
     albumTruePeakDb?: number | null;
+    playbackId: string;
 }
 
 interface CurrentPlaylistResponse {
@@ -951,6 +953,10 @@ export class DiscoveryRecommendationsService {
                     truePeakDb: track.truePeakDb,
                     albumLoudnessLufs: track.album.albumLoudnessLufs,
                     albumTruePeakDb: track.album.albumTruePeakDb,
+                    playbackId: encodePlaybackId({
+                        kind: "t",
+                        trackId: track.id,
+                    }),
                 });
             }
         }

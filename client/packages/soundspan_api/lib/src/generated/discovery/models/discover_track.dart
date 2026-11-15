@@ -53,6 +53,10 @@ class const DiscoverTrack({
 
   @JsonKey(includeIfNull: false) final num? loudnessLufs,
 
+  /// Opaque track identifier. Do not parse.
+  @JsonKey(disallowNullValue: true, includeIfNull: false)
+  final String? playbackId,
+
   @JsonKey(required: true, disallowNullValue: true)
   required final num similarity,
 
@@ -96,6 +100,7 @@ class const DiscoverTrack({
     "isLiked",
     "likedAt",
     "loudnessLufs",
+    "playbackId",
     "similarity",
     "sourceType",
     "tier",

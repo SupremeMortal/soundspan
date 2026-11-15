@@ -1215,6 +1215,10 @@
             "nullable": true,
             "type": "number"
           },
+          "playbackId": {
+            "description": "Opaque track identifier. Do not parse.",
+            "type": "string"
+          },
           "similarity": {
             "type": "number"
           },

@@ -33,7 +33,7 @@ api.PopularArtist _popular() => const api.PopularArtist(
   mbid: 'mbid-2',
 );
 
-api.DiscoverTrack _track() => const api.DiscoverTrack(
+api.DiscoverTrack _track({String? playbackId}) => api.DiscoverTrack(
   album: 'Fresh Album',
   albumId: 'rg-1',
   artist: 'New Voice',
@@ -48,6 +48,7 @@ api.DiscoverTrack _track() => const api.DiscoverTrack(
   tier: api.RecommendationTier.high,
   title: 'First Light',
   loudnessLufs: -9.5,
+  playbackId: playbackId,
 );
 
 void main() {
@@ -131,6 +132,17 @@ void main() {
     expect(track.albumId, isNull);
     expect(track.libraryTrackId, 'track-1');
     expect(track.loudness?.loudnessLufs, -9.5);
+  });
+
+  test('a discovery track with a playbackId is playable', () async {
+    server.current = [_track(playbackId: 't.track-1')];
+
+    final (values, errors) = await listenOnce(repository.currentDiscovery());
+
+    expect(errors, isEmpty);
+    final track = values.single.value!.tracks.single;
+    expect(track.playbackId, const PlaybackId('t.track-1'));
+    expect(track.libraryTrackId, 'track-1');
   });
 
   test('an empty discovery playlist is null, and cached as null', () async {

@@ -3,6 +3,7 @@ import { DiscoveryRecommendationsService } from "../discoveryRecommendations";
 import { discoverySeeding } from "../discoverySeeding";
 import { prisma } from "../../../utils/db";
 import { logger } from "../../../utils/logger";
+import { encodePlaybackId } from "../../playback/playbackId";
 
 jest.mock("date-fns", () => {
     const actual = jest.requireActual("date-fns");
@@ -1322,6 +1323,10 @@ describe("DiscoveryRecommendationsService", () => {
                         truePeakDb: -1.5,
                         albumLoudnessLufs: -17.6,
                         albumTruePeakDb: -0.8,
+                        playbackId: encodePlaybackId({
+                            kind: "t",
+                            trackId: "track-1",
+                        }),
                     },
                     {
                         id: "track-2",
@@ -1341,6 +1346,10 @@ describe("DiscoveryRecommendationsService", () => {
                         truePeakDb: null,
                         albumLoudnessLufs: null,
                         albumTruePeakDb: null,
+                        playbackId: encodePlaybackId({
+                            kind: "t",
+                            trackId: "track-2",
+                        }),
                     },
                 ],
                 unavailable: [],

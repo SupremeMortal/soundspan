@@ -24,12 +24,12 @@ DiscoveryArtist recommendedArtistFromWire(api.RecommendedArtist wire) =>
 DiscoveryArtist popularArtistFromWire(api.PopularArtist wire) =>
     DiscoveryArtist(name: wire.name, artworkRef: wire.image);
 
-/// A track of the discovery playlist. The payload carries no `playbackId`,
-/// so the track is not playable, and its album id names a release group,
-/// not a library album.
+/// A track of the discovery playlist. It is playable by its `playbackId`;
+/// its album id names a release group, not a library album, so the track
+/// has no album id.
 Track trackFromDiscover(api.DiscoverTrack wire) => trackFromParts(
   id: wire.id,
-  playbackId: null,
+  playbackId: wire.playbackId,
   title: wire.title,
   artistName: wire.artist,
   albumTitle: wire.album,

@@ -69,6 +69,9 @@ void main() {
     await gated((rest) => rest.discovery.getCurrentDiscover(), (value) {
       expect(value.tracks, hasLength(value.totalCount));
       expect(value.weekEnd.isAfter(value.weekStart), isTrue);
+      for (final track in value.tracks) {
+        expect(track.playbackId, isNotEmpty);
+      }
     });
   });
 }

@@ -33,7 +33,8 @@ export const RecommendationTier = z
 
 /**
  * A track of the week's Discover playlist. `artist` and `album` are names;
- * `albumId` is the album's MusicBrainz release-group id.
+ * `albumId` is the album's MusicBrainz release-group id. `playbackId` streams
+ * the track.
  */
 export const DiscoverTrack = z
     .object({
@@ -54,6 +55,10 @@ export const DiscoverTrack = z
         truePeakDb: z.number().nullable().optional(),
         albumLoudnessLufs: z.number().nullable().optional(),
         albumTruePeakDb: z.number().nullable().optional(),
+        playbackId: z
+            .string()
+            .optional()
+            .describe("Opaque track identifier. Do not parse."),
     })
     .meta({ id: "DiscoverTrack" });
 
