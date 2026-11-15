@@ -251,7 +251,7 @@ void main() {
   });
 
   group('liked', () {
-    void stubLiked({required bool hasMore}) {
+    void stubLiked({required bool hasMore, bool cursor = true}) {
       when(
         () => client.listLikedTracks(
           limit: any(named: 'limit'),
@@ -268,10 +268,9 @@ void main() {
           'pagination': {
             'hasMore': hasMore,
             'limit': 1,
-            'nextCursor': {
-              'likedAt': '2024-05-06T07:08:09.000Z',
-              'trackId': 't-3',
-            },
+            'nextCursor': cursor
+                ? {'likedAt': '2024-05-06T07:08:09.000Z', 'trackId': 't-3'}
+                : null,
           },
         }),
       );
@@ -311,6 +310,15 @@ void main() {
       final page = await source.liked(limit: 1);
 
       verify(() => client.listLikedTracks(limit: 1)).called(1);
+      expect(page.hasMore, isFalse);
+      expect(page.nextCursor, isNull);
+    });
+
+    test('a last page whose cursor is null decodes and has none', () async {
+      stubLiked(hasMore: false, cursor: false);
+
+      final page = await source.liked(limit: 1);
+
       expect(page.hasMore, isFalse);
       expect(page.nextCursor, isNull);
     });

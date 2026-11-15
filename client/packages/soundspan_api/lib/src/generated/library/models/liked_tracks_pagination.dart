@@ -24,8 +24,7 @@ class const LikedTracksPagination({
   )
   required final int limit,
 
-  @JsonKey(required: true, disallowNullValue: true)
-  required final LikedTracksCursor nextCursor,
+  @JsonKey(required: true) required final LikedTracksCursor? nextCursor,
 
   @JsonKey(
     readValue: LikedTracksPagination._extras,

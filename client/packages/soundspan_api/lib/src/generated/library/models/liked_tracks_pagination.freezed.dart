@@ -51,11 +51,11 @@ abstract mixin class $LikedTracksPaginationCopyWith<$Res>  {
   factory $LikedTracksPaginationCopyWith(LikedTracksPagination value, $Res Function(LikedTracksPagination) _then) = _$LikedTracksPaginationCopyWithImpl;
 @useResult
 $Res call({
-@JsonKey(required: true, disallowNullValue: true) bool hasMore,@JsonKey(required: true, disallowNullValue: true, fromJson: LikedTracksPagination._read_limit, toJson: LikedTracksPagination._write_limit) int limit,@JsonKey(required: true, disallowNullValue: true) LikedTracksCursor nextCursor,@JsonKey(readValue: LikedTracksPagination._extras, fromJson: LikedTracksPagination._readExtras, includeToJson: false) Map<String, Object?> additionalProperties
+@JsonKey(required: true, disallowNullValue: true) bool hasMore,@JsonKey(required: true, disallowNullValue: true, fromJson: LikedTracksPagination._read_limit, toJson: LikedTracksPagination._write_limit) int limit,@JsonKey(required: true) LikedTracksCursor? nextCursor,@JsonKey(readValue: LikedTracksPagination._extras, fromJson: LikedTracksPagination._readExtras, includeToJson: false) Map<String, Object?> additionalProperties
 });
 
 
-$LikedTracksCursorCopyWith<$Res> get nextCursor;
+$LikedTracksCursorCopyWith<$Res>? get nextCursor;
 
 }
 /// @nodoc
@@ -68,12 +68,12 @@ class _$LikedTracksPaginationCopyWithImpl<$Res>
 
 /// Create a copy of LikedTracksPagination
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? hasMore = null,Object? limit = null,Object? nextCursor = null,Object? additionalProperties = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? hasMore = null,Object? limit = null,Object? nextCursor = freezed,Object? additionalProperties = null,}) {
   return _then(LikedTracksPagination(
 hasMore: null == hasMore ? _self.hasMore : hasMore // ignore: cast_nullable_to_non_nullable
 as bool,limit: null == limit ? _self.limit : limit // ignore: cast_nullable_to_non_nullable
-as int,nextCursor: null == nextCursor ? _self.nextCursor : nextCursor // ignore: cast_nullable_to_non_nullable
-as LikedTracksCursor,additionalProperties: null == additionalProperties ? _self.additionalProperties : additionalProperties // ignore: cast_nullable_to_non_nullable
+as int,nextCursor: freezed == nextCursor ? _self.nextCursor : nextCursor // ignore: cast_nullable_to_non_nullable
+as LikedTracksCursor?,additionalProperties: null == additionalProperties ? _self.additionalProperties : additionalProperties // ignore: cast_nullable_to_non_nullable
 as Map<String, Object?>,
   ));
 }
@@ -81,9 +81,12 @@ as Map<String, Object?>,
 /// with the given fields replaced by the non-null parameter values.
 @override
 @pragma('vm:prefer-inline')
-$LikedTracksCursorCopyWith<$Res> get nextCursor {
-  
-  return $LikedTracksCursorCopyWith<$Res>(_self.nextCursor, (value) {
+$LikedTracksCursorCopyWith<$Res>? get nextCursor {
+    if (_self.nextCursor == null) {
+    return null;
+  }
+
+  return $LikedTracksCursorCopyWith<$Res>(_self.nextCursor!, (value) {
     return _then(_self.copyWith(nextCursor: value));
   });
 }

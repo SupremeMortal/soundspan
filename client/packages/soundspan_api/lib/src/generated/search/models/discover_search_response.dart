@@ -15,8 +15,7 @@ part 'discover_search_response.g.dart';
   disallowUnrecognizedKeys: false,
 )
 class const DiscoverSearchResponse({
-  @JsonKey(required: true, disallowNullValue: true)
-  required final DiscoverAliasInfo aliasInfo,
+  @JsonKey(required: true) required final DiscoverAliasInfo? aliasInfo,
 
   @JsonKey(required: true, disallowNullValue: true)
   required final List<DiscoverResult> results,

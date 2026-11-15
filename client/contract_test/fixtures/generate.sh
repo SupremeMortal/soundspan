@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Writes the contract suite's fixture music library under
 # client/contract_test/.fixtures/music: one tagged FLAC sine tone per track of
-# fixtures/library.json, at the frequency and length listed there. The output
+# fixtures/library.json, at the frequency and length listed there, each with
+# the same embedded 600x600 PNG front cover so albums have cover art. The output
 # depends only on library.json and the ffmpeg build, so every run writes the
 # same library. Needs ffmpeg and jq.
 set -euo pipefail
@@ -15,6 +16,11 @@ command -v jq >/dev/null || { echo "generate.sh: jq is required" >&2; exit 1; }
 
 rm -rf "$out"
 mkdir -p "$out"
+
+cover="$out/.cover.png"
+ffmpeg -nostdin -hide_banner -loglevel error -y \
+  -f lavfi -i "color=c=0x3366aa:s=600x600" -frames:v 1 \
+  -c:v png -fflags +bitexact -flags +bitexact "$cover"
 
 # One tab-separated line per track; lyrics are base64 so newlines survive.
 jq -r '
@@ -42,6 +48,8 @@ jq -r '
     fi
     ffmpeg -nostdin -hide_banner -loglevel error -y \
       -f lavfi -i "sine=frequency=$freq:duration=$seconds:sample_rate=44100" \
+      -i "$cover" -map 0:a -map 1:v -c:v copy -disposition:v attached_pic \
+      -metadata:s:v "comment=Cover (front)" \
       -ac 1 -c:a flac -fflags +bitexact -flags:a +bitexact \
       -metadata "title=$title" \
       -metadata "artist=$artist" \
@@ -53,6 +61,8 @@ jq -r '
       "${lyrics_args[@]}" \
       "$file"
   done
+
+rm "$cover"
 
 count="$(find "$out" -name '*.flac' | wc -l)"
 expected="$(jq '[.artists[].albums[].tracks[]] | length' "$library")"

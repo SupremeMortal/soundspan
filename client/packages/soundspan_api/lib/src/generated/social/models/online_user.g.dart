@@ -26,7 +26,6 @@ OnlineUser _$OnlineUserFromJson(Map<String, dynamic> json) {
       'isInListenTogetherGroup',
       'lastHeartbeatAt',
       'listeningStatus',
-      'listeningTrack',
       'username',
     ],
   );
@@ -37,9 +36,11 @@ OnlineUser _$OnlineUserFromJson(Map<String, dynamic> json) {
     isInListenTogetherGroup: json['isInListenTogetherGroup'] as bool,
     lastHeartbeatAt: OnlineUser._read_lastHeartbeatAt(json['lastHeartbeatAt']),
     listeningStatus: OnlineUser._read_listeningStatus(json['listeningStatus']),
-    listeningTrack: OnlineUserTrack.fromJson(
-      json['listeningTrack'] as Map<String, dynamic>,
-    ),
+    listeningTrack: json['listeningTrack'] == null
+        ? null
+        : OnlineUserTrack.fromJson(
+            json['listeningTrack'] as Map<String, dynamic>,
+          ),
     username: json['username'] as String,
     additionalProperties:
         OnlineUser._extras(json, 'additionalProperties') == null
@@ -62,6 +63,6 @@ Map<String, dynamic> _$OnlineUserToJson(OnlineUser instance) =>
       'listeningStatus': ?OnlineUser._write_listeningStatus(
         instance.listeningStatus,
       ),
-      'listeningTrack': instance.listeningTrack.toJson(),
+      'listeningTrack': instance.listeningTrack?.toJson(),
       'username': instance.username,
     };

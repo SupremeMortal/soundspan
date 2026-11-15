@@ -51,11 +51,11 @@ abstract mixin class $PodcastEpisodeCopyWith<$Res>  {
   factory $PodcastEpisodeCopyWith(PodcastEpisode value, $Res Function(PodcastEpisode) _then) = _$PodcastEpisodeCopyWithImpl;
 @useResult
 $Res call({
-@JsonKey(required: true) String? description,@JsonKey(required: true, disallowNullValue: true, fromJson: PodcastEpisode._read_duration, toJson: PodcastEpisode._write_duration) int duration,@JsonKey(required: true, fromJson: PodcastEpisode._read_episodeNumber, toJson: PodcastEpisode._write_episodeNumber) int? episodeNumber,@JsonKey(required: true, disallowNullValue: true) String id,@JsonKey(required: true) String? imageUrl,@JsonKey(required: true, disallowNullValue: true) bool isDownloaded,@JsonKey(required: true, disallowNullValue: true) EpisodeProgress progress,@JsonKey(required: true, disallowNullValue: true, fromJson: PodcastEpisode._read_publishedAt, toJson: PodcastEpisode._write_publishedAt) DateTime publishedAt,@JsonKey(required: true, fromJson: PodcastEpisode._read_season, toJson: PodcastEpisode._write_season) int? season,@JsonKey(required: true, disallowNullValue: true) String title,@JsonKey(readValue: PodcastEpisode._extras, fromJson: PodcastEpisode._readExtras, includeToJson: false) Map<String, Object?> additionalProperties
+@JsonKey(required: true) String? description,@JsonKey(required: true, disallowNullValue: true, fromJson: PodcastEpisode._read_duration, toJson: PodcastEpisode._write_duration) int duration,@JsonKey(required: true, fromJson: PodcastEpisode._read_episodeNumber, toJson: PodcastEpisode._write_episodeNumber) int? episodeNumber,@JsonKey(required: true, disallowNullValue: true) String id,@JsonKey(required: true) String? imageUrl,@JsonKey(required: true, disallowNullValue: true) bool isDownloaded,@JsonKey(required: true) EpisodeProgress? progress,@JsonKey(required: true, disallowNullValue: true, fromJson: PodcastEpisode._read_publishedAt, toJson: PodcastEpisode._write_publishedAt) DateTime publishedAt,@JsonKey(required: true, fromJson: PodcastEpisode._read_season, toJson: PodcastEpisode._write_season) int? season,@JsonKey(required: true, disallowNullValue: true) String title,@JsonKey(readValue: PodcastEpisode._extras, fromJson: PodcastEpisode._readExtras, includeToJson: false) Map<String, Object?> additionalProperties
 });
 
 
-$EpisodeProgressCopyWith<$Res> get progress;
+$EpisodeProgressCopyWith<$Res>? get progress;
 
 }
 /// @nodoc
@@ -68,7 +68,7 @@ class _$PodcastEpisodeCopyWithImpl<$Res>
 
 /// Create a copy of PodcastEpisode
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? description = freezed,Object? duration = null,Object? episodeNumber = freezed,Object? id = null,Object? imageUrl = freezed,Object? isDownloaded = null,Object? progress = null,Object? publishedAt = null,Object? season = freezed,Object? title = null,Object? additionalProperties = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? description = freezed,Object? duration = null,Object? episodeNumber = freezed,Object? id = null,Object? imageUrl = freezed,Object? isDownloaded = null,Object? progress = freezed,Object? publishedAt = null,Object? season = freezed,Object? title = null,Object? additionalProperties = null,}) {
   return _then(PodcastEpisode(
 description: freezed == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
 as String?,duration: null == duration ? _self.duration : duration // ignore: cast_nullable_to_non_nullable
@@ -76,8 +76,8 @@ as int,episodeNumber: freezed == episodeNumber ? _self.episodeNumber : episodeNu
 as int?,id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,imageUrl: freezed == imageUrl ? _self.imageUrl : imageUrl // ignore: cast_nullable_to_non_nullable
 as String?,isDownloaded: null == isDownloaded ? _self.isDownloaded : isDownloaded // ignore: cast_nullable_to_non_nullable
-as bool,progress: null == progress ? _self.progress : progress // ignore: cast_nullable_to_non_nullable
-as EpisodeProgress,publishedAt: null == publishedAt ? _self.publishedAt : publishedAt // ignore: cast_nullable_to_non_nullable
+as bool,progress: freezed == progress ? _self.progress : progress // ignore: cast_nullable_to_non_nullable
+as EpisodeProgress?,publishedAt: null == publishedAt ? _self.publishedAt : publishedAt // ignore: cast_nullable_to_non_nullable
 as DateTime,season: freezed == season ? _self.season : season // ignore: cast_nullable_to_non_nullable
 as int?,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
 as String,additionalProperties: null == additionalProperties ? _self.additionalProperties : additionalProperties // ignore: cast_nullable_to_non_nullable
@@ -88,9 +88,12 @@ as Map<String, Object?>,
 /// with the given fields replaced by the non-null parameter values.
 @override
 @pragma('vm:prefer-inline')
-$EpisodeProgressCopyWith<$Res> get progress {
-  
-  return $EpisodeProgressCopyWith<$Res>(_self.progress, (value) {
+$EpisodeProgressCopyWith<$Res>? get progress {
+    if (_self.progress == null) {
+    return null;
+  }
+
+  return $EpisodeProgressCopyWith<$Res>(_self.progress!, (value) {
     return _then(_self.copyWith(progress: value));
   });
 }

@@ -38,8 +38,7 @@ class const PodcastEpisode({
   @JsonKey(required: true, disallowNullValue: true)
   required final bool isDownloaded,
 
-  @JsonKey(required: true, disallowNullValue: true)
-  required final EpisodeProgress progress,
+  @JsonKey(required: true) required final EpisodeProgress? progress,
 
   @JsonKey(
     required: true,

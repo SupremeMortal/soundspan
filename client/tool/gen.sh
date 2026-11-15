@@ -3,7 +3,11 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 (
   cd packages/soundspan_api
-  dart run swagger_parser
+  # The generator reads a copy with nullable allOf references rewritten
+  # (tool/normalize_spec.dart); the committed spec stays as emitted.
+  normalized="$(mktemp -d)/soundspan-client.json"
+  dart run tool/normalize_spec.dart openapi/soundspan-client.json "$normalized"
+  dart run swagger_parser --schema_path "$normalized"
   # Anonymous operations and operation ids, read from the same spec.
   dart run tool/gen_anonymous_operations.dart
   dart format lib/src/generated/anonymous_operations.g.dart

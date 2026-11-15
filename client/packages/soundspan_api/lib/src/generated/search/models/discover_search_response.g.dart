@@ -12,12 +12,12 @@ DiscoverSearchResponse _$DiscoverSearchResponseFromJson(
   $checkKeys(
     json,
     requiredKeys: const ['aliasInfo', 'results'],
-    disallowNullValues: const ['aliasInfo', 'results'],
+    disallowNullValues: const ['results'],
   );
   return DiscoverSearchResponse(
-    aliasInfo: DiscoverAliasInfo.fromJson(
-      json['aliasInfo'] as Map<String, dynamic>,
-    ),
+    aliasInfo: json['aliasInfo'] == null
+        ? null
+        : DiscoverAliasInfo.fromJson(json['aliasInfo'] as Map<String, dynamic>),
     results: (json['results'] as List<dynamic>)
         .map((e) => DiscoverResult.fromJson(e as Map<String, dynamic>))
         .toList(),
@@ -33,6 +33,6 @@ DiscoverSearchResponse _$DiscoverSearchResponseFromJson(
 Map<String, dynamic> _$DiscoverSearchResponseToJson(
   DiscoverSearchResponse instance,
 ) => <String, dynamic>{
-  'aliasInfo': instance.aliasInfo.toJson(),
+  'aliasInfo': instance.aliasInfo?.toJson(),
   'results': instance.results.map((e) => e.toJson()).toList(),
 };

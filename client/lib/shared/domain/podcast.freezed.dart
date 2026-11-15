@@ -301,6 +301,293 @@ as String?,
 
 
 /// @nodoc
+mixin _$PodcastSummary {
+
+/// The podcast id the server sent.
+ String get id;/// The podcast title.
+ String get title;/// The author, if known.
+ String? get author;/// The value to pass to the cover-art endpoint, if any.
+ String? get artworkRef;
+/// Create a copy of PodcastSummary
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$PodcastSummaryCopyWith<PodcastSummary> get copyWith => _$PodcastSummaryCopyWithImpl<PodcastSummary>(this as PodcastSummary, _$identity);
+
+  /// Serializes this PodcastSummary to a JSON map.
+  Map<String, dynamic> toJson();
+
+
+@override
+bool operator ==(Object other) {
+  final _this = this as PodcastSummary;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is PodcastSummary&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.title, _this.title) || other.title == _this.title)&&(identical(other.author, _this.author) || other.author == _this.author)&&(identical(other.artworkRef, _this.artworkRef) || other.artworkRef == _this.artworkRef));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode {
+  final _this = this as PodcastSummary;
+  return Object.hash(runtimeType,_this.id,_this.title,_this.author,_this.artworkRef);
+}
+
+@override
+String toString() {
+  final _this = this as PodcastSummary;
+  return 'PodcastSummary(id: ${_this.id}, title: ${_this.title}, author: ${_this.author}, artworkRef: ${_this.artworkRef})';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $PodcastSummaryCopyWith<$Res>  {
+  factory $PodcastSummaryCopyWith(PodcastSummary value, $Res Function(PodcastSummary) _then) = _$PodcastSummaryCopyWithImpl;
+@useResult
+$Res call({
+ String id, String title, String? author, String? artworkRef
+});
+
+
+
+
+}
+/// @nodoc
+class _$PodcastSummaryCopyWithImpl<$Res>
+    implements $PodcastSummaryCopyWith<$Res> {
+  _$PodcastSummaryCopyWithImpl(this._self, this._then);
+
+  final PodcastSummary _self;
+  final $Res Function(PodcastSummary) _then;
+
+/// Create a copy of PodcastSummary
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? title = null,Object? author = freezed,Object? artworkRef = freezed,}) {
+  return _then(PodcastSummary(
+id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
+as String,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
+as String,author: freezed == author ? _self.author : author // ignore: cast_nullable_to_non_nullable
+as String?,artworkRef: freezed == artworkRef ? _self.artworkRef : artworkRef // ignore: cast_nullable_to_non_nullable
+as String?,
+  ));
+}
+
+}
+
+
+/// Adds pattern-matching-related methods to [PodcastSummary].
+extension PodcastSummaryPatterns on PodcastSummary {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _PodcastSummary value)?  $default,{required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case _PodcastSummary() when $default != null:
+return $default(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _PodcastSummary value)  $default,){
+final _that = this;
+switch (_that) {
+case _PodcastSummary():
+return $default(_that);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _PodcastSummary value)?  $default,){
+final _that = this;
+switch (_that) {
+case _PodcastSummary() when $default != null:
+return $default(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String title,  String? author,  String? artworkRef)?  $default,{required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case _PodcastSummary() when $default != null:
+return $default(_that.id,_that.title,_that.author,_that.artworkRef);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String title,  String? author,  String? artworkRef)  $default,) {final _that = this;
+switch (_that) {
+case _PodcastSummary():
+return $default(_that.id,_that.title,_that.author,_that.artworkRef);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String title,  String? author,  String? artworkRef)?  $default,) {final _that = this;
+switch (_that) {
+case _PodcastSummary() when $default != null:
+return $default(_that.id,_that.title,_that.author,_that.artworkRef);case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+@JsonSerializable()
+
+class _PodcastSummary implements PodcastSummary {
+  const _PodcastSummary({required this.id, required this.title, this.author, this.artworkRef});
+  factory _PodcastSummary.fromJson(Map<String, dynamic> json) => _$PodcastSummaryFromJson(json);
+
+/// The podcast id the server sent.
+@override final  String id;
+/// The podcast title.
+@override final  String title;
+/// The author, if known.
+@override final  String? author;
+/// The value to pass to the cover-art endpoint, if any.
+@override final  String? artworkRef;
+
+/// Create a copy of PodcastSummary
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$PodcastSummaryCopyWith<_PodcastSummary> get copyWith => __$PodcastSummaryCopyWithImpl<_PodcastSummary>(this, _$identity);
+
+@override
+Map<String, dynamic> toJson() {
+  return _$PodcastSummaryToJson(this, );
+}
+
+@override
+bool operator ==(Object other) {
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _PodcastSummary&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.author, author) || other.author == author)&&(identical(other.artworkRef, artworkRef) || other.artworkRef == artworkRef));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode {
+    return Object.hash(runtimeType,id,title,author,artworkRef);
+}
+
+@override
+String toString() {
+    return 'PodcastSummary(id: $id, title: $title, author: $author, artworkRef: $artworkRef)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$PodcastSummaryCopyWith<$Res> implements $PodcastSummaryCopyWith<$Res> {
+  factory _$PodcastSummaryCopyWith(_PodcastSummary value, $Res Function(_PodcastSummary) _then) = __$PodcastSummaryCopyWithImpl;
+@override @useResult
+$Res call({
+ String id, String title, String? author, String? artworkRef
+});
+
+
+
+
+}
+/// @nodoc
+class __$PodcastSummaryCopyWithImpl<$Res>
+    implements _$PodcastSummaryCopyWith<$Res> {
+  __$PodcastSummaryCopyWithImpl(this._self, this._then);
+
+  final _PodcastSummary _self;
+  final $Res Function(_PodcastSummary) _then;
+
+/// Create a copy of PodcastSummary
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? title = null,Object? author = freezed,Object? artworkRef = freezed,}) {
+  return _then(_PodcastSummary(
+id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
+as String,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
+as String,author: freezed == author ? _self.author : author // ignore: cast_nullable_to_non_nullable
+as String?,artworkRef: freezed == artworkRef ? _self.artworkRef : artworkRef // ignore: cast_nullable_to_non_nullable
+as String?,
+  ));
+}
+
+
+}
+
+
+/// @nodoc
 mixin _$Episode {
 
 /// The server's episode id.
