@@ -6,12 +6,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:soundspan/app/l10n/generated/app_localizations.dart';
 import 'package:soundspan/app/theme/theme.dart';
+import 'package:soundspan/core/connectivity/reachability.dart';
 import 'package:soundspan/core/storage/providers.dart';
 import 'package:soundspan/platform/secrets/secrets.dart';
 import 'package:soundspan/shared/clock.dart';
 import 'package:soundspan/shared/providers/images.dart';
 
 import 'fake_clock.dart';
+import 'fake_reachability.dart';
 import 'in_memory_database_opener.dart';
 import 'in_memory_secret_store.dart';
 import 'placeholder_image_provider.dart';
@@ -38,7 +40,8 @@ extension PumpApp on WidgetTester {
   /// or light, [highContrast] the high-contrast variant. The surface and the
   /// platform values are reset when the test ends. The clock is a
   /// [FakeClock] ([clock], or a new one), the database opener an
-  /// [InMemoryDatabaseOpener], the secret store an [InMemorySecretStore] and
+  /// [InMemoryDatabaseOpener], reachability a [FakeReachability], the secret
+  /// store an [InMemorySecretStore] and
   /// artwork a [PlaceholderImageProvider] of its ref; [overrides] are applied
   /// after the defaults and win over them.
   ///
@@ -70,6 +73,7 @@ extension PumpApp on WidgetTester {
     final defaults = <Override>[
       clockProvider.overrideWithValue(clock ?? FakeClock()),
       databaseOpenerProvider.overrideWithValue(InMemoryDatabaseOpener()),
+      reachabilityProvider.overrideWithValue(FakeReachability()),
       secretStoreProvider.overrideWithValue(InMemorySecretStore()),
       artworkImageProvider.overrideWithValue(
         (request) => PlaceholderImageProvider(request.ref),

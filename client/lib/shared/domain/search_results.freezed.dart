@@ -1458,4 +1458,329 @@ $AliasInfoCopyWith<$Res>? get aliasInfo {
 }
 }
 
+
+/// @nodoc
+mixin _$SearchResults {
+
+/// The library search, when the scope includes it.
+ LibrarySearchResults? get library;/// The catalogue search, when the scope includes it.
+ DiscoverResults? get discover;
+/// Create a copy of SearchResults
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$SearchResultsCopyWith<SearchResults> get copyWith => _$SearchResultsCopyWithImpl<SearchResults>(this as SearchResults, _$identity);
+
+  /// Serializes this SearchResults to a JSON map.
+  Map<String, dynamic> toJson();
+
+
+@override
+bool operator ==(Object other) {
+  final _this = this as SearchResults;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SearchResults&&(identical(other.library, _this.library) || other.library == _this.library)&&(identical(other.discover, _this.discover) || other.discover == _this.discover));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode {
+  final _this = this as SearchResults;
+  return Object.hash(runtimeType,_this.library,_this.discover);
+}
+
+@override
+String toString() {
+  final _this = this as SearchResults;
+  return 'SearchResults(library: ${_this.library}, discover: ${_this.discover})';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $SearchResultsCopyWith<$Res>  {
+  factory $SearchResultsCopyWith(SearchResults value, $Res Function(SearchResults) _then) = _$SearchResultsCopyWithImpl;
+@useResult
+$Res call({
+ LibrarySearchResults? library, DiscoverResults? discover
+});
+
+
+$LibrarySearchResultsCopyWith<$Res>? get library;$DiscoverResultsCopyWith<$Res>? get discover;
+
+}
+/// @nodoc
+class _$SearchResultsCopyWithImpl<$Res>
+    implements $SearchResultsCopyWith<$Res> {
+  _$SearchResultsCopyWithImpl(this._self, this._then);
+
+  final SearchResults _self;
+  final $Res Function(SearchResults) _then;
+
+/// Create a copy of SearchResults
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') @override $Res call({Object? library = freezed,Object? discover = freezed,}) {
+  return _then(SearchResults(
+library: freezed == library ? _self.library : library // ignore: cast_nullable_to_non_nullable
+as LibrarySearchResults?,discover: freezed == discover ? _self.discover : discover // ignore: cast_nullable_to_non_nullable
+as DiscoverResults?,
+  ));
+}
+/// Create a copy of SearchResults
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$LibrarySearchResultsCopyWith<$Res>? get library {
+    if (_self.library == null) {
+    return null;
+  }
+
+  return $LibrarySearchResultsCopyWith<$Res>(_self.library!, (value) {
+    return _then(_self.copyWith(library: value));
+  });
+}/// Create a copy of SearchResults
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$DiscoverResultsCopyWith<$Res>? get discover {
+    if (_self.discover == null) {
+    return null;
+  }
+
+  return $DiscoverResultsCopyWith<$Res>(_self.discover!, (value) {
+    return _then(_self.copyWith(discover: value));
+  });
+}
+}
+
+
+/// Adds pattern-matching-related methods to [SearchResults].
+extension SearchResultsPatterns on SearchResults {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _SearchResults value)?  $default,{required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case _SearchResults() when $default != null:
+return $default(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _SearchResults value)  $default,){
+final _that = this;
+switch (_that) {
+case _SearchResults():
+return $default(_that);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _SearchResults value)?  $default,){
+final _that = this;
+switch (_that) {
+case _SearchResults() when $default != null:
+return $default(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( LibrarySearchResults? library,  DiscoverResults? discover)?  $default,{required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case _SearchResults() when $default != null:
+return $default(_that.library,_that.discover);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( LibrarySearchResults? library,  DiscoverResults? discover)  $default,) {final _that = this;
+switch (_that) {
+case _SearchResults():
+return $default(_that.library,_that.discover);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( LibrarySearchResults? library,  DiscoverResults? discover)?  $default,) {final _that = this;
+switch (_that) {
+case _SearchResults() when $default != null:
+return $default(_that.library,_that.discover);case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+@JsonSerializable()
+
+class _SearchResults implements SearchResults {
+  const _SearchResults({this.library, this.discover});
+  factory _SearchResults.fromJson(Map<String, dynamic> json) => _$SearchResultsFromJson(json);
+
+/// The library search, when the scope includes it.
+@override final  LibrarySearchResults? library;
+/// The catalogue search, when the scope includes it.
+@override final  DiscoverResults? discover;
+
+/// Create a copy of SearchResults
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$SearchResultsCopyWith<_SearchResults> get copyWith => __$SearchResultsCopyWithImpl<_SearchResults>(this, _$identity);
+
+@override
+Map<String, dynamic> toJson() {
+  return _$SearchResultsToJson(this, );
+}
+
+@override
+bool operator ==(Object other) {
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _SearchResults&&(identical(other.library, library) || other.library == library)&&(identical(other.discover, discover) || other.discover == discover));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode {
+    return Object.hash(runtimeType,library,discover);
+}
+
+@override
+String toString() {
+    return 'SearchResults(library: $library, discover: $discover)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$SearchResultsCopyWith<$Res> implements $SearchResultsCopyWith<$Res> {
+  factory _$SearchResultsCopyWith(_SearchResults value, $Res Function(_SearchResults) _then) = __$SearchResultsCopyWithImpl;
+@override @useResult
+$Res call({
+ LibrarySearchResults? library, DiscoverResults? discover
+});
+
+
+@override $LibrarySearchResultsCopyWith<$Res>? get library;@override $DiscoverResultsCopyWith<$Res>? get discover;
+
+}
+/// @nodoc
+class __$SearchResultsCopyWithImpl<$Res>
+    implements _$SearchResultsCopyWith<$Res> {
+  __$SearchResultsCopyWithImpl(this._self, this._then);
+
+  final _SearchResults _self;
+  final $Res Function(_SearchResults) _then;
+
+/// Create a copy of SearchResults
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? library = freezed,Object? discover = freezed,}) {
+  return _then(_SearchResults(
+library: freezed == library ? _self.library : library // ignore: cast_nullable_to_non_nullable
+as LibrarySearchResults?,discover: freezed == discover ? _self.discover : discover // ignore: cast_nullable_to_non_nullable
+as DiscoverResults?,
+  ));
+}
+
+/// Create a copy of SearchResults
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$LibrarySearchResultsCopyWith<$Res>? get library {
+    if (_self.library == null) {
+    return null;
+  }
+
+  return $LibrarySearchResultsCopyWith<$Res>(_self.library!, (value) {
+    return _then(_self.copyWith(library: value));
+  });
+}/// Create a copy of SearchResults
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$DiscoverResultsCopyWith<$Res>? get discover {
+    if (_self.discover == null) {
+    return null;
+  }
+
+  return $DiscoverResultsCopyWith<$Res>(_self.discover!, (value) {
+    return _then(_self.copyWith(discover: value));
+  });
+}
+}
+
 // dart format on

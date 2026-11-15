@@ -6,7 +6,7 @@ import 'package:soundspan_api/soundspan_api.dart' as api;
 
 /// The network half of search: calls the generated `SearchClient` and
 /// returns domain values. `ApiException` propagates unchanged.
-final class SearchRemoteSource {
+class SearchRemoteSource {
   /// Creates a source over the generated search client.
   new(this._client);
 

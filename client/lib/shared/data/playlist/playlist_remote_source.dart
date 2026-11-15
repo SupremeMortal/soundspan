@@ -10,7 +10,7 @@ import 'package:soundspan_api/soundspan_api.dart' as api;
 /// unchanged; each write is one request, with no caching, queuing or
 /// optimistic state. Liked Songs is `LibraryRemoteSource.liked`, not a playlist
 /// here.
-final class PlaylistRemoteSource {
+class PlaylistRemoteSource {
   /// Creates a source over the generated playlists client.
   new(this._client);
 
