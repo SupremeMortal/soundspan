@@ -34,7 +34,7 @@ client/
 │   ├── fonts/TurretRoad-ExtraBold.ttf  # Wordmark only
 │   ├── fonts/README.md             # Source, commit and SHA-256 of each font
 │   ├── brand/                      # soundspan-mark.svg, soundspan-mark-mono.svg, tray icons
-│   ├── licenses/                   # Notices for bundled native libraries (libmpv, ffmpeg)
+│   ├── licenses/                   # Notices for bundled native libraries (mpv, FFmpeg, AndroidX Media3, SQLite); index.json lists every notice file
 │   └── licenses/fonts/             # Montserrat.txt, TurretRoad.txt (SIL Open Font License)
 ├── lib/
 │   ├── main.dart                   # Calls bootstrap(); no logic
@@ -172,6 +172,7 @@ flutter:
     - assets/brand/tray/
     - assets/licenses/
     - assets/licenses/fonts/
+    - LICENSE                      # the client's own licence (Licences screen)
   fonts:
     - family: Montserrat
       fonts:

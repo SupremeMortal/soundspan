@@ -211,10 +211,47 @@ void _writeFont(String file, {String? licence}) {
     ..writeAsBytesSync([0, 1, 0, 0]);
   if (licence != null) {
     final family = file.split('-').first.split('.').first;
-    File(p.join(_root.path, 'assets', 'licenses', 'fonts', '$family.txt'))
-      ..createSync(recursive: true)
-      ..writeAsStringSync(licence);
+    _writeNotice('fonts/$family.txt', licence);
   }
+}
+
+/// Writes `assets/licenses/<file>` with [text] and, unless [listed] is
+/// false, keeps `assets/licenses/index.json` listing it.
+void _writeNotice(String file, String text, {bool listed = true}) {
+  File(p.join(_root.path, 'assets', 'licenses', file))
+    ..createSync(recursive: true)
+    ..writeAsStringSync(text);
+  if (listed) _listNotice(file);
+}
+
+/// Adds an `index.json` entry naming [file].
+void _listNotice(String file) {
+  final index = File(p.join(_root.path, 'assets', 'licenses', 'index.json'));
+  final entries = [
+    if (index.existsSync())
+      ...(jsonDecode(index.readAsStringSync()) as List<Object?>),
+    {
+      'title': p.basenameWithoutExtension(file),
+      'file': file,
+      'spdx': 'LicenseRef-test',
+      'platforms': ['linux'],
+    },
+  ];
+  index
+    ..createSync(recursive: true)
+    ..writeAsStringSync(jsonEncode(entries));
+}
+
+void _writeLock(List<String> packages) {
+  final b = StringBuffer('packages:\n');
+  for (final name in packages) {
+    b
+      ..writeln('  $name:')
+      ..writeln('    dependency: "direct main"')
+      ..writeln('    source: hosted')
+      ..writeln('    version: "1.0.0"');
+  }
+  File(p.join(_root.path, 'pubspec.lock')).writeAsStringSync(b.toString());
 }
 
 void main() {
@@ -476,6 +513,90 @@ void main() {
     });
 
     test('no assets/fonts/ passes', () async {
+      expect(await _subjects(), isEmpty);
+    });
+  });
+
+  group('notice manifest', () {
+    setUp(_writeTree);
+
+    test('notices that are all listed pass', () async {
+      _writeNotice('SQLite-NOTICE.txt', 'public domain');
+      _writeNotice('fonts/Montserrat.txt', 'SIL OFL 1.1');
+      expect(await _subjects(), isEmpty);
+    });
+
+    test('a notice file missing from index.json fails', () async {
+      _writeNotice('SQLite-NOTICE.txt', 'public domain');
+      _writeNotice('Unlisted-NOTICE.txt', 'text', listed: false);
+      expect(await _subjects(), ['assets/licenses/Unlisted-NOTICE.txt']);
+    });
+
+    test('an unlisted font licence fails', () async {
+      _writeNotice('SQLite-NOTICE.txt', 'public domain');
+      _writeNotice('fonts/Montserrat.txt', 'SIL OFL 1.1', listed: false);
+      expect(await _subjects(), ['assets/licenses/fonts/Montserrat.txt']);
+    });
+
+    test('an index.json entry naming a missing file fails', () async {
+      _writeNotice('SQLite-NOTICE.txt', 'public domain');
+      _listNotice('Gone-NOTICE.txt');
+      final findings = await auditLicenses(_root);
+      expect(findings.map((f) => f.subject), ['assets/licenses/index.json']);
+      expect(findings.single.reason, contains('Gone-NOTICE.txt'));
+    });
+
+    test('notice files without index.json fail', () async {
+      _writeNotice('SQLite-NOTICE.txt', 'public domain', listed: false);
+      expect(await _subjects(), ['assets/licenses/index.json']);
+    });
+
+    test('a malformed index.json fails', () async {
+      _writeNotice('SQLite-NOTICE.txt', 'public domain');
+      File(p.join(_root.path, 'assets', 'licenses', 'index.json'))
+          .writeAsStringSync('{"title": "not a list"}');
+      expect(await _subjects(), contains('assets/licenses/index.json'));
+    });
+
+    test('an entry without a title fails', () async {
+      _writeNotice('SQLite-NOTICE.txt', 'public domain', listed: false);
+      File(p.join(_root.path, 'assets', 'licenses', 'index.json'))
+          .writeAsStringSync(
+            jsonEncode([
+              {
+                'file': 'SQLite-NOTICE.txt',
+                'spdx': 'blessing',
+                'platforms': ['linux'],
+              },
+            ]),
+          );
+      expect(await _subjects(), contains('assets/licenses/index.json'));
+    });
+
+    test(
+      'media_kit_libs_linux in pubspec.lock without the mpv notice fails',
+      () async {
+        _writeNotice('FFmpeg-NOTICE.txt', 'LGPL');
+        _writeLock(['media_kit', 'media_kit_libs_linux']);
+        expect(await _subjects(), ['assets/licenses/mpv-NOTICE.txt']);
+      },
+    );
+
+    test('a media_kit_libs package without the FFmpeg notice fails', () async {
+      _writeNotice('mpv-NOTICE.txt', 'LGPL');
+      _writeLock(['media_kit_libs_windows_audio']);
+      expect(await _subjects(), ['assets/licenses/FFmpeg-NOTICE.txt']);
+    });
+
+    test('media_kit_libs packages with both notices pass', () async {
+      _writeNotice('mpv-NOTICE.txt', 'LGPL');
+      _writeNotice('FFmpeg-NOTICE.txt', 'LGPL');
+      _writeLock(['media_kit_libs_linux', 'media_kit_libs_windows_audio']);
+      expect(await _subjects(), isEmpty);
+    });
+
+    test('a lock without media_kit_libs packages needs no notice', () async {
+      _writeLock(['media_kit', 'path']);
       expect(await _subjects(), isEmpty);
     });
   });

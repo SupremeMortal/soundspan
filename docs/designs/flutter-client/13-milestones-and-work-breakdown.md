@@ -167,7 +167,7 @@ Exit: accessibility script passes on every platform, resource budgets are met an
 | M5-03 | Desktop update notice: a version check that opens the release page; `auto_updater` is evaluated once builds are signed (spike S7) | — | A build older than the latest release shows the notice |
 | M5-05 | Packaging: MSIX and Inno Setup, `.dmg`, Flatpak manifest, AppImage, `.deb`, web container image (all unsigned) | M2-12 | Each installs and runs on a clean machine or container |
 | M5-07 | User documentation: `docs/` page for the client (install, connect, link a device, offline), reverse-proxy notes for the web build, `docs/SUBSONIC_CLIENTS.md` cross-link | — | Docs are timeless-rule compliant |
-| M5-08 | Licence review: exception wording approved by copyright holders; in-app licences screen complete, including fonts; LGPL notices for libmpv | — | Sign-off recorded |
+| M5-08 | Licence review: exception wording approved by copyright holders; in-app licences screen complete, including fonts; LGPL notices for libmpv | — | Automated: `test/app/licenses/` (the client licence, both fonts and every `assets/licenses/index.json` notice are registered, and every notice file is listed), the licences screen tests and goldens, and `tool/license_audit.dart` (manifest and files agree; a `media_kit_libs_*` package needs the mpv and FFmpeg notices). Sign-off recorded on the human checklist: the copyright holders approve the app-store permission wording in `client/LICENSE` and confirm the libmpv and FFmpeg builds in release artifacts are LGPL configurations |
 
 ## M6. Extended Surfaces
 
