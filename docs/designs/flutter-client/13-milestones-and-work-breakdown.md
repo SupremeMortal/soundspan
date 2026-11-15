@@ -44,7 +44,7 @@ Defined in [12](12-server-prerequisites-p6-p9.md).
 | S1-P9d | Device link and API keys | Same |
 | S1-P9e | Offline | Same |
 | S1-P9f | Mixes, discovery, radio, vibe, Listen Together REST, presence | Same |
-| S1-REL | Server release containing P1–P9; `BuildConfig.minServer` set to it | Tag exists; contract suite pinned to it |
+| S1-REL | `BuildConfig.minServer` (and `maxTestedServer` when lower) is the server's `version` if that version is unreleased, otherwise the next minor, with the server version moved to it in the package manifests and the Helm chart; `client/tool/specs/min-server.json` is refreshed from the client-surface spec of that version. Cutting the server release is on the human checklist | `client-spec` passes against the refreshed snapshot |
 
 ## M0. Foundations
 
