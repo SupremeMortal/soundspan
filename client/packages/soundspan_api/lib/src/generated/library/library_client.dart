@@ -2,31 +2,22 @@
 
 import 'dart:convert' as convert;
 
-import 'package:dio/dio.dart'
-    show Dio, Options, ResponseType, CancelToken, RequestOptions;
-import 'package:retrofit/retrofit.dart'
-    show
-        RestApi,
-        Extras,
-        CancelRequest,
-        GET,
-        POST,
-        ParseErrorLogger,
-        Body,
-        Headers,
-        Path,
-        Query;
+import 'package:dio/dio.dart' show Dio, Options, ResponseType, CancelToken;
 
-import 'models/album_detail.dart' show AlbumDetail;
+import 'models/album_detail.dart' as models show AlbumDetail;
 import 'models/album_list_response.dart' as models show AlbumListResponse;
-import 'models/album_preference_request.dart' show AlbumPreferenceRequest;
-import 'models/album_preference_response.dart' show AlbumPreferenceResponse;
-import 'models/artist_detail.dart' show ArtistDetail;
+import 'models/album_preference_request.dart'
+    as models
+    show AlbumPreferenceRequest;
+import 'models/album_preference_response.dart'
+    as models
+    show AlbumPreferenceResponse;
+import 'models/artist_detail.dart' as models show ArtistDetail;
 import 'models/artist_list_response.dart' as models show ArtistListResponse;
 import 'models/library_track_list_response.dart'
     as models
     show LibraryTrackListResponse;
-import 'models/liked_tracks_response.dart' show LikedTracksResponse;
+import 'models/liked_tracks_response.dart' as models show LikedTracksResponse;
 import 'models/list_albums_filter.dart' as models show ListAlbumsFilter;
 import 'models/list_albums_origin.dart' as models show ListAlbumsOrigin;
 import 'models/list_albums_sort_by.dart' as models show ListAlbumsSortBy;
@@ -35,19 +26,24 @@ import 'models/list_artists_origin.dart' as models show ListArtistsOrigin;
 import 'models/list_artists_sort_by.dart' as models show ListArtistsSortBy;
 import 'models/list_tracks_origin.dart' as models show ListTracksOrigin;
 import 'models/list_tracks_sort_by.dart' as models show ListTracksSortBy;
-import 'models/recently_added_response.dart' show RecentlyAddedResponse;
-import 'models/recently_listened_response.dart' show RecentlyListenedResponse;
-import 'models/shuffled_tracks_response.dart' show ShuffledTracksResponse;
-import 'models/track_preference_request.dart' show TrackPreferenceRequest;
-import 'models/track_preference_response.dart' show TrackPreferenceResponse;
+import 'models/recently_added_response.dart'
+    as models
+    show RecentlyAddedResponse;
+import 'models/recently_listened_response.dart'
+    as models
+    show RecentlyListenedResponse;
+import 'models/shuffled_tracks_response.dart'
+    as models
+    show ShuffledTracksResponse;
+import 'models/track_preference_request.dart'
+    as models
+    show TrackPreferenceRequest;
+import 'models/track_preference_response.dart'
+    as models
+    show TrackPreferenceResponse;
 
-part 'library_client.g.dart';
-
-@RestApi(headers: {'Accept': 'application/json'})
-abstract class LibraryClient {
-  LibraryClient._(this._transport);
-
-  factory LibraryClient(Dio dio) => _LibraryClientWithOptions(dio);
+class LibraryClient {
+  LibraryClient(this._transport);
 
   final Dio _transport;
 
@@ -90,48 +86,50 @@ abstract class LibraryClient {
     );
   }
 
-  Future<AlbumDetail> _getAlbumWithOptions({
+  /// An album with its tracks
+  ///
+  /// `id` is a library album id or a release-group MBID. `includeTracks` defaults to true; without it `tracks` is empty.
+  Future<models.AlbumDetail> getAlbum({
     Map<String, Object?> extra = const {},
     CancelToken? cancelToken,
     Options? options,
     required String id,
     bool? includeTracks,
   }) async {
+    if (const {'', '.', '..'}.contains(Uri.encodeComponent(id))) {
+      throw ArgumentError('Invalid path segment.');
+    }
     final _options = (options ?? Options()).copyWith(
       method: "GET",
       responseType: ResponseType.json,
       extra: {...?options?.extra, ...extra},
       headers: {...?options?.headers, 'Accept': "application/json"},
+      validateStatus: (status) => status != null && (status == 200),
     );
     final response = await _transport.request<dynamic>(
-      "/api/library/albums/" + id.toString(),
+      "/api/library/albums/" + Uri.encodeComponent(id),
       options: _options,
       queryParameters: <String, Object?>{
         if (includeTracks != null) "includeTracks": includeTracks,
       },
       cancelToken: cancelToken,
     );
-    return AlbumDetail.fromJson(response.data as Map<String, Object?>);
+    return models.AlbumDetail.fromJson(response.data as Map<String, Object?>);
   }
 
-  /// An album with its tracks
+  /// Like, dislike or clear every library track of an album
   ///
-  /// `id` is a library album id or a release-group MBID. `includeTracks` defaults to true; without it `tracks` is empty.
-  @GET('/api/library/albums/{id}')
-  Future<AlbumDetail> getAlbum({
-    @Extras() Map<String, Object?> extra = const {},
-    @CancelRequest() CancelToken? cancelToken,
-    Options? options,
-    @Path('id') required String id,
-    @Query('includeTracks') bool? includeTracks,
-  });
-  Future<AlbumPreferenceResponse> _setAlbumPreferenceWithOptions({
+  /// 400 for an invalid signal, 404 when there is no such album, 422 when the album has no library tracks.
+  Future<models.AlbumPreferenceResponse> setAlbumPreference({
     Map<String, Object?> extra = const {},
     CancelToken? cancelToken,
     Options? options,
     required String id,
-    required AlbumPreferenceRequest body,
+    required models.AlbumPreferenceRequest body,
   }) async {
+    if (const {'', '.', '..'}.contains(Uri.encodeComponent(id))) {
+      throw ArgumentError('Invalid path segment.');
+    }
     final _options = (options ?? Options()).copyWith(
       method: "POST",
       responseType: ResponseType.json,
@@ -143,30 +141,18 @@ abstract class LibraryClient {
           if (entry.key.toLowerCase() != 'content-type') entry.key: entry.value,
         'Accept': "application/json",
       },
+      validateStatus: (status) => status != null && (status == 200),
     );
     final response = await _transport.request<dynamic>(
-      "/api/library/albums/" + id.toString() + "/preference",
+      "/api/library/albums/" + Uri.encodeComponent(id) + "/preference",
       options: _options,
       data: convert.jsonEncode(body),
       cancelToken: cancelToken,
     );
-    return AlbumPreferenceResponse.fromJson(
+    return models.AlbumPreferenceResponse.fromJson(
       response.data as Map<String, Object?>,
     );
   }
-
-  /// Like, dislike or clear every library track of an album
-  ///
-  /// 400 for an invalid signal, 404 when there is no such album, 422 when the album has no library tracks.
-  @POST('/api/library/albums/{id}/preference')
-  @Headers({'Content-Type': 'application/json'})
-  Future<AlbumPreferenceResponse> setAlbumPreference({
-    @Extras() Map<String, Object?> extra = const {},
-    @CancelRequest() CancelToken? cancelToken,
-    Options? options,
-    @Path('id') required String id,
-    @Body() required AlbumPreferenceRequest body,
-  });
 
   /// One page of library artists
   ///
@@ -209,7 +195,10 @@ abstract class LibraryClient {
     );
   }
 
-  Future<ArtistDetail> _getArtistWithOptions({
+  /// An artist with its albums, top tracks and similar artists
+  ///
+  /// `id` is a library artist id, a MusicBrainz artist id, or an artist name (case-insensitive). Each `include*` flag defaults to true; with `includeDiscography` the albums include MusicBrainz release groups the library does not hold.
+  Future<models.ArtistDetail> getArtist({
     Map<String, Object?> extra = const {},
     CancelToken? cancelToken,
     Options? options,
@@ -218,14 +207,18 @@ abstract class LibraryClient {
     bool? includeTopTracks,
     bool? includeSimilarArtists,
   }) async {
+    if (const {'', '.', '..'}.contains(Uri.encodeComponent(id))) {
+      throw ArgumentError('Invalid path segment.');
+    }
     final _options = (options ?? Options()).copyWith(
       method: "GET",
       responseType: ResponseType.json,
       extra: {...?options?.extra, ...extra},
       headers: {...?options?.headers, 'Accept': "application/json"},
+      validateStatus: (status) => status != null && (status == 200),
     );
     final response = await _transport.request<dynamic>(
-      "/api/library/artists/" + id.toString(),
+      "/api/library/artists/" + Uri.encodeComponent(id),
       options: _options,
       queryParameters: <String, Object?>{
         if (includeDiscography != null)
@@ -236,23 +229,13 @@ abstract class LibraryClient {
       },
       cancelToken: cancelToken,
     );
-    return ArtistDetail.fromJson(response.data as Map<String, Object?>);
+    return models.ArtistDetail.fromJson(response.data as Map<String, Object?>);
   }
 
-  /// An artist with its albums, top tracks and similar artists
+  /// One page of the user's liked tracks
   ///
-  /// `id` is a library artist id, a MusicBrainz artist id, or an artist name (case-insensitive). Each `include*` flag defaults to true; with `includeDiscography` the albums include MusicBrainz release groups the library does not hold.
-  @GET('/api/library/artists/{id}')
-  Future<ArtistDetail> getArtist({
-    @Extras() Map<String, Object?> extra = const {},
-    @CancelRequest() CancelToken? cancelToken,
-    Options? options,
-    @Path('id') required String id,
-    @Query('includeDiscography') bool? includeDiscography,
-    @Query('includeTopTracks') bool? includeTopTracks,
-    @Query('includeSimilarArtists') bool? includeSimilarArtists,
-  });
-  Future<LikedTracksResponse> _listLikedTracksWithOptions({
+  /// Library and streaming likes merged, newest first, with duplicates of one recording collapsed. `cursorLikedAt` and `cursorTrackId` must be sent together (400 otherwise, or when `cursorLikedAt` is not a timestamp).
+  Future<models.LikedTracksResponse> listLikedTracks({
     Map<String, Object?> extra = const {},
     CancelToken? cancelToken,
     Options? options,
@@ -265,6 +248,7 @@ abstract class LibraryClient {
       responseType: ResponseType.json,
       extra: {...?options?.extra, ...extra},
       headers: {...?options?.headers, 'Accept': "application/json"},
+      validateStatus: (status) => status != null && (status == 200),
     );
     final response = await _transport.request<dynamic>(
       "/api/library/liked",
@@ -276,26 +260,19 @@ abstract class LibraryClient {
       },
       cancelToken: cancelToken,
     );
-    return LikedTracksResponse.fromJson(response.data as Map<String, Object?>);
+    return models.LikedTracksResponse.fromJson(
+      response.data as Map<String, Object?>,
+    );
   }
 
-  /// One page of the user's liked tracks
+  /// Like, dislike or clear the preference of any track
   ///
-  /// Library and streaming likes merged, newest first, with duplicates of one recording collapsed. `cursorLikedAt` and `cursorTrackId` must be sent together (400 otherwise, or when `cursorLikedAt` is not a timestamp).
-  @GET('/api/library/liked')
-  Future<LikedTracksResponse> listLikedTracks({
-    @Extras() Map<String, Object?> extra = const {},
-    @CancelRequest() CancelToken? cancelToken,
-    Options? options,
-    @Query('limit') int? limit,
-    @Query('cursorLikedAt') String? cursorLikedAt,
-    @Query('cursorTrackId') String? cursorTrackId,
-  });
-  Future<TrackPreferenceResponse> _setTrackPreferenceWithOptions({
+  /// `metadata` is required (400 `METADATA_REQUIRED`) only when a TIDAL or YouTube Music track row must be created. 400 for an invalid signal or `INVALID_PLAYBACK_ID`, 404 `TRACK_NOT_FOUND`, 409 `SOURCE_UNAVAILABLE` for a track no preference can be stored for. A dislike of a streaming track clears its like and answers `neutral`.
+  Future<models.TrackPreferenceResponse> setTrackPreference({
     Map<String, Object?> extra = const {},
     CancelToken? cancelToken,
     Options? options,
-    required TrackPreferenceRequest body,
+    required models.TrackPreferenceRequest body,
   }) async {
     final _options = (options ?? Options()).copyWith(
       method: "POST",
@@ -308,6 +285,7 @@ abstract class LibraryClient {
           if (entry.key.toLowerCase() != 'content-type') entry.key: entry.value,
         'Accept': "application/json",
       },
+      validateStatus: (status) => status != null && (status == 200),
     );
     final response = await _transport.request<dynamic>(
       "/api/library/preferences",
@@ -315,41 +293,7 @@ abstract class LibraryClient {
       data: convert.jsonEncode(body),
       cancelToken: cancelToken,
     );
-    return TrackPreferenceResponse.fromJson(
-      response.data as Map<String, Object?>,
-    );
-  }
-
-  /// Like, dislike or clear the preference of any track
-  ///
-  /// `metadata` is required (400 `METADATA_REQUIRED`) only when a TIDAL or YouTube Music track row must be created. 400 for an invalid signal or `INVALID_PLAYBACK_ID`, 404 `TRACK_NOT_FOUND`, 409 `SOURCE_UNAVAILABLE` for a track no preference can be stored for. A dislike of a streaming track clears its like and answers `neutral`.
-  @POST('/api/library/preferences')
-  @Headers({'Content-Type': 'application/json'})
-  Future<TrackPreferenceResponse> setTrackPreference({
-    @Extras() Map<String, Object?> extra = const {},
-    @CancelRequest() CancelToken? cancelToken,
-    Options? options,
-    @Body() required TrackPreferenceRequest body,
-  });
-  Future<RecentlyAddedResponse> _listRecentlyAddedWithOptions({
-    Map<String, Object?> extra = const {},
-    CancelToken? cancelToken,
-    Options? options,
-    int? limit,
-  }) async {
-    final _options = (options ?? Options()).copyWith(
-      method: "GET",
-      responseType: ResponseType.json,
-      extra: {...?options?.extra, ...extra},
-      headers: {...?options?.headers, 'Accept': "application/json"},
-    );
-    final response = await _transport.request<dynamic>(
-      "/api/library/recently-added",
-      options: _options,
-      queryParameters: <String, Object?>{if (limit != null) "limit": limit},
-      cancelToken: cancelToken,
-    );
-    return RecentlyAddedResponse.fromJson(
+    return models.TrackPreferenceResponse.fromJson(
       response.data as Map<String, Object?>,
     );
   }
@@ -357,14 +301,7 @@ abstract class LibraryClient {
   /// Artists of the most recently added library albums
   ///
   /// `limit` defaults to 10; at most the 20 most recently added albums are considered.
-  @GET('/api/library/recently-added')
-  Future<RecentlyAddedResponse> listRecentlyAdded({
-    @Extras() Map<String, Object?> extra = const {},
-    @CancelRequest() CancelToken? cancelToken,
-    Options? options,
-    @Query('limit') int? limit,
-  });
-  Future<RecentlyListenedResponse> _listRecentlyListenedWithOptions({
+  Future<models.RecentlyAddedResponse> listRecentlyAdded({
     Map<String, Object?> extra = const {},
     CancelToken? cancelToken,
     Options? options,
@@ -375,14 +312,15 @@ abstract class LibraryClient {
       responseType: ResponseType.json,
       extra: {...?options?.extra, ...extra},
       headers: {...?options?.headers, 'Accept': "application/json"},
+      validateStatus: (status) => status != null && (status == 200),
     );
     final response = await _transport.request<dynamic>(
-      "/api/library/recently-listened",
+      "/api/library/recently-added",
       options: _options,
       queryParameters: <String, Object?>{if (limit != null) "limit": limit},
       cancelToken: cancelToken,
     );
-    return RecentlyListenedResponse.fromJson(
+    return models.RecentlyAddedResponse.fromJson(
       response.data as Map<String, Object?>,
     );
   }
@@ -390,13 +328,29 @@ abstract class LibraryClient {
   /// Recently listened artists, audiobooks and podcasts
   ///
   /// `limit` defaults to 10 and is clamped to 1 to 100.
-  @GET('/api/library/recently-listened')
-  Future<RecentlyListenedResponse> listRecentlyListened({
-    @Extras() Map<String, Object?> extra = const {},
-    @CancelRequest() CancelToken? cancelToken,
+  Future<models.RecentlyListenedResponse> listRecentlyListened({
+    Map<String, Object?> extra = const {},
+    CancelToken? cancelToken,
     Options? options,
-    @Query('limit') int? limit,
-  });
+    int? limit,
+  }) async {
+    final _options = (options ?? Options()).copyWith(
+      method: "GET",
+      responseType: ResponseType.json,
+      extra: {...?options?.extra, ...extra},
+      headers: {...?options?.headers, 'Accept': "application/json"},
+      validateStatus: (status) => status != null && (status == 200),
+    );
+    final response = await _transport.request<dynamic>(
+      "/api/library/recently-listened",
+      options: _options,
+      queryParameters: <String, Object?>{if (limit != null) "limit": limit},
+      cancelToken: cancelToken,
+    );
+    return models.RecentlyListenedResponse.fromJson(
+      response.data as Map<String, Object?>,
+    );
+  }
 
   /// One page of library tracks (the Songs list)
   ///
@@ -435,7 +389,10 @@ abstract class LibraryClient {
     );
   }
 
-  Future<ShuffledTracksResponse> _listShuffledTracksWithOptions({
+  /// A random sample of library tracks
+  ///
+  /// `limit` defaults to 100 and is capped at 10000. `total` is the number of library tracks sampled from; an empty library answers no tracks and `total` 0.
+  Future<models.ShuffledTracksResponse> listShuffledTracks({
     Map<String, Object?> extra = const {},
     CancelToken? cancelToken,
     Options? options,
@@ -446,6 +403,7 @@ abstract class LibraryClient {
       responseType: ResponseType.json,
       extra: {...?options?.extra, ...extra},
       headers: {...?options?.headers, 'Accept': "application/json"},
+      validateStatus: (status) => status != null && (status == 200),
     );
     final response = await _transport.request<dynamic>(
       "/api/library/tracks/shuffle",
@@ -453,220 +411,8 @@ abstract class LibraryClient {
       queryParameters: <String, Object?>{if (limit != null) "limit": limit},
       cancelToken: cancelToken,
     );
-    return ShuffledTracksResponse.fromJson(
+    return models.ShuffledTracksResponse.fromJson(
       response.data as Map<String, Object?>,
     );
-  }
-
-  /// A random sample of library tracks
-  ///
-  /// `limit` defaults to 100 and is capped at 10000. `total` is the number of library tracks sampled from; an empty library answers no tracks and `total` 0.
-  @GET('/api/library/tracks/shuffle')
-  Future<ShuffledTracksResponse> listShuffledTracks({
-    @Extras() Map<String, Object?> extra = const {},
-    @CancelRequest() CancelToken? cancelToken,
-    Options? options,
-    @Query('limit') int? limit,
-  });
-}
-
-class _LibraryClientWithOptions extends _LibraryClient {
-  _LibraryClientWithOptions(Dio dio) : super._(dio, dio);
-
-  @override
-  Future<AlbumDetail> getAlbum({
-    Map<String, Object?> extra = const {},
-    CancelToken? cancelToken,
-    Options? options,
-    required String id,
-    bool? includeTracks,
-  }) {
-    return options == null
-        ? super.getAlbum(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            id: id,
-            includeTracks: includeTracks,
-          )
-        : _getAlbumWithOptions(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            id: id,
-            includeTracks: includeTracks,
-          );
-  }
-
-  @override
-  Future<AlbumPreferenceResponse> setAlbumPreference({
-    Map<String, Object?> extra = const {},
-    CancelToken? cancelToken,
-    Options? options,
-    required String id,
-    required AlbumPreferenceRequest body,
-  }) {
-    return options == null
-        ? super.setAlbumPreference(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            id: id,
-            body: body,
-          )
-        : _setAlbumPreferenceWithOptions(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            id: id,
-            body: body,
-          );
-  }
-
-  @override
-  Future<ArtistDetail> getArtist({
-    Map<String, Object?> extra = const {},
-    CancelToken? cancelToken,
-    Options? options,
-    required String id,
-    bool? includeDiscography,
-    bool? includeTopTracks,
-    bool? includeSimilarArtists,
-  }) {
-    return options == null
-        ? super.getArtist(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            id: id,
-            includeDiscography: includeDiscography,
-            includeTopTracks: includeTopTracks,
-            includeSimilarArtists: includeSimilarArtists,
-          )
-        : _getArtistWithOptions(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            id: id,
-            includeDiscography: includeDiscography,
-            includeTopTracks: includeTopTracks,
-            includeSimilarArtists: includeSimilarArtists,
-          );
-  }
-
-  @override
-  Future<LikedTracksResponse> listLikedTracks({
-    Map<String, Object?> extra = const {},
-    CancelToken? cancelToken,
-    Options? options,
-    int? limit,
-    String? cursorLikedAt,
-    String? cursorTrackId,
-  }) {
-    return options == null
-        ? super.listLikedTracks(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            limit: limit,
-            cursorLikedAt: cursorLikedAt,
-            cursorTrackId: cursorTrackId,
-          )
-        : _listLikedTracksWithOptions(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            limit: limit,
-            cursorLikedAt: cursorLikedAt,
-            cursorTrackId: cursorTrackId,
-          );
-  }
-
-  @override
-  Future<TrackPreferenceResponse> setTrackPreference({
-    Map<String, Object?> extra = const {},
-    CancelToken? cancelToken,
-    Options? options,
-    required TrackPreferenceRequest body,
-  }) {
-    return options == null
-        ? super.setTrackPreference(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            body: body,
-          )
-        : _setTrackPreferenceWithOptions(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            body: body,
-          );
-  }
-
-  @override
-  Future<RecentlyAddedResponse> listRecentlyAdded({
-    Map<String, Object?> extra = const {},
-    CancelToken? cancelToken,
-    Options? options,
-    int? limit,
-  }) {
-    return options == null
-        ? super.listRecentlyAdded(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            limit: limit,
-          )
-        : _listRecentlyAddedWithOptions(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            limit: limit,
-          );
-  }
-
-  @override
-  Future<RecentlyListenedResponse> listRecentlyListened({
-    Map<String, Object?> extra = const {},
-    CancelToken? cancelToken,
-    Options? options,
-    int? limit,
-  }) {
-    return options == null
-        ? super.listRecentlyListened(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            limit: limit,
-          )
-        : _listRecentlyListenedWithOptions(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            limit: limit,
-          );
-  }
-
-  @override
-  Future<ShuffledTracksResponse> listShuffledTracks({
-    Map<String, Object?> extra = const {},
-    CancelToken? cancelToken,
-    Options? options,
-    int? limit,
-  }) {
-    return options == null
-        ? super.listShuffledTracks(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            limit: limit,
-          )
-        : _listShuffledTracksWithOptions(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            limit: limit,
-          );
   }
 }

@@ -2,45 +2,32 @@
 
 import 'dart:convert' as convert;
 
-import 'package:dio/dio.dart'
-    show Dio, Options, ResponseType, CancelToken, RequestOptions;
-import 'package:retrofit/retrofit.dart'
-    show
-        RestApi,
-        Extras,
-        CancelRequest,
-        GET,
-        POST,
-        DELETE,
-        ParseErrorLogger,
-        Body,
-        Headers,
-        Path,
-        Query;
+import 'package:dio/dio.dart' show Dio, Options, ResponseType, CancelToken;
 
 import 'models/clear_playback_state_response.dart'
+    as models
     show ClearPlaybackStateResponse;
-import 'models/lyrics.dart' show Lyrics;
+import 'models/lyrics.dart' as models show Lyrics;
 import 'models/playback_quality.dart' as models show PlaybackQuality;
-import 'models/playback_state.dart' show PlaybackState;
+import 'models/playback_state.dart' as models show PlaybackState;
 import 'models/record_play_request.dart' as models show RecordPlayRequest;
 import 'models/record_play_response200.dart'
     as models
     show RecordPlayResponse200;
-import 'models/save_playback_state_request.dart' show SavePlaybackStateRequest;
+import 'models/save_playback_state_request.dart'
+    as models
+    show SavePlaybackStateRequest;
 import 'models/stream_info.dart' as models show StreamInfo;
 
-part 'playback_client.g.dart';
-
-@RestApi(headers: {'Accept': 'application/json'})
-abstract class PlaybackClient {
-  PlaybackClient._(this._transport);
-
-  factory PlaybackClient(Dio dio) => _PlaybackClientWithOptions(dio);
+class PlaybackClient {
+  PlaybackClient(this._transport);
 
   final Dio _transport;
 
-  Future<Lyrics> _getLyricsWithOptions({
+  /// Lyrics of a track
+  ///
+  /// Synced (LRC) or plain lyrics, from the cache, the file's embedded tags, or LRCLIB. For a library track the stored metadata drives the lookup; for any other path value the `artist`, `title`, `album` and `duration` parameters do, and without `artist` and `title` the answer is `source: none`. 504 when the lookup times out.
+  Future<models.Lyrics> getLyrics({
     Map<String, Object?> extra = const {},
     CancelToken? cancelToken,
     Options? options,
@@ -50,14 +37,18 @@ abstract class PlaybackClient {
     String? album,
     num? duration,
   }) async {
+    if (const {'', '.', '..'}.contains(Uri.encodeComponent(trackId))) {
+      throw ArgumentError('Invalid path segment.');
+    }
     final _options = (options ?? Options()).copyWith(
       method: "GET",
       responseType: ResponseType.json,
       extra: {...?options?.extra, ...extra},
       headers: {...?options?.headers, 'Accept': "application/json"},
+      validateStatus: (status) => status != null && (status == 200),
     );
     final response = await _transport.request<dynamic>(
-      "/api/lyrics/" + trackId.toString(),
+      "/api/lyrics/" + Uri.encodeComponent(trackId),
       options: _options,
       queryParameters: <String, Object?>{
         if (artist != null) "artist": artist,
@@ -67,24 +58,13 @@ abstract class PlaybackClient {
       },
       cancelToken: cancelToken,
     );
-    return Lyrics.fromJson(response.data as Map<String, Object?>);
+    return models.Lyrics.fromJson(response.data as Map<String, Object?>);
   }
 
-  /// Lyrics of a track
+  /// Read the stored playback state of this device
   ///
-  /// Synced (LRC) or plain lyrics, from the cache, the file's embedded tags, or LRCLIB. For a library track the stored metadata drives the lookup; for any other path value the `artist`, `title`, `album` and `duration` parameters do, and without `artist` and `title` the answer is `source: none`. 504 when the lookup times out.
-  @GET('/api/lyrics/{trackId}')
-  Future<Lyrics> getLyrics({
-    @Extras() Map<String, Object?> extra = const {},
-    @CancelRequest() CancelToken? cancelToken,
-    Options? options,
-    @Path('trackId') required String trackId,
-    @Query('artist') String? artist,
-    @Query('title') String? title,
-    @Query('album') String? album,
-    @Query('duration') num? duration,
-  });
-  Future<PlaybackState?> _getPlaybackStateWithOptions({
+  /// The `X-Playback-Device-Id` request header selects the device whose state is read or written; it defaults to `legacy` and is cut to 128 characters. Answers `null` when no state is stored. Music-track queue items carry a `playbackId` derived when the state is read.
+  Future<models.PlaybackState?> getPlaybackState({
     Map<String, Object?> extra = const {},
     CancelToken? cancelToken,
     Options? options,
@@ -94,6 +74,7 @@ abstract class PlaybackClient {
       responseType: ResponseType.json,
       extra: {...?options?.extra, ...extra},
       headers: {...?options?.headers, 'Accept': "application/json"},
+      validateStatus: (status) => status != null && (status == 200),
     );
     final response = await _transport.request<dynamic>(
       "/api/playback-state",
@@ -102,23 +83,17 @@ abstract class PlaybackClient {
     );
     return response.data == null
         ? null
-        : PlaybackState.fromJson(response.data as Map<String, Object?>);
+        : models.PlaybackState.fromJson(response.data as Map<String, Object?>);
   }
 
-  /// Read the stored playback state of this device
+  /// Store the playback state of this device
   ///
-  /// The `X-Playback-Device-Id` request header selects the device whose state is read or written; it defaults to `legacy` and is cut to 128 characters. Answers `null` when no state is stored. Music-track queue items carry a `playbackId` derived when the state is read.
-  @GET('/api/playback-state')
-  Future<PlaybackState?> getPlaybackState({
-    @Extras() Map<String, Object?> extra = const {},
-    @CancelRequest() CancelToken? cancelToken,
-    Options? options,
-  });
-  Future<PlaybackState?> _savePlaybackStateWithOptions({
+  /// The `X-Playback-Device-Id` request header selects the device whose state is read or written; it defaults to `legacy` and is cut to 128 characters. Omitted fields keep their stored value. The queue keeps its first 100 entries; a `playbackId` entry is stored in the legacy format, and an invalid or unknown one answers 400 `INVALID_PLAYBACK_ID` or 404 `TRACK_NOT_FOUND`.
+  Future<models.PlaybackState?> savePlaybackState({
     Map<String, Object?> extra = const {},
     CancelToken? cancelToken,
     Options? options,
-    required SavePlaybackStateRequest body,
+    required models.SavePlaybackStateRequest body,
   }) async {
     final _options = (options ?? Options()).copyWith(
       method: "POST",
@@ -131,6 +106,7 @@ abstract class PlaybackClient {
           if (entry.key.toLowerCase() != 'content-type') entry.key: entry.value,
         'Accept': "application/json",
       },
+      validateStatus: (status) => status != null && (status == 200),
     );
     final response = await _transport.request<dynamic>(
       "/api/playback-state",
@@ -140,21 +116,13 @@ abstract class PlaybackClient {
     );
     return response.data == null
         ? null
-        : PlaybackState.fromJson(response.data as Map<String, Object?>);
+        : models.PlaybackState.fromJson(response.data as Map<String, Object?>);
   }
 
-  /// Store the playback state of this device
+  /// Clear the stored playback state of this device
   ///
-  /// The `X-Playback-Device-Id` request header selects the device whose state is read or written; it defaults to `legacy` and is cut to 128 characters. Omitted fields keep their stored value. The queue keeps its first 100 entries; a `playbackId` entry is stored in the legacy format, and an invalid or unknown one answers 400 `INVALID_PLAYBACK_ID` or 404 `TRACK_NOT_FOUND`.
-  @POST('/api/playback-state')
-  @Headers({'Content-Type': 'application/json'})
-  Future<PlaybackState?> savePlaybackState({
-    @Extras() Map<String, Object?> extra = const {},
-    @CancelRequest() CancelToken? cancelToken,
-    Options? options,
-    @Body() required SavePlaybackStateRequest body,
-  });
-  Future<ClearPlaybackStateResponse> _clearPlaybackStateWithOptions({
+  /// The `X-Playback-Device-Id` request header selects the device whose state is read or written; it defaults to `legacy` and is cut to 128 characters. The shared `legacy` state is cleared too.
+  Future<models.ClearPlaybackStateResponse> clearPlaybackState({
     Map<String, Object?> extra = const {},
     CancelToken? cancelToken,
     Options? options,
@@ -164,26 +132,17 @@ abstract class PlaybackClient {
       responseType: ResponseType.json,
       extra: {...?options?.extra, ...extra},
       headers: {...?options?.headers, 'Accept': "application/json"},
+      validateStatus: (status) => status != null && (status == 200),
     );
     final response = await _transport.request<dynamic>(
       "/api/playback-state",
       options: _options,
       cancelToken: cancelToken,
     );
-    return ClearPlaybackStateResponse.fromJson(
+    return models.ClearPlaybackStateResponse.fromJson(
       response.data as Map<String, Object?>,
     );
   }
-
-  /// Clear the stored playback state of this device
-  ///
-  /// The `X-Playback-Device-Id` request header selects the device whose state is read or written; it defaults to `legacy` and is cut to 128 characters. The shared `legacy` state is cleared too.
-  @DELETE('/api/playback-state')
-  Future<ClearPlaybackStateResponse> clearPlaybackState({
-    @Extras() Map<String, Object?> extra = const {},
-    @CancelRequest() CancelToken? cancelToken,
-    Options? options,
-  });
 
   /// Describe the audio stream for any track source
   ///
@@ -245,103 +204,5 @@ abstract class PlaybackClient {
       cancelToken: cancelToken,
     );
     return models.RecordPlayResponse200.fromJson(response.data);
-  }
-}
-
-class _PlaybackClientWithOptions extends _PlaybackClient {
-  _PlaybackClientWithOptions(Dio dio) : super._(dio, dio);
-
-  @override
-  Future<Lyrics> getLyrics({
-    Map<String, Object?> extra = const {},
-    CancelToken? cancelToken,
-    Options? options,
-    required String trackId,
-    String? artist,
-    String? title,
-    String? album,
-    num? duration,
-  }) {
-    return options == null
-        ? super.getLyrics(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            trackId: trackId,
-            artist: artist,
-            title: title,
-            album: album,
-            duration: duration,
-          )
-        : _getLyricsWithOptions(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            trackId: trackId,
-            artist: artist,
-            title: title,
-            album: album,
-            duration: duration,
-          );
-  }
-
-  @override
-  Future<PlaybackState?> getPlaybackState({
-    Map<String, Object?> extra = const {},
-    CancelToken? cancelToken,
-    Options? options,
-  }) {
-    return options == null
-        ? super.getPlaybackState(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-          )
-        : _getPlaybackStateWithOptions(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-          );
-  }
-
-  @override
-  Future<PlaybackState?> savePlaybackState({
-    Map<String, Object?> extra = const {},
-    CancelToken? cancelToken,
-    Options? options,
-    required SavePlaybackStateRequest body,
-  }) {
-    return options == null
-        ? super.savePlaybackState(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            body: body,
-          )
-        : _savePlaybackStateWithOptions(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            body: body,
-          );
-  }
-
-  @override
-  Future<ClearPlaybackStateResponse> clearPlaybackState({
-    Map<String, Object?> extra = const {},
-    CancelToken? cancelToken,
-    Options? options,
-  }) {
-    return options == null
-        ? super.clearPlaybackState(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-          )
-        : _clearPlaybackStateWithOptions(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-          );
   }
 }

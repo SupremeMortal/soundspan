@@ -3,6 +3,6 @@ swagger_parser:
   output_directory: lib/src/generated
   generation:
     root_api_class_name: SoundspanRestClient
-    http_client: retrofit
+    http_client: dio
     serializer: freezed
     unknown_enum_values: preserve   # a value added by a newer server decodes to `<Enum>Unknown`

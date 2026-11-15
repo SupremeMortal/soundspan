@@ -2,46 +2,36 @@
 
 import 'dart:convert' as convert;
 
-import 'package:dio/dio.dart'
-    show Dio, Options, ResponseType, CancelToken, RequestOptions;
-import 'package:retrofit/retrofit.dart'
-    show
-        RestApi,
-        Extras,
-        CancelRequest,
-        GET,
-        POST,
-        DELETE,
-        ParseErrorLogger,
-        Body,
-        Headers,
-        Query;
+import 'package:dio/dio.dart' show Dio, Options, ResponseType, CancelToken;
 
 import 'models/complete_offline_item_request.dart'
+    as models
     show CompleteOfflineItemRequest;
-import 'models/completed_offline_item.dart' show CompletedOfflineItem;
+import 'models/completed_offline_item.dart' as models show CompletedOfflineItem;
 import 'models/delete_offline_items_request.dart'
+    as models
     show DeleteOfflineItemsRequest;
 import 'models/delete_offline_items_response.dart'
+    as models
     show DeleteOfflineItemsResponse;
 import 'models/device_offline_items_response.dart'
+    as models
     show DeviceOfflineItemsResponse;
-import 'models/offline_items_response.dart' show OfflineItemsResponse;
-import 'models/offline_stats.dart' show OfflineStats;
+import 'models/offline_items_response.dart' as models show OfflineItemsResponse;
+import 'models/offline_stats.dart' as models show OfflineStats;
 import 'models/request_offline_items_request.dart'
+    as models
     show RequestOfflineItemsRequest;
 
-part 'offline_client.g.dart';
-
-@RestApi(headers: {'Accept': 'application/json'})
-abstract class OfflineClient {
-  OfflineClient._(this._transport);
-
-  factory OfflineClient(Dio dio) => _OfflineClientWithOptions(dio);
+class OfflineClient {
+  OfflineClient(this._transport);
 
   final Dio _transport;
 
-  Future<DeviceOfflineItemsResponse> _listOfflineItemsWithOptions({
+  /// List what the server believes a device holds
+  ///
+  /// Used to reconcile after a reinstall. Errors carry `code` `INVALID_REQUEST` (400).
+  Future<models.DeviceOfflineItemsResponse> listOfflineItems({
     Map<String, Object?> extra = const {},
     CancelToken? cancelToken,
     Options? options,
@@ -52,6 +42,7 @@ abstract class OfflineClient {
       responseType: ResponseType.json,
       extra: {...?options?.extra, ...extra},
       headers: {...?options?.headers, 'Accept': "application/json"},
+      validateStatus: (status) => status != null && (status == 200),
     );
     final response = await _transport.request<dynamic>(
       "/api/offline/items",
@@ -59,26 +50,19 @@ abstract class OfflineClient {
       queryParameters: <String, Object?>{"deviceId": deviceId},
       cancelToken: cancelToken,
     );
-    return DeviceOfflineItemsResponse.fromJson(
+    return models.DeviceOfflineItemsResponse.fromJson(
       response.data as Map<String, Object?>,
     );
   }
 
-  /// List what the server believes a device holds
+  /// Request offline downloads for a track, album, or playlist
   ///
-  /// Used to reconcile after a reinstall. Errors carry `code` `INVALID_REQUEST` (400).
-  @GET('/api/offline/items')
-  Future<DeviceOfflineItemsResponse> listOfflineItems({
-    @Extras() Map<String, Object?> extra = const {},
-    @CancelRequest() CancelToken? cancelToken,
-    Options? options,
-    @Query('deviceId') required String deviceId,
-  });
-  Future<OfflineItemsResponse> _requestOfflineItemsWithOptions({
+  /// Resolves the request to downloadable items or blocked items with a reason. `id` is a playbackId for `track` and the album or playlist id otherwise; albums and playlists include every visible track in order. Records no cached file; `completeOfflineItem` does. Errors carry `code` `INVALID_REQUEST` or `INVALID_PLAYBACK_ID` (400), `ALBUM_NOT_FOUND` or `PLAYLIST_NOT_FOUND` (404), and `CACHE_LIMIT_EXCEEDED` (409) when the used bytes of every device plus the estimate exceed the limit.
+  Future<models.OfflineItemsResponse> requestOfflineItems({
     Map<String, Object?> extra = const {},
     CancelToken? cancelToken,
     Options? options,
-    required RequestOfflineItemsRequest body,
+    required models.RequestOfflineItemsRequest body,
   }) async {
     final _options = (options ?? Options()).copyWith(
       method: "POST",
@@ -91,6 +75,7 @@ abstract class OfflineClient {
           if (entry.key.toLowerCase() != 'content-type') entry.key: entry.value,
         'Accept': "application/json",
       },
+      validateStatus: (status) => status != null && (status == 200),
     );
     final response = await _transport.request<dynamic>(
       "/api/offline/items",
@@ -98,25 +83,19 @@ abstract class OfflineClient {
       data: convert.jsonEncode(body),
       cancelToken: cancelToken,
     );
-    return OfflineItemsResponse.fromJson(response.data as Map<String, Object?>);
+    return models.OfflineItemsResponse.fromJson(
+      response.data as Map<String, Object?>,
+    );
   }
 
-  /// Request offline downloads for a track, album, or playlist
+  /// Remove a device's offline items
   ///
-  /// Resolves the request to downloadable items or blocked items with a reason. `id` is a playbackId for `track` and the album or playlist id otherwise; albums and playlists include every visible track in order. Records no cached file; `completeOfflineItem` does. Errors carry `code` `INVALID_REQUEST` or `INVALID_PLAYBACK_ID` (400), `ALBUM_NOT_FOUND` or `PLAYLIST_NOT_FOUND` (404), and `CACHE_LIMIT_EXCEEDED` (409) when the used bytes of every device plus the estimate exceed the limit.
-  @POST('/api/offline/items')
-  @Headers({'Content-Type': 'application/json'})
-  Future<OfflineItemsResponse> requestOfflineItems({
-    @Extras() Map<String, Object?> extra = const {},
-    @CancelRequest() CancelToken? cancelToken,
-    Options? options,
-    @Body() required RequestOfflineItemsRequest body,
-  });
-  Future<DeleteOfflineItemsResponse> _deleteOfflineItemsWithOptions({
+  /// Unknown ids are ignored. Errors carry `code` `INVALID_REQUEST` (400).
+  Future<models.DeleteOfflineItemsResponse> deleteOfflineItems({
     Map<String, Object?> extra = const {},
     CancelToken? cancelToken,
     Options? options,
-    required DeleteOfflineItemsRequest body,
+    required models.DeleteOfflineItemsRequest body,
   }) async {
     final _options = (options ?? Options()).copyWith(
       method: "DELETE",
@@ -129,6 +108,7 @@ abstract class OfflineClient {
           if (entry.key.toLowerCase() != 'content-type') entry.key: entry.value,
         'Accept': "application/json",
       },
+      validateStatus: (status) => status != null && (status == 200),
     );
     final response = await _transport.request<dynamic>(
       "/api/offline/items",
@@ -136,27 +116,19 @@ abstract class OfflineClient {
       data: convert.jsonEncode(body),
       cancelToken: cancelToken,
     );
-    return DeleteOfflineItemsResponse.fromJson(
+    return models.DeleteOfflineItemsResponse.fromJson(
       response.data as Map<String, Object?>,
     );
   }
 
-  /// Remove a device's offline items
+  /// Record that a device finished writing an offline file
   ///
-  /// Unknown ids are ignored. Errors carry `code` `INVALID_REQUEST` (400).
-  @DELETE('/api/offline/items')
-  @Headers({'Content-Type': 'application/json'})
-  Future<DeleteOfflineItemsResponse> deleteOfflineItems({
-    @Extras() Map<String, Object?> extra = const {},
-    @CancelRequest() CancelToken? cancelToken,
-    Options? options,
-    @Body() required DeleteOfflineItemsRequest body,
-  });
-  Future<CompletedOfflineItem> _completeOfflineItemWithOptions({
+  /// Upserts the device's cached-item row for the playbackId and quality; calling it again updates the recorded size. Errors carry `code` `INVALID_REQUEST` (400, including a `playbackId` that is not valid) or `TRACK_UNAVAILABLE` (404, the library track no longer exists).
+  Future<models.CompletedOfflineItem> completeOfflineItem({
     Map<String, Object?> extra = const {},
     CancelToken? cancelToken,
     Options? options,
-    required CompleteOfflineItemRequest body,
+    required models.CompleteOfflineItemRequest body,
   }) async {
     final _options = (options ?? Options()).copyWith(
       method: "POST",
@@ -169,6 +141,7 @@ abstract class OfflineClient {
           if (entry.key.toLowerCase() != 'content-type') entry.key: entry.value,
         'Accept': "application/json",
       },
+      validateStatus: (status) => status != null && (status == 200),
     );
     final response = await _transport.request<dynamic>(
       "/api/offline/items/complete",
@@ -176,21 +149,15 @@ abstract class OfflineClient {
       data: convert.jsonEncode(body),
       cancelToken: cancelToken,
     );
-    return CompletedOfflineItem.fromJson(response.data as Map<String, Object?>);
+    return models.CompletedOfflineItem.fromJson(
+      response.data as Map<String, Object?>,
+    );
   }
 
-  /// Record that a device finished writing an offline file
+  /// Get offline cache usage statistics
   ///
-  /// Upserts the device's cached-item row for the playbackId and quality; calling it again updates the recorded size. Errors carry `code` `INVALID_REQUEST` (400, including a `playbackId` that is not valid) or `TRACK_UNAVAILABLE` (404, the library track no longer exists).
-  @POST('/api/offline/items/complete')
-  @Headers({'Content-Type': 'application/json'})
-  Future<CompletedOfflineItem> completeOfflineItem({
-    @Extras() Map<String, Object?> extra = const {},
-    @CancelRequest() CancelToken? cancelToken,
-    Options? options,
-    @Body() required CompleteOfflineItemRequest body,
-  });
-  Future<OfflineStats> _getOfflineStatsWithOptions({
+  /// The top-level numbers always cover every device; with `deviceId` the answer also carries `device`. Errors carry `code` `INVALID_REQUEST` (400) for a `deviceId` that is not a UUID.
+  Future<models.OfflineStats> getOfflineStats({
     Map<String, Object?> extra = const {},
     CancelToken? cancelToken,
     Options? options,
@@ -201,6 +168,7 @@ abstract class OfflineClient {
       responseType: ResponseType.json,
       extra: {...?options?.extra, ...extra},
       headers: {...?options?.headers, 'Accept': "application/json"},
+      validateStatus: (status) => status != null && (status == 200),
     );
     final response = await _transport.request<dynamic>(
       "/api/offline/stats",
@@ -210,131 +178,6 @@ abstract class OfflineClient {
       },
       cancelToken: cancelToken,
     );
-    return OfflineStats.fromJson(response.data as Map<String, Object?>);
-  }
-
-  /// Get offline cache usage statistics
-  ///
-  /// The top-level numbers always cover every device; with `deviceId` the answer also carries `device`. Errors carry `code` `INVALID_REQUEST` (400) for a `deviceId` that is not a UUID.
-  @GET('/api/offline/stats')
-  Future<OfflineStats> getOfflineStats({
-    @Extras() Map<String, Object?> extra = const {},
-    @CancelRequest() CancelToken? cancelToken,
-    Options? options,
-    @Query('deviceId') String? deviceId,
-  });
-}
-
-class _OfflineClientWithOptions extends _OfflineClient {
-  _OfflineClientWithOptions(Dio dio) : super._(dio, dio);
-
-  @override
-  Future<DeviceOfflineItemsResponse> listOfflineItems({
-    Map<String, Object?> extra = const {},
-    CancelToken? cancelToken,
-    Options? options,
-    required String deviceId,
-  }) {
-    return options == null
-        ? super.listOfflineItems(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            deviceId: deviceId,
-          )
-        : _listOfflineItemsWithOptions(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            deviceId: deviceId,
-          );
-  }
-
-  @override
-  Future<OfflineItemsResponse> requestOfflineItems({
-    Map<String, Object?> extra = const {},
-    CancelToken? cancelToken,
-    Options? options,
-    required RequestOfflineItemsRequest body,
-  }) {
-    return options == null
-        ? super.requestOfflineItems(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            body: body,
-          )
-        : _requestOfflineItemsWithOptions(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            body: body,
-          );
-  }
-
-  @override
-  Future<DeleteOfflineItemsResponse> deleteOfflineItems({
-    Map<String, Object?> extra = const {},
-    CancelToken? cancelToken,
-    Options? options,
-    required DeleteOfflineItemsRequest body,
-  }) {
-    return options == null
-        ? super.deleteOfflineItems(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            body: body,
-          )
-        : _deleteOfflineItemsWithOptions(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            body: body,
-          );
-  }
-
-  @override
-  Future<CompletedOfflineItem> completeOfflineItem({
-    Map<String, Object?> extra = const {},
-    CancelToken? cancelToken,
-    Options? options,
-    required CompleteOfflineItemRequest body,
-  }) {
-    return options == null
-        ? super.completeOfflineItem(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            body: body,
-          )
-        : _completeOfflineItemWithOptions(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            body: body,
-          );
-  }
-
-  @override
-  Future<OfflineStats> getOfflineStats({
-    Map<String, Object?> extra = const {},
-    CancelToken? cancelToken,
-    Options? options,
-    String? deviceId,
-  }) {
-    return options == null
-        ? super.getOfflineStats(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            deviceId: deviceId,
-          )
-        : _getOfflineStatsWithOptions(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            deviceId: deviceId,
-          );
+    return models.OfflineStats.fromJson(response.data as Map<String, Object?>);
   }
 }

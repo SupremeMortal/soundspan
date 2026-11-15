@@ -2,45 +2,36 @@
 
 import 'dart:convert' as convert;
 
-import 'package:dio/dio.dart'
-    show Dio, Options, ResponseType, CancelToken, RequestOptions;
-import 'package:retrofit/retrofit.dart'
-    show
-        RestApi,
-        Extras,
-        CancelRequest,
-        GET,
-        POST,
-        ParseErrorLogger,
-        Body,
-        Headers,
-        Path,
-        Query;
+import 'package:dio/dio.dart' show Dio, Options, ResponseType, CancelToken;
 
-import 'models/discover_current.dart' show DiscoverCurrent;
-import 'models/mix_detail.dart' show MixDetail;
+import 'models/discover_current.dart' as models show DiscoverCurrent;
+import 'models/mix_detail.dart' as models show MixDetail;
 import 'models/mix_summary.dart' as models show MixSummary;
-import 'models/popular_artists_response.dart' show PopularArtistsResponse;
-import 'models/radio_decades_response.dart' show RadioDecadesResponse;
-import 'models/radio_genres_response.dart' show RadioGenresResponse;
+import 'models/popular_artists_response.dart'
+    as models
+    show PopularArtistsResponse;
+import 'models/radio_decades_response.dart' as models show RadioDecadesResponse;
+import 'models/radio_genres_response.dart' as models show RadioGenresResponse;
 import 'models/radio_response.dart' as models show RadioResponse;
 import 'models/radio_type.dart' as models show RadioType;
-import 'models/recommendations_for_you.dart' show RecommendationsForYou;
-import 'models/similar_tracks_response.dart' show SimilarTracksResponse;
-import 'models/vibe_search_request.dart' show VibeSearchRequest;
-import 'models/vibe_search_response.dart' show VibeSearchResponse;
+import 'models/recommendations_for_you.dart'
+    as models
+    show RecommendationsForYou;
+import 'models/similar_tracks_response.dart'
+    as models
+    show SimilarTracksResponse;
+import 'models/vibe_search_request.dart' as models show VibeSearchRequest;
+import 'models/vibe_search_response.dart' as models show VibeSearchResponse;
 
-part 'discovery_client.g.dart';
-
-@RestApi(headers: {'Accept': 'application/json'})
-abstract class DiscoveryClient {
-  DiscoveryClient._(this._transport);
-
-  factory DiscoveryClient(Dio dio) => _DiscoveryClientWithOptions(dio);
+class DiscoveryClient {
+  DiscoveryClient(this._transport);
 
   final Dio _transport;
 
-  Future<DiscoverCurrent> _getCurrentDiscoverWithOptions({
+  /// The current week's Discover playlist
+  ///
+  /// 404 with code `FEATURE_DISABLED` when discovery is turned off.
+  Future<models.DiscoverCurrent> getCurrentDiscover({
     Map<String, Object?> extra = const {},
     CancelToken? cancelToken,
     Options? options,
@@ -50,25 +41,22 @@ abstract class DiscoveryClient {
       responseType: ResponseType.json,
       extra: {...?options?.extra, ...extra},
       headers: {...?options?.headers, 'Accept': "application/json"},
+      validateStatus: (status) => status != null && (status == 200),
     );
     final response = await _transport.request<dynamic>(
       "/api/discover/current",
       options: _options,
       cancelToken: cancelToken,
     );
-    return DiscoverCurrent.fromJson(response.data as Map<String, Object?>);
+    return models.DiscoverCurrent.fromJson(
+      response.data as Map<String, Object?>,
+    );
   }
 
-  /// The current week's Discover playlist
+  /// Popular artists from the Last.fm chart
   ///
   /// 404 with code `FEATURE_DISABLED` when discovery is turned off.
-  @GET('/api/discover/current')
-  Future<DiscoverCurrent> getCurrentDiscover({
-    @Extras() Map<String, Object?> extra = const {},
-    @CancelRequest() CancelToken? cancelToken,
-    Options? options,
-  });
-  Future<PopularArtistsResponse> _listPopularArtistsWithOptions({
+  Future<models.PopularArtistsResponse> listPopularArtists({
     Map<String, Object?> extra = const {},
     CancelToken? cancelToken,
     Options? options,
@@ -79,6 +67,7 @@ abstract class DiscoveryClient {
       responseType: ResponseType.json,
       extra: {...?options?.extra, ...extra},
       headers: {...?options?.headers, 'Accept': "application/json"},
+      validateStatus: (status) => status != null && (status == 200),
     );
     final response = await _transport.request<dynamic>(
       "/api/discover/popular-artists",
@@ -86,22 +75,13 @@ abstract class DiscoveryClient {
       queryParameters: <String, Object?>{if (limit != null) "limit": limit},
       cancelToken: cancelToken,
     );
-    return PopularArtistsResponse.fromJson(
+    return models.PopularArtistsResponse.fromJson(
       response.data as Map<String, Object?>,
     );
   }
 
-  /// Popular artists from the Last.fm chart
-  ///
-  /// 404 with code `FEATURE_DISABLED` when discovery is turned off.
-  @GET('/api/discover/popular-artists')
-  Future<PopularArtistsResponse> listPopularArtists({
-    @Extras() Map<String, Object?> extra = const {},
-    @CancelRequest() CancelToken? cancelToken,
-    Options? options,
-    @Query('limit') int? limit,
-  });
-  Future<RadioDecadesResponse> _listRadioDecadesWithOptions({
+  /// Library decades with track counts, for decade radio
+  Future<models.RadioDecadesResponse> listRadioDecades({
     Map<String, Object?> extra = const {},
     CancelToken? cancelToken,
     Options? options,
@@ -111,23 +91,20 @@ abstract class DiscoveryClient {
       responseType: ResponseType.json,
       extra: {...?options?.extra, ...extra},
       headers: {...?options?.headers, 'Accept': "application/json"},
+      validateStatus: (status) => status != null && (status == 200),
     );
     final response = await _transport.request<dynamic>(
       "/api/library/decades",
       options: _options,
       cancelToken: cancelToken,
     );
-    return RadioDecadesResponse.fromJson(response.data as Map<String, Object?>);
+    return models.RadioDecadesResponse.fromJson(
+      response.data as Map<String, Object?>,
+    );
   }
 
-  /// Library decades with track counts, for decade radio
-  @GET('/api/library/decades')
-  Future<RadioDecadesResponse> listRadioDecades({
-    @Extras() Map<String, Object?> extra = const {},
-    @CancelRequest() CancelToken? cancelToken,
-    Options? options,
-  });
-  Future<RadioGenresResponse> _listRadioGenresWithOptions({
+  /// Library genres with track counts, for genre radio
+  Future<models.RadioGenresResponse> listRadioGenres({
     Map<String, Object?> extra = const {},
     CancelToken? cancelToken,
     Options? options,
@@ -137,22 +114,17 @@ abstract class DiscoveryClient {
       responseType: ResponseType.json,
       extra: {...?options?.extra, ...extra},
       headers: {...?options?.headers, 'Accept': "application/json"},
+      validateStatus: (status) => status != null && (status == 200),
     );
     final response = await _transport.request<dynamic>(
       "/api/library/genres",
       options: _options,
       cancelToken: cancelToken,
     );
-    return RadioGenresResponse.fromJson(response.data as Map<String, Object?>);
+    return models.RadioGenresResponse.fromJson(
+      response.data as Map<String, Object?>,
+    );
   }
-
-  /// Library genres with track counts, for genre radio
-  @GET('/api/library/genres')
-  Future<RadioGenresResponse> listRadioGenres({
-    @Extras() Map<String, Object?> extra = const {},
-    @CancelRequest() CancelToken? cancelToken,
-    Options? options,
-  });
 
   /// A radio queue built from the library
   ///
@@ -210,37 +182,37 @@ abstract class DiscoveryClient {
         .toList();
   }
 
-  Future<MixDetail> _getMixWithOptions({
+  /// A generated mix with its tracks
+  ///
+  /// Answered from the hour-long mix cache. 404 when the user has no mix with this id, and with code `FEATURE_DISABLED` when automatic playlists are turned off.
+  Future<models.MixDetail> getMix({
     Map<String, Object?> extra = const {},
     CancelToken? cancelToken,
     Options? options,
     required String id,
   }) async {
+    if (const {'', '.', '..'}.contains(Uri.encodeComponent(id))) {
+      throw ArgumentError('Invalid path segment.');
+    }
     final _options = (options ?? Options()).copyWith(
       method: "GET",
       responseType: ResponseType.json,
       extra: {...?options?.extra, ...extra},
       headers: {...?options?.headers, 'Accept': "application/json"},
+      validateStatus: (status) => status != null && (status == 200),
     );
     final response = await _transport.request<dynamic>(
-      "/api/mixes/" + id.toString(),
+      "/api/mixes/" + Uri.encodeComponent(id),
       options: _options,
       cancelToken: cancelToken,
     );
-    return MixDetail.fromJson(response.data as Map<String, Object?>);
+    return models.MixDetail.fromJson(response.data as Map<String, Object?>);
   }
 
-  /// A generated mix with its tracks
+  /// Artists similar to the ones the user plays most
   ///
-  /// Answered from the hour-long mix cache. 404 when the user has no mix with this id, and with code `FEATURE_DISABLED` when automatic playlists are turned off.
-  @GET('/api/mixes/{id}')
-  Future<MixDetail> getMix({
-    @Extras() Map<String, Object?> extra = const {},
-    @CancelRequest() CancelToken? cancelToken,
-    Options? options,
-    @Path('id') required String id,
-  });
-  Future<RecommendationsForYou> _getRecommendationsForYouWithOptions({
+  /// 404 with code `FEATURE_DISABLED` when discovery is turned off.
+  Future<models.RecommendationsForYou> getRecommendationsForYou({
     Map<String, Object?> extra = const {},
     CancelToken? cancelToken,
     Options? options,
@@ -251,6 +223,7 @@ abstract class DiscoveryClient {
       responseType: ResponseType.json,
       extra: {...?options?.extra, ...extra},
       headers: {...?options?.headers, 'Accept': "application/json"},
+      validateStatus: (status) => status != null && (status == 200),
     );
     final response = await _transport.request<dynamic>(
       "/api/recommendations/for-you",
@@ -258,26 +231,19 @@ abstract class DiscoveryClient {
       queryParameters: <String, Object?>{if (limit != null) "limit": limit},
       cancelToken: cancelToken,
     );
-    return RecommendationsForYou.fromJson(
+    return models.RecommendationsForYou.fromJson(
       response.data as Map<String, Object?>,
     );
   }
 
-  /// Artists similar to the ones the user plays most
+  /// Tracks matching a natural-language description
   ///
-  /// 404 with code `FEATURE_DISABLED` when discovery is turned off.
-  @GET('/api/recommendations/for-you')
-  Future<RecommendationsForYou> getRecommendationsForYou({
-    @Extras() Map<String, Object?> extra = const {},
-    @CancelRequest() CancelToken? cancelToken,
-    Options? options,
-    @Query('limit') int? limit,
-  });
-  Future<VibeSearchResponse> _searchVibeWithOptions({
+  /// A `limit` or `minSimilarity` out of range is clamped. 400 for a query shorter than 2 or longer than 512 characters. 502 when the text embedding provider answers with an invalid response, 503 when it is unavailable, 504 when it times out. 404 with code `FEATURE_DISABLED` when audio analysis is turned off.
+  Future<models.VibeSearchResponse> searchVibe({
     Map<String, Object?> extra = const {},
     CancelToken? cancelToken,
     Options? options,
-    required VibeSearchRequest body,
+    required models.VibeSearchRequest body,
   }) async {
     final _options = (options ?? Options()).copyWith(
       method: "POST",
@@ -290,6 +256,7 @@ abstract class DiscoveryClient {
           if (entry.key.toLowerCase() != 'content-type') entry.key: entry.value,
         'Accept': "application/json",
       },
+      validateStatus: (status) => status != null && (status == 200),
     );
     final response = await _transport.request<dynamic>(
       "/api/vibe/search",
@@ -297,40 +264,7 @@ abstract class DiscoveryClient {
       data: convert.jsonEncode(body),
       cancelToken: cancelToken,
     );
-    return VibeSearchResponse.fromJson(response.data as Map<String, Object?>);
-  }
-
-  /// Tracks matching a natural-language description
-  ///
-  /// A `limit` or `minSimilarity` out of range is clamped. 400 for a query shorter than 2 or longer than 512 characters. 502 when the text embedding provider answers with an invalid response, 503 when it is unavailable, 504 when it times out. 404 with code `FEATURE_DISABLED` when audio analysis is turned off.
-  @POST('/api/vibe/search')
-  @Headers({'Content-Type': 'application/json'})
-  Future<VibeSearchResponse> searchVibe({
-    @Extras() Map<String, Object?> extra = const {},
-    @CancelRequest() CancelToken? cancelToken,
-    Options? options,
-    @Body() required VibeSearchRequest body,
-  });
-  Future<SimilarTracksResponse> _getSimilarTracksWithOptions({
-    Map<String, Object?> extra = const {},
-    CancelToken? cancelToken,
-    Options? options,
-    required String trackId,
-    int? limit,
-  }) async {
-    final _options = (options ?? Options()).copyWith(
-      method: "GET",
-      responseType: ResponseType.json,
-      extra: {...?options?.extra, ...extra},
-      headers: {...?options?.headers, 'Accept': "application/json"},
-    );
-    final response = await _transport.request<dynamic>(
-      "/api/vibe/similar/" + trackId.toString(),
-      options: _options,
-      queryParameters: <String, Object?>{if (limit != null) "limit": limit},
-      cancelToken: cancelToken,
-    );
-    return SimilarTracksResponse.fromJson(
+    return models.VibeSearchResponse.fromJson(
       response.data as Map<String, Object?>,
     );
   }
@@ -338,186 +272,31 @@ abstract class DiscoveryClient {
   /// Tracks that sound like a track
   ///
   /// 404 when no similar track is found. 404 with code `FEATURE_DISABLED` when audio analysis is turned off.
-  @GET('/api/vibe/similar/{trackId}')
-  Future<SimilarTracksResponse> getSimilarTracks({
-    @Extras() Map<String, Object?> extra = const {},
-    @CancelRequest() CancelToken? cancelToken,
-    Options? options,
-    @Path('trackId') required String trackId,
-    @Query('limit') int? limit,
-  });
-}
-
-class _DiscoveryClientWithOptions extends _DiscoveryClient {
-  _DiscoveryClientWithOptions(Dio dio) : super._(dio, dio);
-
-  @override
-  Future<DiscoverCurrent> getCurrentDiscover({
-    Map<String, Object?> extra = const {},
-    CancelToken? cancelToken,
-    Options? options,
-  }) {
-    return options == null
-        ? super.getCurrentDiscover(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-          )
-        : _getCurrentDiscoverWithOptions(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-          );
-  }
-
-  @override
-  Future<PopularArtistsResponse> listPopularArtists({
-    Map<String, Object?> extra = const {},
-    CancelToken? cancelToken,
-    Options? options,
-    int? limit,
-  }) {
-    return options == null
-        ? super.listPopularArtists(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            limit: limit,
-          )
-        : _listPopularArtistsWithOptions(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            limit: limit,
-          );
-  }
-
-  @override
-  Future<RadioDecadesResponse> listRadioDecades({
-    Map<String, Object?> extra = const {},
-    CancelToken? cancelToken,
-    Options? options,
-  }) {
-    return options == null
-        ? super.listRadioDecades(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-          )
-        : _listRadioDecadesWithOptions(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-          );
-  }
-
-  @override
-  Future<RadioGenresResponse> listRadioGenres({
-    Map<String, Object?> extra = const {},
-    CancelToken? cancelToken,
-    Options? options,
-  }) {
-    return options == null
-        ? super.listRadioGenres(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-          )
-        : _listRadioGenresWithOptions(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-          );
-  }
-
-  @override
-  Future<MixDetail> getMix({
-    Map<String, Object?> extra = const {},
-    CancelToken? cancelToken,
-    Options? options,
-    required String id,
-  }) {
-    return options == null
-        ? super.getMix(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            id: id,
-          )
-        : _getMixWithOptions(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            id: id,
-          );
-  }
-
-  @override
-  Future<RecommendationsForYou> getRecommendationsForYou({
-    Map<String, Object?> extra = const {},
-    CancelToken? cancelToken,
-    Options? options,
-    int? limit,
-  }) {
-    return options == null
-        ? super.getRecommendationsForYou(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            limit: limit,
-          )
-        : _getRecommendationsForYouWithOptions(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            limit: limit,
-          );
-  }
-
-  @override
-  Future<VibeSearchResponse> searchVibe({
-    Map<String, Object?> extra = const {},
-    CancelToken? cancelToken,
-    Options? options,
-    required VibeSearchRequest body,
-  }) {
-    return options == null
-        ? super.searchVibe(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            body: body,
-          )
-        : _searchVibeWithOptions(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            body: body,
-          );
-  }
-
-  @override
-  Future<SimilarTracksResponse> getSimilarTracks({
+  Future<models.SimilarTracksResponse> getSimilarTracks({
     Map<String, Object?> extra = const {},
     CancelToken? cancelToken,
     Options? options,
     required String trackId,
     int? limit,
-  }) {
-    return options == null
-        ? super.getSimilarTracks(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            trackId: trackId,
-            limit: limit,
-          )
-        : _getSimilarTracksWithOptions(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            trackId: trackId,
-            limit: limit,
-          );
+  }) async {
+    if (const {'', '.', '..'}.contains(Uri.encodeComponent(trackId))) {
+      throw ArgumentError('Invalid path segment.');
+    }
+    final _options = (options ?? Options()).copyWith(
+      method: "GET",
+      responseType: ResponseType.json,
+      extra: {...?options?.extra, ...extra},
+      headers: {...?options?.headers, 'Accept': "application/json"},
+      validateStatus: (status) => status != null && (status == 200),
+    );
+    final response = await _transport.request<dynamic>(
+      "/api/vibe/similar/" + Uri.encodeComponent(trackId),
+      options: _options,
+      queryParameters: <String, Object?>{if (limit != null) "limit": limit},
+      cancelToken: cancelToken,
+    );
+    return models.SimilarTracksResponse.fromJson(
+      response.data as Map<String, Object?>,
+    );
   }
 }

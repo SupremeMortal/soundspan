@@ -30,7 +30,7 @@ The models and endpoint methods are generated from the server's OpenAPI document
 | Step | What happens |
 |---|---|
 | Input | `packages/soundspan_api/openapi/soundspan-client.json`, the client-surface subset the backend emits (`npm --prefix backend run openapi:emit-client`). It is committed; CI re-emits it and fails on a difference. |
-| Generator | `swagger_parser` (a pure Dart dev dependency; no Java). It reads OpenAPI 3.0 and writes `freezed` + `json_serializable` models and `retrofit` clients over `dio`. |
+| Generator | `swagger_parser` (a pure Dart dev dependency; no Java). It reads OpenAPI 3.0 and writes `freezed` + `json_serializable` models and clients that call `dio` directly (`http_client: dio`). |
 | Output | `lib/src/generated/`, committed like all generated code and excluded from analysis and the file-size gate. |
 | Naming | One client class per tag (`LibraryClient`, `PlaybackClient`, …), each a getter of the root `SoundspanRestClient` named after the tag (`library` becomes `library2`, because `library` is a Dart built-in identifier); one method per `operationId`; one model per named component, plus one per inline enum or union, named after its operation or property (`LoginResponse200`, `ListAlbumsSortBy`). |
 
@@ -42,10 +42,12 @@ swagger_parser:
   output_directory: lib/src/generated
   generation:
     root_api_class_name: SoundspanRestClient
-    http_client: retrofit
+    http_client: dio                # concrete Dio clients; every path parameter is percent-encoded
     serializer: freezed
     unknown_enum_values: preserve   # a value added by a newer server decodes to `<Enum>Unknown`
 ```
+
+Each path parameter reaches the server as one path segment whatever it holds: the generated call passes it through `Uri.encodeComponent`, so `/`, `?`, `#`, `%` and `:` are sent as `%2F`, `%3F`, `%23`, `%25` and `%3A`, and a value that encodes to an empty, `.` or `..` segment throws `ArgumentError` before anything is sent. `BaseUrlGuard` sees only the encoded path, so it never refuses an opaque `playbackId`. The `retrofit` backend is not used because `retrofit_generator` interpolates path parameters unencoded and has no option to encode them; the facade cannot encode them afterwards because an interpolated value with a `/` no longer matches its path template.
 
 The generator follows the spec exactly, so two spec constructs decide how tolerant the generated code is: a closed object (`additionalProperties: false`) becomes a decoder that rejects unknown keys, so response objects in the client surface are open ([12](12-server-prerequisites-p6-p9.md), Serialisation Rules); and a value outside an `enum` decodes to the enum's `Unknown` subtype only because of `unknown_enum_values: preserve`. The answers for each generator behaviour the plan relies on are under [Spike S8 Finding](#spike-s8-finding).
 
@@ -421,7 +423,7 @@ Spike S8 ([13](13-milestones-and-work-breakdown.md)) generated the client from t
 | 3 | `oneOf` responses | Yes. `login` returns a sealed `LoginResponse200` with the subtypes `LoginTokenResponse` and `LoginTwoFactorChallenge`; the decoder matches the body against each branch's required keys and types, and the caller tells them apart with a `switch` on the type. |
 | 4 | Unknown enum values | Yes, with `unknown_enum_values: preserve`. Each enum becomes a sealed type with `<Enum>Known` (wrapping a Dart `enum`) and `<Enum>Unknown` (holding the raw value, which `toJson` writes back unchanged). |
 | 5 | One client per tag | Yes. One `<Tag>Client` per operation tag, each a getter of `SoundspanRestClient`; the getter for `library` is `library2`. |
-| 6 | Method names from `operationId` | Yes. Every operation has a method named after its `operationId` that sends the spec's method and path; query parameters, path parameters and JSON bodies serialise as declared (enum query values as their wire strings). |
+| 6 | Method names from `operationId` | Yes. Every operation has a method named after its `operationId` that sends the spec's method and path; query parameters, path parameters and JSON bodies serialise as declared (enum query values as their wire strings). Path parameters are percent-encoded as one segment only with `http_client: dio`; the `retrofit` backend interpolates them unencoded, which is why the configuration selects `dio`. |
 | 7 | Unknown keys are ignored | Yes, with a spec constraint. The spec the spike generated from closed every object (`additionalProperties: false`), and the generator turns that into `disallowUnrecognizedKeys` and a branch matcher that rejects extra keys, so a body with an extra key fails to decode. The same spec with `additionalProperties: false` removed decodes it and keeps the extra key in `additionalProperties`. Response objects in the client surface are therefore emitted open ([12](12-server-prerequisites-p6-p9.md), Serialisation Rules). |
 | 8 | `date-time` strings decode to UTC `DateTime` | Yes. `DateTime.parse(value).toUtc()`; the decoded values have `isUtc` set. |
 

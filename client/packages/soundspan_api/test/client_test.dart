@@ -279,6 +279,61 @@ void main() {
       expect(page.tracks.last.playbackId, 'p1');
     });
 
+    test('a path parameter with reserved characters is sent as one '
+        'segment', () async {
+      final server = ScriptedServer((_) => const HttpReply(200, {'id': 1}));
+      final api = _api(server, credentials: _jwt);
+      await expectLater(
+        api.send((rest) => rest.library2.getAlbum(id: 'a/b?c#d')),
+        throwsA(isA<InvalidResponse>()),
+      );
+      final sent = server.requests.single;
+      expect(sent.uri.toString(), 'https://h/api/library/albums/a%2Fb%3Fc%23d');
+      expect(sent.uri.pathSegments, ['api', 'library', 'albums', 'a/b?c#d']);
+      expect(sent.uri.query, isEmpty);
+      expect(sent.extra['soundspan.operationId'], 'getAlbum');
+    });
+
+    test('a playbackId with a colon is sent, not refused by the '
+        'guard', () async {
+      final server = ScriptedServer((_) => const HttpReply(200, {'ok': true}));
+      final api = _api(server, credentials: _jwt);
+      try {
+        await api.send(
+          (rest) => rest.playlists.removePlaylistItem(
+            id: 'pl1',
+            playbackId: 'yt:abc',
+          ),
+        );
+      } on InvalidResponse {
+        // The scripted body is not a PlaylistWriteResult; only the request
+        // matters here.
+      }
+      final sent = server.requests.single;
+      expect(sent.uri.pathSegments, [
+        'api',
+        'playlists',
+        'pl1',
+        'items',
+        'yt:abc',
+      ]);
+      expect(sent.uri.path, '/api/playlists/pl1/items/yt%3Aabc');
+      expect(sent.extra['soundspan.operationId'], 'removePlaylistItem');
+    });
+
+    test('a percent sign in a path parameter is sent as %25', () async {
+      final server = ScriptedServer((_) => const HttpReply(200, {'id': 1}));
+      final api = _api(server, credentials: _jwt);
+      await expectLater(
+        api.send((rest) => rest.library2.getAlbum(id: '100%')),
+        throwsA(isA<InvalidResponse>()),
+      );
+      expect(
+        server.requests.single.uri.toString(),
+        'https://h/api/library/albums/100%25',
+      );
+    });
+
     test('close closes the adapter', () {
       final server = _ClosingServer();
       final api = SoundspanApi.anonymous(

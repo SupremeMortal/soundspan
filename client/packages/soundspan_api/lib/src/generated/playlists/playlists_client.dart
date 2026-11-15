@@ -2,21 +2,7 @@
 
 import 'dart:convert' as convert;
 
-import 'package:dio/dio.dart'
-    show Dio, Options, ResponseType, CancelToken, RequestOptions;
-import 'package:retrofit/retrofit.dart'
-    show
-        RestApi,
-        Extras,
-        CancelRequest,
-        POST,
-        GET,
-        PUT,
-        DELETE,
-        ParseErrorLogger,
-        Body,
-        Headers,
-        Path;
+import 'package:dio/dio.dart' show Dio, Options, ResponseType, CancelToken;
 
 import 'models/add_playlist_item_request.dart'
     as models
@@ -24,22 +10,22 @@ import 'models/add_playlist_item_request.dart'
 import 'models/add_playlist_item_response200.dart'
     as models
     show AddPlaylistItemResponse200;
-import 'models/create_playlist_request.dart' show CreatePlaylistRequest;
-import 'models/playlist_detail.dart' show PlaylistDetail;
-import 'models/playlist_record.dart' show PlaylistRecord;
+import 'models/create_playlist_request.dart'
+    as models
+    show CreatePlaylistRequest;
+import 'models/playlist_detail.dart' as models show PlaylistDetail;
+import 'models/playlist_record.dart' as models show PlaylistRecord;
 import 'models/playlist_summary.dart' as models show PlaylistSummary;
-import 'models/playlist_write_result.dart' show PlaylistWriteResult;
+import 'models/playlist_write_result.dart' as models show PlaylistWriteResult;
 import 'models/reorder_playlist_items_request.dart'
+    as models
     show ReorderPlaylistItemsRequest;
-import 'models/update_playlist_request.dart' show UpdatePlaylistRequest;
+import 'models/update_playlist_request.dart'
+    as models
+    show UpdatePlaylistRequest;
 
-part 'playlists_client.g.dart';
-
-@RestApi(headers: {'Accept': 'application/json'})
-abstract class PlaylistsClient {
-  PlaylistsClient._(this._transport);
-
-  factory PlaylistsClient(Dio dio) => _PlaylistsClientWithOptions(dio);
+class PlaylistsClient {
+  PlaylistsClient(this._transport);
 
   final Dio _transport;
 
@@ -77,11 +63,14 @@ abstract class PlaylistsClient {
         .toList();
   }
 
-  Future<PlaylistRecord> _createPlaylistWithOptions({
+  /// Create a playlist
+  ///
+  /// `isPublic` defaults to false.
+  Future<models.PlaylistRecord> createPlaylist({
     Map<String, Object?> extra = const {},
     CancelToken? cancelToken,
     Options? options,
-    required CreatePlaylistRequest body,
+    required models.CreatePlaylistRequest body,
   }) async {
     final _options = (options ?? Options()).copyWith(
       method: "POST",
@@ -94,6 +83,7 @@ abstract class PlaylistsClient {
           if (entry.key.toLowerCase() != 'content-type') entry.key: entry.value,
         'Accept': "application/json",
       },
+      validateStatus: (status) => status != null && (status == 200),
     );
     final response = await _transport.request<dynamic>(
       "/api/playlists",
@@ -101,57 +91,53 @@ abstract class PlaylistsClient {
       data: convert.jsonEncode(body),
       cancelToken: cancelToken,
     );
-    return PlaylistRecord.fromJson(response.data as Map<String, Object?>);
-  }
-
-  /// Create a playlist
-  ///
-  /// `isPublic` defaults to false.
-  @POST('/api/playlists')
-  @Headers({'Content-Type': 'application/json'})
-  Future<PlaylistRecord> createPlaylist({
-    @Extras() Map<String, Object?> extra = const {},
-    @CancelRequest() CancelToken? cancelToken,
-    Options? options,
-    @Body() required CreatePlaylistRequest body,
-  });
-  Future<PlaylistDetail> _getPlaylistWithOptions({
-    Map<String, Object?> extra = const {},
-    CancelToken? cancelToken,
-    Options? options,
-    required String id,
-  }) async {
-    final _options = (options ?? Options()).copyWith(
-      method: "GET",
-      responseType: ResponseType.json,
-      extra: {...?options?.extra, ...extra},
-      headers: {...?options?.headers, 'Accept': "application/json"},
+    return models.PlaylistRecord.fromJson(
+      response.data as Map<String, Object?>,
     );
-    final response = await _transport.request<dynamic>(
-      "/api/playlists/" + id.toString(),
-      options: _options,
-      cancelToken: cancelToken,
-    );
-    return PlaylistDetail.fromJson(response.data as Map<String, Object?>);
   }
 
   /// A playlist with its items
   ///
   /// 403 for another user's private playlist; 404 when there is none. The server also sends pending (not yet imported) items for other consumers.
-  @GET('/api/playlists/{id}')
-  Future<PlaylistDetail> getPlaylist({
-    @Extras() Map<String, Object?> extra = const {},
-    @CancelRequest() CancelToken? cancelToken,
-    Options? options,
-    @Path('id') required String id,
-  });
-  Future<PlaylistRecord> _updatePlaylistWithOptions({
+  Future<models.PlaylistDetail> getPlaylist({
     Map<String, Object?> extra = const {},
     CancelToken? cancelToken,
     Options? options,
     required String id,
-    required UpdatePlaylistRequest body,
   }) async {
+    if (const {'', '.', '..'}.contains(Uri.encodeComponent(id))) {
+      throw ArgumentError('Invalid path segment.');
+    }
+    final _options = (options ?? Options()).copyWith(
+      method: "GET",
+      responseType: ResponseType.json,
+      extra: {...?options?.extra, ...extra},
+      headers: {...?options?.headers, 'Accept': "application/json"},
+      validateStatus: (status) => status != null && (status == 200),
+    );
+    final response = await _transport.request<dynamic>(
+      "/api/playlists/" + Uri.encodeComponent(id),
+      options: _options,
+      cancelToken: cancelToken,
+    );
+    return models.PlaylistDetail.fromJson(
+      response.data as Map<String, Object?>,
+    );
+  }
+
+  /// Rename a playlist or change its visibility
+  ///
+  /// Omitted fields keep their value. 403 for a playlist the user does not own.
+  Future<models.PlaylistRecord> updatePlaylist({
+    Map<String, Object?> extra = const {},
+    CancelToken? cancelToken,
+    Options? options,
+    required String id,
+    required models.UpdatePlaylistRequest body,
+  }) async {
+    if (const {'', '.', '..'}.contains(Uri.encodeComponent(id))) {
+      throw ArgumentError('Invalid path segment.');
+    }
     final _options = (options ?? Options()).copyWith(
       method: "PUT",
       responseType: ResponseType.json,
@@ -163,58 +149,47 @@ abstract class PlaylistsClient {
           if (entry.key.toLowerCase() != 'content-type') entry.key: entry.value,
         'Accept': "application/json",
       },
+      validateStatus: (status) => status != null && (status == 200),
     );
     final response = await _transport.request<dynamic>(
-      "/api/playlists/" + id.toString(),
+      "/api/playlists/" + Uri.encodeComponent(id),
       options: _options,
       data: convert.jsonEncode(body),
       cancelToken: cancelToken,
     );
-    return PlaylistRecord.fromJson(response.data as Map<String, Object?>);
-  }
-
-  /// Rename a playlist or change its visibility
-  ///
-  /// Omitted fields keep their value. 403 for a playlist the user does not own.
-  @PUT('/api/playlists/{id}')
-  @Headers({'Content-Type': 'application/json'})
-  Future<PlaylistRecord> updatePlaylist({
-    @Extras() Map<String, Object?> extra = const {},
-    @CancelRequest() CancelToken? cancelToken,
-    Options? options,
-    @Path('id') required String id,
-    @Body() required UpdatePlaylistRequest body,
-  });
-  Future<PlaylistWriteResult> _deletePlaylistWithOptions({
-    Map<String, Object?> extra = const {},
-    CancelToken? cancelToken,
-    Options? options,
-    required String id,
-  }) async {
-    final _options = (options ?? Options()).copyWith(
-      method: "DELETE",
-      responseType: ResponseType.json,
-      extra: {...?options?.extra, ...extra},
-      headers: {...?options?.headers, 'Accept': "application/json"},
+    return models.PlaylistRecord.fromJson(
+      response.data as Map<String, Object?>,
     );
-    final response = await _transport.request<dynamic>(
-      "/api/playlists/" + id.toString(),
-      options: _options,
-      cancelToken: cancelToken,
-    );
-    return PlaylistWriteResult.fromJson(response.data as Map<String, Object?>);
   }
 
   /// Delete a playlist
   ///
   /// 403 for a playlist the user does not own.
-  @DELETE('/api/playlists/{id}')
-  Future<PlaylistWriteResult> deletePlaylist({
-    @Extras() Map<String, Object?> extra = const {},
-    @CancelRequest() CancelToken? cancelToken,
+  Future<models.PlaylistWriteResult> deletePlaylist({
+    Map<String, Object?> extra = const {},
+    CancelToken? cancelToken,
     Options? options,
-    @Path('id') required String id,
-  });
+    required String id,
+  }) async {
+    if (const {'', '.', '..'}.contains(Uri.encodeComponent(id))) {
+      throw ArgumentError('Invalid path segment.');
+    }
+    final _options = (options ?? Options()).copyWith(
+      method: "DELETE",
+      responseType: ResponseType.json,
+      extra: {...?options?.extra, ...extra},
+      headers: {...?options?.headers, 'Accept': "application/json"},
+      validateStatus: (status) => status != null && (status == 200),
+    );
+    final response = await _transport.request<dynamic>(
+      "/api/playlists/" + Uri.encodeComponent(id),
+      options: _options,
+      cancelToken: cancelToken,
+    );
+    return models.PlaylistWriteResult.fromJson(
+      response.data as Map<String, Object?>,
+    );
+  }
 
   /// Add a track to the end of a playlist
   ///
@@ -251,13 +226,19 @@ abstract class PlaylistsClient {
     return models.AddPlaylistItemResponse200.fromJson(response.data);
   }
 
-  Future<PlaylistWriteResult> _reorderPlaylistItemsWithOptions({
+  /// Put the items of a playlist in a new order
+  ///
+  /// `playbackIds` must list every item of the playlist exactly once (400 otherwise). 400 `INVALID_PLAYBACK_ID` for an unparseable id, 404 `TRACK_NOT_FOUND` for one not in the playlist; 403 for a playlist the user does not own. `itemIds` and `trackIds` forms exist for other consumers; `playbackIds` wins over them.
+  Future<models.PlaylistWriteResult> reorderPlaylistItems({
     Map<String, Object?> extra = const {},
     CancelToken? cancelToken,
     Options? options,
     required String id,
-    required ReorderPlaylistItemsRequest body,
+    required models.ReorderPlaylistItemsRequest body,
   }) async {
+    if (const {'', '.', '..'}.contains(Uri.encodeComponent(id))) {
+      throw ArgumentError('Invalid path segment.');
+    }
     final _options = (options ?? Options()).copyWith(
       method: "PUT",
       responseType: ResponseType.json,
@@ -269,203 +250,52 @@ abstract class PlaylistsClient {
           if (entry.key.toLowerCase() != 'content-type') entry.key: entry.value,
         'Accept': "application/json",
       },
+      validateStatus: (status) => status != null && (status == 200),
     );
     final response = await _transport.request<dynamic>(
-      "/api/playlists/" + id.toString() + "/items/reorder",
+      "/api/playlists/" + Uri.encodeComponent(id) + "/items/reorder",
       options: _options,
       data: convert.jsonEncode(body),
       cancelToken: cancelToken,
     );
-    return PlaylistWriteResult.fromJson(response.data as Map<String, Object?>);
+    return models.PlaylistWriteResult.fromJson(
+      response.data as Map<String, Object?>,
+    );
   }
 
-  /// Put the items of a playlist in a new order
+  /// Remove a track from a playlist
   ///
-  /// `playbackIds` must list every item of the playlist exactly once (400 otherwise). 400 `INVALID_PLAYBACK_ID` for an unparseable id, 404 `TRACK_NOT_FOUND` for one not in the playlist; 403 for a playlist the user does not own. `itemIds` and `trackIds` forms exist for other consumers; `playbackIds` wins over them.
-  @PUT('/api/playlists/{id}/items/reorder')
-  @Headers({'Content-Type': 'application/json'})
-  Future<PlaylistWriteResult> reorderPlaylistItems({
-    @Extras() Map<String, Object?> extra = const {},
-    @CancelRequest() CancelToken? cancelToken,
-    Options? options,
-    @Path('id') required String id,
-    @Body() required ReorderPlaylistItemsRequest body,
-  });
-  Future<PlaylistWriteResult> _removePlaylistItemWithOptions({
+  /// 404 when the playlist does not exist or holds no item for the track; 403 for a playlist the user does not own.
+  Future<models.PlaylistWriteResult> removePlaylistItem({
     Map<String, Object?> extra = const {},
     CancelToken? cancelToken,
     Options? options,
     required String id,
     required String playbackId,
   }) async {
+    if (const {'', '.', '..'}.contains(Uri.encodeComponent(id))) {
+      throw ArgumentError('Invalid path segment.');
+    }
+    if (const {'', '.', '..'}.contains(Uri.encodeComponent(playbackId))) {
+      throw ArgumentError('Invalid path segment.');
+    }
     final _options = (options ?? Options()).copyWith(
       method: "DELETE",
       responseType: ResponseType.json,
       extra: {...?options?.extra, ...extra},
       headers: {...?options?.headers, 'Accept': "application/json"},
+      validateStatus: (status) => status != null && (status == 200),
     );
     final response = await _transport.request<dynamic>(
-      "/api/playlists/" + id.toString() + "/items/" + playbackId.toString(),
+      "/api/playlists/" +
+          Uri.encodeComponent(id) +
+          "/items/" +
+          Uri.encodeComponent(playbackId),
       options: _options,
       cancelToken: cancelToken,
     );
-    return PlaylistWriteResult.fromJson(response.data as Map<String, Object?>);
-  }
-
-  /// Remove a track from a playlist
-  ///
-  /// 404 when the playlist does not exist or holds no item for the track; 403 for a playlist the user does not own.
-  @DELETE('/api/playlists/{id}/items/{playbackId}')
-  Future<PlaylistWriteResult> removePlaylistItem({
-    @Extras() Map<String, Object?> extra = const {},
-    @CancelRequest() CancelToken? cancelToken,
-    Options? options,
-    @Path('id') required String id,
-    @Path('playbackId') required String playbackId,
-  });
-}
-
-class _PlaylistsClientWithOptions extends _PlaylistsClient {
-  _PlaylistsClientWithOptions(Dio dio) : super._(dio, dio);
-
-  @override
-  Future<PlaylistRecord> createPlaylist({
-    Map<String, Object?> extra = const {},
-    CancelToken? cancelToken,
-    Options? options,
-    required CreatePlaylistRequest body,
-  }) {
-    return options == null
-        ? super.createPlaylist(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            body: body,
-          )
-        : _createPlaylistWithOptions(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            body: body,
-          );
-  }
-
-  @override
-  Future<PlaylistDetail> getPlaylist({
-    Map<String, Object?> extra = const {},
-    CancelToken? cancelToken,
-    Options? options,
-    required String id,
-  }) {
-    return options == null
-        ? super.getPlaylist(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            id: id,
-          )
-        : _getPlaylistWithOptions(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            id: id,
-          );
-  }
-
-  @override
-  Future<PlaylistRecord> updatePlaylist({
-    Map<String, Object?> extra = const {},
-    CancelToken? cancelToken,
-    Options? options,
-    required String id,
-    required UpdatePlaylistRequest body,
-  }) {
-    return options == null
-        ? super.updatePlaylist(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            id: id,
-            body: body,
-          )
-        : _updatePlaylistWithOptions(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            id: id,
-            body: body,
-          );
-  }
-
-  @override
-  Future<PlaylistWriteResult> deletePlaylist({
-    Map<String, Object?> extra = const {},
-    CancelToken? cancelToken,
-    Options? options,
-    required String id,
-  }) {
-    return options == null
-        ? super.deletePlaylist(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            id: id,
-          )
-        : _deletePlaylistWithOptions(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            id: id,
-          );
-  }
-
-  @override
-  Future<PlaylistWriteResult> reorderPlaylistItems({
-    Map<String, Object?> extra = const {},
-    CancelToken? cancelToken,
-    Options? options,
-    required String id,
-    required ReorderPlaylistItemsRequest body,
-  }) {
-    return options == null
-        ? super.reorderPlaylistItems(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            id: id,
-            body: body,
-          )
-        : _reorderPlaylistItemsWithOptions(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            id: id,
-            body: body,
-          );
-  }
-
-  @override
-  Future<PlaylistWriteResult> removePlaylistItem({
-    Map<String, Object?> extra = const {},
-    CancelToken? cancelToken,
-    Options? options,
-    required String id,
-    required String playbackId,
-  }) {
-    return options == null
-        ? super.removePlaylistItem(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            id: id,
-            playbackId: playbackId,
-          )
-        : _removePlaylistItemWithOptions(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            id: id,
-            playbackId: playbackId,
-          );
+    return models.PlaylistWriteResult.fromJson(
+      response.data as Map<String, Object?>,
+    );
   }
 }

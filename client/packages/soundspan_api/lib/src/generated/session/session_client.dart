@@ -2,48 +2,40 @@
 
 import 'dart:convert' as convert;
 
-import 'package:dio/dio.dart'
-    show Dio, Options, ResponseType, CancelToken, RequestOptions;
-import 'package:retrofit/retrofit.dart'
-    show
-        RestApi,
-        Extras,
-        CancelRequest,
-        GET,
-        DELETE,
-        POST,
-        ParseErrorLogger,
-        Body,
-        Headers;
+import 'package:dio/dio.dart' show Dio, Options, ResponseType, CancelToken;
 
-import 'models/api_document_info.dart' show ApiDocumentInfo;
-import 'models/api_key_list_response.dart' show ApiKeyListResponse;
-import 'models/auth_config.dart' show AuthConfig;
-import 'models/device_link_verify_request.dart' show DeviceLinkVerifyRequest;
-import 'models/device_link_verify_response.dart' show DeviceLinkVerifyResponse;
-import 'models/health_status.dart' show HealthStatus;
+import 'models/api_document_info.dart' as models show ApiDocumentInfo;
+import 'models/api_key_list_response.dart' as models show ApiKeyListResponse;
+import 'models/auth_config.dart' as models show AuthConfig;
+import 'models/device_link_verify_request.dart'
+    as models
+    show DeviceLinkVerifyRequest;
+import 'models/device_link_verify_response.dart'
+    as models
+    show DeviceLinkVerifyResponse;
+import 'models/health_status.dart' as models show HealthStatus;
 import 'models/login_request.dart' as models show LoginRequest;
 import 'models/login_response200.dart' as models show LoginResponse200;
-import 'models/login_user.dart' show LoginUser;
-import 'models/message_response.dart' show MessageResponse;
-import 'models/onboarding_status.dart' show OnboardingStatus;
-import 'models/refresh_session_request.dart' show RefreshSessionRequest;
-import 'models/session_tokens.dart' show SessionTokens;
-import 'models/system_features.dart' show SystemFeatures;
-import 'models/update_settings_request.dart' show UpdateSettingsRequest;
-import 'models/user_settings.dart' show UserSettings;
+import 'models/login_user.dart' as models show LoginUser;
+import 'models/message_response.dart' as models show MessageResponse;
+import 'models/onboarding_status.dart' as models show OnboardingStatus;
+import 'models/refresh_session_request.dart'
+    as models
+    show RefreshSessionRequest;
+import 'models/session_tokens.dart' as models show SessionTokens;
+import 'models/system_features.dart' as models show SystemFeatures;
+import 'models/update_settings_request.dart'
+    as models
+    show UpdateSettingsRequest;
+import 'models/user_settings.dart' as models show UserSettings;
 
-part 'session_client.g.dart';
-
-@RestApi(headers: {'Accept': 'application/json'})
-abstract class SessionClient {
-  SessionClient._(this._transport);
-
-  factory SessionClient(Dio dio) => _SessionClientWithOptions(dio);
+class SessionClient {
+  SessionClient(this._transport);
 
   final Dio _transport;
 
-  Future<ApiKeyListResponse> _listApiKeysWithOptions({
+  /// The current user's API keys, newest first
+  Future<models.ApiKeyListResponse> listApiKeys({
     Map<String, Object?> extra = const {},
     CancelToken? cancelToken,
     Options? options,
@@ -53,23 +45,22 @@ abstract class SessionClient {
       responseType: ResponseType.json,
       extra: {...?options?.extra, ...extra},
       headers: {...?options?.headers, 'Accept': "application/json"},
+      validateStatus: (status) => status != null && (status == 200),
     );
     final response = await _transport.request<dynamic>(
       "/api/api-keys",
       options: _options,
       cancelToken: cancelToken,
     );
-    return ApiKeyListResponse.fromJson(response.data as Map<String, Object?>);
+    return models.ApiKeyListResponse.fromJson(
+      response.data as Map<String, Object?>,
+    );
   }
 
-  /// The current user's API keys, newest first
-  @GET('/api/api-keys')
-  Future<ApiKeyListResponse> listApiKeys({
-    @Extras() Map<String, Object?> extra = const {},
-    @CancelRequest() CancelToken? cancelToken,
-    Options? options,
-  });
-  Future<MessageResponse> _revokeCurrentApiKeyWithOptions({
+  /// Revoke the API key that authenticates this request
+  ///
+  /// The request must be authenticated with `X-API-Key`; any other session answers 400 with code `NOT_API_KEY_SESSION`. The key is deleted and sockets authenticated with it are disconnected; a key already gone still answers 200.
+  Future<models.MessageResponse> revokeCurrentApiKey({
     Map<String, Object?> extra = const {},
     CancelToken? cancelToken,
     Options? options,
@@ -79,25 +70,20 @@ abstract class SessionClient {
       responseType: ResponseType.json,
       extra: {...?options?.extra, ...extra},
       headers: {...?options?.headers, 'Accept': "application/json"},
+      validateStatus: (status) => status != null && (status == 200),
     );
     final response = await _transport.request<dynamic>(
       "/api/api-keys/current",
       options: _options,
       cancelToken: cancelToken,
     );
-    return MessageResponse.fromJson(response.data as Map<String, Object?>);
+    return models.MessageResponse.fromJson(
+      response.data as Map<String, Object?>,
+    );
   }
 
-  /// Revoke the API key that authenticates this request
-  ///
-  /// The request must be authenticated with `X-API-Key`; any other session answers 400 with code `NOT_API_KEY_SESSION`. The key is deleted and sockets authenticated with it are disconnected; a key already gone still answers 200.
-  @DELETE('/api/api-keys/current')
-  Future<MessageResponse> revokeCurrentApiKey({
-    @Extras() Map<String, Object?> extra = const {},
-    @CancelRequest() CancelToken? cancelToken,
-    Options? options,
-  });
-  Future<AuthConfig> _getAuthConfigWithOptions({
+  /// Sign-in methods the server offers
+  Future<models.AuthConfig> getAuthConfig({
     Map<String, Object?> extra = const {},
     CancelToken? cancelToken,
     Options? options,
@@ -107,22 +93,15 @@ abstract class SessionClient {
       responseType: ResponseType.json,
       extra: {...?options?.extra, ...extra},
       headers: {...?options?.headers, 'Accept': "application/json"},
+      validateStatus: (status) => status != null && (status == 200),
     );
     final response = await _transport.request<dynamic>(
       "/api/auth/config",
       options: _options,
       cancelToken: cancelToken,
     );
-    return AuthConfig.fromJson(response.data as Map<String, Object?>);
+    return models.AuthConfig.fromJson(response.data as Map<String, Object?>);
   }
-
-  /// Sign-in methods the server offers
-  @GET('/api/auth/config')
-  Future<AuthConfig> getAuthConfig({
-    @Extras() Map<String, Object?> extra = const {},
-    @CancelRequest() CancelToken? cancelToken,
-    Options? options,
-  });
 
   /// Sign in with a username or email and password
   ///
@@ -155,7 +134,8 @@ abstract class SessionClient {
     return models.LoginResponse200.fromJson(response.data);
   }
 
-  Future<MessageResponse> _logoutWithOptions({
+  /// Sign out; tokens are discarded by the client
+  Future<models.MessageResponse> logout({
     Map<String, Object?> extra = const {},
     CancelToken? cancelToken,
     Options? options,
@@ -165,23 +145,20 @@ abstract class SessionClient {
       responseType: ResponseType.json,
       extra: {...?options?.extra, ...extra},
       headers: {...?options?.headers, 'Accept': "application/json"},
+      validateStatus: (status) => status != null && (status == 200),
     );
     final response = await _transport.request<dynamic>(
       "/api/auth/logout",
       options: _options,
       cancelToken: cancelToken,
     );
-    return MessageResponse.fromJson(response.data as Map<String, Object?>);
+    return models.MessageResponse.fromJson(
+      response.data as Map<String, Object?>,
+    );
   }
 
-  /// Sign out; tokens are discarded by the client
-  @POST('/api/auth/logout')
-  Future<MessageResponse> logout({
-    @Extras() Map<String, Object?> extra = const {},
-    @CancelRequest() CancelToken? cancelToken,
-    Options? options,
-  });
-  Future<LoginUser> _getCurrentUserWithOptions({
+  /// The signed-in user
+  Future<models.LoginUser> getCurrentUser({
     Map<String, Object?> extra = const {},
     CancelToken? cancelToken,
     Options? options,
@@ -191,27 +168,22 @@ abstract class SessionClient {
       responseType: ResponseType.json,
       extra: {...?options?.extra, ...extra},
       headers: {...?options?.headers, 'Accept': "application/json"},
+      validateStatus: (status) => status != null && (status == 200),
     );
     final response = await _transport.request<dynamic>(
       "/api/auth/me",
       options: _options,
       cancelToken: cancelToken,
     );
-    return LoginUser.fromJson(response.data as Map<String, Object?>);
+    return models.LoginUser.fromJson(response.data as Map<String, Object?>);
   }
 
-  /// The signed-in user
-  @GET('/api/auth/me')
-  Future<LoginUser> getCurrentUser({
-    @Extras() Map<String, Object?> extra = const {},
-    @CancelRequest() CancelToken? cancelToken,
-    Options? options,
-  });
-  Future<SessionTokens> _refreshSessionWithOptions({
+  /// Exchange a refresh token for new access and refresh tokens
+  Future<models.SessionTokens> refreshSession({
     Map<String, Object?> extra = const {},
     CancelToken? cancelToken,
     Options? options,
-    required RefreshSessionRequest body,
+    required models.RefreshSessionRequest body,
   }) async {
     final _options = (options ?? Options()).copyWith(
       method: "POST",
@@ -224,6 +196,7 @@ abstract class SessionClient {
           if (entry.key.toLowerCase() != 'content-type') entry.key: entry.value,
         'Accept': "application/json",
       },
+      validateStatus: (status) => status != null && (status == 200),
     );
     final response = await _transport.request<dynamic>(
       "/api/auth/refresh",
@@ -231,23 +204,17 @@ abstract class SessionClient {
       data: convert.jsonEncode(body),
       cancelToken: cancelToken,
     );
-    return SessionTokens.fromJson(response.data as Map<String, Object?>);
+    return models.SessionTokens.fromJson(response.data as Map<String, Object?>);
   }
 
-  /// Exchange a refresh token for new access and refresh tokens
-  @POST('/api/auth/refresh')
-  @Headers({'Content-Type': 'application/json'})
-  Future<SessionTokens> refreshSession({
-    @Extras() Map<String, Object?> extra = const {},
-    @CancelRequest() CancelToken? cancelToken,
-    Options? options,
-    @Body() required RefreshSessionRequest body,
-  });
-  Future<DeviceLinkVerifyResponse> _verifyDeviceLinkWithOptions({
+  /// Exchange a device link code for an API key
+  ///
+  /// The code is matched case-insensitively. 404 for an unknown code; 400 for a missing, used or expired code. `deviceName` names the key and defaults to `Mobile Device`.
+  Future<models.DeviceLinkVerifyResponse> verifyDeviceLink({
     Map<String, Object?> extra = const {},
     CancelToken? cancelToken,
     Options? options,
-    required DeviceLinkVerifyRequest body,
+    required models.DeviceLinkVerifyRequest body,
   }) async {
     final _options = (options ?? Options()).copyWith(
       method: "POST",
@@ -260,6 +227,7 @@ abstract class SessionClient {
           if (entry.key.toLowerCase() != 'content-type') entry.key: entry.value,
         'Accept': "application/json",
       },
+      validateStatus: (status) => status != null && (status == 200),
     );
     final response = await _transport.request<dynamic>(
       "/api/device-link/verify",
@@ -267,23 +235,13 @@ abstract class SessionClient {
       data: convert.jsonEncode(body),
       cancelToken: cancelToken,
     );
-    return DeviceLinkVerifyResponse.fromJson(
+    return models.DeviceLinkVerifyResponse.fromJson(
       response.data as Map<String, Object?>,
     );
   }
 
-  /// Exchange a device link code for an API key
-  ///
-  /// The code is matched case-insensitively. 404 for an unknown code; 400 for a missing, used or expired code. `deviceName` names the key and defaults to `Mobile Device`.
-  @POST('/api/device-link/verify')
-  @Headers({'Content-Type': 'application/json'})
-  Future<DeviceLinkVerifyResponse> verifyDeviceLink({
-    @Extras() Map<String, Object?> extra = const {},
-    @CancelRequest() CancelToken? cancelToken,
-    Options? options,
-    @Body() required DeviceLinkVerifyRequest body,
-  });
-  Future<ApiDocumentInfo> _getApiDocumentWithOptions({
+  /// The server's OpenAPI document; only info.version is declared
+  Future<models.ApiDocumentInfo> getApiDocument({
     Map<String, Object?> extra = const {},
     CancelToken? cancelToken,
     Options? options,
@@ -293,23 +251,20 @@ abstract class SessionClient {
       responseType: ResponseType.json,
       extra: {...?options?.extra, ...extra},
       headers: {...?options?.headers, 'Accept': "application/json"},
+      validateStatus: (status) => status != null && (status == 200),
     );
     final response = await _transport.request<dynamic>(
       "/api/docs.json",
       options: _options,
       cancelToken: cancelToken,
     );
-    return ApiDocumentInfo.fromJson(response.data as Map<String, Object?>);
+    return models.ApiDocumentInfo.fromJson(
+      response.data as Map<String, Object?>,
+    );
   }
 
-  /// The server's OpenAPI document; only info.version is declared
-  @GET('/api/docs.json')
-  Future<ApiDocumentInfo> getApiDocument({
-    @Extras() Map<String, Object?> extra = const {},
-    @CancelRequest() CancelToken? cancelToken,
-    Options? options,
-  });
-  Future<HealthStatus> _getHealthWithOptions({
+  /// Server health; 503 with the same payload when not ready
+  Future<models.HealthStatus> getHealth({
     Map<String, Object?> extra = const {},
     CancelToken? cancelToken,
     Options? options,
@@ -319,23 +274,18 @@ abstract class SessionClient {
       responseType: ResponseType.json,
       extra: {...?options?.extra, ...extra},
       headers: {...?options?.headers, 'Accept': "application/json"},
+      validateStatus: (status) => status != null && (status == 200),
     );
     final response = await _transport.request<dynamic>(
       "/api/health",
       options: _options,
       cancelToken: cancelToken,
     );
-    return HealthStatus.fromJson(response.data as Map<String, Object?>);
+    return models.HealthStatus.fromJson(response.data as Map<String, Object?>);
   }
 
-  /// Server health; 503 with the same payload when not ready
-  @GET('/api/health')
-  Future<HealthStatus> getHealth({
-    @Extras() Map<String, Object?> extra = const {},
-    @CancelRequest() CancelToken? cancelToken,
-    Options? options,
-  });
-  Future<OnboardingStatus> _getOnboardingStatusWithOptions({
+  /// Whether the server or the signed-in user needs onboarding
+  Future<models.OnboardingStatus> getOnboardingStatus({
     Map<String, Object?> extra = const {},
     CancelToken? cancelToken,
     Options? options,
@@ -345,23 +295,22 @@ abstract class SessionClient {
       responseType: ResponseType.json,
       extra: {...?options?.extra, ...extra},
       headers: {...?options?.headers, 'Accept': "application/json"},
+      validateStatus: (status) => status != null && (status == 200),
     );
     final response = await _transport.request<dynamic>(
       "/api/onboarding/status",
       options: _options,
       cancelToken: cancelToken,
     );
-    return OnboardingStatus.fromJson(response.data as Map<String, Object?>);
+    return models.OnboardingStatus.fromJson(
+      response.data as Map<String, Object?>,
+    );
   }
 
-  /// Whether the server or the signed-in user needs onboarding
-  @GET('/api/onboarding/status')
-  Future<OnboardingStatus> getOnboardingStatus({
-    @Extras() Map<String, Object?> extra = const {},
-    @CancelRequest() CancelToken? cancelToken,
-    Options? options,
-  });
-  Future<UserSettings> _getSettingsWithOptions({
+  /// The current user's settings
+  ///
+  /// Settings are created with their defaults on the first read.
+  Future<models.UserSettings> getSettings({
     Map<String, Object?> extra = const {},
     CancelToken? cancelToken,
     Options? options,
@@ -371,29 +320,24 @@ abstract class SessionClient {
       responseType: ResponseType.json,
       extra: {...?options?.extra, ...extra},
       headers: {...?options?.headers, 'Accept': "application/json"},
+      validateStatus: (status) => status != null && (status == 200),
     );
     final response = await _transport.request<dynamic>(
       "/api/settings",
       options: _options,
       cancelToken: cancelToken,
     );
-    return UserSettings.fromJson(response.data as Map<String, Object?>);
+    return models.UserSettings.fromJson(response.data as Map<String, Object?>);
   }
 
-  /// The current user's settings
+  /// Update the current user's settings
   ///
-  /// Settings are created with their defaults on the first read.
-  @GET('/api/settings')
-  Future<UserSettings> getSettings({
-    @Extras() Map<String, Object?> extra = const {},
-    @CancelRequest() CancelToken? cancelToken,
-    Options? options,
-  });
-  Future<UserSettings> _updateSettingsWithOptions({
+  /// Omitted fields keep their stored value. The server accepts further settings for other consumers; a value it does not accept answers 400.
+  Future<models.UserSettings> updateSettings({
     Map<String, Object?> extra = const {},
     CancelToken? cancelToken,
     Options? options,
-    required UpdateSettingsRequest body,
+    required models.UpdateSettingsRequest body,
   }) async {
     final _options = (options ?? Options()).copyWith(
       method: "POST",
@@ -406,6 +350,7 @@ abstract class SessionClient {
           if (entry.key.toLowerCase() != 'content-type') entry.key: entry.value,
         'Accept': "application/json",
       },
+      validateStatus: (status) => status != null && (status == 200),
     );
     final response = await _transport.request<dynamic>(
       "/api/settings",
@@ -413,21 +358,11 @@ abstract class SessionClient {
       data: convert.jsonEncode(body),
       cancelToken: cancelToken,
     );
-    return UserSettings.fromJson(response.data as Map<String, Object?>);
+    return models.UserSettings.fromJson(response.data as Map<String, Object?>);
   }
 
-  /// Update the current user's settings
-  ///
-  /// Omitted fields keep their stored value. The server accepts further settings for other consumers; a value it does not accept answers 400.
-  @POST('/api/settings')
-  @Headers({'Content-Type': 'application/json'})
-  Future<UserSettings> updateSettings({
-    @Extras() Map<String, Object?> extra = const {},
-    @CancelRequest() CancelToken? cancelToken,
-    Options? options,
-    @Body() required UpdateSettingsRequest body,
-  });
-  Future<SystemFeatures> _getSystemFeaturesWithOptions({
+  /// Feature flags and detected capabilities
+  Future<models.SystemFeatures> getSystemFeatures({
     Map<String, Object?> extra = const {},
     CancelToken? cancelToken,
     Options? options,
@@ -437,276 +372,15 @@ abstract class SessionClient {
       responseType: ResponseType.json,
       extra: {...?options?.extra, ...extra},
       headers: {...?options?.headers, 'Accept': "application/json"},
+      validateStatus: (status) => status != null && (status == 200),
     );
     final response = await _transport.request<dynamic>(
       "/api/system/features",
       options: _options,
       cancelToken: cancelToken,
     );
-    return SystemFeatures.fromJson(response.data as Map<String, Object?>);
-  }
-
-  /// Feature flags and detected capabilities
-  @GET('/api/system/features')
-  Future<SystemFeatures> getSystemFeatures({
-    @Extras() Map<String, Object?> extra = const {},
-    @CancelRequest() CancelToken? cancelToken,
-    Options? options,
-  });
-}
-
-class _SessionClientWithOptions extends _SessionClient {
-  _SessionClientWithOptions(Dio dio) : super._(dio, dio);
-
-  @override
-  Future<ApiKeyListResponse> listApiKeys({
-    Map<String, Object?> extra = const {},
-    CancelToken? cancelToken,
-    Options? options,
-  }) {
-    return options == null
-        ? super.listApiKeys(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-          )
-        : _listApiKeysWithOptions(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-          );
-  }
-
-  @override
-  Future<MessageResponse> revokeCurrentApiKey({
-    Map<String, Object?> extra = const {},
-    CancelToken? cancelToken,
-    Options? options,
-  }) {
-    return options == null
-        ? super.revokeCurrentApiKey(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-          )
-        : _revokeCurrentApiKeyWithOptions(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-          );
-  }
-
-  @override
-  Future<AuthConfig> getAuthConfig({
-    Map<String, Object?> extra = const {},
-    CancelToken? cancelToken,
-    Options? options,
-  }) {
-    return options == null
-        ? super.getAuthConfig(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-          )
-        : _getAuthConfigWithOptions(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-          );
-  }
-
-  @override
-  Future<MessageResponse> logout({
-    Map<String, Object?> extra = const {},
-    CancelToken? cancelToken,
-    Options? options,
-  }) {
-    return options == null
-        ? super.logout(extra: extra, cancelToken: cancelToken, options: options)
-        : _logoutWithOptions(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-          );
-  }
-
-  @override
-  Future<LoginUser> getCurrentUser({
-    Map<String, Object?> extra = const {},
-    CancelToken? cancelToken,
-    Options? options,
-  }) {
-    return options == null
-        ? super.getCurrentUser(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-          )
-        : _getCurrentUserWithOptions(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-          );
-  }
-
-  @override
-  Future<SessionTokens> refreshSession({
-    Map<String, Object?> extra = const {},
-    CancelToken? cancelToken,
-    Options? options,
-    required RefreshSessionRequest body,
-  }) {
-    return options == null
-        ? super.refreshSession(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            body: body,
-          )
-        : _refreshSessionWithOptions(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            body: body,
-          );
-  }
-
-  @override
-  Future<DeviceLinkVerifyResponse> verifyDeviceLink({
-    Map<String, Object?> extra = const {},
-    CancelToken? cancelToken,
-    Options? options,
-    required DeviceLinkVerifyRequest body,
-  }) {
-    return options == null
-        ? super.verifyDeviceLink(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            body: body,
-          )
-        : _verifyDeviceLinkWithOptions(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            body: body,
-          );
-  }
-
-  @override
-  Future<ApiDocumentInfo> getApiDocument({
-    Map<String, Object?> extra = const {},
-    CancelToken? cancelToken,
-    Options? options,
-  }) {
-    return options == null
-        ? super.getApiDocument(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-          )
-        : _getApiDocumentWithOptions(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-          );
-  }
-
-  @override
-  Future<HealthStatus> getHealth({
-    Map<String, Object?> extra = const {},
-    CancelToken? cancelToken,
-    Options? options,
-  }) {
-    return options == null
-        ? super.getHealth(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-          )
-        : _getHealthWithOptions(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-          );
-  }
-
-  @override
-  Future<OnboardingStatus> getOnboardingStatus({
-    Map<String, Object?> extra = const {},
-    CancelToken? cancelToken,
-    Options? options,
-  }) {
-    return options == null
-        ? super.getOnboardingStatus(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-          )
-        : _getOnboardingStatusWithOptions(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-          );
-  }
-
-  @override
-  Future<UserSettings> getSettings({
-    Map<String, Object?> extra = const {},
-    CancelToken? cancelToken,
-    Options? options,
-  }) {
-    return options == null
-        ? super.getSettings(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-          )
-        : _getSettingsWithOptions(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-          );
-  }
-
-  @override
-  Future<UserSettings> updateSettings({
-    Map<String, Object?> extra = const {},
-    CancelToken? cancelToken,
-    Options? options,
-    required UpdateSettingsRequest body,
-  }) {
-    return options == null
-        ? super.updateSettings(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            body: body,
-          )
-        : _updateSettingsWithOptions(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            body: body,
-          );
-  }
-
-  @override
-  Future<SystemFeatures> getSystemFeatures({
-    Map<String, Object?> extra = const {},
-    CancelToken? cancelToken,
-    Options? options,
-  }) {
-    return options == null
-        ? super.getSystemFeatures(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-          )
-        : _getSystemFeaturesWithOptions(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-          );
+    return models.SystemFeatures.fromJson(
+      response.data as Map<String, Object?>,
+    );
   }
 }

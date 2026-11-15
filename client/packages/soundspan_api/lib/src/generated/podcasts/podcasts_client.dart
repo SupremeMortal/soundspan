@@ -2,40 +2,29 @@
 
 import 'dart:convert' as convert;
 
-import 'package:dio/dio.dart'
-    show Dio, Options, ResponseType, CancelToken, RequestOptions;
-import 'package:retrofit/retrofit.dart'
-    show
-        RestApi,
-        Extras,
-        CancelRequest,
-        POST,
-        GET,
-        DELETE,
-        ParseErrorLogger,
-        Body,
-        Headers,
-        Path;
+import 'package:dio/dio.dart' show Dio, Options, ResponseType, CancelToken;
 
-import 'models/podcast_detail.dart' show PodcastDetail;
+import 'models/podcast_detail.dart' as models show PodcastDetail;
 import 'models/podcast_summary.dart' as models show PodcastSummary;
-import 'models/subscribe_podcast_request.dart' show SubscribePodcastRequest;
-import 'models/subscribe_podcast_response.dart' show SubscribePodcastResponse;
+import 'models/subscribe_podcast_request.dart'
+    as models
+    show SubscribePodcastRequest;
+import 'models/subscribe_podcast_response.dart'
+    as models
+    show SubscribePodcastResponse;
 import 'models/subscribed_podcast.dart' as models show SubscribedPodcast;
 import 'models/unsubscribe_podcast_response.dart'
+    as models
     show UnsubscribePodcastResponse;
 import 'models/update_episode_progress_request.dart'
+    as models
     show UpdateEpisodeProgressRequest;
 import 'models/update_episode_progress_response.dart'
+    as models
     show UpdateEpisodeProgressResponse;
 
-part 'podcasts_client.g.dart';
-
-@RestApi(headers: {'Accept': 'application/json'})
-abstract class PodcastsClient {
-  PodcastsClient._(this._transport);
-
-  factory PodcastsClient(Dio dio) => _PodcastsClientWithOptions(dio);
+class PodcastsClient {
+  PodcastsClient(this._transport);
 
   final Dio _transport;
 
@@ -97,11 +86,14 @@ abstract class PodcastsClient {
         .toList();
   }
 
-  Future<SubscribePodcastResponse> _subscribePodcastWithOptions({
+  /// Subscribe to a podcast by RSS feed URL or iTunes id
+  ///
+  /// One of `feedUrl` and `itunesId` is required (400 otherwise); `feedUrl` wins when both are sent. An `itunesId` the iTunes directory does not know, or knows without a feed URL, answers 404. A private or unsafe feed URL answers 400. Subscribing again answers 200 with `message` `Already subscribed`.
+  Future<models.SubscribePodcastResponse> subscribePodcast({
     Map<String, Object?> extra = const {},
     CancelToken? cancelToken,
     Options? options,
-    required SubscribePodcastRequest body,
+    required models.SubscribePodcastRequest body,
   }) async {
     final _options = (options ?? Options()).copyWith(
       method: "POST",
@@ -114,6 +106,7 @@ abstract class PodcastsClient {
           if (entry.key.toLowerCase() != 'content-type') entry.key: entry.value,
         'Accept': "application/json",
       },
+      validateStatus: (status) => status != null && (status == 200),
     );
     final response = await _transport.request<dynamic>(
       "/api/podcasts/subscribe",
@@ -121,92 +114,84 @@ abstract class PodcastsClient {
       data: convert.jsonEncode(body),
       cancelToken: cancelToken,
     );
-    return SubscribePodcastResponse.fromJson(
+    return models.SubscribePodcastResponse.fromJson(
       response.data as Map<String, Object?>,
     );
-  }
-
-  /// Subscribe to a podcast by RSS feed URL or iTunes id
-  ///
-  /// One of `feedUrl` and `itunesId` is required (400 otherwise); `feedUrl` wins when both are sent. An `itunesId` the iTunes directory does not know, or knows without a feed URL, answers 404. A private or unsafe feed URL answers 400. Subscribing again answers 200 with `message` `Already subscribed`.
-  @POST('/api/podcasts/subscribe')
-  @Headers({'Content-Type': 'application/json'})
-  Future<SubscribePodcastResponse> subscribePodcast({
-    @Extras() Map<String, Object?> extra = const {},
-    @CancelRequest() CancelToken? cancelToken,
-    Options? options,
-    @Body() required SubscribePodcastRequest body,
-  });
-  Future<PodcastDetail> _getPodcastWithOptions({
-    Map<String, Object?> extra = const {},
-    CancelToken? cancelToken,
-    Options? options,
-    required String id,
-  }) async {
-    final _options = (options ?? Options()).copyWith(
-      method: "GET",
-      responseType: ResponseType.json,
-      extra: {...?options?.extra, ...extra},
-      headers: {...?options?.headers, 'Accept': "application/json"},
-    );
-    final response = await _transport.request<dynamic>(
-      "/api/podcasts/" + id.toString(),
-      options: _options,
-      cancelToken: cancelToken,
-    );
-    return PodcastDetail.fromJson(response.data as Map<String, Object?>);
   }
 
   /// A subscribed podcast with its episodes
   ///
   /// Episodes are newest first, with the user's progress and download state. A podcast the user is not subscribed to answers 404.
-  @GET('/api/podcasts/{id}')
-  Future<PodcastDetail> getPodcast({
-    @Extras() Map<String, Object?> extra = const {},
-    @CancelRequest() CancelToken? cancelToken,
-    Options? options,
-    @Path('id') required String id,
-  });
-  Future<UnsubscribePodcastResponse> _unsubscribePodcastWithOptions({
+  Future<models.PodcastDetail> getPodcast({
     Map<String, Object?> extra = const {},
     CancelToken? cancelToken,
     Options? options,
     required String id,
   }) async {
+    if (const {'', '.', '..'}.contains(Uri.encodeComponent(id))) {
+      throw ArgumentError('Invalid path segment.');
+    }
     final _options = (options ?? Options()).copyWith(
-      method: "DELETE",
+      method: "GET",
       responseType: ResponseType.json,
       extra: {...?options?.extra, ...extra},
       headers: {...?options?.headers, 'Accept': "application/json"},
+      validateStatus: (status) => status != null && (status == 200),
     );
     final response = await _transport.request<dynamic>(
-      "/api/podcasts/" + id.toString() + "/unsubscribe",
+      "/api/podcasts/" + Uri.encodeComponent(id),
       options: _options,
       cancelToken: cancelToken,
     );
-    return UnsubscribePodcastResponse.fromJson(
-      response.data as Map<String, Object?>,
-    );
+    return models.PodcastDetail.fromJson(response.data as Map<String, Object?>);
   }
 
   /// Unsubscribe from a podcast
   ///
   /// Also removes the user's progress and downloads of the podcast's episodes. A podcast the user is not subscribed to answers 404.
-  @DELETE('/api/podcasts/{id}/unsubscribe')
-  Future<UnsubscribePodcastResponse> unsubscribePodcast({
-    @Extras() Map<String, Object?> extra = const {},
-    @CancelRequest() CancelToken? cancelToken,
+  Future<models.UnsubscribePodcastResponse> unsubscribePodcast({
+    Map<String, Object?> extra = const {},
+    CancelToken? cancelToken,
     Options? options,
-    @Path('id') required String id,
-  });
-  Future<UpdateEpisodeProgressResponse> _updateEpisodeProgressWithOptions({
+    required String id,
+  }) async {
+    if (const {'', '.', '..'}.contains(Uri.encodeComponent(id))) {
+      throw ArgumentError('Invalid path segment.');
+    }
+    final _options = (options ?? Options()).copyWith(
+      method: "DELETE",
+      responseType: ResponseType.json,
+      extra: {...?options?.extra, ...extra},
+      headers: {...?options?.headers, 'Accept': "application/json"},
+      validateStatus: (status) => status != null && (status == 200),
+    );
+    final response = await _transport.request<dynamic>(
+      "/api/podcasts/" + Uri.encodeComponent(id) + "/unsubscribe",
+      options: _options,
+      cancelToken: cancelToken,
+    );
+    return models.UnsubscribePodcastResponse.fromJson(
+      response.data as Map<String, Object?>,
+    );
+  }
+
+  /// Save playback progress of a podcast episode
+  ///
+  /// `currentTime` and `duration` are in seconds; `isFinished` defaults to false. `progress` in the answer is the percentage of `duration` played.
+  Future<models.UpdateEpisodeProgressResponse> updateEpisodeProgress({
     Map<String, Object?> extra = const {},
     CancelToken? cancelToken,
     Options? options,
     required String podcastId,
     required String episodeId,
-    required UpdateEpisodeProgressRequest body,
+    required models.UpdateEpisodeProgressRequest body,
   }) async {
+    if (const {'', '.', '..'}.contains(Uri.encodeComponent(podcastId))) {
+      throw ArgumentError('Invalid path segment.');
+    }
+    if (const {'', '.', '..'}.contains(Uri.encodeComponent(episodeId))) {
+      throw ArgumentError('Invalid path segment.');
+    }
     final _options = (options ?? Options()).copyWith(
       method: "POST",
       responseType: ResponseType.json,
@@ -218,131 +203,20 @@ abstract class PodcastsClient {
           if (entry.key.toLowerCase() != 'content-type') entry.key: entry.value,
         'Accept': "application/json",
       },
+      validateStatus: (status) => status != null && (status == 200),
     );
     final response = await _transport.request<dynamic>(
       "/api/podcasts/" +
-          podcastId.toString() +
+          Uri.encodeComponent(podcastId) +
           "/episodes/" +
-          episodeId.toString() +
+          Uri.encodeComponent(episodeId) +
           "/progress",
       options: _options,
       data: convert.jsonEncode(body),
       cancelToken: cancelToken,
     );
-    return UpdateEpisodeProgressResponse.fromJson(
+    return models.UpdateEpisodeProgressResponse.fromJson(
       response.data as Map<String, Object?>,
     );
-  }
-
-  /// Save playback progress of a podcast episode
-  ///
-  /// `currentTime` and `duration` are in seconds; `isFinished` defaults to false. `progress` in the answer is the percentage of `duration` played.
-  @POST('/api/podcasts/{podcastId}/episodes/{episodeId}/progress')
-  @Headers({'Content-Type': 'application/json'})
-  Future<UpdateEpisodeProgressResponse> updateEpisodeProgress({
-    @Extras() Map<String, Object?> extra = const {},
-    @CancelRequest() CancelToken? cancelToken,
-    Options? options,
-    @Path('podcastId') required String podcastId,
-    @Path('episodeId') required String episodeId,
-    @Body() required UpdateEpisodeProgressRequest body,
-  });
-}
-
-class _PodcastsClientWithOptions extends _PodcastsClient {
-  _PodcastsClientWithOptions(Dio dio) : super._(dio, dio);
-
-  @override
-  Future<SubscribePodcastResponse> subscribePodcast({
-    Map<String, Object?> extra = const {},
-    CancelToken? cancelToken,
-    Options? options,
-    required SubscribePodcastRequest body,
-  }) {
-    return options == null
-        ? super.subscribePodcast(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            body: body,
-          )
-        : _subscribePodcastWithOptions(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            body: body,
-          );
-  }
-
-  @override
-  Future<PodcastDetail> getPodcast({
-    Map<String, Object?> extra = const {},
-    CancelToken? cancelToken,
-    Options? options,
-    required String id,
-  }) {
-    return options == null
-        ? super.getPodcast(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            id: id,
-          )
-        : _getPodcastWithOptions(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            id: id,
-          );
-  }
-
-  @override
-  Future<UnsubscribePodcastResponse> unsubscribePodcast({
-    Map<String, Object?> extra = const {},
-    CancelToken? cancelToken,
-    Options? options,
-    required String id,
-  }) {
-    return options == null
-        ? super.unsubscribePodcast(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            id: id,
-          )
-        : _unsubscribePodcastWithOptions(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            id: id,
-          );
-  }
-
-  @override
-  Future<UpdateEpisodeProgressResponse> updateEpisodeProgress({
-    Map<String, Object?> extra = const {},
-    CancelToken? cancelToken,
-    Options? options,
-    required String podcastId,
-    required String episodeId,
-    required UpdateEpisodeProgressRequest body,
-  }) {
-    return options == null
-        ? super.updateEpisodeProgress(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            podcastId: podcastId,
-            episodeId: episodeId,
-            body: body,
-          )
-        : _updateEpisodeProgressWithOptions(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            podcastId: podcastId,
-            episodeId: episodeId,
-            body: body,
-          );
   }
 }

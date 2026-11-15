@@ -2,43 +2,36 @@
 
 import 'dart:convert' as convert;
 
-import 'package:dio/dio.dart'
-    show Dio, Options, ResponseType, CancelToken, RequestOptions;
-import 'package:retrofit/retrofit.dart'
-    show
-        RestApi,
-        Extras,
-        CancelRequest,
-        POST,
-        GET,
-        ParseErrorLogger,
-        Body,
-        Headers,
-        Path;
+import 'package:dio/dio.dart' show Dio, Options, ResponseType, CancelToken;
 
-import 'models/create_listen_group_request.dart' show CreateListenGroupRequest;
-import 'models/end_listen_group_response.dart' show EndListenGroupResponse;
-import 'models/join_listen_group_request.dart' show JoinListenGroupRequest;
-import 'models/leave_listen_group_response.dart' show LeaveListenGroupResponse;
-import 'models/listen_group_snapshot.dart' show ListenGroupSnapshot;
+import 'models/create_listen_group_request.dart'
+    as models
+    show CreateListenGroupRequest;
+import 'models/end_listen_group_response.dart'
+    as models
+    show EndListenGroupResponse;
+import 'models/join_listen_group_request.dart'
+    as models
+    show JoinListenGroupRequest;
+import 'models/leave_listen_group_response.dart'
+    as models
+    show LeaveListenGroupResponse;
+import 'models/listen_group_snapshot.dart' as models show ListenGroupSnapshot;
 import 'models/listen_group_summary.dart' as models show ListenGroupSummary;
 
-part 'listen_together_client.g.dart';
-
-@RestApi(headers: {'Accept': 'application/json'})
-abstract class ListenTogetherClient {
-  ListenTogetherClient._(this._transport);
-
-  factory ListenTogetherClient(Dio dio) =>
-      _ListenTogetherClientWithOptions(dio);
+class ListenTogetherClient {
+  ListenTogetherClient(this._transport);
 
   final Dio _transport;
 
-  Future<ListenGroupSnapshot?> _createListenGroupWithOptions({
+  /// Create a Listen Together group hosted by the user
+  ///
+  /// Each `queueTracks` entry needs a `playbackId`, which wins over the legacy queue item fields (`trackId` and display fields), still accepted and not described here. 400 with code `INVALID_PLAYBACK_ID` for a `playbackId` that cannot be parsed, and without a code for an invalid body. 409 when a concurrent change to the group wins; the request can be retried.
+  Future<models.ListenGroupSnapshot?> createListenGroup({
     Map<String, Object?> extra = const {},
     CancelToken? cancelToken,
     Options? options,
-    required CreateListenGroupRequest body,
+    required models.CreateListenGroupRequest body,
   }) async {
     final _options = (options ?? Options()).copyWith(
       method: "POST",
@@ -51,6 +44,7 @@ abstract class ListenTogetherClient {
           if (entry.key.toLowerCase() != 'content-type') entry.key: entry.value,
         'Accept': "application/json",
       },
+      validateStatus: (status) => status != null && (status == 201),
     );
     final response = await _transport.request<dynamic>(
       "/api/listen-together",
@@ -60,20 +54,10 @@ abstract class ListenTogetherClient {
     );
     return response.data == null
         ? null
-        : ListenGroupSnapshot.fromJson(response.data as Map<String, Object?>);
+        : models.ListenGroupSnapshot.fromJson(
+            response.data as Map<String, Object?>,
+          );
   }
-
-  /// Create a Listen Together group hosted by the user
-  ///
-  /// Each `queueTracks` entry needs a `playbackId`, which wins over the legacy queue item fields (`trackId` and display fields), still accepted and not described here. 400 with code `INVALID_PLAYBACK_ID` for a `playbackId` that cannot be parsed, and without a code for an invalid body. 409 when a concurrent change to the group wins; the request can be retried.
-  @POST('/api/listen-together')
-  @Headers({'Content-Type': 'application/json'})
-  Future<ListenGroupSnapshot?> createListenGroup({
-    @Extras() Map<String, Object?> extra = const {},
-    @CancelRequest() CancelToken? cancelToken,
-    Options? options,
-    @Body() required CreateListenGroupRequest body,
-  });
 
   /// Active public groups, most recently updated first
   ///
@@ -103,11 +87,14 @@ abstract class ListenTogetherClient {
         .toList();
   }
 
-  Future<ListenGroupSnapshot?> _joinListenGroupWithOptions({
+  /// Join a group by its join code
+  ///
+  /// 400 for an invalid join code. 403 when the user may not join. 404 when no active group has the code. 409 when a concurrent change to the group wins; the request can be retried.
+  Future<models.ListenGroupSnapshot?> joinListenGroup({
     Map<String, Object?> extra = const {},
     CancelToken? cancelToken,
     Options? options,
-    required JoinListenGroupRequest body,
+    required models.JoinListenGroupRequest body,
   }) async {
     final _options = (options ?? Options()).copyWith(
       method: "POST",
@@ -120,6 +107,7 @@ abstract class ListenTogetherClient {
           if (entry.key.toLowerCase() != 'content-type') entry.key: entry.value,
         'Accept': "application/json",
       },
+      validateStatus: (status) => status != null && (status == 200),
     );
     final response = await _transport.request<dynamic>(
       "/api/listen-together/join",
@@ -129,21 +117,15 @@ abstract class ListenTogetherClient {
     );
     return response.data == null
         ? null
-        : ListenGroupSnapshot.fromJson(response.data as Map<String, Object?>);
+        : models.ListenGroupSnapshot.fromJson(
+            response.data as Map<String, Object?>,
+          );
   }
 
-  /// Join a group by its join code
+  /// The active group the user is a member of
   ///
-  /// 400 for an invalid join code. 403 when the user may not join. 404 when no active group has the code. 409 when a concurrent change to the group wins; the request can be retried.
-  @POST('/api/listen-together/join')
-  @Headers({'Content-Type': 'application/json'})
-  Future<ListenGroupSnapshot?> joinListenGroup({
-    @Extras() Map<String, Object?> extra = const {},
-    @CancelRequest() CancelToken? cancelToken,
-    Options? options,
-    @Body() required JoinListenGroupRequest body,
-  });
-  Future<ListenGroupSnapshot?> _getMyListenGroupWithOptions({
+  /// Answers `null` when the user is in no active group.
+  Future<models.ListenGroupSnapshot?> getMyListenGroup({
     Map<String, Object?> extra = const {},
     CancelToken? cancelToken,
     Options? options,
@@ -153,6 +135,7 @@ abstract class ListenTogetherClient {
       responseType: ResponseType.json,
       extra: {...?options?.extra, ...extra},
       headers: {...?options?.headers, 'Accept': "application/json"},
+      validateStatus: (status) => status != null && (status == 200),
     );
     final response = await _transport.request<dynamic>(
       "/api/listen-together/mine",
@@ -161,68 +144,36 @@ abstract class ListenTogetherClient {
     );
     return response.data == null
         ? null
-        : ListenGroupSnapshot.fromJson(response.data as Map<String, Object?>);
-  }
-
-  /// The active group the user is a member of
-  ///
-  /// Answers `null` when the user is in no active group.
-  @GET('/api/listen-together/mine')
-  Future<ListenGroupSnapshot?> getMyListenGroup({
-    @Extras() Map<String, Object?> extra = const {},
-    @CancelRequest() CancelToken? cancelToken,
-    Options? options,
-  });
-  Future<EndListenGroupResponse> _endListenGroupWithOptions({
-    Map<String, Object?> extra = const {},
-    CancelToken? cancelToken,
-    Options? options,
-    required String groupId,
-  }) async {
-    final _options = (options ?? Options()).copyWith(
-      method: "POST",
-      responseType: ResponseType.json,
-      extra: {...?options?.extra, ...extra},
-      headers: {...?options?.headers, 'Accept': "application/json"},
-    );
-    final response = await _transport.request<dynamic>(
-      "/api/listen-together/" + groupId.toString() + "/end",
-      options: _options,
-      cancelToken: cancelToken,
-    );
-    return EndListenGroupResponse.fromJson(
-      response.data as Map<String, Object?>,
-    );
+        : models.ListenGroupSnapshot.fromJson(
+            response.data as Map<String, Object?>,
+          );
   }
 
   /// End a group for every member
   ///
   /// 403 when the user is not the host. 404 when the group does not exist. 409 when a concurrent change to the group wins; the request can be retried.
-  @POST('/api/listen-together/{groupId}/end')
-  Future<EndListenGroupResponse> endListenGroup({
-    @Extras() Map<String, Object?> extra = const {},
-    @CancelRequest() CancelToken? cancelToken,
-    Options? options,
-    @Path('groupId') required String groupId,
-  });
-  Future<LeaveListenGroupResponse> _leaveListenGroupWithOptions({
+  Future<models.EndListenGroupResponse> endListenGroup({
     Map<String, Object?> extra = const {},
     CancelToken? cancelToken,
     Options? options,
     required String groupId,
   }) async {
+    if (const {'', '.', '..'}.contains(Uri.encodeComponent(groupId))) {
+      throw ArgumentError('Invalid path segment.');
+    }
     final _options = (options ?? Options()).copyWith(
       method: "POST",
       responseType: ResponseType.json,
       extra: {...?options?.extra, ...extra},
       headers: {...?options?.headers, 'Accept': "application/json"},
+      validateStatus: (status) => status != null && (status == 200),
     );
     final response = await _transport.request<dynamic>(
-      "/api/listen-together/" + groupId.toString() + "/leave",
+      "/api/listen-together/" + Uri.encodeComponent(groupId) + "/end",
       options: _options,
       cancelToken: cancelToken,
     );
-    return LeaveListenGroupResponse.fromJson(
+    return models.EndListenGroupResponse.fromJson(
       response.data as Map<String, Object?>,
     );
   }
@@ -230,122 +181,29 @@ abstract class ListenTogetherClient {
   /// Leave a group
   ///
   /// 403 when the user is not a member. 404 when the group does not exist. 409 when a concurrent change to the group wins; the request can be retried.
-  @POST('/api/listen-together/{groupId}/leave')
-  Future<LeaveListenGroupResponse> leaveListenGroup({
-    @Extras() Map<String, Object?> extra = const {},
-    @CancelRequest() CancelToken? cancelToken,
-    Options? options,
-    @Path('groupId') required String groupId,
-  });
-}
-
-class _ListenTogetherClientWithOptions extends _ListenTogetherClient {
-  _ListenTogetherClientWithOptions(Dio dio) : super._(dio, dio);
-
-  @override
-  Future<ListenGroupSnapshot?> createListenGroup({
-    Map<String, Object?> extra = const {},
-    CancelToken? cancelToken,
-    Options? options,
-    required CreateListenGroupRequest body,
-  }) {
-    return options == null
-        ? super.createListenGroup(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            body: body,
-          )
-        : _createListenGroupWithOptions(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            body: body,
-          );
-  }
-
-  @override
-  Future<ListenGroupSnapshot?> joinListenGroup({
-    Map<String, Object?> extra = const {},
-    CancelToken? cancelToken,
-    Options? options,
-    required JoinListenGroupRequest body,
-  }) {
-    return options == null
-        ? super.joinListenGroup(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            body: body,
-          )
-        : _joinListenGroupWithOptions(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            body: body,
-          );
-  }
-
-  @override
-  Future<ListenGroupSnapshot?> getMyListenGroup({
-    Map<String, Object?> extra = const {},
-    CancelToken? cancelToken,
-    Options? options,
-  }) {
-    return options == null
-        ? super.getMyListenGroup(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-          )
-        : _getMyListenGroupWithOptions(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-          );
-  }
-
-  @override
-  Future<EndListenGroupResponse> endListenGroup({
+  Future<models.LeaveListenGroupResponse> leaveListenGroup({
     Map<String, Object?> extra = const {},
     CancelToken? cancelToken,
     Options? options,
     required String groupId,
-  }) {
-    return options == null
-        ? super.endListenGroup(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            groupId: groupId,
-          )
-        : _endListenGroupWithOptions(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            groupId: groupId,
-          );
-  }
-
-  @override
-  Future<LeaveListenGroupResponse> leaveListenGroup({
-    Map<String, Object?> extra = const {},
-    CancelToken? cancelToken,
-    Options? options,
-    required String groupId,
-  }) {
-    return options == null
-        ? super.leaveListenGroup(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            groupId: groupId,
-          )
-        : _leaveListenGroupWithOptions(
-            extra: extra,
-            cancelToken: cancelToken,
-            options: options,
-            groupId: groupId,
-          );
+  }) async {
+    if (const {'', '.', '..'}.contains(Uri.encodeComponent(groupId))) {
+      throw ArgumentError('Invalid path segment.');
+    }
+    final _options = (options ?? Options()).copyWith(
+      method: "POST",
+      responseType: ResponseType.json,
+      extra: {...?options?.extra, ...extra},
+      headers: {...?options?.headers, 'Accept': "application/json"},
+      validateStatus: (status) => status != null && (status == 200),
+    );
+    final response = await _transport.request<dynamic>(
+      "/api/listen-together/" + Uri.encodeComponent(groupId) + "/leave",
+      options: _options,
+      cancelToken: cancelToken,
+    );
+    return models.LeaveListenGroupResponse.fromJson(
+      response.data as Map<String, Object?>,
+    );
   }
 }
