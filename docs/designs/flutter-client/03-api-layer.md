@@ -65,6 +65,7 @@ The generator follows the spec exactly, so two spec constructs decide how tolera
 packages/soundspan_api/
 ├── openapi/soundspan-client.json    # Emitted by the backend (P9); committed
 ├── swagger_parser.yaml
+├── tool/gen_anonymous_operations.dart  # Writes generated/anonymous_operations.g.dart from the spec
 └── lib/
     ├── soundspan_api.dart           # Public barrel
     └── src/
@@ -78,10 +79,12 @@ packages/soundspan_api/
         │   ├── error_mapper.dart
         │   └── log_interceptor.dart
         ├── errors.dart              # sealed ApiException
+        ├── operations.dart          # matchOperation: request → `METHOD path-template` key
         ├── urls.dart                # StreamUrls, ImageUrls
         ├── paging.dart              # OffsetPage, KeysetPage
         └── generated/               # swagger_parser output; never edited
             ├── soundspan_rest_client.dart   # Root client: one getter per tag
+            ├── anonymous_operations.g.dart  # Anonymous operations and operation ids, by key
             ├── exports.dart
             └── <tag>/                       # One folder per tag (session, library, playlists, …)
                 ├── <tag>_client.dart        # SessionClient, LibraryClient, PlaylistsClient, …
@@ -114,6 +117,26 @@ abstract interface class CredentialProvider {
 ```
 
 A `SoundspanApi.anonymous(baseUrl)` constructor exists for the probe calls made before sign-in.
+
+## The `SoundspanApi` Facade
+
+```dart
+class SoundspanApi {
+  SoundspanApi(ApiConfig config, {required CredentialProvider credentials, ApiLogSink? log,
+      HttpClientAdapter? adapter});
+  SoundspanApi.anonymous(Uri baseUrl, {String userAgent, ApiLogSink? log, HttpClientAdapter? adapter});
+
+  ApiConfig get config;
+  SoundspanRestClient get rest;                       // The generated root client
+  Future<T> send<T>(Future<T> Function(SoundspanRestClient rest) call); // rest call under guardDecode
+  void close();
+}
+```
+
+- The facade exposes the generated root client rather than one hand-written getter per tag, so a tag added on the server needs only regeneration.
+- The generated clients send the spec's paths, which start with `/api`. One interceptor in `client.dart`, installed before `BaseUrlGuard`, removes that prefix (the guard resolves paths against `<baseUrl>/api`), stores the operation's `operationId` in the request's extras, and sets `anonymous: true` on the operations the spec declares without security. A replay already carries its mark and passes through unchanged.
+- Both tables come from the spec: `tool/gen_anonymous_operations.dart` writes `lib/src/generated/anonymous_operations.g.dart` with a `const Set<String>` of anonymous operations and a `const Map<String, String>` of operation ids, keyed by `METHOD path-template`; `tool/gen.sh` runs it after `swagger_parser`. An operation is anonymous when its own `security`, or the root `security` when it has none, is `[]` or contains the empty requirement `{}`; with no requirement at either level the credential is sent. `matchOperation` matches a concrete path to a template (a `{param}` segment matches one non-empty segment; the template with more literal segments wins).
+- `RefreshInterceptor` keeps its own raw refresh call on a bare `Dio`; it never goes through the generated client.
 
 ## Transport
 
@@ -199,7 +222,7 @@ Mapping is by status first, then `code`. Unknown `code` values keep the status-l
 
 Where the list above leaves a choice, the mapper decides:
 
-- `InvalidResponse` and `Unexpected` are not interchangeable. `InvalidResponse` is a 2xx JSON body that fails to decode into its generated model; the facade wraps each generated call in `guardDecode`, which turns the decoder's failure into it. `Unexpected` is anything no other class fits: a cancelled or otherwise unclassifiable `DioException`, or an unexpected status such as a 3xx.
+- `InvalidResponse` and `Unexpected` are not interchangeable. `InvalidResponse` is a 2xx JSON body that fails to decode into its generated model; the facade wraps each generated call in `guardDecode` (`SoundspanApi.send`), which turns the decoder's failure into it. `guardDecode` runs the call in a zone in which the `Dio` of `createDio` records every usable 2xx response; any failure after one is a decode failure, carrying the response status, the `operationId` from the request's extras and the failing key when the decoder names it (`MissingRequiredKeysException`, `DisallowedNullValueException`, `CheckedFromJsonException`), never the payload. A guard `ArgumentError` raised before any response passes through. `Unexpected` is anything no other class fits: a cancelled or otherwise unclassifiable `DioException`, or an unexpected status such as a 3xx.
 - `NotSoundspan` is a 2xx whose body is not JSON where JSON is expected (including a body that claims JSON and does not parse), or a 4xx whose body is HTML, plain text, or JSON without a string `error`. A plain-text 429 is `RateLimited`, not `NotSoundspan`.
 - A 4xx without a class of its own (405, 413, 422, …) with a JSON error body is `InvalidRequest` with its real `status`.
 - 502, 503 and 504 with code `UPSTREAM_FAILED` are `Upstream`; every other 5xx, including one with an HTML body, is `ServerError`.

@@ -226,6 +226,8 @@ linter:
     lines_longer_than_80_chars: false   # dart format decides
 ```
 
+`packages/soundspan_api/analysis_options.yaml` includes this file and repeats the `exclude` list with paths relative to the package (`"**/*.g.dart"`, `"**/*.freezed.dart"`, `lib/src/generated/**`), because an including file's list replaces the included one and the client's paths are relative to `client/`.
+
 Rules the analyzer cannot express are enforced by `tool/check_imports.dart`. It parses files with `package:analyzer` (no resolution), prints `path:line: [rule] message` per violation, and fails CI on any. It runs in `client-analyze` after `flutter analyze` and in `tool/verify.sh`. It scans `lib/`, `test/`, `tool/`, `integration_test/`, `contract_test/`, and `packages/*/{lib,test}`; the import and code rules apply to `lib/` and `packages/*/lib/`, and `spdx` applies to all of them. Generated files (`*.g.dart`, `*.freezed.dart`, anything under a `generated/` directory) and `spikes/` are not checked. Relative and `package:soundspan/...` imports are resolved to a path under `lib/` before the path rules apply, and exports count as imports. There is no ignore comment and no baseline: a rule that needs an exception gets it in the tool, with a test.
 
 | Rule id | Fails when | Reason |
@@ -250,20 +252,32 @@ One command, `tool/gen.sh`:
 #!/usr/bin/env bash
 set -euo pipefail
 cd "$(dirname "$0")/.."
-(cd packages/soundspan_api && dart run swagger_parser && dart run build_runner build --delete-conflicting-outputs)
+(
+  cd packages/soundspan_api
+  dart run swagger_parser
+  # Anonymous operations and operation ids, read from the same spec.
+  dart run tool/gen_anonymous_operations.dart
+  dart format lib/src/generated/anonymous_operations.g.dart
+  dart run build_runner build --delete-conflicting-outputs
+)
 dart run build_runner build --delete-conflicting-outputs
-# Per database (app; state and cache join as they are added): schema dump, stepByStep helper, migration test helpers
+# Per database: schema dump, stepByStep helper, migration test helpers (cache.db: dump only, it is recreated)
 dart run drift_dev schema dump lib/core/storage/app/app_database.dart drift_schemas/app/
 dart run drift_dev schema steps drift_schemas/app/ lib/core/storage/app/app_database.steps.g.dart
 mkdir -p test/core/storage/generated_migrations
 dart run drift_dev schema generate drift_schemas/app/ test/core/storage/generated_migrations/app/
+dart run drift_dev schema dump lib/core/storage/state/state_database.dart drift_schemas/state/
+dart run drift_dev schema steps drift_schemas/state/ lib/core/storage/state/state_database.steps.g.dart
+dart run drift_dev schema generate drift_schemas/state/ test/core/storage/generated_migrations/state/
+dart run drift_dev schema dump lib/core/storage/cache/cache_database.dart drift_schemas/cache/
 dart run tool/gen_pseudo_locale.dart
 flutter gen-l10n
 ```
 
 | Generator | Inputs | Outputs |
 |---|---|---|
-| `swagger_parser` | `packages/soundspan_api/openapi/soundspan-client.json` (emitted by the backend, P9) | `packages/soundspan_api/lib/src/generated/` |
+| `swagger_parser` | `packages/soundspan_api/openapi/soundspan-client.json` (emitted by the backend, P9) | `packages/soundspan_api/lib/src/generated/` (its `.swagger_parser.lock` is ignored by git) |
+| `packages/soundspan_api/tool/gen_anonymous_operations.dart` | the same spec | `packages/soundspan_api/lib/src/generated/anonymous_operations.g.dart` |
 | `retrofit_generator` | Generated client interfaces | `*.g.dart` |
 | `freezed` + `json_serializable` | Generated API models, domain value types | `*.freezed.dart`, `*.g.dart` |
 | `drift_dev` | `lib/core/storage/**/tables/*.dart`, `*.drift` | `*.g.dart`; schema dumps under `drift_schemas/`, `*.steps.g.dart` and migration test helpers under `test/core/storage/generated_migrations/` (the `drift_dev schema` commands) |

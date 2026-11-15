@@ -3,10 +3,10 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 (
   cd packages/soundspan_api
-  # Guarded until the swagger_parser configuration exists (#69 removes it).
-  if [[ -f swagger_parser.yaml ]]; then
-    dart run swagger_parser
-  fi
+  dart run swagger_parser
+  # Anonymous operations and operation ids, read from the same spec.
+  dart run tool/gen_anonymous_operations.dart
+  dart format lib/src/generated/anonymous_operations.g.dart
   dart run build_runner build --delete-conflicting-outputs
 )
 dart run build_runner build --delete-conflicting-outputs

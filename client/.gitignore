@@ -49,3 +49,4 @@ app.*.map.json
 
 # Golden test failure output
 /test/**/failures/
+packages/soundspan_api/lib/src/generated/.swagger_parser.lock
