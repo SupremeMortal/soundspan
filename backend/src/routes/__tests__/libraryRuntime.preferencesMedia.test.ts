@@ -440,6 +440,36 @@ describe("library catalog list runtime coverage", () => {
         expect(smallRes.body.tracks[0].album.coverArt).toBe("c1.jpg");
     });
 
+    it("gives every shuffled track the playbackId of its row", async () => {
+        const rows = (ids: string[]) =>
+            ids.map((id) => ({
+                id,
+                title: id,
+                duration: 180,
+                album: { id: `album-${id}`, title: "A", coverUrl: null },
+            }));
+
+        mockTrackCount.mockResolvedValueOnce(2);
+        mockTrackFindMany.mockResolvedValueOnce(rows(["track-1", "track-2"]));
+        const smallRes = createRes();
+        await shuffleHandler({ query: { limit: "5" } } as any, smallRes);
+
+        mockTrackCount.mockResolvedValueOnce(10);
+        mockTrackFindMany
+            .mockResolvedValueOnce([{ id: "track-9" }, { id: "track-8" }])
+            .mockResolvedValueOnce(rows(["track-9", "track-8"]));
+        const largeRes = createRes();
+        await shuffleHandler({ query: { limit: "2" } } as any, largeRes);
+
+        for (const res of [smallRes, largeRes]) {
+            expect(res.statusCode).toBe(200);
+            expect(res.body.tracks.length).toBeGreaterThan(0);
+            for (const track of res.body.tracks) {
+                expect(track.playbackId).toBe(`t.${track.id}`);
+            }
+        }
+    });
+
     it("routes the totalTracks === limit boundary to the small-library in-memory branch", async () => {
         // Guards the `totalTracks <= limit` comparison: at exact equality the
         // handler must fetch-all + shuffle in memory, never pivot-sample (a

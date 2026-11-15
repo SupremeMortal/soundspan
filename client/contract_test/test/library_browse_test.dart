@@ -196,6 +196,9 @@ void main() {
 
       expect(shuffled.tracks.length, inInclusiveRange(1, 3));
       expect(shuffled.total, greaterThanOrEqualTo(shuffled.tracks.length));
+      for (final track in shuffled.tracks) {
+        expect(track.playbackId, isNotNull);
+      }
     });
 
     test('liked: keyset paging with limit 2 returns all three tracks across '
