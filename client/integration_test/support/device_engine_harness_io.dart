@@ -5,8 +5,8 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:soundspan/core/playback/engines/player_engine.dart';
 
-import '../../test/core/playback/engine_conformance.dart';
 import 'device_engine_harness_base.dart';
+import 'engine_conformance.dart';
 import 'tone_server.dart';
 
 /// What every native harness of one test run shares: the in-process tone

@@ -18,8 +18,8 @@ library;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 
-import '../test/core/playback/engine_conformance.dart';
 import 'support/device_engine_harness.dart';
+import 'support/engine_conformance.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();

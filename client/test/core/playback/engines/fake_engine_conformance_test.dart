@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:soundspan/core/playback/engines/fake_engine.dart';
 import 'package:soundspan/core/playback/engines/player_engine.dart';
 
-import '../engine_conformance.dart';
+import '../../../../integration_test/support/engine_conformance.dart';
 
 void main() {
   runEngineConformance('FakeEngine', FakeEngineHarness.new);

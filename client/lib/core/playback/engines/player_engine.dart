@@ -262,7 +262,7 @@ final class EngineError {
 /// Plays at most two things: the current source and a preloaded next source.
 ///
 /// It knows nothing about queues, shuffle or the server. Contract, pinned by
-/// the engine conformance suite (`test/core/playback/engine_conformance.dart`):
+/// the engine conformance suite (`integration_test/support/engine_conformance.dart`):
 ///
 /// - [state] replays the latest value to a new listener; the initial state
 ///   is [EngineState.idle] (idle, not playing, position zero).

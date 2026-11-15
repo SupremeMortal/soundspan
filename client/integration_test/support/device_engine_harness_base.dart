@@ -7,7 +7,7 @@ library;
 import 'package:soundspan/core/playback/engines/player_engine.dart';
 import 'package:soundspan/platform/player_engine/player_engine_factory.dart';
 
-import '../../test/core/playback/engine_conformance.dart';
+import 'engine_conformance.dart';
 import 'tone_server.dart' show ToneServer;
 
 /// Runs the conformance suite against the platform's real engine, built by

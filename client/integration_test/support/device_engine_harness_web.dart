@@ -3,8 +3,8 @@
 import 'package:dio/dio.dart';
 import 'package:soundspan/core/playback/engines/player_engine.dart';
 
-import '../../test/core/playback/engine_conformance.dart';
 import 'device_engine_harness_base.dart';
+import 'engine_conformance.dart';
 
 /// The tone server started by `tool/tone_server.dart`, passed with
 /// `--dart-define=TONE_SERVER=<address>`.

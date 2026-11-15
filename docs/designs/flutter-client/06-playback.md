@@ -144,7 +144,7 @@ The two-slot contract is the smallest surface that still gives gapless playback.
 
 ### Engine Conformance Suite
 
-`test/core/playback/engine_conformance.dart` is one parameterized suite run against `FakeEngine` in unit tests and against the real engine for the current platform in `integration_test/engine_conformance_test.dart` (tag `engine`), using short tone files served by a local `shelf` server that checks headers and Range.
+`integration_test/support/engine_conformance.dart` (under `integration_test/`, because the web build of the device test cannot import files outside it) is one parameterized suite run against `FakeEngine` in unit tests and against the real engine for the current platform in `integration_test/engine_conformance_test.dart` (tag `engine`), using short tone files served by a local `shelf` server that checks headers and Range.
 
 Required behaviours: load and play; pause and resume keep position; seek within buffered and unbuffered ranges; `setNext` then natural end produces exactly one `AdvancedToNext` and no audible gap larger than 20 ms (measured from the position streams, verified by ear in the manual matrix); `setNext(null)` then natural end produces `Completed`; replacing next twice before the transition plays only the last one; a 404 source produces `Failed(notFound)`; a 401 produces `Failed(unauthorized)`; headers reach the server; a local file plays with the network disabled; `stop` then `load` works; `dispose` releases the device.
 
