@@ -62,11 +62,17 @@ abstract class QueueState with _$QueueState {
   /// The item at [cursor], or null when the queue is empty.
   QueueItem? get current => _itemAtPlayIndex(cursor);
 
-  /// The item after [current] in play order, or null at the end or when the
-  /// queue is empty.
+  /// The item after [current] in play order: [current] itself with
+  /// [RepeatMode.one], the first item in play order after the last with
+  /// [RepeatMode.all], else null at the end. Null when the queue is empty.
   QueueItem? get upNext {
     final at = cursor;
-    return at == null ? null : _itemAtPlayIndex(at + 1);
+    if (at == null) return null;
+    return switch (repeat) {
+      RepeatMode.one => current,
+      RepeatMode.all => _itemAtPlayIndex(at + 1 >= items.length ? 0 : at + 1),
+      RepeatMode.off => _itemAtPlayIndex(at + 1),
+    };
   }
 
   QueueItem? _itemAtPlayIndex(int? playIndex) {
