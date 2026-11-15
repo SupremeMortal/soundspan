@@ -4,7 +4,8 @@
 /// Back and Forward buttons (doc 09, Shell by Window Class).
 ///
 /// Back pops the current branch; Forward re-opens the location most
-/// recently popped in that branch. Each branch keeps its own forward list,
+/// recently popped in that branch, on top of the branch's detail stack
+/// when the branch shows a detail. Each branch keeps its own forward list,
 /// and any new navigation in a branch clears that branch's list.
 class ShellHistory {
   final Map<int, String> _current = {};

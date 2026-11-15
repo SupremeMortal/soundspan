@@ -96,7 +96,10 @@ StatefulShellRoute buildShellRoute(
           onForward: history.canForward(branch)
               ? () {
                   final target = history.forward(branch);
-                  if (target != null) router.go(target);
+                  // Pushed onto a detail so the branch's stack survives.
+                  if (target != null) {
+                    DetailNavigation.openLocation(router, target);
+                  }
                 }
               : null,
           child: shell,

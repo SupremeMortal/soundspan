@@ -1,11 +1,15 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 
+import 'package:flutter_riverpod/flutter_riverpod.dart' show AsyncData;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:soundspan/app/router/placeholder_screen.dart';
 import 'package:soundspan/app/router/routes.dart';
 import 'package:soundspan/app/shell/top_bar.dart';
+import 'package:soundspan/shared/providers/tint.dart';
 
+import '../../helpers/fake_repositories.dart';
+import '../../helpers/fake_tint_extractor.dart';
 import '../../helpers/guidelines.dart';
 import '../../helpers/pump_app.dart';
 import '../../helpers/test_root.dart';
@@ -103,6 +107,36 @@ void main() {
     await tester.pumpAndSettle();
     expect(locationOf(root), '/home/artist/r1');
     expect(enabled(tester, 'Forward'), isFalse);
+  });
+
+  testWidgets('Forward keeps a stacked branch', (tester) async {
+    final root = await tester.pumpSoundspanApp(
+      stored: StoredProfile.signedIn,
+      size: TestSizes.expanded,
+      overrides: [
+        ...FakeRepositories().overrides,
+        tintExtractorProvider.overrideWithValue(AsyncData(FakeTintExtractor())),
+      ],
+    );
+    DetailNavigation.openAlbum(screen(tester), 'a1');
+    await tester.pumpAndSettle();
+    DetailNavigation.openArtist(screen(tester), 'r1');
+    await tester.pumpAndSettle();
+    expect(locationOf(root), '/home/artist/r1');
+
+    await tapButton(tester, 'Back');
+    expect(locationOf(root), '/home/album/a1');
+
+    await tapButton(tester, 'Forward');
+    expect(locationOf(root), '/home/artist/r1');
+    expect(enabled(tester, 'Forward'), isFalse);
+
+    await tapButton(tester, 'Back');
+    expect(locationOf(root), '/home/album/a1');
+
+    await tapButton(tester, 'Back');
+    expect(locationOf(root), '/home');
+    expect(enabled(tester, 'Back'), isFalse);
   });
 
   testWidgets('Forward belongs to the branch it was left in', (tester) async {
