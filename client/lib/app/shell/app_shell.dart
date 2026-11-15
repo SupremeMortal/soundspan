@@ -25,6 +25,7 @@ class AppShell extends StatelessWidget {
     this.onBack,
     this.onForward,
     this.openPlaylistId,
+    this.onExplore,
     super.key,
   });
 
@@ -51,6 +52,9 @@ class AppShell extends StatelessWidget {
   /// when none is open.
   final String? openPlaylistId;
 
+  /// Opens Explore; null leaves the sidebar item out.
+  final VoidCallback? onExplore;
+
   /// The selected destination's content.
   final Widget child;
 
@@ -69,6 +73,7 @@ class AppShell extends StatelessWidget {
     miniPlayer: const MiniPlayerSlot(),
     playerBar: const PlayerBarSlot(),
     sidebarPlaylists: SidebarPlaylists(selectedPlaylistId: openPlaylistId),
+    onExplore: onExplore,
     child: child,
   );
 }

@@ -16,6 +16,7 @@ import 'package:soundspan/features/album/album.dart';
 import 'package:soundspan/features/artist/artist.dart';
 import 'package:soundspan/features/connect/connect.dart';
 import 'package:soundspan/features/connect/ui/probe_controller.dart';
+import 'package:soundspan/features/discover/discover.dart';
 import 'package:soundspan/features/playlist/playlist.dart';
 import 'package:soundspan/shared/providers/tint.dart';
 import 'package:soundspan_api/soundspan_api.dart';
@@ -244,6 +245,17 @@ void main() {
     await go(tester, root, '/album/42');
     expect(location(root), '/podcasts/album/42');
     expect(selectedIndex(tester), ShellDestination.podcasts.index);
+  });
+
+  testWidgets('/explore opens Explore inside the selected branch', (
+    tester,
+  ) async {
+    final root = await tester.pumpRouterApp(stored: StoredProfile.signedIn);
+    await go(tester, root, '/podcasts');
+    await go(tester, root, '/explore');
+    expect(location(root), '/podcasts/explore');
+    expect(selectedIndex(tester), ShellDestination.podcasts.index);
+    expect(find.byType(ExploreScreen), findsOneWidget);
   });
 
   testWidgets('/album/42 goes to Home before any branch is shown', (

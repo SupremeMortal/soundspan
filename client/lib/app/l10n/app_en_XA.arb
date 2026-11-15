@@ -1258,5 +1258,49 @@
   "podcastsEpisodePlayedSpoken": "[þļåýéð one]",
   "@podcastsEpisodePlayedSpoken": {
     "description": "Last part of the screen-reader label of an episode the user finished, e.g. the 'played' of 'Title, Mar 12, 2026, 42 minutes, played'."
+  },
+  "navExplore": "[Éxþļöŕé one]",
+  "@navExplore": {
+    "description": "Sidebar item, Home card and screen name of Explore, the page of recommendations and new music."
+  },
+  "discoverRecommendedForYou": "[Ŕéçömméñðéð Föŕ Ýöû one two]",
+  "@discoverRecommendedForYou": {
+    "description": "Title of the Home row and the Explore section of artists similar to the ones the user plays most."
+  },
+  "discoverPopularArtists": "[Þöþûļåŕ Åŕţîšţš one two]",
+  "@discoverPopularArtists": {
+    "description": "Title of the Home row and the Explore section of artists popular right now."
+  },
+  "discoverCardArtist": "[Åŕţîšţ one]",
+  "@discoverCardArtist": {
+    "description": "Second line of a card of a recommended or popular artist: what kind of item it is."
+  },
+  "exploreThisWeek": "[Ţĥîš ŵééķ’š ðîšçövéŕîéš one two three]",
+  "@exploreThisWeek": {
+    "description": "Title of the Explore section of this week's discovery playlist."
+  },
+  "explorePlay": "[Þļåý one]",
+  "@explorePlay": {
+    "description": "Button of the Explore discovery section that plays its tracks in order."
+  },
+  "exploreShuffle": "[Šĥûffļé one]",
+  "@exploreShuffle": {
+    "description": "Button of the Explore discovery section that plays its tracks in random order."
+  },
+  "exploreShowAll": "[Šĥöŵ åļļ one]",
+  "@exploreShowAll": {
+    "description": "Button under the first tracks of the Explore discovery section that shows every track."
+  },
+  "exploreEmpty": "[Ñöţĥîñĝ ţö éxþļöŕé ýéţ one two three]",
+  "@exploreEmpty": {
+    "description": "Shown on Explore when every section is empty."
+  },
+  "exploreNotAvailable": "[Ñöţ åvåîļåbļé öñ ţĥîš šéŕvéŕ one two three]",
+  "@exploreNotAvailable": {
+    "description": "Shown on Explore when the server has discovery turned off."
+  },
+  "homeExploreCard": "[Fîñð ñéŵ åŕţîšţš åñð mûšîç one two three]",
+  "@homeExploreCard": {
+    "description": "Second line of the Explore card at the end of Home on phones and tablets."
   }
 }

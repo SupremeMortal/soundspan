@@ -9,6 +9,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show ProviderListenable;
 import 'package:soundspan/core/profile/capabilities.dart';
+import 'package:soundspan/features/discover/discover.dart';
 import 'package:soundspan/shared/domain/domain.dart';
 import 'package:soundspan/shared/providers/capability_refresh.dart';
 import 'package:soundspan/shared/providers/repositories.dart';
@@ -24,6 +25,12 @@ enum HomeShelf {
 
   /// Liked Songs and the user's mixes.
   madeForYou,
+
+  /// Artists similar to the ones the user plays most (`discovery`).
+  recommendedForYou,
+
+  /// Artists popular right now (`discovery`).
+  popularArtists,
 
   /// The first page of the user's playlists.
   yourPlaylists,
@@ -160,6 +167,8 @@ ProviderListenable<AsyncValue<List<Object>?>> homeShelfSource(
   HomeShelf.continueListening => homeRecentlyListenedProvider,
   HomeShelf.recentlyAdded => homeRecentlyAddedProvider,
   HomeShelf.madeForYou => homeMixesProvider,
+  HomeShelf.recommendedForYou => recommendedForYouProvider,
+  HomeShelf.popularArtists => popularArtistsProvider,
   HomeShelf.yourPlaylists => homePlaylistsProvider,
   HomeShelf.popularPodcasts => homeTopPodcastsProvider,
 };
@@ -280,6 +289,7 @@ Future<void> refreshHome(WidgetRef ref) async {
     homeTopPodcastsProvider,
     (repository) => repository.refreshTopPodcasts(),
   );
+  refreshes.add(refreshDiscovery(ref));
 
   if (ref.read(homePlaylistsProvider.exists)) {
     final playlists = ref.read(homePlaylistsProvider);
@@ -301,4 +311,5 @@ void retryHome(WidgetRef ref) {
     ..invalidate(homeMixesProvider)
     ..invalidate(homeTopPodcastsProvider)
     ..invalidate(homePlaylistSourceProvider);
+  retryDiscovery(ref);
 }

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:soundspan/app/router/routes.dart';
@@ -11,15 +12,20 @@ import 'package:soundspan/app/shell/shell_history.dart';
 import 'package:soundspan/core/profile/profile_scope.dart';
 import 'package:soundspan/features/album/album.dart';
 import 'package:soundspan/features/artist/artist.dart';
+import 'package:soundspan/features/discover/discover.dart';
 import 'package:soundspan/features/home/home.dart';
 import 'package:soundspan/features/library/library.dart';
 import 'package:soundspan/features/playlist/playlist.dart';
 import 'package:soundspan/features/podcasts/podcasts.dart';
 import 'package:soundspan/features/search/search.dart';
 
-/// The detail routes, attached as children of every branch root so a detail
-/// opens inside the branch it was opened from.
+/// The detail routes and Explore, attached as children of every branch
+/// root so a detail opens inside the branch it was opened from.
 List<RouteBase> detailRoutes() => [
+  GoRoute(
+    path: RoutePaths.exploreSegment,
+    builder: (_, _) => const ExploreScreen(),
+  ),
   for (final kind in DetailKind.values)
     GoRoute(
       path: '${kind.name}/:${kind.parameter}',
@@ -80,30 +86,39 @@ StatefulShellRoute buildShellRoute(
     return LocalDataTooNewGate(
       child: ProfileScope(
         child: OutboxNoticeListener(
-          child: AppShell(
-            selectedIndex: branch,
-            onDestinationSelected: (index) =>
-                shell.goBranch(index, initialLocation: index == branch),
-            onSearch: (query) => router.go(searchLocation(query)),
-            onSearchChanged: branch == ShellDestination.search.index
-                ? (query) => router.go(searchLocation(query))
-                : null,
-            onBack: canBack
-                ? () {
-                    history.back(branch);
-                    router.pop();
-                  }
-                : null,
-            onForward: history.canForward(branch)
-                ? () {
-                    final target = history.forward(branch);
-                    // Pushed onto a detail so the branch's stack survives.
-                    if (target != null) {
-                      DetailNavigation.openLocation(router, target);
+          child: Consumer(
+            builder: (context, ref, shellChild) => AppShell(
+              selectedIndex: branch,
+              onDestinationSelected: (index) =>
+                  shell.goBranch(index, initialLocation: index == branch),
+              onSearch: (query) => router.go(searchLocation(query)),
+              onSearchChanged: branch == ShellDestination.search.index
+                  ? (query) => router.go(searchLocation(query))
+                  : null,
+              onBack: canBack
+                  ? () {
+                      history.back(branch);
+                      router.pop();
                     }
-                  }
-                : null,
-            openPlaylistId: openPlaylistIdOf(state.uri),
+                  : null,
+              onForward: history.canForward(branch)
+                  ? () {
+                      final target = history.forward(branch);
+                      // Pushed onto a detail so the branch's stack survives.
+                      if (target != null) {
+                        DetailNavigation.openLocation(router, target);
+                      }
+                    }
+                  : null,
+              openPlaylistId: openPlaylistIdOf(state.uri),
+              onExplore: ref.watch(discoveryEnabledProvider)
+                  ? () => DetailNavigation.openLocation(
+                      router,
+                      RoutePaths.explore,
+                    )
+                  : null,
+              child: shellChild!,
+            ),
             child: shell,
           ),
         ),

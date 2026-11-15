@@ -12,6 +12,9 @@ final class FakeApi {
 
   /// The podcasts resource: `rest.podcasts`.
   final FakePodcastsClient podcasts = FakePodcastsClient();
+
+  /// The discovery resource: `rest.discovery`.
+  final FakeDiscoveryClient discovery = FakeDiscoveryClient();
 }
 
 /// One file a device reported as written.
@@ -454,4 +457,78 @@ final class FakePodcastsClient implements api.PodcastsClient {
     _call('listTopPodcasts');
     return const [];
   }
+}
+
+/// An in-memory model of the server's discovery reads: the recommended
+/// artists, the popular artists and this week's discovery playlist. Every
+/// call is counted in [calls]; an exception in [failures] is thrown by the
+/// call of that name instead of answering. The operations this model does
+/// not cover throw [UnimplementedError].
+final class FakeDiscoveryClient implements api.DiscoveryClient {
+  /// The answer of `GET /recommendations/for-you`.
+  List<api.RecommendedArtist> recommended = [];
+
+  /// The answer of `GET /discover/popular-artists`.
+  List<api.PopularArtist> popular = [];
+
+  /// The tracks of `GET /discover/current`; empty when there is none.
+  List<api.DiscoverTrack> current = [];
+
+  /// Calls by operation name.
+  final Map<String, int> calls = {};
+
+  /// The `limit` of each call that takes one, by operation name.
+  final Map<String, int?> limits = {};
+
+  /// Exceptions to throw, by operation name.
+  final Map<String, Exception> failures = {};
+
+  void _call(String name) {
+    calls.update(name, (n) => n + 1, ifAbsent: () => 1);
+    if (failures[name] case final error?) throw error;
+  }
+
+  @override
+  Future<api.RecommendationsForYou> getRecommendationsForYou({
+    Map<String, Object?> extra = const {},
+    CancelToken? cancelToken,
+    Options? options,
+    int? limit,
+  }) async {
+    _call('getRecommendationsForYou');
+    limits['getRecommendationsForYou'] = limit;
+    return api.RecommendationsForYou(artists: List.of(recommended));
+  }
+
+  @override
+  Future<api.PopularArtistsResponse> listPopularArtists({
+    Map<String, Object?> extra = const {},
+    CancelToken? cancelToken,
+    Options? options,
+    int? limit,
+  }) async {
+    _call('listPopularArtists');
+    limits['listPopularArtists'] = limit;
+    return api.PopularArtistsResponse(artists: List.of(popular));
+  }
+
+  @override
+  Future<api.DiscoverCurrent> getCurrentDiscover({
+    Map<String, Object?> extra = const {},
+    CancelToken? cancelToken,
+    Options? options,
+  }) async {
+    _call('getCurrentDiscover');
+    return api.DiscoverCurrent(
+      totalCount: current.length,
+      tracks: List.of(current),
+      unavailableCount: 0,
+      weekStart: DateTime.utc(2026, 11, 9),
+      weekEnd: DateTime.utc(2026, 11, 15, 23, 59, 59),
+    );
+  }
+
+  @override
+  Never noSuchMethod(Invocation invocation) =>
+      throw UnimplementedError('${invocation.memberName}');
 }

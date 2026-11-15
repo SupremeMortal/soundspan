@@ -39,6 +39,12 @@ abstract final class RoutePaths {
   /// The podcasts branch.
   static const podcasts = '/podcasts';
 
+  /// Explore; redirected into the selected branch like a detail.
+  static const explore = '/explore';
+
+  /// The last segment of Explore inside a branch.
+  static const exploreSegment = 'explore';
+
   /// Settings, on the root navigator.
   static const settings = '/settings';
 
@@ -122,9 +128,14 @@ class ShellLocation {
   }
 
   /// The location of the [kind] detail [id] inside the selected branch.
-  String detail(DetailKind kind, String id) => _base
+  String detail(DetailKind kind, String id) => _inBranch([kind.name, id]);
+
+  /// The location of Explore inside the selected branch.
+  String explore() => _inBranch(const [RoutePaths.exploreSegment]);
+
+  String _inBranch(List<String> segments) => _base
       .replace(
-        pathSegments: [..._base.pathSegments, kind.name, id],
+        pathSegments: [..._base.pathSegments, ...segments],
         queryParameters: _base.queryParameters.isEmpty
             ? null
             : _base.queryParameters,
@@ -182,6 +193,10 @@ abstract final class DetailNavigation {
   /// Opens playlist [id].
   static void openPlaylist(BuildContext context, String id) =>
       _open(context, DetailKind.playlist, id);
+
+  /// Opens Explore.
+  static void openExplore(BuildContext context) =>
+      openLocation(GoRouter.of(context), RoutePaths.explore);
 
   /// Opens the top-level detail [location] (`/album/42`, the form deep links
   /// use) in [router]'s selected branch, pushing it when that branch already
@@ -268,6 +283,7 @@ GoRouter createRouter(
           redirect: (_, state) =>
               location.detail(kind, state.pathParameters[kind.parameter]!),
         ),
+      GoRoute(path: RoutePaths.explore, redirect: (_, _) => location.explore()),
       GoRoute(
         path: RoutePaths.settings,
         builder: (context, _) => const SettingsScreen(),

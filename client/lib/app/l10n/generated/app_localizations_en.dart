@@ -986,6 +986,39 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get podcastsEpisodePlayedSpoken => 'played';
+
+  @override
+  String get navExplore => 'Explore';
+
+  @override
+  String get discoverRecommendedForYou => 'Recommended For You';
+
+  @override
+  String get discoverPopularArtists => 'Popular Artists';
+
+  @override
+  String get discoverCardArtist => 'Artist';
+
+  @override
+  String get exploreThisWeek => 'This week’s discoveries';
+
+  @override
+  String get explorePlay => 'Play';
+
+  @override
+  String get exploreShuffle => 'Shuffle';
+
+  @override
+  String get exploreShowAll => 'Show all';
+
+  @override
+  String get exploreEmpty => 'Nothing to explore yet';
+
+  @override
+  String get exploreNotAvailable => 'Not available on this server';
+
+  @override
+  String get homeExploreCard => 'Find new artists and music';
 }
 
 /// The translations for English (`en_XA`).
@@ -1994,4 +2027,38 @@ class AppLocalizationsEnXa extends AppLocalizationsEn {
 
   @override
   String get podcastsEpisodePlayedSpoken => '[þļåýéð one]';
+
+  @override
+  String get navExplore => '[Éxþļöŕé one]';
+
+  @override
+  String get discoverRecommendedForYou => '[Ŕéçömméñðéð Föŕ Ýöû one two]';
+
+  @override
+  String get discoverPopularArtists => '[Þöþûļåŕ Åŕţîšţš one two]';
+
+  @override
+  String get discoverCardArtist => '[Åŕţîšţ one]';
+
+  @override
+  String get exploreThisWeek => '[Ţĥîš ŵééķ’š ðîšçövéŕîéš one two three]';
+
+  @override
+  String get explorePlay => '[Þļåý one]';
+
+  @override
+  String get exploreShuffle => '[Šĥûffļé one]';
+
+  @override
+  String get exploreShowAll => '[Šĥöŵ åļļ one]';
+
+  @override
+  String get exploreEmpty => '[Ñöţĥîñĝ ţö éxþļöŕé ýéţ one two three]';
+
+  @override
+  String get exploreNotAvailable =>
+      '[Ñöţ åvåîļåbļé öñ ţĥîš šéŕvéŕ one two three]';
+
+  @override
+  String get homeExploreCard => '[Fîñð ñéŵ åŕţîšţš åñð mûšîç one two three]';
 }

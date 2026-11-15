@@ -57,6 +57,7 @@ class AdaptiveShell extends StatefulWidget {
     this.miniPlayer,
     this.playerBar,
     this.sidebarPlaylists,
+    this.onExplore,
     super.key,
   });
 
@@ -90,6 +91,10 @@ class AdaptiveShell extends StatefulWidget {
 
   /// The playlist list slot under the sidebar destinations (expanded).
   final Widget? sidebarPlaylists;
+
+  /// Opens Explore from an "Explore" item below the sidebar destinations
+  /// (expanded); null leaves the item out.
+  final VoidCallback? onExplore;
 
   @override
   State<AdaptiveShell> createState() => _AdaptiveShellState();
@@ -259,6 +264,14 @@ class _AdaptiveShellState extends State<AdaptiveShell> {
                                               index == widget.selectedIndex,
                                           onTap: () => widget
                                               .onDestinationSelected(index),
+                                        ),
+                                      if (widget.onExplore
+                                          case final onExplore?)
+                                        _SidebarDestination(
+                                          label: l10n.navExplore,
+                                          icon: Icons.explore_outlined,
+                                          selected: false,
+                                          onTap: onExplore,
                                         ),
                                     ],
                                   ),

@@ -13,6 +13,7 @@ import 'package:soundspan/app/theme/dimens.dart';
 import 'package:soundspan/app/theme/extensions.dart';
 import 'package:soundspan/app/theme/typography.dart';
 import 'package:soundspan/core/profile/version_notice.dart';
+import 'package:soundspan/features/discover/discover.dart';
 import 'package:soundspan/features/home/ui/home_view_model.dart';
 import 'package:soundspan/shared/clock.dart';
 import 'package:soundspan/shared/domain/domain.dart';
@@ -31,6 +32,8 @@ import 'package:soundspan/shared/widgets/shelf.dart';
 /// hidden. When every shelf failed with nothing cached one [ErrorView]
 /// takes their place; when every shelf is empty an [EmptyState] does.
 /// Pull to refresh on touch and F5 on desktop fetch the shelves again.
+/// While the server has `discovery` on, compact and medium windows end with
+/// the [ExploreCard].
 class HomeScreen extends ConsumerWidget {
   /// Creates the screen.
   const new({super.key});
@@ -93,6 +96,7 @@ class HomeScreen extends ConsumerWidget {
                         slivers: [
                           const SliverToBoxAdapter(child: _Greeting()),
                           body,
+                          const SliverToBoxAdapter(child: ExploreCard()),
                         ],
                       ),
                     ),
@@ -211,6 +215,18 @@ class _ShelfSlotState extends ConsumerState<_ShelfSlot> {
         (artist) => _artistCard(context, artist),
       ),
       HomeShelf.madeForYou => _madeForYou(context),
+      HomeShelf.recommendedForYou => _shelf(
+        l10n.discoverRecommendedForYou,
+        ref.watch(recommendedForYouProvider),
+        DiscoveryArtistCard.new,
+        onShowAll: () => DetailNavigation.openExplore(context),
+      ),
+      HomeShelf.popularArtists => _shelf(
+        l10n.discoverPopularArtists,
+        ref.watch(popularArtistsProvider),
+        DiscoveryArtistCard.new,
+        onShowAll: () => DetailNavigation.openExplore(context),
+      ),
       HomeShelf.yourPlaylists => _shelf(
         l10n.homeShelfYourPlaylists,
         ref.watch(homePlaylistsProvider),

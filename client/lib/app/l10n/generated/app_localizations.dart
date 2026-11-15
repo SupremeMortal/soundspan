@@ -1698,6 +1698,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'played'**
   String get podcastsEpisodePlayedSpoken;
+
+  /// Sidebar item, Home card and screen name of Explore, the page of recommendations and new music.
+  ///
+  /// In en, this message translates to:
+  /// **'Explore'**
+  String get navExplore;
+
+  /// Title of the Home row and the Explore section of artists similar to the ones the user plays most.
+  ///
+  /// In en, this message translates to:
+  /// **'Recommended For You'**
+  String get discoverRecommendedForYou;
+
+  /// Title of the Home row and the Explore section of artists popular right now.
+  ///
+  /// In en, this message translates to:
+  /// **'Popular Artists'**
+  String get discoverPopularArtists;
+
+  /// Second line of a card of a recommended or popular artist: what kind of item it is.
+  ///
+  /// In en, this message translates to:
+  /// **'Artist'**
+  String get discoverCardArtist;
+
+  /// Title of the Explore section of this week's discovery playlist.
+  ///
+  /// In en, this message translates to:
+  /// **'This week’s discoveries'**
+  String get exploreThisWeek;
+
+  /// Button of the Explore discovery section that plays its tracks in order.
+  ///
+  /// In en, this message translates to:
+  /// **'Play'**
+  String get explorePlay;
+
+  /// Button of the Explore discovery section that plays its tracks in random order.
+  ///
+  /// In en, this message translates to:
+  /// **'Shuffle'**
+  String get exploreShuffle;
+
+  /// Button under the first tracks of the Explore discovery section that shows every track.
+  ///
+  /// In en, this message translates to:
+  /// **'Show all'**
+  String get exploreShowAll;
+
+  /// Shown on Explore when every section is empty.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing to explore yet'**
+  String get exploreEmpty;
+
+  /// Shown on Explore when the server has discovery turned off.
+  ///
+  /// In en, this message translates to:
+  /// **'Not available on this server'**
+  String get exploreNotAvailable;
+
+  /// Second line of the Explore card at the end of Home on phones and tablets.
+  ///
+  /// In en, this message translates to:
+  /// **'Find new artists and music'**
+  String get homeExploreCard;
 }
 
 class _AppLocalizationsDelegate
