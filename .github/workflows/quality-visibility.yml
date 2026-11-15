@@ -10,10 +10,6 @@ on:
       - "feature/**"
   workflow_dispatch:
 
-concurrency:
-  group: quality-visibility-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
   backend-tests-coverage:
     name: Backend Tests + Coverage

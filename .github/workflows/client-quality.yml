@@ -14,10 +14,6 @@ on:
     paths:
       - "client/**"
 
-concurrency:
-  group: client-quality-${{ github.ref }}
-  cancel-in-progress: true
-
 permissions:
   contents: read
 
