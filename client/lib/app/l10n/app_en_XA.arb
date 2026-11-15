@@ -1087,5 +1087,75 @@
         "type": "int"
       }
     }
+  },
+  "codeCellsLabel": "[Ļîñķ çöðé, 6 çĥåŕåçţéŕš one two three]",
+  "@codeCellsLabel": {
+    "description": "Screen-reader label of the six cells a device-link code is typed into."
+  },
+  "codeCellsHint": "[Çöðéš ĥåvé ñö Î, Ö, 0 öŕ 1 one two three]",
+  "@codeCellsHint": {
+    "description": "Shown under the device-link code cells when a character that cannot be in a code was typed."
+  },
+  "connectDeviceLinkStep1": "[Öþéñ šöûñðšþåñ îñ å bŕöŵšéŕ one two three]",
+  "@connectDeviceLinkStep1": {
+    "description": "First of three steps to get a device-link code from the web UI."
+  },
+  "connectDeviceLinkStep2": "[Ĝö ţö Šéţţîñĝš → Ļîñķ Ðévîçé one two three]",
+  "@connectDeviceLinkStep2": {
+    "description": "Second of three steps to get a device-link code from the web UI; 'Settings' and 'Link Device' are the web UI's names."
+  },
+  "connectDeviceLinkStep3": "[Šéļéçţ Ĝéñéŕåţé Çöðé åñð éñţéŕ îţ béļöŵ one two three four]",
+  "@connectDeviceLinkStep3": {
+    "description": "Third of three steps to get a device-link code from the web UI; 'Generate Code' is the web UI's button."
+  },
+  "connectDeviceLinkDeviceName": "[Ðévîçé ñåmé one two]",
+  "@connectDeviceLinkDeviceName": {
+    "description": "Label of the field naming this device on the server when it is linked with a code."
+  },
+  "connectDeviceLinkSubmit": "[Ļîñķ one]",
+  "@connectDeviceLinkSubmit": {
+    "description": "Button that links this device with the entered code."
+  },
+  "connectDeviceLinkInvalidCode": "[Ţĥåţ çöðé ðöéš ñöţ éxîšţ. Ĝéñéŕåţé å ñéŵ çöðé îñ ţĥé ŵéb ÛÎ. one two three four five]",
+  "@connectDeviceLinkInvalidCode": {
+    "description": "Inline error when the server knows no such device-link code."
+  },
+  "connectDeviceLinkCodeUsed": "[Ţĥåţ çöðé ĥåš åļŕéåðý bééñ ûšéð. Ĝéñéŕåţé å ñéŵ çöðé îñ ţĥé ŵéb ÛÎ. one two three four five six]",
+  "@connectDeviceLinkCodeUsed": {
+    "description": "Inline error when the device-link code was used before."
+  },
+  "connectDeviceLinkCodeExpired": "[Ţĥåţ çöðé ĥåš éxþîŕéð. Ĝéñéŕåţé å ñéŵ çöðé îñ ţĥé ŵéb ÛÎ. one two three four five]",
+  "@connectDeviceLinkCodeExpired": {
+    "description": "Inline error when the device-link code is too old."
+  },
+  "connectDeviceLinkRejected": "[Ţĥé šéŕvéŕ ðîð ñöţ åççéþţ ţĥé çöðé. Ĝéñéŕåţé å ñéŵ çöðé îñ ţĥé ŵéb ÛÎ. one two three four five six]",
+  "@connectDeviceLinkRejected": {
+    "description": "Inline error when the server turned the device-link code down without saying why."
+  },
+  "connectSignInLinkWithCode": "[Ļîñķ ŵîţĥ å çöðé one two]",
+  "@connectSignInLinkWithCode": {
+    "description": "Secondary action on the password sign-in screen that shows the device-link panel instead."
+  },
+  "connectSignInUsePassword": "[Šîĝñ îñ ŵîţĥ å þåššŵöŕð one two three]",
+  "@connectSignInUsePassword": {
+    "description": "Secondary action on the device-link panel that goes back to the password form."
+  },
+  "connectSignInSsoNote": "[Šîñĝļé šîĝñ-öñ ûšéŕš: ļîñķ ţĥîš ðévîçé ŵîţĥ å çöðé. one two three four five]",
+  "@connectSignInSsoNote": {
+    "description": "Note on the password sign-in screen of a server that also offers single sign-on."
+  },
+  "connectLinkThisDevice": "[Ļîñķ ţĥîš ðévîçé one two]",
+  "@connectLinkThisDevice": {
+    "description": "Heading of the device-link panel."
+  },
+  "connectSignInWithProvider": "[Šîĝñ îñ ŵîţĥ {provider} one two]",
+  "@connectSignInWithProvider": {
+    "description": "Heading of the device-link panel on a server that offers only single sign-on, naming its provider.",
+    "placeholders": {
+      "provider": {
+        "type": "String",
+        "example": "Authentik"
+      }
+    }
   }
 }

@@ -1482,6 +1482,102 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, =1{1 song} other{{count} songs}}'**
   String searchPlaylistSongs(int count);
+
+  /// Screen-reader label of the six cells a device-link code is typed into.
+  ///
+  /// In en, this message translates to:
+  /// **'Link code, 6 characters'**
+  String get codeCellsLabel;
+
+  /// Shown under the device-link code cells when a character that cannot be in a code was typed.
+  ///
+  /// In en, this message translates to:
+  /// **'Codes have no I, O, 0 or 1'**
+  String get codeCellsHint;
+
+  /// First of three steps to get a device-link code from the web UI.
+  ///
+  /// In en, this message translates to:
+  /// **'Open soundspan in a browser'**
+  String get connectDeviceLinkStep1;
+
+  /// Second of three steps to get a device-link code from the web UI; 'Settings' and 'Link Device' are the web UI's names.
+  ///
+  /// In en, this message translates to:
+  /// **'Go to Settings → Link Device'**
+  String get connectDeviceLinkStep2;
+
+  /// Third of three steps to get a device-link code from the web UI; 'Generate Code' is the web UI's button.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Generate Code and enter it below'**
+  String get connectDeviceLinkStep3;
+
+  /// Label of the field naming this device on the server when it is linked with a code.
+  ///
+  /// In en, this message translates to:
+  /// **'Device name'**
+  String get connectDeviceLinkDeviceName;
+
+  /// Button that links this device with the entered code.
+  ///
+  /// In en, this message translates to:
+  /// **'Link'**
+  String get connectDeviceLinkSubmit;
+
+  /// Inline error when the server knows no such device-link code.
+  ///
+  /// In en, this message translates to:
+  /// **'That code does not exist. Generate a new code in the web UI.'**
+  String get connectDeviceLinkInvalidCode;
+
+  /// Inline error when the device-link code was used before.
+  ///
+  /// In en, this message translates to:
+  /// **'That code has already been used. Generate a new code in the web UI.'**
+  String get connectDeviceLinkCodeUsed;
+
+  /// Inline error when the device-link code is too old.
+  ///
+  /// In en, this message translates to:
+  /// **'That code has expired. Generate a new code in the web UI.'**
+  String get connectDeviceLinkCodeExpired;
+
+  /// Inline error when the server turned the device-link code down without saying why.
+  ///
+  /// In en, this message translates to:
+  /// **'The server did not accept the code. Generate a new code in the web UI.'**
+  String get connectDeviceLinkRejected;
+
+  /// Secondary action on the password sign-in screen that shows the device-link panel instead.
+  ///
+  /// In en, this message translates to:
+  /// **'Link with a code'**
+  String get connectSignInLinkWithCode;
+
+  /// Secondary action on the device-link panel that goes back to the password form.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with a password'**
+  String get connectSignInUsePassword;
+
+  /// Note on the password sign-in screen of a server that also offers single sign-on.
+  ///
+  /// In en, this message translates to:
+  /// **'Single sign-on users: link this device with a code.'**
+  String get connectSignInSsoNote;
+
+  /// Heading of the device-link panel.
+  ///
+  /// In en, this message translates to:
+  /// **'Link this device'**
+  String get connectLinkThisDevice;
+
+  /// Heading of the device-link panel on a server that offers only single sign-on, naming its provider.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with {provider}'**
+  String connectSignInWithProvider(String provider);
 }
 
 class _AppLocalizationsDelegate

@@ -842,6 +842,62 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get codeCellsLabel => 'Link code, 6 characters';
+
+  @override
+  String get codeCellsHint => 'Codes have no I, O, 0 or 1';
+
+  @override
+  String get connectDeviceLinkStep1 => 'Open soundspan in a browser';
+
+  @override
+  String get connectDeviceLinkStep2 => 'Go to Settings → Link Device';
+
+  @override
+  String get connectDeviceLinkStep3 =>
+      'Select Generate Code and enter it below';
+
+  @override
+  String get connectDeviceLinkDeviceName => 'Device name';
+
+  @override
+  String get connectDeviceLinkSubmit => 'Link';
+
+  @override
+  String get connectDeviceLinkInvalidCode =>
+      'That code does not exist. Generate a new code in the web UI.';
+
+  @override
+  String get connectDeviceLinkCodeUsed =>
+      'That code has already been used. Generate a new code in the web UI.';
+
+  @override
+  String get connectDeviceLinkCodeExpired =>
+      'That code has expired. Generate a new code in the web UI.';
+
+  @override
+  String get connectDeviceLinkRejected =>
+      'The server did not accept the code. Generate a new code in the web UI.';
+
+  @override
+  String get connectSignInLinkWithCode => 'Link with a code';
+
+  @override
+  String get connectSignInUsePassword => 'Sign in with a password';
+
+  @override
+  String get connectSignInSsoNote =>
+      'Single sign-on users: link this device with a code.';
+
+  @override
+  String get connectLinkThisDevice => 'Link this device';
+
+  @override
+  String connectSignInWithProvider(String provider) {
+    return 'Sign in with $provider';
+  }
 }
 
 /// The translations for English (`en_XA`).
@@ -1699,5 +1755,64 @@ class AppLocalizationsEnXa extends AppLocalizationsEn {
       one: '1 šöñĝ one',
     );
     return '[$_temp0]';
+  }
+
+  @override
+  String get codeCellsLabel => '[Ļîñķ çöðé, 6 çĥåŕåçţéŕš one two three]';
+
+  @override
+  String get codeCellsHint => '[Çöðéš ĥåvé ñö Î, Ö, 0 öŕ 1 one two three]';
+
+  @override
+  String get connectDeviceLinkStep1 =>
+      '[Öþéñ šöûñðšþåñ îñ å bŕöŵšéŕ one two three]';
+
+  @override
+  String get connectDeviceLinkStep2 =>
+      '[Ĝö ţö Šéţţîñĝš → Ļîñķ Ðévîçé one two three]';
+
+  @override
+  String get connectDeviceLinkStep3 =>
+      '[Šéļéçţ Ĝéñéŕåţé Çöðé åñð éñţéŕ îţ béļöŵ one two three four]';
+
+  @override
+  String get connectDeviceLinkDeviceName => '[Ðévîçé ñåmé one two]';
+
+  @override
+  String get connectDeviceLinkSubmit => '[Ļîñķ one]';
+
+  @override
+  String get connectDeviceLinkInvalidCode =>
+      '[Ţĥåţ çöðé ðöéš ñöţ éxîšţ. Ĝéñéŕåţé å ñéŵ çöðé îñ ţĥé ŵéb ÛÎ. one two three four five]';
+
+  @override
+  String get connectDeviceLinkCodeUsed =>
+      '[Ţĥåţ çöðé ĥåš åļŕéåðý bééñ ûšéð. Ĝéñéŕåţé å ñéŵ çöðé îñ ţĥé ŵéb ÛÎ. one two three four five six]';
+
+  @override
+  String get connectDeviceLinkCodeExpired =>
+      '[Ţĥåţ çöðé ĥåš éxþîŕéð. Ĝéñéŕåţé å ñéŵ çöðé îñ ţĥé ŵéb ÛÎ. one two three four five]';
+
+  @override
+  String get connectDeviceLinkRejected =>
+      '[Ţĥé šéŕvéŕ ðîð ñöţ åççéþţ ţĥé çöðé. Ĝéñéŕåţé å ñéŵ çöðé îñ ţĥé ŵéb ÛÎ. one two three four five six]';
+
+  @override
+  String get connectSignInLinkWithCode => '[Ļîñķ ŵîţĥ å çöðé one two]';
+
+  @override
+  String get connectSignInUsePassword =>
+      '[Šîĝñ îñ ŵîţĥ å þåššŵöŕð one two three]';
+
+  @override
+  String get connectSignInSsoNote =>
+      '[Šîñĝļé šîĝñ-öñ ûšéŕš: ļîñķ ţĥîš ðévîçé ŵîţĥ å çöðé. one two three four five]';
+
+  @override
+  String get connectLinkThisDevice => '[Ļîñķ ţĥîš ðévîçé one two]';
+
+  @override
+  String connectSignInWithProvider(String provider) {
+    return '[Šîĝñ îñ ŵîţĥ $provider one two]';
   }
 }

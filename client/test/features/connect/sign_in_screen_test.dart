@@ -6,15 +6,21 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:soundspan/app/router/routes.dart';
 import 'package:soundspan/core/auth/active_profile.dart';
+import 'package:soundspan/core/auth/device_link_sign_in.dart';
 import 'package:soundspan/core/auth/password_sign_in.dart';
 import 'package:soundspan/core/auth/probe/server_probe.dart';
 import 'package:soundspan/core/auth/profile.dart';
 import 'package:soundspan/core/auth/profile_repository.dart';
 import 'package:soundspan/core/logging/app_logger.dart';
 import 'package:soundspan/core/profile/profile_runtime.dart';
+import 'package:soundspan/core/profile/server_admission_gate.dart';
 import 'package:soundspan/features/connect/connect.dart';
+import 'package:soundspan/features/connect/ui/device_link_panel.dart';
 import 'package:soundspan/features/connect/ui/probe_controller.dart';
+import 'package:soundspan/platform/capabilities/capabilities.dart';
+import 'package:soundspan/platform/device_info/device_info.dart';
 import 'package:soundspan/platform/secrets/secrets.dart';
+import 'package:soundspan/shared/widgets/code_cells.dart';
 import 'package:soundspan_api/soundspan_api.dart';
 
 import '../../core/auth/password_sign_in_fakes.dart';
@@ -25,6 +31,7 @@ import '../../helpers/in_memory_secret_store.dart';
 import '../../helpers/pump_app.dart';
 import '../../helpers/test_root.dart';
 import 'connect_harness.dart';
+import 'ui/device_link_fakes.dart';
 
 const _base = 'https://music.example.com';
 
@@ -37,11 +44,12 @@ class _UnavailableSecretStore extends InMemorySecretStore {
 
 /// What [_pumpSignIn] built.
 class _SignIn {
-  new(this.root, this.client, this.clock);
+  new(this.root, this.client, this.clock, this.link);
 
   final TestRoot root;
   final FakeLoginClient client;
   final FakeClock clock;
+  final FakeDeviceLinkSignIn link;
 
   String get location => locationOf(root);
 }
@@ -63,9 +71,12 @@ Future<_SignIn> _pumpSignIn(
   InMemorySecretStore? secrets,
   ProbeState? probed,
   Size size = TestSizes.compact,
+  PlatformCapabilities capabilities = PlatformCapabilities.android,
+  FakeDeviceLinkSignIn? link,
 }) async {
   final client = FakeLoginClient();
   final clock = FakeClock();
+  link ??= FakeDeviceLinkSignIn();
   final root = await tester.pumpSoundspanApp(
     stored: stored,
     size: size,
@@ -73,6 +84,11 @@ Future<_SignIn> _pumpSignIn(
     clock: clock,
     overrides: [
       passwordSignInProvider.overrideWithValue(PasswordSignIn(client.factory)),
+      deviceLinkSignInProvider.overrideWithValue(link),
+      platformCapabilitiesProvider.overrideWithValue(capabilities),
+      deviceInfoProvider.overrideWithValue(
+        const DeviceInfo(osLabel: 'Android', isMobile: true),
+      ),
       if (probed != null)
         probeControllerProvider.overrideWith(
           () => InstantProbeController(probed),
@@ -95,16 +111,23 @@ Future<_SignIn> _pumpSignIn(
         );
   }
   await tester.pumpAndSettle();
-  return _SignIn(root, client, clock);
+  return _SignIn(root, client, clock, link);
 }
 
-ProbeResult _result({bool localLoginEnabled = true}) {
+ProbeResult _result({
+  bool localLoginEnabled = true,
+  bool oidcEnabled = false,
+  String? oidcProviderName,
+  String? linkCode,
+}) {
   final url = Uri.parse(_base);
   return ProbeResult(
     baseUrl: url,
     requestedBaseUrl: url,
     localLoginEnabled: localLoginEnabled,
-    oidcEnabled: false,
+    oidcEnabled: oidcEnabled,
+    oidcProviderName: oidcProviderName,
+    linkCode: linkCode,
     isCleartext: false,
     isPrivateHost: false,
   );
@@ -489,5 +512,161 @@ void main() {
       await _toCodeStep(tester, signIn);
       expect(tester.takeException(), isNull);
     });
+  });
+
+  group("doc 04's Sign-In table", () {
+    const linkWithCode = 'Link with a code';
+    const ssoNote = 'Single sign-on users: link this device with a code.';
+    final panel = find.byType(DeviceLinkPanel);
+
+    testWidgets('local login only: the password form with "Link with a '
+        'code", which swaps in the panel and back', (tester) async {
+      await _pumpSignIn(tester);
+      expect(_password, findsOne);
+      expect(panel, findsNothing);
+      expect(find.text(ssoNote), findsNothing);
+
+      await tester.tap(find.text(linkWithCode));
+      await tester.pumpAndSettle();
+      expect(panel, findsOne);
+      expect(find.text('Link this device'), findsOne);
+      expect(_password, findsNothing);
+
+      await tester.tap(find.text('Sign in with a password'));
+      await tester.pumpAndSettle();
+      expect(_password, findsOne);
+      expect(panel, findsNothing);
+    });
+
+    testWidgets('both enabled: the same, plus the single sign-on note', (
+      tester,
+    ) async {
+      await _pumpSignIn(tester, result: _result(oidcEnabled: true));
+      expect(_password, findsOne);
+      expect(find.text(linkWithCode), findsOne);
+      expect(find.text(ssoNote), findsOne);
+      await _meetsGuidelines(tester);
+    });
+
+    testWidgets('single sign-on only: the panel is the primary content, '
+        'titled after the provider', (tester) async {
+      await _pumpSignIn(
+        tester,
+        result: _result(
+          localLoginEnabled: false,
+          oidcEnabled: true,
+          oidcProviderName: 'Authentik',
+        ),
+      );
+      expect(find.text('Sign in with Authentik'), findsOne);
+      expect(panel, findsOne);
+      expect(_password, findsNothing);
+      expect(find.text(linkWithCode), findsNothing);
+      // The panel's guidelines are checked in device_link_panel_test.dart:
+      // in this light root the pixel sampling of the prefilled device name
+      // reads the antialiased glyph edges, not the `content` token.
+    });
+
+    testWidgets('single sign-on only without a provider name is titled '
+        '"Link this device"', (tester) async {
+      await _pumpSignIn(
+        tester,
+        result: _result(
+          localLoginEnabled: false,
+          oidcEnabled: true,
+          oidcProviderName: '',
+        ),
+      );
+      expect(find.text('Link this device'), findsOne);
+      expect(panel, findsOne);
+    });
+
+    testWidgets('linking signs in and opens /home as a password sign-in '
+        'does', (tester) async {
+      final signIn = await _pumpSignIn(
+        tester,
+        result: _result(localLoginEnabled: false, oidcEnabled: true),
+      );
+      final profile = (await tester.runAsync(
+        () => signIn.root.container
+            .read(profileRepositoryProvider)
+            .upsertSignedIn(
+              baseUrl: Uri.parse(_base),
+              userId: 'user-1',
+              username: 'ada',
+              userDisplayName: 'Ada',
+              role: 'user',
+              authKind: AuthKind.deviceLink,
+              credentials: const ApiKeyCredentials(apiKey: 'key-1'),
+              credentialCreatedAt: DateTime.utc(2026),
+            ),
+      ))!;
+      signIn.link.answer = () async => profile;
+
+      await tester.enterText(
+        find.descendant(
+          of: find.byType(CodeCells),
+          matching: find.byType(EditableText),
+        ),
+        'abc234',
+      );
+      await tester.pump();
+      await tester.tap(find.widgetWithText(FilledButton, 'Link'));
+      await _drive(tester);
+
+      expect(
+        signIn.link.calls.single.deviceName,
+        'Android phone (soundspan '
+        'Android)',
+      );
+      expect(signIn.location, RoutePaths.home);
+      expect(
+        signIn.root.container.read(profileRuntimeProvider).state.value,
+        ProfileRuntimeActive(profile.id),
+      );
+    });
+
+    testWidgets('a result with a link code opens the panel and submits it '
+        'once', (tester) async {
+      final link = FakeDeviceLinkSignIn()
+        ..answer = () async => throw const DeviceLinkFailure.codeUsed();
+      final signIn = await _pumpSignIn(
+        tester,
+        result: _result(linkCode: 'ABC234'),
+        link: link,
+      );
+      await _drive(tester);
+      expect(find.textContaining('already been used'), findsOne);
+      expect(panel, findsOne);
+      expect(signIn.link.calls.single.code.value, 'ABC234');
+    });
+
+    for (final result in [
+      _result(),
+      _result(oidcEnabled: true),
+      _result(localLoginEnabled: false, oidcEnabled: true),
+      _result(linkCode: 'ABC234'),
+    ]) {
+      testWidgets('on web no device-link entry point exists '
+          '(local ${result.localLoginEnabled}, oidc ${result.oidcEnabled}, '
+          'code ${result.linkCode})', (tester) async {
+        final signIn = await _pumpSignIn(
+          tester,
+          result: result,
+          capabilities: PlatformCapabilities.web,
+        );
+        expect(panel, findsNothing);
+        expect(find.byType(CodeCells), findsNothing);
+        expect(find.text(linkWithCode), findsNothing);
+        expect(find.text(ssoNote), findsNothing);
+        expect(signIn.link.calls, isEmpty);
+        if (!result.localLoginEnabled) {
+          expect(
+            find.text('This server does not offer password sign-in.'),
+            findsOne,
+          );
+        }
+      });
+    }
   });
 }

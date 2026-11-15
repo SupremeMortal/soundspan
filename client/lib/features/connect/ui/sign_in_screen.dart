@@ -13,19 +13,29 @@ import 'package:soundspan/app/theme/typography.dart';
 import 'package:soundspan/core/auth/active_profile.dart';
 import 'package:soundspan/core/auth/password_sign_in.dart';
 import 'package:soundspan/core/auth/probe/server_probe.dart';
+import 'package:soundspan/core/auth/profile.dart';
 import 'package:soundspan/core/auth/server_address.dart';
 import 'package:soundspan/core/profile/profile_runtime.dart';
 import 'package:soundspan/features/connect/ui/address_screen.dart';
 import 'package:soundspan/features/connect/ui/connect_layout.dart';
+import 'package:soundspan/features/connect/ui/device_link_panel.dart';
 import 'package:soundspan/features/connect/ui/probe_controller.dart';
 import 'package:soundspan/features/connect/ui/sign_in_controller.dart';
+import 'package:soundspan/platform/capabilities/capabilities.dart';
 import 'package:soundspan/shared/clock.dart';
 
-/// `/connect/sign-in`: password sign-in with the two-factor step (doc 04,
-/// Sign-In and Password).
+/// `/connect/sign-in`: password sign-in with the two-factor step, and
+/// linking with a code (doc 04, Sign-In, Password and Device Link).
 ///
-/// The form follows the [ProbeResult]: where local login is off, the screen
-/// says so and offers another server. Without a result but with
+/// The screen follows the [ProbeResult] and rows 1 to 3 of doc 04's
+/// Sign-In table: with local login, the password form with "Link with a
+/// code" as a secondary action that swaps in the [DeviceLinkPanel] (and,
+/// when single sign-on is on too, a note that its users link with a code);
+/// with single sign-on only, the panel titled after the provider. Where
+/// API keys cannot stream (`supportsApiKeyStreaming == false`, the web)
+/// the device-link action and panel are not built, and a server without
+/// local login is said to offer no password sign-in. A result that carries
+/// a link code opens the panel with that code. Without a result but with
 /// [profileId] (a signed-out profile sent here by the router guard), the
 /// screen probes that profile's server itself and prefills its user name; a
 /// failed probe goes to `/connect/probe`.
@@ -52,6 +62,12 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   /// The base URL being probed for the signed-out profile.
   String? _probing;
   bool _obscured = true;
+
+  /// Whether the device-link panel replaces the password form.
+  bool _linking = false;
+
+  /// The link code the panel starts with, until the user leaves it.
+  String? _linkCode;
 
   @override
   void initState() {
@@ -104,6 +120,8 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
 
   void _show(ProbeResult result) {
     _result = result;
+    _linkCode = result.linkCode;
+    _linking = _linkCode != null;
     if (!result.localLoginEnabled) return;
     _form = SignInController(
       signIn: ref.read(passwordSignInProvider),
@@ -140,6 +158,19 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     }
   }
 
+  void _setLinking(bool linking) => setState(() {
+    _linking = linking;
+    _linkCode = null;
+  });
+
+  /// Activates the linked [profile] and opens home, as after a password
+  /// sign-in.
+  Future<void> _onLinked(Profile profile) async {
+    await ref.read(profileRuntimeProvider).switchTo(profile.id);
+    if (!mounted) return;
+    GoRouter.of(context).go(RoutePaths.home);
+  }
+
   @override
   void dispose() {
     _probe?.cancel();
@@ -153,6 +184,9 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     final l10n = AppLocalizations.of(context);
     final result = _result;
     final form = _form;
+    final linkable = ref
+        .watch(platformCapabilitiesProvider)
+        .supportsApiKeyStreaming;
     return ConnectLayout(
       screen: l10n.screenSignIn,
       leading: IconButton(
@@ -167,6 +201,15 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
           if (_probing case final String base)
             _Message(l10n.connectProbeResolving(base)),
         ],
+        (final ProbeResult result, null) when linkable && result.oidcEnabled =>
+          [
+            _Message(switch (result.oidcProviderName?.trim()) {
+              null || '' => l10n.connectLinkThisDevice,
+              final name => l10n.connectSignInWithProvider(name),
+            }),
+            const SizedBox(height: Spacing.x24),
+            _panel(result),
+          ],
         (final ProbeResult _, null) => [
           _Message(l10n.connectSignInNoPassword),
           const SizedBox(height: Spacing.x24),
@@ -178,6 +221,18 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
             child: Text(l10n.connectSignInBack),
           ),
         ],
+        (final ProbeResult result, final SignInController _)
+            when linkable && _linking =>
+          [
+            _Message(l10n.connectLinkThisDevice),
+            const SizedBox(height: Spacing.x24),
+            _panel(result),
+            const SizedBox(height: Spacing.x8),
+            _FormBody._secondary(
+              l10n.connectSignInUsePassword,
+              () => _setLinking(false),
+            ),
+          ],
         (final ProbeResult result, final SignInController form) => [
           ListenableBuilder(
             listenable: form,
@@ -187,12 +242,20 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
               obscured: _obscured,
               onToggleObscured: () => setState(() => _obscured = !_obscured),
               onSubmit: () => unawaited(_submit()),
+              ssoNote: linkable && result.oidcEnabled,
+              onLinkWithCode: linkable ? () => _setLinking(true) : null,
             ),
           ),
         ],
       },
     );
   }
+
+  Widget _panel(ProbeResult result) => DeviceLinkPanel(
+    baseUrl: result.baseUrl,
+    initialCode: _linkCode,
+    onLinked: _onLinked,
+  );
 }
 
 /// The form of the current step.
@@ -203,6 +266,8 @@ class _FormBody extends StatelessWidget {
     required this.obscured,
     required this.onToggleObscured,
     required this.onSubmit,
+    this.ssoNote = false,
+    this.onLinkWithCode,
   });
 
   final SignInController form;
@@ -210,6 +275,12 @@ class _FormBody extends StatelessWidget {
   final bool obscured;
   final VoidCallback onToggleObscured;
   final VoidCallback onSubmit;
+
+  /// Whether to say that single sign-on users link with a code.
+  final bool ssoNote;
+
+  /// Swaps in the device-link panel; null hides the action.
+  final VoidCallback? onLinkWithCode;
 
   @override
   Widget build(BuildContext context) {
@@ -330,6 +401,20 @@ class _FormBody extends StatelessWidget {
             ),
           ),
           _secondary(l10n.connectSignInStartOver, form.startOver),
+        ],
+        if (!code && onLinkWithCode != null) ...[
+          const SizedBox(height: Spacing.x8),
+          _secondary(l10n.connectSignInLinkWithCode, onLinkWithCode),
+        ],
+        if (!code && ssoNote) ...[
+          const SizedBox(height: Spacing.x8),
+          Text(
+            l10n.connectSignInSsoNote,
+            textAlign: TextAlign.center,
+            style: context.typography.body.copyWith(
+              color: context.colors.contentSecondary,
+            ),
+          ),
         ],
       ],
     );
