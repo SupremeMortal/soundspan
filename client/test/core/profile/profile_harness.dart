@@ -79,14 +79,16 @@ class ProfileHarness {
   new _(this.appDb, this.secrets, this.opener, this.paths, this.clock);
 
   /// Creates the harness; its resources are released when the test ends.
+  /// [opener] replaces the new [TestOpener].
   static Future<ProfileHarness> create({
     String? storedActiveId,
     List<Override> overrides = const [],
+    TestOpener? opener,
   }) async {
     final harness = ProfileHarness._(
       AppDatabase(NativeDatabase.memory()),
       InMemorySecretStore(),
-      TestOpener(),
+      opener ?? TestOpener(),
       RecordingAppPaths(),
       FakeClock(),
     );

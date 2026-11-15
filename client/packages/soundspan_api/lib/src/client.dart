@@ -8,6 +8,7 @@ import 'package:soundspan_api/src/config.dart';
 import 'package:soundspan_api/src/generated/anonymous_operations.g.dart';
 import 'package:soundspan_api/src/generated/soundspan_rest_client.dart';
 import 'package:soundspan_api/src/operations.dart';
+import 'package:soundspan_api/src/server_version.dart';
 import 'package:soundspan_api/src/transport/dio_factory.dart';
 import 'package:soundspan_api/src/transport/error_mapper.dart';
 import 'package:soundspan_api/src/transport/log_interceptor.dart';
@@ -82,6 +83,15 @@ class SoundspanApi {
   /// key.
   Future<T> send<T>(Future<T> Function(SoundspanRestClient rest) call) =>
       guardDecode(() => call(rest));
+
+  /// The server's version, or null when it does not say.
+  ///
+  /// Reads `info.version` from `GET /api/docs.json` as a byte stream,
+  /// cancelling the request as soon as it has been read, so the document is
+  /// never held in memory. A 401, 403 or 404 there falls back to the
+  /// `version` of `GET /api/health`. A missing value and the literal
+  /// `unknown` give null; other failures propagate as an `ApiException`.
+  Future<String?> fetchServerVersion() => fetchServerVersionWith(_dio, rest);
 
   /// Closes the HTTP adapter and its open connections.
   void close() => _dio.close(force: true);

@@ -7,12 +7,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:soundspan/core/auth/active_profile.dart';
 import 'package:soundspan/core/auth/profile.dart';
 import 'package:soundspan/core/logging/app_logger.dart';
+import 'package:soundspan/core/profile/capability_refresher.dart';
 import 'package:soundspan/core/profile/profile_context.dart';
 import 'package:soundspan/core/profile/profile_disposer.dart';
 import 'package:soundspan/core/profile/profile_providers.dart';
 import 'package:soundspan/core/storage/database_too_new_exception.dart';
 import 'package:soundspan/core/storage/providers.dart';
 import 'package:soundspan/platform/database_opener/database_opener.dart';
+import 'package:soundspan/shared/providers/capability_refresh.dart';
 
 /// What [ProfileRuntime.state] reports.
 @immutable
@@ -178,6 +180,11 @@ class ProfileRuntime {
     final container = ProviderContainer(
       parent: _root,
       overrides: [
+        capabilityRefreshProvider.overrideWith(
+          (ref) =>
+              () =>
+                  unawaited(ref.read(capabilityRefresherProvider).refreshNow()),
+        ),
         profileContextProvider.overrideWithValue(
           ProfileContext(
             profile: profile,

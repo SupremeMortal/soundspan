@@ -458,6 +458,28 @@
   "@connectProbeCorsOrNetwork": {
     "description": "Failure in the browser app: the server is unreachable or does not allow this app’s origin. ALLOWED_ORIGINS is a setting name and is not translated."
   },
+  "connectServerTooOld": "This app needs soundspan {minServer} or newer. This server runs {version}.",
+  "@connectServerTooOld": {
+    "description": "Shown instead of sign-in, or instead of the app, when the server is older than the oldest version this app supports.",
+    "placeholders": {
+      "minServer": {
+        "type": "String",
+        "example": "2.6.1"
+      },
+      "version": {
+        "type": "String",
+        "example": "2.5.0"
+      }
+    }
+  },
+  "connectServerTooOldCheckAgain": "Check again",
+  "@connectServerTooOldCheckAgain": {
+    "description": "Button that asks the signed-in server for its version again."
+  },
+  "connectServerTooOldSwitchServer": "Switch server",
+  "@connectServerTooOldSwitchServer": {
+    "description": "Button that opens the list of servers, to use another one."
+  },
   "connectProbeOrigin": "This app’s address",
   "@connectProbeOrigin": {
     "description": "Label of the read-only field showing the web app’s origin."

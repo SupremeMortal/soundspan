@@ -349,6 +349,17 @@ class AppLocalizationsEn extends AppLocalizations {
       'The server could not be reached. If it is running, it must allow this app’s address: add the address below to the server’s ALLOWED_ORIGINS setting, restart it and try again.';
 
   @override
+  String connectServerTooOld(String minServer, String version) {
+    return 'This app needs soundspan $minServer or newer. This server runs $version.';
+  }
+
+  @override
+  String get connectServerTooOldCheckAgain => 'Check again';
+
+  @override
+  String get connectServerTooOldSwitchServer => 'Switch server';
+
+  @override
   String get connectProbeOrigin => 'This app’s address';
 
   @override
@@ -856,6 +867,17 @@ class AppLocalizationsEnXa extends AppLocalizationsEn {
   @override
   String get connectProbeCorsOrNetwork =>
       '[Ţĥé šéŕvéŕ çöûļð ñöţ bé ŕéåçĥéð. Îf îţ îš ŕûññîñĝ, îţ mûšţ åļļöŵ ţĥîš åþþ’š åððŕéšš: åðð ţĥé åððŕéšš béļöŵ ţö ţĥé šéŕvéŕ’š ÅĻĻÖŴÉÐ_ÖŔÎĜÎÑŠ šéţţîñĝ, ŕéšţåŕţ îţ åñð ţŕý åĝåîñ. one two three four five six seven eight nine ten one two three four five]';
+
+  @override
+  String connectServerTooOld(String minServer, String version) {
+    return '[Ţĥîš åþþ ñééðš šöûñðšþåñ $minServer öŕ ñéŵéŕ. Ţĥîš šéŕvéŕ ŕûñš $version. one two three four five]';
+  }
+
+  @override
+  String get connectServerTooOldCheckAgain => '[Çĥéçķ åĝåîñ one two]';
+
+  @override
+  String get connectServerTooOldSwitchServer => '[Šŵîţçĥ šéŕvéŕ one two]';
 
   @override
   String get connectProbeOrigin => '[Ţĥîš åþþ’š åððŕéšš one two]';

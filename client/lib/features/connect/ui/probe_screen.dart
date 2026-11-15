@@ -13,6 +13,8 @@ import 'package:soundspan/app/theme/extensions.dart';
 import 'package:soundspan/app/theme/typography.dart';
 import 'package:soundspan/core/auth/probe/probe_failure.dart';
 import 'package:soundspan/core/auth/probe/server_probe.dart';
+import 'package:soundspan/core/profile/version.dart';
+import 'package:soundspan/core/profile/version_gate.dart';
 import 'package:soundspan/features/connect/ui/address_screen.dart';
 import 'package:soundspan/features/connect/ui/connect_layout.dart';
 import 'package:soundspan/features/connect/ui/probe_controller.dart';
@@ -31,8 +33,10 @@ final Provider<String> appOriginProvider = Provider<String>((ref) {
 ///
 /// A server found at the address typed continues to `/connect/sign-in`
 /// with the [ProbeResult] as the route `extra`. A changed base or a
-/// cleartext private host is shown first, with "Continue". Leaving the
-/// screen cancels the probe.
+/// cleartext private host is shown first, with "Continue". A server whose
+/// health version is older than the [VersionGate]'s minimum does not
+/// continue: the screen says so, with "Try again" and "Edit address"; an
+/// unknown version does not block. Leaving the screen cancels the probe.
 class ProbeScreen extends ConsumerStatefulWidget {
   /// Creates the screen probing [request].
   const new({required this.request, super.key});
@@ -73,6 +77,15 @@ class _ProbeScreenState extends ConsumerState<ProbeScreen> {
   static bool _confirms(ProbeResult result) =>
       result.baseChanged || (result.isCleartext && result.isPrivateHost);
 
+  /// The server's version when it is below the supported minimum; null when
+  /// it is supported or unknown.
+  Version? _tooOld(ProbeResult result) {
+    final version = Version.tryParse(result.healthVersion ?? '');
+    return ref.read(versionGateProvider).evaluate(version).blocks
+        ? version
+        : null;
+  }
+
   void _continue(ProbeResult result) =>
       GoRouter.of(context).go(RoutePaths.signIn, extra: result);
 
@@ -92,7 +105,8 @@ class _ProbeScreenState extends ConsumerState<ProbeScreen> {
     final l10n = AppLocalizations.of(context);
     ref.listen(probeControllerProvider, (_, next) {
       if (!_started) return;
-      if (next.value case ProbeReady(:final result) when !_confirms(result)) {
+      if (next.value case ProbeReady(:final result)
+          when !_confirms(result) && _tooOld(result) == null) {
         _continue(result);
       }
     });
@@ -138,6 +152,21 @@ class _ProbeScreenState extends ConsumerState<ProbeScreen> {
   ];
 
   List<Widget> _ready(AppLocalizations l10n, ProbeResult result) {
+    final tooOld = _tooOld(result);
+    if (tooOld != null) {
+      return [
+        _Message(
+          l10n.connectServerTooOld(
+            ref.read(versionGateProvider).min.toString(),
+            tooOld.toString(),
+          ),
+        ),
+        const SizedBox(height: Spacing.x24),
+        _primary(l10n.connectProbeTryAgain, _probe.retry),
+        const SizedBox(height: Spacing.x8),
+        _secondary(l10n.connectProbeEditAddress, _editAddress),
+      ];
+    }
     final base = result.baseUrl.toString();
     final cleartext = result.isCleartext && result.isPrivateHost;
     return [

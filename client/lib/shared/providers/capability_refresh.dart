@@ -8,8 +8,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Asks the active profile's capability refresher to run now.
 ///
-/// The default does nothing; the capability refresher overrides it with its
-/// `refreshNow`. `ErrorView` calls it once for each `FeatureDisabled` it
-/// shows.
+/// The default does nothing; each profile container overrides it with its
+/// capability refresher's `refreshNow`. `ErrorView` calls it once for each
+/// `FeatureDisabled` it shows.
 final Provider<void Function()> capabilityRefreshProvider =
-    Provider<void Function()>((ref) => () {});
+    Provider<void Function()>((ref) => () {}, dependencies: const []);

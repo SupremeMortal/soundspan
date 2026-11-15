@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:soundspan/bootstrap.dart';
 import 'package:soundspan/core/logging/app_logger.dart';
+import 'package:soundspan/core/profile/capability_refresher.dart';
 import 'package:soundspan/core/profile/profile_providers.dart';
 import 'package:soundspan/core/profile/profile_runtime.dart';
 import 'package:soundspan/core/storage/app/app_settings_store.dart';
@@ -94,6 +95,10 @@ void main() {
       ('severe', 'Invalid argument(s): async boom'),
     ]);
     expect(sink.entries.first.fields, {'library': 'test'});
+  });
+
+  test('the capability refresh starts after the first frame', () {
+    expect(postFirstFrameTasks, contains(startCapabilityRefresh));
   });
 
   test('userAgentFor names the version and the operating system', () {

@@ -5,15 +5,32 @@ import 'package:soundspan/core/profile/profile_disposer.dart';
 import 'package:soundspan/core/profile/profile_providers.dart';
 import 'package:soundspan_api/soundspan_api.dart';
 
+/// Builds a profile's [SoundspanApi] from its config and credential
+/// provider.
+typedef SoundspanApiFactory = SoundspanApi Function(
+  ApiConfig config,
+  CredentialProvider credentials,
+);
+
+/// How [soundspanApiProvider] builds its API: [SoundspanApi.new] over the
+/// platform's HTTP adapter unless overridden. Tests override it to talk to
+/// a fake server.
+final Provider<SoundspanApiFactory> soundspanApiFactoryProvider =
+    Provider<SoundspanApiFactory>(
+      (ref) =>
+          (config, credentials) =>
+              SoundspanApi(config, credentials: credentials),
+    );
+
 /// The [SoundspanApi] of the profile scope, built from [apiConfigProvider]
 /// with the [sessionControllerProvider] as its credential provider, and
 /// closed through the [ProfileDisposer] when the scope ends. Every
 /// repository uses it.
 final Provider<SoundspanApi> soundspanApiProvider = Provider<SoundspanApi>(
   (ref) {
-    final api = SoundspanApi(
+    final api = ref.watch(soundspanApiFactoryProvider)(
       ref.watch(apiConfigProvider),
-      credentials: ref.watch(sessionControllerProvider),
+      ref.watch(sessionControllerProvider),
     );
     ref.watch(profileDisposerProvider).register(() async => api.close());
     return api;

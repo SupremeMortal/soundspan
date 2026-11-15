@@ -679,6 +679,24 @@ abstract class AppLocalizations {
   /// **'The server could not be reached. If it is running, it must allow this app’s address: add the address below to the server’s ALLOWED_ORIGINS setting, restart it and try again.'**
   String get connectProbeCorsOrNetwork;
 
+  /// Shown instead of sign-in, or instead of the app, when the server is older than the oldest version this app supports.
+  ///
+  /// In en, this message translates to:
+  /// **'This app needs soundspan {minServer} or newer. This server runs {version}.'**
+  String connectServerTooOld(String minServer, String version);
+
+  /// Button that asks the signed-in server for its version again.
+  ///
+  /// In en, this message translates to:
+  /// **'Check again'**
+  String get connectServerTooOldCheckAgain;
+
+  /// Button that opens the list of servers, to use another one.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch server'**
+  String get connectServerTooOldSwitchServer;
+
   /// Label of the read-only field showing the web app’s origin.
   ///
   /// In en, this message translates to:
