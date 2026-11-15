@@ -6,6 +6,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:soundspan/core/playback/engines/player_engine.dart';
 
 import 'device_engine_harness_base.dart';
+import 'device_gap_tolerance.dart';
 import 'engine_conformance.dart';
 import 'tone_server.dart';
 
@@ -64,19 +65,15 @@ final class _NativeHarness extends DeviceEngineHarnessBase {
   @override
   Future<void> disableNetwork() async => _server.reachable = false;
 
-  /// 20 ms on Android and on iOS hardware. 100 ms, the largest tolerance
-  /// doc 06 allows, on macOS, whose transition between the two loaded
-  /// items is not reliably gapless (Spike S1 finding), and on the iOS
-  /// simulator, whose index and position reports jitter by tens of
-  /// milliseconds around a transition from run to run. Gapless playback on
-  /// a Mac and an iPhone is confirmed on real hardware.
+  /// 20 ms on Android and on iOS hardware; 100 ms, the largest tolerance
+  /// doc 06 allows, on macOS and on the iOS simulator, whose CI job defines
+  /// it (see [deviceGapTolerance]). Gapless playback on a Mac and an iPhone
+  /// is confirmed on real hardware.
   @override
-  Duration get gapTolerance =>
-      Platform.isMacOS ||
-          (Platform.isIOS &&
-              Platform.environment.containsKey('SIMULATOR_DEVICE_NAME'))
-      ? const Duration(milliseconds: 100)
-      : const Duration(milliseconds: 20);
+  Duration get gapTolerance => deviceGapTolerance(
+    isMacOS: Platform.isMacOS,
+    definedMs: definedDeviceGapToleranceMs,
+  );
 
   @override
   Set<ConformanceCase> get skipped => const {};
