@@ -147,11 +147,32 @@ final class RateLimited extends ApiException {
 }
 
 /// A 2xx JSON body that failed to decode into its model: a contract bug.
+///
+/// It names the operation and the failing key, never the payload.
 final class InvalidResponse extends ApiException {
   /// Creates an [InvalidResponse].
-  const new({super.status, super.code, super.serverMessage});
+  const new({
+    this.operationId,
+    this.key,
+    super.status,
+    super.code,
+    super.serverMessage,
+  });
+
+  /// The spec's `operationId` of the call, when it was made through the
+  /// generated clients of `SoundspanApi`.
+  final String? operationId;
+
+  /// The JSON key that failed to decode, when the decoder names one.
+  final String? key;
+
   @override
   String get _kind => 'InvalidResponse';
+
+  @override
+  String toString() =>
+      'InvalidResponse(status: $status, operationId: $operationId, '
+      'key: $key)';
 }
 
 /// 502, 503 or 504 with the code `UPSTREAM_FAILED`.

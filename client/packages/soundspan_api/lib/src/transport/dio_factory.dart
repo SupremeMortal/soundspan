@@ -66,7 +66,9 @@ class _ApiDio extends DioMixin {
   @override
   Future<Response<T>> fetch<T>(RequestOptions requestOptions) async {
     try {
-      return await super.fetch<T>(requestOptions);
+      final response = await super.fetch<T>(requestOptions);
+      recordAnswered(response);
+      return response;
     } on DioException catch (error) {
       final cause = error.error;
       if (cause is Error) Error.throwWithStackTrace(cause, error.stackTrace);

@@ -4,6 +4,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
+import 'package:json_annotation/json_annotation.dart';
 import 'package:soundspan_api/src/errors.dart';
 
 /// The wait used when a 429 carries no usable `Retry-After`.
@@ -132,22 +133,67 @@ ApiException mapResponse(Response<dynamic> response) {
   };
 }
 
+/// The request extra holding the spec's `operationId` of a call made through
+/// the generated clients.
+const operationIdExtra = 'soundspan.operationId';
+
+/// The zone value through which [guardDecode] learns which request last
+/// answered with a usable 2xx.
+final _answeredKey = Object();
+
+/// The response that last arrived inside one [guardDecode].
+class _Answered {
+  Response<dynamic>? response;
+}
+
+/// Notes that [response] is a usable 2xx, so a failure that follows inside
+/// the enclosing [guardDecode] is a decode failure of its body. Called by
+/// the Dio of `createDio` for every successful request.
+void recordAnswered(Response<dynamic> response) {
+  final answered = Zone.current[_answeredKey];
+  if (answered is _Answered) answered.response = response;
+}
+
 /// Runs [call], which sends a request and decodes its 2xx body, and turns a
 /// failure to decode into [InvalidResponse].
 ///
-/// [ApiException]s and the [ArgumentError] of the base-URL guard pass
-/// through unchanged.
+/// The [InvalidResponse] carries the status, the `operationId` of a call
+/// made through the generated clients, and the failing key when the
+/// decoder names it (a missing required key, a disallowed null, a checked
+/// conversion); it never carries the payload. [ApiException]s pass through
+/// unchanged, and so does the [ArgumentError] of the base-URL guard, which
+/// is raised before any response arrives.
 Future<T> guardDecode<T>(Future<T> Function() call) async {
+  final answered = _Answered();
   try {
-    return await call();
+    return await runZoned(call, zoneValues: {_answeredKey: answered});
   } on Object catch (error, stackTrace) {
-    if (error is ApiException || error is ArgumentError) rethrow;
+    if (error is ApiException) rethrow;
+    final response = answered.response;
+    if (response == null && error is ArgumentError) rethrow;
     Error.throwWithStackTrace(
-      InvalidResponse(serverMessage: error.runtimeType.toString()),
+      InvalidResponse(
+        operationId: switch (response?.requestOptions.extra[operationIdExtra]) {
+          final String id => id,
+          _ => null,
+        },
+        key: _failingKey(error),
+        status: response?.statusCode,
+        serverMessage: error.runtimeType.toString(),
+      ),
       stackTrace,
     );
   }
 }
+
+/// The key a json_serializable decode failure names, if any.
+String? _failingKey(Object error) => switch (error) {
+  MissingRequiredKeysException(:final missingKeys) => missingKeys.firstOrNull,
+  DisallowedNullValueException(:final keysWithNullValues) =>
+    keysWithNullValues.firstOrNull,
+  CheckedFromJsonException(:final key) => key,
+  _ => null,
+};
 
 bool _isNonEmptyText(Object? data) => data is String && data.trim().isNotEmpty;
 

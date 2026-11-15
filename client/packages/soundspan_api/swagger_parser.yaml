@@ -1,0 +1,8 @@
+swagger_parser:
+  schema_path: openapi/soundspan-client.json
+  output_directory: lib/src/generated
+  generation:
+    root_api_class_name: SoundspanRestClient
+    http_client: retrofit
+    serializer: freezed
+    unknown_enum_values: preserve   # a value added by a newer server decodes to `<Enum>Unknown`
