@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 
+import 'package:flutter/foundation.dart' show immutable;
+
 /// The user's loudness levelling mode (doc 06, Loudness).
 enum LoudnessMode {
   /// No gain is applied.
@@ -19,6 +21,7 @@ enum LoudnessMode {
 }
 
 /// The server-stored settings the client reads (`GET /settings`).
+@immutable
 final class UserSettings {
   /// Creates settings.
   const new({

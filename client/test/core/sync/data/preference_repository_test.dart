@@ -18,7 +18,7 @@ const _meta = TrackMeta(
   isrc: 'XX0000000001',
 );
 
-const _signals = {
+const Map<Preference, String> _signals = {
   Preference.liked: 'thumbs_up',
   Preference.disliked: 'thumbs_down',
   Preference.neutral: 'clear',
