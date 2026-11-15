@@ -41,6 +41,66 @@ final class ImageUrls {
   }
 }
 
+/// Builds the URLs that players and the downloader fetch audio from (doc
+/// 03, URL Builders). Audio is never requested through a generated method.
+final class StreamUrls {
+  /// Creates a builder for [baseUrl], the normalized server base URL; a
+  /// path prefix is kept.
+  new(this.baseUrl);
+
+  /// The server base URL, without a trailing slash.
+  final Uri baseUrl;
+
+  /// The stream of the track [playbackId], which is one opaque path segment
+  /// and never inspected.
+  ///
+  /// [quality] null means the server default and adds no parameter. Unless
+  /// [reportPlay] is true the URL carries `report=0`, so the server records
+  /// no play for the request (P7).
+  Uri track(String playbackId, {String? quality, bool reportPlay = false}) {
+    final query = Uri(
+      queryParameters: {'quality': ?quality, if (!reportPlay) 'report': '0'},
+    ).query;
+    final path =
+        '$baseUrl/api/playback/stream/'
+        '${Uri.encodeComponent(playbackId)}';
+    return Uri.parse(query.isEmpty ? path : '$path?$query');
+  }
+
+  /// The stream of episode [episodeId] of podcast [podcastId].
+  Uri episode(String podcastId, String episodeId) => Uri.parse(
+    '$baseUrl/api/podcasts/${Uri.encodeComponent(podcastId)}/episodes/'
+    '${Uri.encodeComponent(episodeId)}/stream',
+  );
+
+  /// Resolves a server-provided relative URL such as an offline
+  /// `downloadUrl` against the base, path prefix included.
+  ///
+  /// Throws [ArgumentError] when [serverRelative] does not start with
+  /// `/api/`.
+  Uri resolve(String serverRelative) {
+    if (!serverRelative.startsWith('/api/')) {
+      throw ArgumentError.value(
+        serverRelative,
+        'serverRelative',
+        'must start with /api/',
+      );
+    }
+    return Uri.parse('$baseUrl$serverRelative');
+  }
+
+  /// The headers that authenticate a stream request; see the top-level
+  /// [authHeaders]. The headers are always returned; leaving them out on
+  /// web is up to the caller.
+  Map<String, String> authHeaders(Credentials credentials) =>
+      _authHeaders(credentials);
+
+  /// [uri] with the access token of [credentials] as the `token` query
+  /// parameter; see the top-level [withQueryToken].
+  Uri withQueryToken(Uri uri, JwtCredentials credentials) =>
+      _withQueryToken(uri, credentials);
+}
+
 /// [physicalPx] rounded up to the next size in [coverArtSizes]; the largest
 /// size above that.
 int snapCoverSize(double physicalPx) {
@@ -54,6 +114,9 @@ int snapCoverSize(double physicalPx) {
 /// as by an image cache or a native player: `X-API-Key` for an API key,
 /// `Authorization: Bearer` for a JWT session.
 Map<String, String> authHeaders(Credentials credentials) =>
+    _authHeaders(credentials);
+
+Map<String, String> _authHeaders(Credentials credentials) =>
     switch (credentials) {
       ApiKeyCredentials(:final apiKey) => {'X-API-Key': apiKey},
       JwtCredentials(:final accessToken) => {
@@ -64,6 +127,9 @@ Map<String, String> authHeaders(Credentials credentials) =>
 /// [uri] with the access token of [credentials] added as the `token` query
 /// parameter, for web playback and images where headers cannot be set;
 /// existing parameters are kept.
-Uri withQueryToken(Uri uri, JwtCredentials credentials) => uri.replace(
+Uri withQueryToken(Uri uri, JwtCredentials credentials) =>
+    _withQueryToken(uri, credentials);
+
+Uri _withQueryToken(Uri uri, JwtCredentials credentials) => uri.replace(
   queryParameters: {...uri.queryParameters, 'token': credentials.accessToken},
 );

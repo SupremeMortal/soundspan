@@ -84,7 +84,7 @@ abstract class PlaybackClient {
     @Query('album') String? album,
     @Query('duration') num? duration,
   });
-  Future<PlaybackState> _getPlaybackStateWithOptions({
+  Future<PlaybackState?> _getPlaybackStateWithOptions({
     Map<String, Object?> extra = const {},
     CancelToken? cancelToken,
     Options? options,
@@ -100,19 +100,21 @@ abstract class PlaybackClient {
       options: _options,
       cancelToken: cancelToken,
     );
-    return PlaybackState.fromJson(response.data as Map<String, Object?>);
+    return response.data == null
+        ? null
+        : PlaybackState.fromJson(response.data as Map<String, Object?>);
   }
 
   /// Read the stored playback state of this device
   ///
   /// The `X-Playback-Device-Id` request header selects the device whose state is read or written; it defaults to `legacy` and is cut to 128 characters. Answers `null` when no state is stored. Music-track queue items carry a `playbackId` derived when the state is read.
   @GET('/api/playback-state')
-  Future<PlaybackState> getPlaybackState({
+  Future<PlaybackState?> getPlaybackState({
     @Extras() Map<String, Object?> extra = const {},
     @CancelRequest() CancelToken? cancelToken,
     Options? options,
   });
-  Future<PlaybackState> _savePlaybackStateWithOptions({
+  Future<PlaybackState?> _savePlaybackStateWithOptions({
     Map<String, Object?> extra = const {},
     CancelToken? cancelToken,
     Options? options,
@@ -136,7 +138,9 @@ abstract class PlaybackClient {
       data: convert.jsonEncode(body),
       cancelToken: cancelToken,
     );
-    return PlaybackState.fromJson(response.data as Map<String, Object?>);
+    return response.data == null
+        ? null
+        : PlaybackState.fromJson(response.data as Map<String, Object?>);
   }
 
   /// Store the playback state of this device
@@ -144,7 +148,7 @@ abstract class PlaybackClient {
   /// The `X-Playback-Device-Id` request header selects the device whose state is read or written; it defaults to `legacy` and is cut to 128 characters. Omitted fields keep their stored value. The queue keeps its first 100 entries; a `playbackId` entry is stored in the legacy format, and an invalid or unknown one answers 400 `INVALID_PLAYBACK_ID` or 404 `TRACK_NOT_FOUND`.
   @POST('/api/playback-state')
   @Headers({'Content-Type': 'application/json'})
-  Future<PlaybackState> savePlaybackState({
+  Future<PlaybackState?> savePlaybackState({
     @Extras() Map<String, Object?> extra = const {},
     @CancelRequest() CancelToken? cancelToken,
     Options? options,
@@ -282,7 +286,7 @@ class _PlaybackClientWithOptions extends _PlaybackClient {
   }
 
   @override
-  Future<PlaybackState> getPlaybackState({
+  Future<PlaybackState?> getPlaybackState({
     Map<String, Object?> extra = const {},
     CancelToken? cancelToken,
     Options? options,
@@ -301,7 +305,7 @@ class _PlaybackClientWithOptions extends _PlaybackClient {
   }
 
   @override
-  Future<PlaybackState> savePlaybackState({
+  Future<PlaybackState?> savePlaybackState({
     Map<String, Object?> extra = const {},
     CancelToken? cancelToken,
     Options? options,

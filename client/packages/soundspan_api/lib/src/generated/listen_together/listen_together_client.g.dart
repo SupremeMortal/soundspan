@@ -26,7 +26,7 @@ class _ListenTogetherClient extends ListenTogetherClient {
   final ParseErrorLogger? errorLogger;
 
   @override
-  Future<ListenGroupSnapshot> createListenGroup({
+  Future<ListenGroupSnapshot?> createListenGroup({
     Map<String, Object?> extra = const {},
     CancelToken? cancelToken,
     Options? options,
@@ -43,7 +43,7 @@ class _ListenTogetherClient extends ListenTogetherClient {
     _headers.removeWhere((k, v) => v == null);
     final _data = <String, dynamic>{};
     _data.addAll(body.toJson());
-    final _options = _setStreamType<ListenGroupSnapshot>(
+    final _options = _setStreamType<ListenGroupSnapshot?>(
       Options(
             method: 'POST',
             headers: _headers,
@@ -59,10 +59,12 @@ class _ListenTogetherClient extends ListenTogetherClient {
           )
           .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
     );
-    final _result = await _dio.fetch<Map<String, Object?>>(_options);
-    late ListenGroupSnapshot _value;
+    final _result = await _dio.fetch<Map<String, Object?>?>(_options);
+    late ListenGroupSnapshot? _value;
     try {
-      _value = ListenGroupSnapshot.fromJson(_result.data!);
+      _value = _result.data == null
+          ? null
+          : ListenGroupSnapshot.fromJson(_result.data!);
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options, response: _result);
       rethrow;
@@ -71,7 +73,7 @@ class _ListenTogetherClient extends ListenTogetherClient {
   }
 
   @override
-  Future<ListenGroupSnapshot> joinListenGroup({
+  Future<ListenGroupSnapshot?> joinListenGroup({
     Map<String, Object?> extra = const {},
     CancelToken? cancelToken,
     Options? options,
@@ -88,7 +90,7 @@ class _ListenTogetherClient extends ListenTogetherClient {
     _headers.removeWhere((k, v) => v == null);
     final _data = <String, dynamic>{};
     _data.addAll(body.toJson());
-    final _options = _setStreamType<ListenGroupSnapshot>(
+    final _options = _setStreamType<ListenGroupSnapshot?>(
       Options(
             method: 'POST',
             headers: _headers,
@@ -104,10 +106,12 @@ class _ListenTogetherClient extends ListenTogetherClient {
           )
           .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
     );
-    final _result = await _dio.fetch<Map<String, Object?>>(_options);
-    late ListenGroupSnapshot _value;
+    final _result = await _dio.fetch<Map<String, Object?>?>(_options);
+    late ListenGroupSnapshot? _value;
     try {
-      _value = ListenGroupSnapshot.fromJson(_result.data!);
+      _value = _result.data == null
+          ? null
+          : ListenGroupSnapshot.fromJson(_result.data!);
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options, response: _result);
       rethrow;
@@ -116,7 +120,7 @@ class _ListenTogetherClient extends ListenTogetherClient {
   }
 
   @override
-  Future<ListenGroupSnapshot> getMyListenGroup({
+  Future<ListenGroupSnapshot?> getMyListenGroup({
     Map<String, Object?> extra = const {},
     CancelToken? cancelToken,
     Options? options,
@@ -128,7 +132,7 @@ class _ListenTogetherClient extends ListenTogetherClient {
     final _headers = <String, dynamic>{r'Accept': 'application/json'};
     _headers.removeWhere((k, v) => v == null);
     const Map<String, dynamic>? _data = null;
-    final _options = _setStreamType<ListenGroupSnapshot>(
+    final _options = _setStreamType<ListenGroupSnapshot?>(
       Options(method: 'GET', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
@@ -139,10 +143,12 @@ class _ListenTogetherClient extends ListenTogetherClient {
           )
           .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
     );
-    final _result = await _dio.fetch<Map<String, Object?>>(_options);
-    late ListenGroupSnapshot _value;
+    final _result = await _dio.fetch<Map<String, Object?>?>(_options);
+    late ListenGroupSnapshot? _value;
     try {
-      _value = ListenGroupSnapshot.fromJson(_result.data!);
+      _value = _result.data == null
+          ? null
+          : ListenGroupSnapshot.fromJson(_result.data!);
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options, response: _result);
       rethrow;

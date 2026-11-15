@@ -9,9 +9,12 @@
 /// reads nullability only from the referenced component. The copy marks a
 /// component `nullable` when every reference to it is such a nullable
 /// reference or the value of an optional property (already nullable in
-/// Dart), which changes no Dart type. A component that is also referenced
-/// from a required property, an array or elsewhere is left as it is. The
-/// committed spec is untouched.
+/// Dart), which changes no Dart type. A plain reference that is a whole
+/// response body does not block the mark either: an operation that answers
+/// `null` for a component another operation returns then decodes `null`,
+/// and the other operation's return type becomes nullable. A component that
+/// is also referenced from a required property, an array or elsewhere is
+/// left as it is. The committed spec is untouched.
 ///
 /// Run from the package root by `client/tool/gen.sh`:
 ///
@@ -24,8 +27,8 @@ import 'dart:io';
 const _componentPrefix = '#/components/schemas/';
 
 /// [spec] with every component that is referenced only through nullable
-/// single-reference `allOf` schemas or from optional properties, at least
-/// once the former, marked `nullable: true`.
+/// single-reference `allOf` schemas, from optional properties or as a whole
+/// response body, at least once the first, marked `nullable: true`.
 Map<String, Object?> normalizeSpec(Map<String, Object?> spec) {
   final nullableRefs = <String>{};
   final plainRefs = <String>{};
@@ -93,7 +96,11 @@ void _collect(
     _ => const <Object?>{},
   };
   for (final MapEntry(:key, value: child) in value.entries) {
-    if (key == 'properties' && child is Map<String, Object?>) {
+    if (key == 'responses' && child is Map<String, Object?>) {
+      for (final response in child.values) {
+        _collectResponse(response, nullableRefs, plainRefs);
+      }
+    } else if (key == 'properties' && child is Map<String, Object?>) {
       for (final MapEntry(key: name, value: property) in child.entries) {
         _collect(
           property,
@@ -101,6 +108,33 @@ void _collect(
           plainRefs,
           optionalProperty: !required.contains(name),
         );
+      }
+    } else {
+      _collect(child, nullableRefs, plainRefs);
+    }
+  }
+}
+
+/// Collects the references of one response object of an operation. A body
+/// schema that is a plain reference neither blocks nor needs the nullable
+/// mark.
+void _collectResponse(
+  Object? response,
+  Set<String> nullableRefs,
+  Set<String> plainRefs,
+) {
+  if (response is! Map<String, Object?>) {
+    _collect(response, nullableRefs, plainRefs);
+    return;
+  }
+  for (final MapEntry(:key, value: child) in response.entries) {
+    if (key == 'content' && child is Map<String, Object?>) {
+      for (final media in child.values) {
+        if (media case {'schema': {r'$ref': String()} && final schema}
+            when schema.length == 1) {
+          continue;
+        }
+        _collect(media, nullableRefs, plainRefs);
       }
     } else {
       _collect(child, nullableRefs, plainRefs);

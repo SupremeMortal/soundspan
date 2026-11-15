@@ -49,7 +49,7 @@ swagger_parser:
 
 The generator follows the spec exactly, so two spec constructs decide how tolerant the generated code is: a closed object (`additionalProperties: false`) becomes a decoder that rejects unknown keys, so response objects in the client surface are open ([12](12-server-prerequisites-p6-p9.md), Serialisation Rules); and a value outside an `enum` decodes to the enum's `Unknown` subtype only because of `unknown_enum_values: preserve`. The answers for each generator behaviour the plan relies on are under [Spike S8 Finding](#spike-s8-finding).
 
-The server emits a nullable reference to a component as `{allOf: [{$ref}], nullable: true}`, and the generator ignores `nullable` there, declaring the field non-null. `client/tool/gen.sh` therefore runs `packages/soundspan_api/tool/normalize_spec.dart` first and passes its output to the generator with `--schema_path`: the copy marks a component `nullable` when every reference to it is such a nullable reference or the value of an optional property (already nullable in Dart), so a `null` decodes and no Dart type changes. A component that is also referenced from a required property, an array or elsewhere keeps a non-null Dart type. The committed spec is not changed.
+The server emits a nullable reference to a component as `{allOf: [{$ref}], nullable: true}`, and the generator ignores `nullable` there, declaring the field non-null. `client/tool/gen.sh` therefore runs `packages/soundspan_api/tool/normalize_spec.dart` first and passes its output to the generator with `--schema_path`: the copy marks a component `nullable` when every reference to it is such a nullable reference, the value of an optional property (already nullable in Dart) or a whole response body, at least once the first, so a `null` decodes. Only the return type of an operation whose whole response body is that component changes: it becomes nullable (`savePlaybackState` returns `PlaybackState?` because `getPlaybackState` answers `null` when no state is stored). A component that is also referenced from a required property, an array or elsewhere keeps a non-null Dart type. The committed spec is not changed.
 
 **Hand-written, around the generated code:**
 
@@ -267,8 +267,10 @@ class StreamUrls {
   Uri track(String playbackId, {String? quality, bool reportPlay = false});
   Uri episode(String podcastId, String episodeId);
   /// Resolves a server-provided relative URL such as an offline `downloadUrl`.
+  /// Throws `ArgumentError` for a value that does not start with `/api/`.
   Uri resolve(String serverRelative);
-  /// Headers for native players and the downloader; empty on web.
+  /// Headers for native players and the downloader. Always returned; the app's
+  /// `StreamAuth` seam leaves them out on web.
   Map<String, String> authHeaders(Credentials c);
   /// Adds `?token=<accessJwt>` for web playback and images. Throws for API keys.
   Uri withQueryToken(Uri uri, JwtCredentials c);
@@ -283,7 +285,7 @@ class ImageUrls {
 
 `authHeaders(Credentials)` and `withQueryToken(Uri, JwtCredentials)` are also top-level functions of `urls.dart`, used by the artwork widget; `StreamUrls` delegates to them.
 
-`reportPlay: false` adds the P7 marker ([12](12-server-prerequisites-p6-p9.md)). The client always passes `false`.
+`reportPlay: false` adds the P7 marker `report=0` ([12](12-server-prerequisites-p6-p9.md)). The client always passes `false`. `playbackId`, `podcastId` and `episodeId` are each one percent-encoded path segment, and `quality` is added only when set. `StreamUrls` is built from the profile's base URL, like `ImageUrls`.
 
 `ImageUrls.cover` reproduces the three cases of the web builder (`frontend/lib/api/media.ts`): an id or hash → `/library/cover-art/<encoded>?size=`; an `http(s)://` value → `/library/cover-art?url=<encoded>&size=`; a value starting with `/podcasts/` or `/audiobooks/` → `/api<path>`.
 
