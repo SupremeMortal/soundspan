@@ -83,7 +83,7 @@ abstract interface class PlayerEngine {
   Stream<EngineEvent> get events;
 
   /// Replace everything. Completes when the source is ready or failed.
-  Future<void> load(EngineSource current, {EngineSource? next, bool autoPlay});
+  Future<void> load(EngineSource current, {EngineSource? next, bool autoPlay = true});
   /// Set, replace, or clear the preloaded next source without disturbing current.
   Future<void> setNext(EngineSource? next);
   Future<void> play();
@@ -102,6 +102,20 @@ class EngineError {
   final String detail;                   // For logs only
 }
 ```
+
+Contract details every engine keeps (doc comments on `PlayerEngine`, pinned by the conformance suite):
+
+- `state` replays the latest value to a new listener; the initial state is `idle`, not playing, position zero.
+- `load` never throws for a bad source: it completes, emits `Failed` for that `queueItemId`, and the state is `error` with the `EngineError`.
+- A next source that fails to load emits `Failed` with the next item's id; the current item is undisturbed and the next slot is empty.
+- After `AdvancedToNext`, `currentQueueItemId` is the new item, position restarts from zero, and the next slot is empty until `setNext` is called again.
+- After `Completed`, status is `ended`, `playing` is false, and position equals the duration.
+- `seek` clamps to `[0, duration]`. `play` with nothing loaded is a no-op. `setVolume` clamps to 0.0–1.0, `setSpeed` to 0.5–3.0.
+- After `dispose`, both streams are closed and any further call throws `StateError`.
+
+The engine for the platform comes from the root-scope `playerEngineBuilderProvider` (`engines/player_engine_provider.dart`). Its default throws `UnsupportedError` when called; each platform's engine replaces it and tests override it with `FakeEngine.new`.
+
+`FakeEngine` runs on virtual time: `advance(d)` moves playback forward and emits state (every 200 ms while playing, and at every transition) and events in order, with no real timers. Each source is scripted by URI with a `FakeSource` (duration, an optional failure, how far ahead it buffers, and headers it requires, answering 401 without them); a URI with no script fails with `notFound`, and `requested` records every source opened with its headers.
 
 The two-slot contract is the smallest surface that still gives gapless playback. It maps cleanly onto both backends and keeps queue edits (reorder, remove, shuffle toggle) out of engine code: an edit that changes what comes next is one `setNext` call.
 
@@ -131,6 +145,8 @@ The two-slot contract is the smallest surface that still gives gapless playback.
 `test/core/playback/engine_conformance.dart` is one parameterized suite run against `FakeEngine` in unit tests and against the real engine for the current platform in `integration_test/engine_conformance_test.dart` (tag `engine`), using short tone files served by a local `shelf` server that checks headers and Range.
 
 Required behaviours: load and play; pause and resume keep position; seek within buffered and unbuffered ranges; `setNext` then natural end produces exactly one `AdvancedToNext` and no audible gap larger than 20 ms (measured from the position streams, verified by ear in the manual matrix); `setNext(null)` then natural end produces `Completed`; replacing next twice before the transition plays only the last one; a 404 source produces `Failed(notFound)`; a 401 produces `Failed(unauthorized)`; headers reach the server; a local file plays with the network disabled; `stop` then `load` works; `dispose` releases the device.
+
+The suite is `runEngineConformance(name, createHarness)`. An `EngineHarness` supplies engines and sources (a tone, a slowly buffering tone, a 404, a 401, a local file), the headers the server saw, a way to disable the network, `elapse` (virtual for the fake, real time for devices), the clock `now` that stamps state samples (the sum of `elapse` for the fake, a stopwatch for devices), the gap tolerance (20 ms) and the cases the platform skips. Besides the required behaviours it pins the interface: state replays the latest value to a late listener, position updates at least four times a second while playing, `load` with `startAt` starts there, and `load` with `autoPlay: false` is ready and not playing. The gap at a transition is measured from the position stream only: with `(tA, pA)` the last sample of the ending item and `(tB, pB)` the first of the new one, the gap is `|(tB − tA) − ((durationA − pA) + pB)|`.
 
 ## Queue Model
 
