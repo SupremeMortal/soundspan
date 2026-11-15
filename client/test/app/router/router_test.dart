@@ -53,7 +53,7 @@ void main() {
   );
 
   BuildContext screen(WidgetTester tester) =>
-      tester.element(find.byType(PlaceholderScreen).last);
+      tester.element(find.byType(RouteTitle).last);
 
   int selectedIndex(WidgetTester tester) =>
       tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex;
@@ -63,10 +63,8 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  String visibleScreen(WidgetTester tester) => tester
-      .widgetList<PlaceholderScreen>(find.byType(PlaceholderScreen))
-      .last
-      .name;
+  String visibleScreen(WidgetTester tester) =>
+      tester.widgetList<RouteTitle>(find.byType(RouteTitle)).last.screen;
 
   List<String> recordTitles(WidgetTester tester) {
     final titles = <String>[];

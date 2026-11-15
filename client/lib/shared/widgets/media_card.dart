@@ -6,6 +6,7 @@ import 'package:soundspan/app/theme/dimens.dart';
 import 'package:soundspan/app/theme/extensions.dart';
 import 'package:soundspan/app/theme/typography.dart';
 import 'package:soundspan/shared/widgets/artwork.dart';
+import 'package:soundspan/shared/widgets/mosaic_artwork.dart';
 
 /// A card of one album, artist, playlist or podcast: artwork, a one-line
 /// title and a one-line subtitle (doc 09, Components). Used in shelves and
@@ -24,6 +25,7 @@ class MediaCard extends StatefulWidget {
     required this.subtitle,
     required this.artworkRef,
     this.shape = ArtworkShape.square,
+    this.mosaicRefs,
     this.onTap,
     this.onPlay,
     super.key,
@@ -40,6 +42,10 @@ class MediaCard extends StatefulWidget {
 
   /// Square, or circle for artists.
   final ArtworkShape shape;
+
+  /// Covers shown as a square [MosaicArtwork] in place of [artworkRef], as
+  /// for a playlist or mix; null shows [artworkRef].
+  final List<String>? mosaicRefs;
 
   /// Opens the item; null makes the card inert.
   final VoidCallback? onTap;
@@ -94,11 +100,14 @@ class _MediaCardState extends State<MediaCard> {
             children: [
               Stack(
                 children: [
-                  Artwork(
-                    ref: widget.artworkRef,
-                    size: artSize,
-                    shape: widget.shape,
-                  ),
+                  if (widget.mosaicRefs case final refs?)
+                    MosaicArtwork(refs: refs, size: artSize)
+                  else
+                    Artwork(
+                      ref: widget.artworkRef,
+                      size: artSize,
+                      shape: widget.shape,
+                    ),
                   if (highlighted && onPlay != null)
                     Positioned(
                       right: Spacing.x4,

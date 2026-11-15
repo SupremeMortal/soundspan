@@ -516,6 +516,64 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get appBannerDismiss => 'Dismiss';
+
+  @override
+  String get homeGreetingMorning => 'Good morning';
+
+  @override
+  String get homeGreetingAfternoon => 'Good afternoon';
+
+  @override
+  String get homeGreetingEvening => 'Good evening';
+
+  @override
+  String get homeShelfContinueListening => 'Continue Listening';
+
+  @override
+  String get homeShelfRecentlyAdded => 'Recently Added';
+
+  @override
+  String get homeShelfMadeForYou => 'Made For You';
+
+  @override
+  String get homeShelfYourPlaylists => 'Your Playlists';
+
+  @override
+  String get homeShelfPopularPodcasts => 'Popular Podcasts';
+
+  @override
+  String get homeLikedSongs => 'Liked Songs';
+
+  @override
+  String get homeLikedSongsSubtitle => 'Playlist';
+
+  @override
+  String get homeCardArtist => 'Artist';
+
+  @override
+  String get homeCardPodcast => 'Podcast';
+
+  @override
+  String get homeNoticeNewerThanTested =>
+      'This server is newer than this app was tested with';
+
+  @override
+  String get homeNoticeVersionUnknown =>
+      'This server’s version could not be read';
+
+  @override
+  String get homeEmptyLibrary => 'Your library is empty';
+
+  @override
+  String homePlaylistSongs(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count songs',
+      one: '1 song',
+    );
+    return '$_temp0';
+  }
 }
 
 /// The translations for English (`en_XA`).
@@ -1043,4 +1101,62 @@ class AppLocalizationsEnXa extends AppLocalizationsEn {
 
   @override
   String get appBannerDismiss => '[Ðîšmîšš one]';
+
+  @override
+  String get homeGreetingMorning => '[Ĝööð möŕñîñĝ one two]';
+
+  @override
+  String get homeGreetingAfternoon => '[Ĝööð åfţéŕñööñ one two]';
+
+  @override
+  String get homeGreetingEvening => '[Ĝööð évéñîñĝ one two]';
+
+  @override
+  String get homeShelfContinueListening => '[Çöñţîñûé Ļîšţéñîñĝ one two]';
+
+  @override
+  String get homeShelfRecentlyAdded => '[Ŕéçéñţļý Åððéð one two]';
+
+  @override
+  String get homeShelfMadeForYou => '[Måðé Föŕ Ýöû one two]';
+
+  @override
+  String get homeShelfYourPlaylists => '[Ýöûŕ Þļåýļîšţš one two]';
+
+  @override
+  String get homeShelfPopularPodcasts => '[Þöþûļåŕ Þöðçåšţš one two]';
+
+  @override
+  String get homeLikedSongs => '[Ļîķéð Šöñĝš one two]';
+
+  @override
+  String get homeLikedSongsSubtitle => '[Þļåýļîšţ one]';
+
+  @override
+  String get homeCardArtist => '[Åŕţîšţ one]';
+
+  @override
+  String get homeCardPodcast => '[Þöðçåšţ one]';
+
+  @override
+  String get homeNoticeNewerThanTested =>
+      '[Ţĥîš šéŕvéŕ îš ñéŵéŕ ţĥåñ ţĥîš åþþ ŵåš ţéšţéð ŵîţĥ one two three four five]';
+
+  @override
+  String get homeNoticeVersionUnknown =>
+      '[Ţĥîš šéŕvéŕ’š véŕšîöñ çöûļð ñöţ bé ŕéåð one two three four]';
+
+  @override
+  String get homeEmptyLibrary => '[Ýöûŕ ļîbŕåŕý îš émþţý one two three]';
+
+  @override
+  String homePlaylistSongs(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count šöñĝš one',
+      one: '1 šöñĝ one',
+    );
+    return '[$_temp0]';
+  }
 }

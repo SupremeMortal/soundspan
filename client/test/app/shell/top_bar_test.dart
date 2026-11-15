@@ -30,7 +30,7 @@ void main() {
   }
 
   BuildContext screen(WidgetTester tester) =>
-      tester.element(find.byType(PlaceholderScreen).last);
+      tester.element(find.byType(RouteTitle).last);
 
   for (final size in [TestSizes.compact, TestSizes.medium]) {
     testWidgets('absent at ${size.width.toInt()}', (tester) async {

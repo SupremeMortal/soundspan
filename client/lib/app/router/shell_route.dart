@@ -9,6 +9,7 @@ import 'package:soundspan/app/shell/app_shell.dart';
 import 'package:soundspan/app/shell/local_data_too_new_screen.dart';
 import 'package:soundspan/app/shell/shell_history.dart';
 import 'package:soundspan/core/profile/profile_scope.dart';
+import 'package:soundspan/features/home/home.dart';
 
 /// The detail routes, attached as children of every branch root so a detail
 /// opens inside the branch it was opened from.
@@ -72,10 +73,7 @@ StatefulShellRoute buildShellRoute(
       routes: [
         GoRoute(
           path: RoutePaths.home,
-          builder: (context, _) => PlaceholderScreen(
-            AppLocalizations.of(context).navHome,
-            branchRoot: true,
-          ),
+          builder: (_, _) => const HomeScreen(),
           routes: detailRoutes(),
         ),
       ],
