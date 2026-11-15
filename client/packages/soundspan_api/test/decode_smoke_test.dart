@@ -241,6 +241,10 @@ final Map<String, FixtureDecoder> fixtureDecoders = {
     OfflineItemsResponse.fromJson,
     (model) => model.toJson(),
   ),
+  'revokeCurrentApiKey.json': _object(
+    MessageResponse.fromJson,
+    (model) => model.toJson(),
+  ),
   'savePlaybackState.json': _object(
     PlaybackState.fromJson,
     (model) => model.toJson(),
@@ -276,6 +280,10 @@ final Map<String, FixtureDecoder> fixtureDecoders = {
   ),
   'updateSettings.json': _object(
     UserSettings.fromJson,
+    (model) => model.toJson(),
+  ),
+  'verifyDeviceLink.json': _object(
+    DeviceLinkVerifyResponse.fromJson,
     (model) => model.toJson(),
   ),
 };
