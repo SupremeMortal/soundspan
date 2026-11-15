@@ -53,6 +53,7 @@ PodcastDetail podcastDetailFromWire(api.PodcastDetail wire) => PodcastDetail(
     description: wire.description,
     artworkRef: wire.coverUrl,
     episodeCount: wire.episodes.length,
+    feedUrl: wire.feedUrl,
   ),
   episodes: [
     for (final episode in wire.episodes)

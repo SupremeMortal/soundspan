@@ -1157,5 +1157,106 @@
         "example": "Authentik"
       }
     }
+  },
+  "screenPodcast": "Podcast",
+  "@screenPodcast": {
+    "description": "Window title part and route name of a podcast page."
+  },
+  "podcastsYourPodcasts": "Your podcasts",
+  "@podcastsYourPodcasts": {
+    "description": "Title of the grid of the podcasts the user is subscribed to on the Podcasts screen."
+  },
+  "podcastsTopPodcasts": "Top podcasts",
+  "@podcastsTopPodcasts": {
+    "description": "Title of the shelf of popular podcasts from the directory on the Podcasts screen."
+  },
+  "podcastsEmpty": "You haven’t subscribed to any podcasts yet",
+  "@podcastsEmpty": {
+    "description": "Shown on the Podcasts screen when the user is subscribed to no podcast."
+  },
+  "podcastsOverline": "Podcast",
+  "@podcastsOverline": {
+    "description": "Type label above the title on a podcast page."
+  },
+  "podcastsEpisodeCount": "{count, plural, =1{1 episode} other{{count} episodes}}",
+  "@podcastsEpisodeCount": {
+    "description": "Part of the metadata line of a podcast page: how many episodes the podcast has.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "podcastsSubscribe": "Subscribe",
+  "@podcastsSubscribe": {
+    "description": "Button that subscribes the user to a podcast, on a podcast page and in the dialog of a top podcast."
+  },
+  "podcastsUnsubscribe": "Unsubscribe",
+  "@podcastsUnsubscribe": {
+    "description": "Button on a podcast page that unsubscribes the user from the podcast, and the confirming action of its dialog."
+  },
+  "podcastsUnsubscribeTitle": "Unsubscribe from {title}?",
+  "@podcastsUnsubscribeTitle": {
+    "description": "Title of the dialog confirming that the user wants to unsubscribe from a podcast.",
+    "placeholders": {
+      "title": {
+        "type": "String",
+        "example": "The Daily"
+      }
+    }
+  },
+  "podcastsUnsubscribeBody": "The podcast leaves your podcasts. You can subscribe again later.",
+  "@podcastsUnsubscribeBody": {
+    "description": "Body of the dialog confirming that the user wants to unsubscribe from a podcast."
+  },
+  "podcastsCancel": "Cancel",
+  "@podcastsCancel": {
+    "description": "Dismisses a Podcasts dialog without doing anything."
+  },
+  "podcastsOfflineTooltip": "Subscriptions can be changed only while the server is reachable",
+  "@podcastsOfflineTooltip": {
+    "description": "Tooltip of the disabled Subscribe or Unsubscribe button while the server is not reachable."
+  },
+  "podcastsSubscribeFailed": "Couldn’t subscribe. Try again.",
+  "@podcastsSubscribeFailed": {
+    "description": "Snackbar shown when subscribing to a podcast failed."
+  },
+  "podcastsUnsubscribeFailed": "Couldn’t unsubscribe. Try again.",
+  "@podcastsUnsubscribeFailed": {
+    "description": "Snackbar shown when unsubscribing from a podcast failed."
+  },
+  "podcastsShowMore": "Show more",
+  "@podcastsShowMore": {
+    "description": "Button under the collapsed description of a podcast page: shows the whole description."
+  },
+  "podcastsShowLess": "Show less",
+  "@podcastsShowLess": {
+    "description": "Button under the expanded description of a podcast page: collapses it to three lines again."
+  },
+  "podcastsEpisodePlayed": "Played",
+  "@podcastsEpisodePlayed": {
+    "description": "Label next to the check of an episode the user finished."
+  },
+  "podcastsEpisodeMinutes": "{count, plural, =1{1 minute} other{{count} minutes}}",
+  "@podcastsEpisodeMinutes": {
+    "description": "An episode's length as a screen reader says it, in whole minutes.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "podcastsEpisodeMinutesLeft": "{count, plural, =1{1 minute left} other{{count} minutes left}}",
+  "@podcastsEpisodeMinutesLeft": {
+    "description": "How much of a started episode is left, as a screen reader says it, in whole minutes.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "podcastsEpisodePlayedSpoken": "played",
+  "@podcastsEpisodePlayedSpoken": {
+    "description": "Last part of the screen-reader label of an episode the user finished, e.g. the 'played' of 'Title, Mar 12, 2026, 42 minutes, played'."
   }
 }

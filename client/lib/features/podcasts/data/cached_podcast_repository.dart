@@ -76,11 +76,17 @@ class CachedPodcastRepository implements PodcastRepository {
   );
 
   @override
-  Future<void> subscribe(PodcastRef ref) =>
-      _swr.refresh('podcast:subscribe:$ref', () async {
-        await _client.subscribePodcast(body: subscribeRequestFromRef(ref));
-        await _store.markListStale(subscribedPodcastsKey);
-      });
+  Future<String> subscribe(PodcastRef ref) async {
+    late String id;
+    await _swr.refresh('podcast:subscribe:$ref', () async {
+      final response = await _client.subscribePodcast(
+        body: subscribeRequestFromRef(ref),
+      );
+      id = response.podcast.id;
+      await _store.markListStale(subscribedPodcastsKey);
+    });
+    return id;
+  }
 
   @override
   Future<void> unsubscribe(String podcastId) =>

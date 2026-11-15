@@ -5,25 +5,10 @@ import 'dart:math' as math;
 import 'package:flutter/rendering.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:soundspan/app/shell/window_class.dart';
-import 'package:soundspan/app/theme/dimens.dart';
 import 'package:soundspan/features/library/ui/paged_library_view.dart';
 import 'package:soundspan/shared/domain/domain.dart';
 import 'package:soundspan/shared/widgets/media_card.dart';
-
-/// The narrowest a grid tile gets.
-const double gridMinTileWidth = 160;
-
-/// The space between grid tiles.
-const double gridSpacing = Spacing.x16;
-
-/// The number of columns of a grid [availableWidth] wide: as many tiles of
-/// at least [gridMinTileWidth] as fit with [gridSpacing] between them, from
-/// 2 to 8 (doc 09, Library).
-int gridColumnsFor(double availableWidth) =>
-    ((availableWidth + gridSpacing) ~/ (gridMinTileWidth + gridSpacing)).clamp(
-      2,
-      8,
-    );
+import 'package:soundspan/shared/widgets/media_grid_layout.dart';
 
 /// A paged grid of [MediaCard]s over the [PagedSource] that [open] makes
 /// from the library repository, in a [PagedLibraryView] under [controls]

@@ -55,6 +55,11 @@ abstract final class RoutePaths {
   static const settingsAboutLicenses = '/settings/about/licenses';
 }
 
+/// The location of the page of podcast [podcastId] in the Podcasts branch:
+/// `/podcasts/<podcastId>`.
+String podcastLocation(String podcastId) =>
+    '${RoutePaths.podcasts}/${Uri.encodeComponent(podcastId)}';
+
 /// The tabs of `/library/:tab`.
 enum LibraryTab {
   /// Playlists; the default tab.

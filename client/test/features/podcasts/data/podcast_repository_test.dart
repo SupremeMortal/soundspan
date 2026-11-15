@@ -258,10 +258,11 @@ void main() {
       server.podcasts['pc-2'] = _other();
       await listenOnce(repository.subscribed());
 
-      await repository.subscribe(
+      final id = await repository.subscribe(
         const PodcastRef.feed('https://example.com/other.xml'),
       );
 
+      expect(id, 'pc-2');
       expect(server.subscriptions, ['pc-2', 'pc-1']);
       final (values, _) = await listenOnce(repository.subscribed());
       expect(calls('listPodcasts'), 2);

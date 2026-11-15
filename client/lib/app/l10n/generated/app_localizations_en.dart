@@ -898,6 +898,94 @@ class AppLocalizationsEn extends AppLocalizations {
   String connectSignInWithProvider(String provider) {
     return 'Sign in with $provider';
   }
+
+  @override
+  String get screenPodcast => 'Podcast';
+
+  @override
+  String get podcastsYourPodcasts => 'Your podcasts';
+
+  @override
+  String get podcastsTopPodcasts => 'Top podcasts';
+
+  @override
+  String get podcastsEmpty => 'You haven’t subscribed to any podcasts yet';
+
+  @override
+  String get podcastsOverline => 'Podcast';
+
+  @override
+  String podcastsEpisodeCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count episodes',
+      one: '1 episode',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get podcastsSubscribe => 'Subscribe';
+
+  @override
+  String get podcastsUnsubscribe => 'Unsubscribe';
+
+  @override
+  String podcastsUnsubscribeTitle(String title) {
+    return 'Unsubscribe from $title?';
+  }
+
+  @override
+  String get podcastsUnsubscribeBody =>
+      'The podcast leaves your podcasts. You can subscribe again later.';
+
+  @override
+  String get podcastsCancel => 'Cancel';
+
+  @override
+  String get podcastsOfflineTooltip =>
+      'Subscriptions can be changed only while the server is reachable';
+
+  @override
+  String get podcastsSubscribeFailed => 'Couldn’t subscribe. Try again.';
+
+  @override
+  String get podcastsUnsubscribeFailed => 'Couldn’t unsubscribe. Try again.';
+
+  @override
+  String get podcastsShowMore => 'Show more';
+
+  @override
+  String get podcastsShowLess => 'Show less';
+
+  @override
+  String get podcastsEpisodePlayed => 'Played';
+
+  @override
+  String podcastsEpisodeMinutes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count minutes',
+      one: '1 minute',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String podcastsEpisodeMinutesLeft(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count minutes left',
+      one: '1 minute left',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get podcastsEpisodePlayedSpoken => 'played';
 }
 
 /// The translations for English (`en_XA`).
@@ -1815,4 +1903,95 @@ class AppLocalizationsEnXa extends AppLocalizationsEn {
   String connectSignInWithProvider(String provider) {
     return '[Šîĝñ îñ ŵîţĥ $provider one two]';
   }
+
+  @override
+  String get screenPodcast => '[Þöðçåšţ one]';
+
+  @override
+  String get podcastsYourPodcasts => '[Ýöûŕ þöðçåšţš one two]';
+
+  @override
+  String get podcastsTopPodcasts => '[Ţöþ þöðçåšţš one two]';
+
+  @override
+  String get podcastsEmpty =>
+      '[Ýöû ĥåvéñ’ţ šûbšçŕîbéð ţö åñý þöðçåšţš ýéţ one two three four]';
+
+  @override
+  String get podcastsOverline => '[Þöðçåšţ one]';
+
+  @override
+  String podcastsEpisodeCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count éþîšöðéš one',
+      one: '1 éþîšöðé one',
+    );
+    return '[$_temp0]';
+  }
+
+  @override
+  String get podcastsSubscribe => '[Šûbšçŕîbé one]';
+
+  @override
+  String get podcastsUnsubscribe => '[Ûñšûbšçŕîbé one two]';
+
+  @override
+  String podcastsUnsubscribeTitle(String title) {
+    return '[Ûñšûbšçŕîbé fŕöm $title? one two]';
+  }
+
+  @override
+  String get podcastsUnsubscribeBody =>
+      '[Ţĥé þöðçåšţ ļéåvéš ýöûŕ þöðçåšţš. Ýöû çåñ šûbšçŕîbé åĝåîñ ļåţéŕ. one two three four five six]';
+
+  @override
+  String get podcastsCancel => '[Çåñçéļ one]';
+
+  @override
+  String get podcastsOfflineTooltip =>
+      '[Šûbšçŕîþţîöñš çåñ bé çĥåñĝéð öñļý ŵĥîļé ţĥé šéŕvéŕ îš ŕéåçĥåbļé one two three four five six]';
+
+  @override
+  String get podcastsSubscribeFailed =>
+      '[Çöûļðñ’ţ šûbšçŕîbé. Ţŕý åĝåîñ. one two three]';
+
+  @override
+  String get podcastsUnsubscribeFailed =>
+      '[Çöûļðñ’ţ ûñšûbšçŕîbé. Ţŕý åĝåîñ. one two three]';
+
+  @override
+  String get podcastsShowMore => '[Šĥöŵ möŕé one]';
+
+  @override
+  String get podcastsShowLess => '[Šĥöŵ ļéšš one]';
+
+  @override
+  String get podcastsEpisodePlayed => '[Þļåýéð one]';
+
+  @override
+  String podcastsEpisodeMinutes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count mîñûţéš one',
+      one: '1 mîñûţé one',
+    );
+    return '[$_temp0]';
+  }
+
+  @override
+  String podcastsEpisodeMinutesLeft(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count mîñûţéš ļéfţ one two',
+      one: '1 mîñûţé ļéfţ one two',
+    );
+    return '[$_temp0]';
+  }
+
+  @override
+  String get podcastsEpisodePlayedSpoken => '[þļåýéð one]';
 }

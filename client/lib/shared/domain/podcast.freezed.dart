@@ -22,7 +22,9 @@ mixin _$Podcast {
  String? get author;/// The podcast's description, if any.
  String? get description;/// The value to pass to the cover-art endpoint, if any.
  String? get artworkRef;/// How many episodes the podcast has, if known.
- int? get episodeCount;
+ int? get episodeCount;/// The podcast's RSS feed URL, if the server sent one; a podcast detail
+/// carries it so the podcast can be subscribed to again.
+ String? get feedUrl;
 /// Create a copy of Podcast
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -36,20 +38,20 @@ $PodcastCopyWith<Podcast> get copyWith => _$PodcastCopyWithImpl<Podcast>(this as
 @override
 bool operator ==(Object other) {
   final _this = this as Podcast;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Podcast&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.title, _this.title) || other.title == _this.title)&&(identical(other.author, _this.author) || other.author == _this.author)&&(identical(other.description, _this.description) || other.description == _this.description)&&(identical(other.artworkRef, _this.artworkRef) || other.artworkRef == _this.artworkRef)&&(identical(other.episodeCount, _this.episodeCount) || other.episodeCount == _this.episodeCount));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Podcast&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.title, _this.title) || other.title == _this.title)&&(identical(other.author, _this.author) || other.author == _this.author)&&(identical(other.description, _this.description) || other.description == _this.description)&&(identical(other.artworkRef, _this.artworkRef) || other.artworkRef == _this.artworkRef)&&(identical(other.episodeCount, _this.episodeCount) || other.episodeCount == _this.episodeCount)&&(identical(other.feedUrl, _this.feedUrl) || other.feedUrl == _this.feedUrl));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
   final _this = this as Podcast;
-  return Object.hash(runtimeType,_this.id,_this.title,_this.author,_this.description,_this.artworkRef,_this.episodeCount);
+  return Object.hash(runtimeType,_this.id,_this.title,_this.author,_this.description,_this.artworkRef,_this.episodeCount,_this.feedUrl);
 }
 
 @override
 String toString() {
   final _this = this as Podcast;
-  return 'Podcast(id: ${_this.id}, title: ${_this.title}, author: ${_this.author}, description: ${_this.description}, artworkRef: ${_this.artworkRef}, episodeCount: ${_this.episodeCount})';
+  return 'Podcast(id: ${_this.id}, title: ${_this.title}, author: ${_this.author}, description: ${_this.description}, artworkRef: ${_this.artworkRef}, episodeCount: ${_this.episodeCount}, feedUrl: ${_this.feedUrl})';
 }
 
 
@@ -60,7 +62,7 @@ abstract mixin class $PodcastCopyWith<$Res>  {
   factory $PodcastCopyWith(Podcast value, $Res Function(Podcast) _then) = _$PodcastCopyWithImpl;
 @useResult
 $Res call({
- String id, String title, String? author, String? description, String? artworkRef, int? episodeCount
+ String id, String title, String? author, String? description, String? artworkRef, int? episodeCount, String? feedUrl
 });
 
 
@@ -77,7 +79,7 @@ class _$PodcastCopyWithImpl<$Res>
 
 /// Create a copy of Podcast
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? title = null,Object? author = freezed,Object? description = freezed,Object? artworkRef = freezed,Object? episodeCount = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? title = null,Object? author = freezed,Object? description = freezed,Object? artworkRef = freezed,Object? episodeCount = freezed,Object? feedUrl = freezed,}) {
   return _then(Podcast(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
@@ -85,7 +87,8 @@ as String,author: freezed == author ? _self.author : author // ignore: cast_null
 as String?,description: freezed == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
 as String?,artworkRef: freezed == artworkRef ? _self.artworkRef : artworkRef // ignore: cast_nullable_to_non_nullable
 as String?,episodeCount: freezed == episodeCount ? _self.episodeCount : episodeCount // ignore: cast_nullable_to_non_nullable
-as int?,
+as int?,feedUrl: freezed == feedUrl ? _self.feedUrl : feedUrl // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 
@@ -170,10 +173,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String title,  String? author,  String? description,  String? artworkRef,  int? episodeCount)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String title,  String? author,  String? description,  String? artworkRef,  int? episodeCount,  String? feedUrl)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Podcast() when $default != null:
-return $default(_that.id,_that.title,_that.author,_that.description,_that.artworkRef,_that.episodeCount);case _:
+return $default(_that.id,_that.title,_that.author,_that.description,_that.artworkRef,_that.episodeCount,_that.feedUrl);case _:
   return orElse();
 
 }
@@ -191,10 +194,10 @@ return $default(_that.id,_that.title,_that.author,_that.description,_that.artwor
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String title,  String? author,  String? description,  String? artworkRef,  int? episodeCount)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String title,  String? author,  String? description,  String? artworkRef,  int? episodeCount,  String? feedUrl)  $default,) {final _that = this;
 switch (_that) {
 case _Podcast():
-return $default(_that.id,_that.title,_that.author,_that.description,_that.artworkRef,_that.episodeCount);case _:
+return $default(_that.id,_that.title,_that.author,_that.description,_that.artworkRef,_that.episodeCount,_that.feedUrl);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -211,10 +214,10 @@ return $default(_that.id,_that.title,_that.author,_that.description,_that.artwor
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String title,  String? author,  String? description,  String? artworkRef,  int? episodeCount)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String title,  String? author,  String? description,  String? artworkRef,  int? episodeCount,  String? feedUrl)?  $default,) {final _that = this;
 switch (_that) {
 case _Podcast() when $default != null:
-return $default(_that.id,_that.title,_that.author,_that.description,_that.artworkRef,_that.episodeCount);case _:
+return $default(_that.id,_that.title,_that.author,_that.description,_that.artworkRef,_that.episodeCount,_that.feedUrl);case _:
   return null;
 
 }
@@ -226,7 +229,7 @@ return $default(_that.id,_that.title,_that.author,_that.description,_that.artwor
 @JsonSerializable()
 
 class _Podcast implements Podcast {
-  const _Podcast({required this.id, required this.title, this.author, this.description, this.artworkRef, this.episodeCount});
+  const _Podcast({required this.id, required this.title, this.author, this.description, this.artworkRef, this.episodeCount, this.feedUrl});
   factory _Podcast.fromJson(Map<String, dynamic> json) => _$PodcastFromJson(json);
 
 /// The server's podcast id.
@@ -241,6 +244,9 @@ class _Podcast implements Podcast {
 @override final  String? artworkRef;
 /// How many episodes the podcast has, if known.
 @override final  int? episodeCount;
+/// The podcast's RSS feed URL, if the server sent one; a podcast detail
+/// carries it so the podcast can be subscribed to again.
+@override final  String? feedUrl;
 
 /// Create a copy of Podcast
 /// with the given fields replaced by the non-null parameter values.
@@ -255,18 +261,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _Podcast&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.author, author) || other.author == author)&&(identical(other.description, description) || other.description == description)&&(identical(other.artworkRef, artworkRef) || other.artworkRef == artworkRef)&&(identical(other.episodeCount, episodeCount) || other.episodeCount == episodeCount));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _Podcast&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.author, author) || other.author == author)&&(identical(other.description, description) || other.description == description)&&(identical(other.artworkRef, artworkRef) || other.artworkRef == artworkRef)&&(identical(other.episodeCount, episodeCount) || other.episodeCount == episodeCount)&&(identical(other.feedUrl, feedUrl) || other.feedUrl == feedUrl));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
-    return Object.hash(runtimeType,id,title,author,description,artworkRef,episodeCount);
+    return Object.hash(runtimeType,id,title,author,description,artworkRef,episodeCount,feedUrl);
 }
 
 @override
 String toString() {
-    return 'Podcast(id: $id, title: $title, author: $author, description: $description, artworkRef: $artworkRef, episodeCount: $episodeCount)';
+    return 'Podcast(id: $id, title: $title, author: $author, description: $description, artworkRef: $artworkRef, episodeCount: $episodeCount, feedUrl: $feedUrl)';
 }
 
 
@@ -277,7 +283,7 @@ abstract mixin class _$PodcastCopyWith<$Res> implements $PodcastCopyWith<$Res> {
   factory _$PodcastCopyWith(_Podcast value, $Res Function(_Podcast) _then) = __$PodcastCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String title, String? author, String? description, String? artworkRef, int? episodeCount
+ String id, String title, String? author, String? description, String? artworkRef, int? episodeCount, String? feedUrl
 });
 
 
@@ -294,7 +300,7 @@ class __$PodcastCopyWithImpl<$Res>
 
 /// Create a copy of Podcast
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? title = null,Object? author = freezed,Object? description = freezed,Object? artworkRef = freezed,Object? episodeCount = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? title = null,Object? author = freezed,Object? description = freezed,Object? artworkRef = freezed,Object? episodeCount = freezed,Object? feedUrl = freezed,}) {
   return _then(_Podcast(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
@@ -302,7 +308,8 @@ as String,author: freezed == author ? _self.author : author // ignore: cast_null
 as String?,description: freezed == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
 as String?,artworkRef: freezed == artworkRef ? _self.artworkRef : artworkRef // ignore: cast_nullable_to_non_nullable
 as String?,episodeCount: freezed == episodeCount ? _self.episodeCount : episodeCount // ignore: cast_nullable_to_non_nullable
-as int?,
+as int?,feedUrl: freezed == feedUrl ? _self.feedUrl : feedUrl // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 

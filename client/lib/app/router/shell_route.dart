@@ -2,8 +2,6 @@
 
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:soundspan/app/l10n/generated/app_localizations.dart';
-import 'package:soundspan/app/router/placeholder_screen.dart';
 import 'package:soundspan/app/router/routes.dart';
 import 'package:soundspan/app/shell/adaptive_shell.dart';
 import 'package:soundspan/app/shell/app_shell.dart';
@@ -16,6 +14,7 @@ import 'package:soundspan/features/artist/artist.dart';
 import 'package:soundspan/features/home/home.dart';
 import 'package:soundspan/features/library/library.dart';
 import 'package:soundspan/features/playlist/playlist.dart';
+import 'package:soundspan/features/podcasts/podcasts.dart';
 import 'package:soundspan/features/search/search.dart';
 
 /// The detail routes, attached as children of every branch root so a detail
@@ -147,11 +146,16 @@ StatefulShellRoute buildShellRoute(
       routes: [
         GoRoute(
           path: RoutePaths.podcasts,
-          builder: (context, _) => PlaceholderScreen(
-            AppLocalizations.of(context).navPodcasts,
-            branchRoot: true,
-          ),
-          routes: detailRoutes(),
+          builder: (_, _) => const PodcastsScreen(),
+          routes: [
+            ...detailRoutes(),
+            GoRoute(
+              path: ':podcastId',
+              builder: (_, state) => PodcastDetailScreen(
+                podcastId: state.pathParameters['podcastId']!,
+              ),
+            ),
+          ],
         ),
       ],
     ),

@@ -1578,6 +1578,126 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sign in with {provider}'**
   String connectSignInWithProvider(String provider);
+
+  /// Window title part and route name of a podcast page.
+  ///
+  /// In en, this message translates to:
+  /// **'Podcast'**
+  String get screenPodcast;
+
+  /// Title of the grid of the podcasts the user is subscribed to on the Podcasts screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Your podcasts'**
+  String get podcastsYourPodcasts;
+
+  /// Title of the shelf of popular podcasts from the directory on the Podcasts screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Top podcasts'**
+  String get podcastsTopPodcasts;
+
+  /// Shown on the Podcasts screen when the user is subscribed to no podcast.
+  ///
+  /// In en, this message translates to:
+  /// **'You haven’t subscribed to any podcasts yet'**
+  String get podcastsEmpty;
+
+  /// Type label above the title on a podcast page.
+  ///
+  /// In en, this message translates to:
+  /// **'Podcast'**
+  String get podcastsOverline;
+
+  /// Part of the metadata line of a podcast page: how many episodes the podcast has.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 episode} other{{count} episodes}}'**
+  String podcastsEpisodeCount(int count);
+
+  /// Button that subscribes the user to a podcast, on a podcast page and in the dialog of a top podcast.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscribe'**
+  String get podcastsSubscribe;
+
+  /// Button on a podcast page that unsubscribes the user from the podcast, and the confirming action of its dialog.
+  ///
+  /// In en, this message translates to:
+  /// **'Unsubscribe'**
+  String get podcastsUnsubscribe;
+
+  /// Title of the dialog confirming that the user wants to unsubscribe from a podcast.
+  ///
+  /// In en, this message translates to:
+  /// **'Unsubscribe from {title}?'**
+  String podcastsUnsubscribeTitle(String title);
+
+  /// Body of the dialog confirming that the user wants to unsubscribe from a podcast.
+  ///
+  /// In en, this message translates to:
+  /// **'The podcast leaves your podcasts. You can subscribe again later.'**
+  String get podcastsUnsubscribeBody;
+
+  /// Dismisses a Podcasts dialog without doing anything.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get podcastsCancel;
+
+  /// Tooltip of the disabled Subscribe or Unsubscribe button while the server is not reachable.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscriptions can be changed only while the server is reachable'**
+  String get podcastsOfflineTooltip;
+
+  /// Snackbar shown when subscribing to a podcast failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t subscribe. Try again.'**
+  String get podcastsSubscribeFailed;
+
+  /// Snackbar shown when unsubscribing from a podcast failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t unsubscribe. Try again.'**
+  String get podcastsUnsubscribeFailed;
+
+  /// Button under the collapsed description of a podcast page: shows the whole description.
+  ///
+  /// In en, this message translates to:
+  /// **'Show more'**
+  String get podcastsShowMore;
+
+  /// Button under the expanded description of a podcast page: collapses it to three lines again.
+  ///
+  /// In en, this message translates to:
+  /// **'Show less'**
+  String get podcastsShowLess;
+
+  /// Label next to the check of an episode the user finished.
+  ///
+  /// In en, this message translates to:
+  /// **'Played'**
+  String get podcastsEpisodePlayed;
+
+  /// An episode's length as a screen reader says it, in whole minutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 minute} other{{count} minutes}}'**
+  String podcastsEpisodeMinutes(int count);
+
+  /// How much of a started episode is left, as a screen reader says it, in whole minutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 minute left} other{{count} minutes left}}'**
+  String podcastsEpisodeMinutesLeft(int count);
+
+  /// Last part of the screen-reader label of an episode the user finished, e.g. the 'played' of 'Title, Mar 12, 2026, 42 minutes, played'.
+  ///
+  /// In en, this message translates to:
+  /// **'played'**
+  String get podcastsEpisodePlayedSpoken;
 }
 
 class _AppLocalizationsDelegate

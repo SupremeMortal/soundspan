@@ -186,7 +186,7 @@ Header: artwork (140 compact, 192 medium, 232 expanded), overline type label, ti
 
 ### Podcasts (M1)
 
-Subscribed grid; Top Podcasts shelf; detail with header, Subscribe, and an episode list (title, date, duration, progress bar, download glyph, played check). Episode row tap plays from the saved position.
+Subscribed grid (the Library grid's columns); Top Podcasts shelf, hidden when empty or failed. A top podcast the user already follows opens its detail; any other opens a dialog (artwork, title, author, Subscribe) and a successful subscribe opens the new podcast's detail. Detail with the album header (overline "Podcast", author and episode count), a Subscribe / Unsubscribe pill (Unsubscribe confirms, then returns to `/podcasts`; both disabled with a tooltip while the server is not reachable, a failure shows a snackbar), the description collapsed to three lines, and an episode list of fixed-height rows (title, date, duration, progress bar, download glyph, played check), each one merged semantics node ("Title, Mar 12, 2026, 42 minutes, played" or "…, 18 minutes left"). Episode row tap plays from the saved position.
 
 ### Settings (M0 onward)
 

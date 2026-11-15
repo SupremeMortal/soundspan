@@ -13,6 +13,7 @@ _Podcast _$PodcastFromJson(Map<String, dynamic> json) => _Podcast(
   description: json['description'] as String?,
   artworkRef: json['artworkRef'] as String?,
   episodeCount: (json['episodeCount'] as num?)?.toInt(),
+  feedUrl: json['feedUrl'] as String?,
 );
 
 Map<String, dynamic> _$PodcastToJson(_Podcast instance) => <String, dynamic>{
@@ -22,6 +23,7 @@ Map<String, dynamic> _$PodcastToJson(_Podcast instance) => <String, dynamic>{
   'description': instance.description,
   'artworkRef': instance.artworkRef,
   'episodeCount': instance.episodeCount,
+  'feedUrl': instance.feedUrl,
 };
 
 _PodcastSummary _$PodcastSummaryFromJson(Map<String, dynamic> json) =>

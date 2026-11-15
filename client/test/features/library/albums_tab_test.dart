@@ -5,11 +5,11 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:soundspan/features/library/ui/library_controls.dart';
-import 'package:soundspan/features/library/ui/paged_media_grid.dart';
 import 'package:soundspan/shared/domain/domain.dart';
 import 'package:soundspan/shared/widgets/empty_state.dart';
 import 'package:soundspan/shared/widgets/error_view.dart';
 import 'package:soundspan/shared/widgets/media_card.dart';
+import 'package:soundspan/shared/widgets/media_grid_layout.dart';
 import 'package:soundspan_api/soundspan_api.dart' show ServerError;
 
 import '../../helpers/fake_repositories.dart';

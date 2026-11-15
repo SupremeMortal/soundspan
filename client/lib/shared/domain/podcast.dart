@@ -29,6 +29,10 @@ abstract class Podcast with _$Podcast {
 
     /// How many episodes the podcast has, if known.
     int? episodeCount,
+
+    /// The podcast's RSS feed URL, if the server sent one; a podcast detail
+    /// carries it so the podcast can be subscribed to again.
+    String? feedUrl,
   }) = _Podcast;
 
   /// Decodes a podcast written by [Podcast.toJson].

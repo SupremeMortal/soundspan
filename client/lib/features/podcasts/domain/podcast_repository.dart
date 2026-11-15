@@ -22,9 +22,9 @@ abstract interface class PodcastRepository {
   /// `Offline` while the server is not reachable.
   Future<void> refreshDetail(String podcastId);
 
-  /// Subscribes to the podcast [ref] names. Throws `Offline` while the
-  /// server is not reachable.
-  Future<void> subscribe(PodcastRef ref);
+  /// Subscribes to the podcast [ref] names and returns the server's id of
+  /// the podcast. Throws `Offline` while the server is not reachable.
+  Future<String> subscribe(PodcastRef ref);
 
   /// Unsubscribes from the podcast [podcastId]. Throws `Offline` while the
   /// server is not reachable.

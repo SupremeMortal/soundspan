@@ -124,6 +124,7 @@ void main() {
           description: 'A show',
           artworkRef: '/podcasts/pc-1/cover',
           episodeCount: 2,
+          feedUrl: 'https://example.com/feed.xml',
         ),
       );
       expect([for (final e in detail.episodes) e.id], ['e2', 'e1']);
