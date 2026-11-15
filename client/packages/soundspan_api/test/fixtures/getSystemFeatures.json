@@ -1,0 +1,22 @@
+{
+  "audioAnalysis": false,
+  "autoPlaylists": true,
+  "discovery": true,
+  "federation": false,
+  "loudnessTargetLufs": -18,
+  "musicCNN": false,
+  "vibe": {
+    "activeSpace": {
+      "family": "clap-music-audioset",
+      "id": "space_clap_music_audioset_v1"
+    },
+    "migration": null,
+    "provider": {
+      "checkedAt": null,
+      "configured": true,
+      "fresh": false,
+      "reachable": null
+    }
+  },
+  "vibeEmbeddings": true
+}

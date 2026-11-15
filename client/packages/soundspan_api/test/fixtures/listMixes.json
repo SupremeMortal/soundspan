@@ -1,0 +1,77 @@
+[
+  {
+    "color": "linear-gradient(to bottom, rgba(68, 64, 60, 0.5), rgba(38, 38, 38, 0.4), rgba(39, 39, 42, 0.4))",
+    "coverUrls": [],
+    "description": "Random picks from the 2000s",
+    "id": "era-2000-2026-11-15",
+    "name": "Your 2000s Mix",
+    "trackCount": 6,
+    "trackIds": [
+      "cmwhdx9mn001a07teq4kgnmot",
+      "cmwhdx93t000c07te7xakyuv7",
+      "cmwhdx9ab000p07te5u0tbawb",
+      "cmwhdx9p7001e07tetbfu9bq7",
+      "cmwhdx95t000g07tex2w47up6",
+      "cmwhdx9a5000n07tew1cuodh4"
+    ],
+    "type": "era"
+  },
+  {
+    "color": "linear-gradient(to bottom, rgba(55, 48, 163, 0.5), rgba(76, 29, 149, 0.4), rgba(15, 23, 42, 0.4))",
+    "coverUrls": [],
+    "description": "Hidden gems you rarely play",
+    "id": "rediscover-2026-11-15",
+    "name": "Rediscover",
+    "trackCount": 18,
+    "trackIds": [
+      "cmwhdx9cn000s07teaxvjnjev",
+      "cmwhdx91m000907teufurqxjh",
+      "cmwhdx9ht001207texgdupij8",
+      "cmwhdx9a5000n07tew1cuodh4",
+      "cmwhdx95r000f07te9v99kuye",
+      "cmwhdx9k0001507teu6v2tp2v",
+      "cmwhdx9ab000p07te5u0tbawb",
+      "cmwhdx91n000a07teh38h3g19",
+      "cmwhdx9m4001907teuojd1j3v",
+      "cmwhdx9cs000t07teagmlpr6c",
+      "cmwhdx95y000h07teax2vkumd",
+      "cmwhdx9ny001c07te7b27vf50",
+      "cmwhdx9gn001007tec8gcemfa",
+      "cmwhdx8zk000707teypzrpndu",
+      "cmwhdx9p7001e07tetbfu9bq7",
+      "cmwhdx9g1000z07te6kx4vrgh",
+      "cmwhdx91i000807te6e4cy2tz",
+      "cmwhdx9lf001807teanmvkpth"
+    ],
+    "type": "rediscover"
+  },
+  {
+    "color": "linear-gradient(to bottom, rgba(55, 48, 163, 0.5), rgba(76, 29, 149, 0.4), rgba(15, 23, 42, 0.4))",
+    "coverUrls": [],
+    "description": "Hidden gems waiting to be discovered",
+    "id": "deep-cuts-2026-11-15",
+    "name": "Deep Cuts",
+    "trackCount": 18,
+    "trackIds": [
+      "cmwhdx8zk000707teypzrpndu",
+      "cmwhdx985000k07tehiuhzapa",
+      "cmwhdx9il001307teoe0752tt",
+      "cmwhdx93t000c07te7xakyuv7",
+      "cmwhdx9cn000s07teaxvjnjev",
+      "cmwhdx9mn001a07teq4kgnmot",
+      "cmwhdx93y000e07tekcl9xxy3",
+      "cmwhdx98b000m07tezhwfg4rd",
+      "cmwhdx9kl001707tefsj75wfe",
+      "cmwhdx91i000807te6e4cy2tz",
+      "cmwhdx9e7000u07tewy555oid",
+      "cmwhdx9jm001407te3x68f4of",
+      "cmwhdx91n000a07teh38h3g19",
+      "cmwhdx9c2000r07teo18ceef1",
+      "cmwhdx9or001d07teqekxaw1p",
+      "cmwhdx95t000g07tex2w47up6",
+      "cmwhdx9gn001007tec8gcemfa",
+      "cmwhdx9m4001907teuojd1j3v"
+    ],
+    "type": "deep-cuts"
+  }
+]

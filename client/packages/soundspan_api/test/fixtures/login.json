@@ -1,0 +1,10 @@
+{
+  "refreshToken": "<redacted>",
+  "token": "<redacted>",
+  "user": {
+    "displayName": null,
+    "id": "cmwhdx8n4000107teqfjj1bol",
+    "role": "user",
+    "username": "listener"
+  }
+}

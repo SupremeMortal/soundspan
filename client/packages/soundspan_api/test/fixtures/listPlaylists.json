@@ -1,0 +1,96 @@
+[
+  {
+    "createdAt": "2026-11-15T05:22:08.012Z",
+    "id": "cmwhe0xl8002707tegp2thwg7",
+    "isHidden": false,
+    "isOwner": true,
+    "isPublic": false,
+    "items": [
+      {
+        "id": "cmwhe0xmj002907tec1pszn7y",
+        "track": {
+          "album": {
+            "coverArt": null
+          }
+        }
+      },
+      {
+        "id": "cmwhe0xlr002807teuqiysxa7",
+        "track": {
+          "album": {
+            "coverArt": null
+          }
+        }
+      }
+    ],
+    "mixId": null,
+    "name": "Captured fixtures (renamed)",
+    "spotifyPlaylistId": null,
+    "spotifyPlaylistUrl": null,
+    "trackCount": 2,
+    "updatedAt": "2026-11-15T05:22:08.074Z",
+    "user": {
+      "username": "listener"
+    },
+    "userId": "cmwhdx8n4000107teqfjj1bol"
+  },
+  {
+    "createdAt": "2026-11-15T05:19:18.196Z",
+    "id": "cmwhdxak4001h07telmelo95j",
+    "isHidden": false,
+    "isOwner": true,
+    "isPublic": false,
+    "items": [
+      {
+        "id": "cmwhdxako001i07tesxb6c1ez",
+        "track": {
+          "album": {
+            "coverArt": null
+          }
+        }
+      },
+      {
+        "id": "cmwhdxal3001j07te9r3rqxln",
+        "track": {
+          "album": {
+            "coverArt": null
+          }
+        }
+      },
+      {
+        "id": "cmwhdxalj001k07tew8wwklpj",
+        "track": {
+          "album": {
+            "coverArt": null
+          }
+        }
+      },
+      {
+        "id": "cmwhdxam1001l07te845a8e9a",
+        "track": {
+          "album": {
+            "coverArt": null
+          }
+        }
+      },
+      {
+        "id": "cmwhdxamj001m07teg5nrz2ua",
+        "track": {
+          "album": {
+            "coverArt": null
+          }
+        }
+      }
+    ],
+    "mixId": null,
+    "name": "Contract Playlist",
+    "spotifyPlaylistId": null,
+    "spotifyPlaylistUrl": null,
+    "trackCount": 5,
+    "updatedAt": "2026-11-15T05:19:18.286Z",
+    "user": {
+      "username": "listener"
+    },
+    "userId": "cmwhdx8n4000107teqfjj1bol"
+  }
+]

@@ -1,0 +1,107 @@
+{
+  "groupType": "host-follower",
+  "hostUserId": "cmwhdx8n4000107teqfjj1bol",
+  "id": "cmwhe0xq2002a07te35012l5e",
+  "isActive": true,
+  "joinCode": "4RZJ2P",
+  "members": [
+    {
+      "isConnected": false,
+      "isHost": true,
+      "joinedAt": "2026-11-15T05:22:08.185Z",
+      "userId": "cmwhdx8n4000107teqfjj1bol",
+      "username": "listener"
+    }
+  ],
+  "membershipVersion": 0,
+  "name": "Captured fixtures",
+  "playback": {
+    "currentIndex": 0,
+    "isPlaying": false,
+    "positionMs": 0,
+    "queue": [
+      {
+        "album": {
+          "albumLoudnessLufs": null,
+          "albumTruePeakDb": null,
+          "coverArt": null,
+          "id": "cmwhdx9au000q07tetrh44224",
+          "title": "Quiet Fault"
+        },
+        "artist": {
+          "id": "cmwhdx964000i07teg8mj46nf",
+          "name": "Contract Basalt"
+        },
+        "duration": 3,
+        "id": "cmwhdx9g1000z07te6kx4vrgh",
+        "localTrackId": "cmwhdx9g1000z07te6kx4vrgh",
+        "loudnessLufs": null,
+        "mediaSource": "local",
+        "originSource": "local",
+        "playbackId": "t.cmwhdx9g1000z07te6kx4vrgh",
+        "provider": {
+          "source": "local"
+        },
+        "title": "Alder Tone",
+        "truePeakDb": null
+      },
+      {
+        "album": {
+          "albumLoudnessLufs": null,
+          "albumTruePeakDb": null,
+          "coverArt": null,
+          "id": "cmwhdx9kb001607teqiqkblth",
+          "title": "First Light"
+        },
+        "artist": {
+          "id": "cmwhdx9fe000x07tessr3bzm3",
+          "name": "Contract Aurora"
+        },
+        "duration": 30,
+        "id": "cmwhdx9m4001907teuojd1j3v",
+        "localTrackId": "cmwhdx9m4001907teuojd1j3v",
+        "loudnessLufs": null,
+        "mediaSource": "local",
+        "originSource": "local",
+        "playbackId": "t.cmwhdx9m4001907teuojd1j3v",
+        "provider": {
+          "source": "local"
+        },
+        "title": "Aster Tone",
+        "truePeakDb": null
+      },
+      {
+        "album": {
+          "albumLoudnessLufs": null,
+          "albumTruePeakDb": null,
+          "coverArt": null,
+          "id": "cmwhdx9kb001607teqiqkblth",
+          "title": "First Light"
+        },
+        "artist": {
+          "id": "cmwhdx9fe000x07tessr3bzm3",
+          "name": "Contract Aurora"
+        },
+        "duration": 3,
+        "id": "cmwhdx9mn001a07teq4kgnmot",
+        "localTrackId": "cmwhdx9mn001a07teq4kgnmot",
+        "loudnessLufs": null,
+        "mediaSource": "local",
+        "originSource": "local",
+        "playbackId": "t.cmwhdx9mn001a07teq4kgnmot",
+        "provider": {
+          "source": "local"
+        },
+        "title": "Birch Tone",
+        "truePeakDb": null
+      }
+    ],
+    "serverTime": 1794720128197,
+    "stateVersion": 0,
+    "trackId": "cmwhdx9g1000z07te6kx4vrgh"
+  },
+  "readyDeadlineMs": null,
+  "readyUserIds": [],
+  "syncState": "paused",
+  "visibility": "public"
+}

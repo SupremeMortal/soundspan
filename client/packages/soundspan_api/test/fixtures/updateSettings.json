@@ -1,0 +1,17 @@
+{
+  "displayName": null,
+  "loudnessMode": "auto",
+  "maxCacheSizeMb": 10240,
+  "offlineEnabled": false,
+  "playbackQuality": "original",
+  "shareListeningStatus": false,
+  "shareOnlinePresence": false,
+  "showTidalExplore": true,
+  "showYtMusicExplore": true,
+  "tidalOAuthJson": null,
+  "tidalStreamingQuality": "HIGH",
+  "userId": "cmwhdx8n4000107teqfjj1bol",
+  "wifiOnly": false,
+  "ytMusicOAuthJson": null,
+  "ytMusicQuality": "HIGH"
+}

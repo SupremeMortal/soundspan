@@ -1,0 +1,43 @@
+{
+  "pagination": {
+    "hasMore": true,
+    "limit": 1,
+    "nextCursor": {
+      "likedAt": "2026-11-15T05:22:07.907Z",
+      "trackId": "cmwhdx9m4001907teuojd1j3v"
+    }
+  },
+  "playlist": {
+    "description": "All your thumbs-up tracks",
+    "id": "my-liked",
+    "name": "My Liked"
+  },
+  "total": 2,
+  "tracks": [
+    {
+      "album": {
+        "albumLoudnessLufs": null,
+        "albumTruePeakDb": null,
+        "coverArt": null,
+        "id": "cmwhdx9kb001607teqiqkblth",
+        "title": "First Light"
+      },
+      "artist": {
+        "id": "cmwhdx9fe000x07tessr3bzm3",
+        "name": "Contract Aurora"
+      },
+      "duration": 30,
+      "filePath": "Contract Aurora/First Light/1-01 Aster Tone.flac",
+      "id": "cmwhdx9m4001907teuojd1j3v",
+      "likedAt": "2026-11-15T05:22:07.907Z",
+      "playbackId": "t.cmwhdx9m4001907teuojd1j3v",
+      "provider": {
+        "tidalTrackId": null,
+        "youtubeVideoId": null
+      },
+      "source": "local",
+      "title": "Aster Tone",
+      "trackNo": 1
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "artists": [
+    {
+      "albumCount": 2,
+      "coverArt": null,
+      "heroUrl": null,
+      "id": "cmwhdx9fe000x07tessr3bzm3",
+      "mbid": null,
+      "name": "Contract Aurora",
+      "trackCount": 14
+    },
+    {
+      "albumCount": 2,
+      "coverArt": null,
+      "heroUrl": null,
+      "id": "cmwhdx964000i07teg8mj46nf",
+      "mbid": null,
+      "name": "Contract Basalt",
+      "trackCount": 14
+    },
+    {
+      "albumCount": 2,
+      "coverArt": null,
+      "heroUrl": null,
+      "id": "cmwhdx8wf000307te6a41006z",
+      "mbid": null,
+      "name": "Contract Cinder",
+      "trackCount": 12
+    }
+  ],
+  "limit": 3,
+  "nextCursor": "cmwhdx8wf000307te6a41006z",
+  "offset": 0,
+  "total": 3
+}

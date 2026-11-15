@@ -1,0 +1,67 @@
+{
+  "tracks": [
+    {
+      "album": {
+        "albumLoudnessLufs": null,
+        "albumTruePeakDb": null,
+        "coverArt": null,
+        "id": "cmwhdx920000b07te25rb5at8",
+        "title": "Ash Weather"
+      },
+      "artist": {
+        "id": "cmwhdx8wf000307te6a41006z",
+        "name": "Contract Cinder"
+      },
+      "duration": 3,
+      "filePath": "Contract Cinder/Ash Weather/1-05 Moss Tone.flac",
+      "id": "cmwhdx95t000g07tex2w47up6",
+      "loudnessLufs": null,
+      "playbackId": "t.cmwhdx95t000g07tex2w47up6",
+      "title": "Moss Tone",
+      "trackNo": 5,
+      "truePeakDb": null
+    },
+    {
+      "album": {
+        "albumLoudnessLufs": null,
+        "albumTruePeakDb": null,
+        "coverArt": null,
+        "id": "cmwhdx96b000j07teoa7eoo1j",
+        "title": "Stone Garden"
+      },
+      "artist": {
+        "id": "cmwhdx964000i07teg8mj46nf",
+        "name": "Contract Basalt"
+      },
+      "duration": 3,
+      "filePath": "Contract Basalt/Stone Garden/1-03 Quartz Tone.flac",
+      "id": "cmwhdx98b000m07tezhwfg4rd",
+      "loudnessLufs": null,
+      "playbackId": "t.cmwhdx98b000m07tezhwfg4rd",
+      "title": "Quartz Tone",
+      "trackNo": 3,
+      "truePeakDb": null
+    },
+    {
+      "album": {
+        "albumLoudnessLufs": null,
+        "albumTruePeakDb": null,
+        "coverArt": null,
+        "id": "cmwhdx9fk000y07tedglz63b8",
+        "title": "Long Evening"
+      },
+      "artist": {
+        "id": "cmwhdx9fe000x07tessr3bzm3",
+        "name": "Contract Aurora"
+      },
+      "duration": 3,
+      "filePath": "Contract Aurora/Long Evening/2-03 Nectar Tone.flac",
+      "id": "cmwhdx9lf001807teanmvkpth",
+      "loudnessLufs": null,
+      "playbackId": "t.cmwhdx9lf001807teanmvkpth",
+      "title": "Nectar Tone",
+      "trackNo": 3,
+      "truePeakDb": null
+    }
+  ]
+}

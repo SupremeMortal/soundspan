@@ -1,0 +1,4 @@
+{
+  "message": "2FA token required",
+  "requires2FA": true
+}

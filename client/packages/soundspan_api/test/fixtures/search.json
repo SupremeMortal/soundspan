@@ -1,0 +1,139 @@
+{
+  "albums": [
+    {
+      "artist": {
+        "id": "cmwhdx8wf000307te6a41006z",
+        "mbid": "",
+        "name": "Contract Cinder"
+      },
+      "artistId": "cmwhdx8wf000307te6a41006z",
+      "coverUrl": null,
+      "id": "cmwhdx920000b07te25rb5at8",
+      "title": "Ash Weather",
+      "year": 2021
+    },
+    {
+      "artist": {
+        "id": "cmwhdx964000i07teg8mj46nf",
+        "mbid": "",
+        "name": "Contract Basalt"
+      },
+      "artistId": "cmwhdx964000i07teg8mj46nf",
+      "coverUrl": null,
+      "id": "cmwhdx9au000q07tetrh44224",
+      "title": "Quiet Fault",
+      "year": 2013
+    },
+    {
+      "artist": {
+        "id": "cmwhdx964000i07teg8mj46nf",
+        "mbid": "",
+        "name": "Contract Basalt"
+      },
+      "artistId": "cmwhdx964000i07teg8mj46nf",
+      "coverUrl": null,
+      "id": "cmwhdx96b000j07teoa7eoo1j",
+      "title": "Stone Garden",
+      "year": 2010
+    }
+  ],
+  "artists": [
+    {
+      "heroUrl": null,
+      "id": "cmwhdx9fe000x07tessr3bzm3",
+      "mbid": null,
+      "name": "Contract Aurora",
+      "rank": 0.05882353
+    },
+    {
+      "heroUrl": null,
+      "id": "cmwhdx964000i07teg8mj46nf",
+      "mbid": null,
+      "name": "Contract Basalt",
+      "rank": 0
+    },
+    {
+      "heroUrl": null,
+      "id": "cmwhdx8wf000307te6a41006z",
+      "mbid": null,
+      "name": "Contract Cinder",
+      "rank": 0
+    }
+  ],
+  "audiobooks": [],
+  "episodes": [],
+  "podcasts": [],
+  "remoteAlbums": [],
+  "remoteTracks": [],
+  "tracks": [
+    {
+      "album": {
+        "albumLoudnessLufs": null,
+        "albumTruePeakDb": null,
+        "artist": {
+          "id": "cmwhdx964000i07teg8mj46nf",
+          "mbid": "",
+          "name": "Contract Basalt"
+        },
+        "artistId": "cmwhdx964000i07teg8mj46nf",
+        "coverUrl": null,
+        "id": "cmwhdx9au000q07tetrh44224",
+        "title": "Quiet Fault"
+      },
+      "albumId": "cmwhdx9au000q07tetrh44224",
+      "duration": 3,
+      "id": "cmwhdx9g1000z07te6kx4vrgh",
+      "loudnessLufs": null,
+      "playbackId": "t.cmwhdx9g1000z07te6kx4vrgh",
+      "title": "Alder Tone",
+      "trackNo": 0,
+      "truePeakDb": null
+    },
+    {
+      "album": {
+        "albumLoudnessLufs": null,
+        "albumTruePeakDb": null,
+        "artist": {
+          "id": "cmwhdx9fe000x07tessr3bzm3",
+          "mbid": "",
+          "name": "Contract Aurora"
+        },
+        "artistId": "cmwhdx9fe000x07tessr3bzm3",
+        "coverUrl": null,
+        "id": "cmwhdx9kb001607teqiqkblth",
+        "title": "First Light"
+      },
+      "albumId": "cmwhdx9kb001607teqiqkblth",
+      "duration": 30,
+      "id": "cmwhdx9m4001907teuojd1j3v",
+      "loudnessLufs": null,
+      "playbackId": "t.cmwhdx9m4001907teuojd1j3v",
+      "title": "Aster Tone",
+      "trackNo": 0,
+      "truePeakDb": null
+    },
+    {
+      "album": {
+        "albumLoudnessLufs": null,
+        "albumTruePeakDb": null,
+        "artist": {
+          "id": "cmwhdx9fe000x07tessr3bzm3",
+          "mbid": "",
+          "name": "Contract Aurora"
+        },
+        "artistId": "cmwhdx9fe000x07tessr3bzm3",
+        "coverUrl": null,
+        "id": "cmwhdx9kb001607teqiqkblth",
+        "title": "First Light"
+      },
+      "albumId": "cmwhdx9kb001607teqiqkblth",
+      "duration": 3,
+      "id": "cmwhdx9nb001b07teak1u3tum",
+      "loudnessLufs": null,
+      "playbackId": "t.cmwhdx9nb001b07teak1u3tum",
+      "title": "Cedar Tone",
+      "trackNo": 0,
+      "truePeakDb": null
+    }
+  ]
+}

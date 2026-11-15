@@ -398,7 +398,7 @@ Page size is 100 for lists and 60 for grids. The repository exposes a `PagedSour
 ## Testing the Package
 
 - **Unit** (`dart test`, `http_mock_adapter`): one test file per interceptor, for error mapping, and for the URL builders. Generated code is not unit-tested in the client; its shapes are proven on the server by P9's response validation.
-- **Decode smoke:** `tool/capture_fixtures.dart` records one real response per operation from the contract server; a single table-driven test decodes each with its generated model. This catches generator defects (as opposed to spec defects).
+- **Decode smoke:** `client/contract_test/tool/capture_fixtures.dart` records one real, scrubbed response per capture step from the contract server into `test/fixtures/`; `test/decode_smoke_test.dart` decodes each with its generated model and checks that `toJson` round-trips. This catches generator defects (as opposed to spec defects). See [11](11-testing-and-ci.md) (Contract Suite, "Fixtures").
 - **Contract** (`client/contract_test`, tag `contract`): behaviour against a seeded server that runs with response validation on. See [11](11-testing-and-ci.md).
 - **Spec gates:** the committed spec equals the backend's emitted spec; generated Dart is current; `tool/spec_compat.dart` passes against the `minServer` snapshot.
 

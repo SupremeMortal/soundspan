@@ -1,0 +1,55 @@
+{
+  "duplicated": true,
+  "item": {
+    "id": "cmwhe0xlr002807teuqiysxa7",
+    "playback": {
+      "isPlayable": true,
+      "message": null,
+      "reason": null
+    },
+    "playlistId": "cmwhe0xl8002707tegp2thwg7",
+    "provider": {
+      "label": "LOCAL",
+      "source": "local",
+      "tidalTrackId": null,
+      "youtubeVideoId": null
+    },
+    "sort": 1,
+    "track": {
+      "album": {
+        "albumLoudnessLufs": null,
+        "albumTruePeakDb": null,
+        "artist": {
+          "id": "cmwhdx964000i07teg8mj46nf",
+          "name": "Contract Basalt"
+        },
+        "coverArt": null,
+        "id": "cmwhdx9au000q07tetrh44224",
+        "title": "Quiet Fault"
+      },
+      "artist": {
+        "id": "cmwhdx964000i07teg8mj46nf",
+        "name": "Contract Basalt"
+      },
+      "displayTitle": null,
+      "duration": 3,
+      "filePath": "Contract Basalt/Quiet Fault/1-06 Alder Tone.flac",
+      "id": "cmwhdx9g1000z07te6kx4vrgh",
+      "loudnessLufs": null,
+      "playbackId": "t.cmwhdx9g1000z07te6kx4vrgh",
+      "provider": {
+        "tidalTrackId": null,
+        "youtubeVideoId": null
+      },
+      "source": "local",
+      "title": "Alder Tone",
+      "trackNo": 6,
+      "truePeakDb": null
+    },
+    "trackId": "cmwhdx9g1000z07te6kx4vrgh",
+    "trackTidalId": null,
+    "trackYtMusicId": null,
+    "type": "track"
+  },
+  "message": "Track already in playlist"
+}
