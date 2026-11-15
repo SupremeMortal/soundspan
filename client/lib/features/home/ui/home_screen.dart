@@ -21,9 +21,10 @@ import 'package:soundspan/shared/widgets/artwork.dart';
 import 'package:soundspan/shared/widgets/empty_state.dart';
 import 'package:soundspan/shared/widgets/error_view.dart';
 import 'package:soundspan/shared/widgets/media_card.dart';
+import 'package:soundspan/shared/widgets/offline_banner.dart';
 import 'package:soundspan/shared/widgets/shelf.dart';
 
-/// Home (doc 09, Home): the server notice, a greeting and the user's
+/// Home (doc 09, Home): the offline and server notices, a greeting and the user's
 /// shelves, each read from cache first and built as it scrolls into view.
 ///
 /// A shelf that is empty, disabled, or failed with nothing cached is
@@ -82,6 +83,7 @@ class HomeScreen extends ConsumerWidget {
               autofocus: true,
               child: Column(
                 children: [
+                  const OfflineBanner(),
                   const _VersionNoticeBanner(),
                   Expanded(
                     child: RefreshIndicator(

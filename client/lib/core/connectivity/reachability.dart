@@ -1,6 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:soundspan/core/connectivity/reachability_controller_impl.dart';
+import 'package:soundspan/platform/connectivity/connectivity.dart';
+import 'package:soundspan/shared/clock.dart';
 
 /// Whether the active profile's server can be reached (doc 07, Reachability
 /// and Offline Mode).
@@ -52,32 +57,42 @@ abstract interface class ReachabilityController {
   /// Reports the outcome of a real API call: any response is a success, an
   /// `Offline` exception a failure.
   void reportCallOutcome({required bool success});
+
+  /// Asks the server at once whether it answers, outside the probe
+  /// schedule; an answer returns the state to [Reachability.online] from
+  /// [Reachability.serverUnreachable].
+  Future<void> probeNow();
 }
 
-/// A [ReachabilityController] that is always [Reachability.online] and
-/// ignores call outcomes.
-class AlwaysOnlineReachability implements ReachabilityController {
-  /// Creates the controller.
-  const new();
+/// The process-wide [ReachabilityControllerImpl] over the platform's
+/// connectivity. `startReachability` starts it after the first frame and
+/// binds it to the active profile.
+final Provider<ReachabilityControllerImpl> reachabilityControllerProvider =
+    Provider<ReachabilityControllerImpl>((ref) {
+      final controller = ReachabilityControllerImpl(
+        connectivity: ref.watch(connectivitySourceProvider),
+        clock: ref.watch(clockProvider),
+      );
+      ref.onDispose(controller.dispose);
+      return controller;
+    });
 
-  @override
-  Reachability get current => Reachability.online;
-
-  @override
-  Stream<Reachability> get changes => const Stream<Reachability>.empty();
-
-  @override
-  bool get isOnline => true;
-
-  /// Always [ConnectionType.wifi].
-  @override
-  ConnectionType get connectionType => ConnectionType.wifi;
-
-  @override
-  void reportCallOutcome({required bool success}) {}
-}
-
-/// The root-scope [ReachabilityController]; [AlwaysOnlineReachability]
-/// unless overridden.
+/// The root-scope [ReachabilityController]: the
+/// [reachabilityControllerProvider] unless overridden.
 final Provider<ReachabilityController> reachabilityProvider =
-    Provider<ReachabilityController>((ref) => const AlwaysOnlineReachability());
+    Provider<ReachabilityController>(
+      (ref) => ref.watch(reachabilityControllerProvider),
+    );
+
+/// The current [Reachability] and every change of it, for widgets.
+final StreamProvider<Reachability> reachabilityStateProvider =
+    StreamProvider<Reachability>((ref) {
+      final controller = ref.watch(reachabilityProvider);
+      final states = StreamController<Reachability>()..add(controller.current);
+      final subscription = controller.changes.listen(states.add);
+      ref.onDispose(() {
+        unawaited(subscription.cancel());
+        unawaited(states.close());
+      });
+      return states.stream;
+    });

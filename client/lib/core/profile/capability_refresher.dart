@@ -51,6 +51,7 @@ class CapabilityRefresher {
 
   Future<bool>? _running;
   DateTime? _backgroundSince;
+  DateTime? _lastSuccess;
   AppLifecycleListener? _lifecycle;
   bool _started = false;
   bool _disposed = false;
@@ -75,6 +76,17 @@ class CapabilityRefresher {
 
   /// Refreshes now, for a caller that received `FeatureDisabled`.
   Future<bool> refreshNow() => refresh();
+
+  /// Refreshes when one is due, as reachability asks on returning online
+  /// (doc 07): no refresh has succeeded yet, or the last success is more
+  /// than [resumeAfter] old. True when a refresh ran and succeeded.
+  Future<bool> refreshIfDue() {
+    final last = _lastSuccess;
+    if (last != null && _clock.now().difference(last) <= resumeAfter) {
+      return Future<bool>.value(false);
+    }
+    return refresh();
+  }
 
   /// Follows the app's lifecycle: a resume after more than [resumeAfter]
   /// hidden or paused refreshes.
@@ -123,6 +135,7 @@ class CapabilityRefresher {
         featuresFetchedAt: fetchedAt,
       );
       if (_disposed) return false;
+      _lastSuccess = fetchedAt;
       _onRefreshed(capabilities);
       _logger.info('Capabilities refreshed', {
         'profileId': _profileId,

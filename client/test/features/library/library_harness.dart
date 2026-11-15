@@ -9,9 +9,11 @@ import 'package:soundspan/app/router/shell_route.dart';
 import 'package:soundspan/app/shell/window_class.dart';
 import 'package:soundspan/core/auth/active_profile.dart';
 import 'package:soundspan/core/auth/profile.dart';
+import 'package:soundspan/core/connectivity/reachability.dart';
 import 'package:soundspan/core/profile/capabilities.dart';
 import 'package:soundspan/shared/domain/domain.dart';
 
+import '../../helpers/fake_reachability.dart';
 import '../../helpers/fake_repositories.dart';
 import '../../helpers/pump_app.dart';
 
@@ -137,6 +139,7 @@ extension PumpLibrary on WidgetTester {
     Size size = TestSizes.compact,
     ThemeMode theme = ThemeMode.dark,
     double textScale = 1.0,
+    FakeReachability? reachability,
   }) async {
     library ??= FakeLibraryRepository();
     playlists ??= FakePlaylistRepository();
@@ -156,6 +159,9 @@ extension PumpLibrary on WidgetTester {
           (ref, notifier) => capabilities(federation: federation),
         ),
         profilesProvider.overrideWithValue(const AsyncData(<Profile>[])),
+        reachabilityProvider.overrideWithValue(
+          reachability ?? FakeReachability(),
+        ),
         activeProfileIdProvider.overrideWithBuild((ref, notifier) => null),
       ],
     );

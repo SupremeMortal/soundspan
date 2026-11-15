@@ -949,6 +949,30 @@ abstract class AppLocalizations {
   /// **'Dismiss'**
   String get appBannerDismiss;
 
+  /// Notice at the top of Home and Library when the device has no network connection.
+  ///
+  /// In en, this message translates to:
+  /// **'You’re offline. Showing what’s saved on this device.'**
+  String get offlineBannerNoNetwork;
+
+  /// Notice at the top of Home and Library when the network is up but the server does not answer.
+  ///
+  /// In en, this message translates to:
+  /// **'Can’t reach the server. Showing what’s saved on this device.'**
+  String get offlineBannerServerUnreachable;
+
+  /// Notice at the top of Home and Library when the user turned offline mode on.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline mode is on.'**
+  String get offlineBannerForced;
+
+  /// Button of the server-unreachable notice that asks the server again at once.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get offlineBannerRetry;
+
   /// Library tab that lists the user's playlists.
   ///
   /// In en, this message translates to:

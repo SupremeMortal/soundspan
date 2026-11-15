@@ -531,6 +531,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appBannerDismiss => 'Dismiss';
 
   @override
+  String get offlineBannerNoNetwork =>
+      'You’re offline. Showing what’s saved on this device.';
+
+  @override
+  String get offlineBannerServerUnreachable =>
+      'Can’t reach the server. Showing what’s saved on this device.';
+
+  @override
+  String get offlineBannerForced => 'Offline mode is on.';
+
+  @override
+  String get offlineBannerRetry => 'Retry';
+
+  @override
   String get libraryTabPlaylists => 'Playlists';
 
   @override
@@ -1368,6 +1382,20 @@ class AppLocalizationsEnXa extends AppLocalizationsEn {
 
   @override
   String get appBannerDismiss => '[Ðîšmîšš one]';
+
+  @override
+  String get offlineBannerNoNetwork =>
+      '[Ýöû’ŕé öffļîñé. Šĥöŵîñĝ ŵĥåţ’š šåvéð öñ ţĥîš ðévîçé. one two three four five]';
+
+  @override
+  String get offlineBannerServerUnreachable =>
+      '[Çåñ’ţ ŕéåçĥ ţĥé šéŕvéŕ. Šĥöŵîñĝ ŵĥåţ’š šåvéð öñ ţĥîš ðévîçé. one two three four five]';
+
+  @override
+  String get offlineBannerForced => '[Öffļîñé möðé îš öñ. one two]';
+
+  @override
+  String get offlineBannerRetry => '[Ŕéţŕý one]';
 
   @override
   String get libraryTabPlaylists => '[Þļåýļîšţš one]';

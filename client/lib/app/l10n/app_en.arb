@@ -681,6 +681,22 @@
   "@appBannerDismiss": {
     "description": "Tooltip and accessibility label of the close button of an inline notice at the top of a screen."
   },
+  "offlineBannerNoNetwork": "You’re offline. Showing what’s saved on this device.",
+  "@offlineBannerNoNetwork": {
+    "description": "Notice at the top of Home and Library when the device has no network connection."
+  },
+  "offlineBannerServerUnreachable": "Can’t reach the server. Showing what’s saved on this device.",
+  "@offlineBannerServerUnreachable": {
+    "description": "Notice at the top of Home and Library when the network is up but the server does not answer."
+  },
+  "offlineBannerForced": "Offline mode is on.",
+  "@offlineBannerForced": {
+    "description": "Notice at the top of Home and Library when the user turned offline mode on."
+  },
+  "offlineBannerRetry": "Retry",
+  "@offlineBannerRetry": {
+    "description": "Button of the server-unreachable notice that asks the server again at once."
+  },
   "libraryTabPlaylists": "Playlists",
   "@libraryTabPlaylists": {
     "description": "Library tab that lists the user's playlists."

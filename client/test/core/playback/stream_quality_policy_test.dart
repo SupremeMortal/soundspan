@@ -61,13 +61,6 @@ void main() {
     expect(await policy.current(), isNull);
   });
 
-  test('the always-online default reports Wi-Fi', () {
-    expect(
-      const AlwaysOnlineReachability().connectionType,
-      ConnectionType.wifi,
-    );
-  });
-
   group('DeviceSettingsDao', () {
     test('write replaces the value and read decodes it', () async {
       await settings.write('playback.volume', 0.5);

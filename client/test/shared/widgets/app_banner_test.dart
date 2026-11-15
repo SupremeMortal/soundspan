@@ -37,12 +37,18 @@ void main() {
     return (box.decoration as BoxDecoration).color;
   }
 
-  testWidgets('offline kind is neutral on surfaceActive', (tester) async {
+  testWidgets('offline kind has a warning icon on surfaceActive', (
+    tester,
+  ) async {
     await tester.pumpApp(banner(AppBannerKind.offline));
     final colors = tester.element(find.byType(AppBanner)).colors;
 
     expect(find.text('A message'), findsOneWidget);
     expect(fill(tester), colors.surfaceActive);
+    final icon = tester.widget<Icon>(
+      find.descendant(of: find.byType(AppBanner), matching: find.byType(Icon)),
+    );
+    expect(icon.color, colors.warning);
     await expectMeetsGuidelines(tester);
   });
 

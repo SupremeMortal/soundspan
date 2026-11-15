@@ -142,11 +142,16 @@ Runs at start-up when online, after sign-in, and at most every 6 hours.
 It also reports `connectionType` (`wifi`, `cellular`, `other`, `none`), from which the stream quality setting is chosen (doc 06, Source Resolution).
 
 - Inputs: `connectivity_plus` (interface up/down and type), the outcome of real API calls (any `Offline` exception counts as a failure, any response as a success), and the `offline.forced` setting.
-- After 2 consecutive failures within 30 s the state becomes `serverUnreachable`. A probe of `GET /api/health/live` then runs with backoff 5 s, 15 s, 30 s, 60 s (cap) and on every connectivity change; one success returns to `online`.
+- Call outcomes come from `Swr` and `PagedSource` ([05](05-local-data.md#read-policy-stale-while-revalidate)) and from the probe.
+- The rules, in priority order: `offline.forced` set is `forcedOffline`; no interface is `noNetwork`; 2 consecutive failures less than 30 s apart, with no success between them, are `serverUnreachable`; anything else is `online`. With an interface up, the state starts `online`. Call outcomes are ignored in `forcedOffline` and `noNetwork`.
+- While `serverUnreachable`, a probe of `GET /api/health` (anonymous, in the client surface) runs 5 s, 15 s, 30 s, then every 60 s, at once on every connectivity change, and at once on the banner's Retry. Any HTTP response is a success and returns to `online`; an `Offline` failure keeps the state and advances the backoff. Any other successful call also returns to `online`.
+- Leaving `noNetwork` (an interface appears) or `forcedOffline` (the setting is cleared) enters `serverUnreachable` and probes at once.
 - `connectivity_plus` alone is never trusted to mean "online": a captive portal or a VPN-only server looks connected.
+- One controller lives in the root scope. `startReachability` (bootstrap step 8) starts it and binds it to each active profile: the profile's API runs the probe, its `state.db` supplies `offline.forced`, and a return to `online` runs its capability refresh when one is due (none has succeeded yet, or the last success is more than an hour old). Switching profiles starts the controller afresh for the next profile.
+- Home (above the greeting) and Library (above the tabs' content) show `OfflineBanner` in every non-online state: "You're offline. Showing what's saved on this device." (`noNetwork`), "Can't reach the server. Showing what's saved on this device." with a Retry action (`serverUnreachable`), and "Offline mode is on." (`forcedOffline`). It is an `AppBanner` of kind `offline` (a `warning` icon), announced as a live region, and it collapses over 150 ms when the state returns to `online`, at once with reduced motion.
 - In any non-online state:
   - Repositories serve the cache and skip refreshes.
-  - Library gains an "Offline" banner and a "Downloaded only" filter that is on by default; rows without a local file are disabled.
+  - Home and Library show the offline banner; Library gains a "Downloaded only" filter that is on by default; rows without a local file are disabled.
   - Search queries the local cache and downloads (`title`/`name` `LIKE`), labelled "Results from this device".
   - Writes go to the outbox.
 - Returning to `online` triggers: outbox replay, playback-state post, capability refresh if due, reconciliation if due, and resolution of `resolving(pendingNetwork)` collections.

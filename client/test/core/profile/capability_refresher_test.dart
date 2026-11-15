@@ -136,6 +136,31 @@ void main() {
     expect(profile.featuresFetchedAt, fetchedAt);
   });
 
+  test(
+    'refreshIfDue refreshes after a failure or an hour, not before',
+    () async {
+      final server = FakeServerAdapter(version: '1.5.0')..fail = true;
+      final (harness, runtime) = await _start(server);
+      await runtime.switchTo(harness.a);
+      final refresher = runtime.container!.read(capabilityRefresherProvider);
+
+      expect(await refresher.refreshIfDue(), isFalse);
+      expect(server.count('/api/docs.json'), 1);
+
+      server.fail = false;
+      expect(await refresher.refreshIfDue(), isTrue);
+      expect(server.count('/api/system/features'), 1);
+
+      harness.clock.advance(const Duration(minutes: 59));
+      expect(await refresher.refreshIfDue(), isFalse);
+      expect(server.count('/api/system/features'), 1);
+
+      harness.clock.advance(const Duration(minutes: 2));
+      expect(await refresher.refreshIfDue(), isTrue);
+      expect(server.count('/api/system/features'), 2);
+    },
+  );
+
   test('resume after 61 minutes refreshes, after 59 does not', () async {
     final server = FakeServerAdapter(version: '1.5.0');
     final (harness, runtime) = await _start(server);

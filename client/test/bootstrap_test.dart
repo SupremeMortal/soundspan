@@ -8,6 +8,7 @@ import 'package:soundspan/core/logging/app_logger.dart';
 import 'package:soundspan/core/profile/capability_refresher.dart';
 import 'package:soundspan/core/profile/profile_providers.dart';
 import 'package:soundspan/core/profile/profile_runtime.dart';
+import 'package:soundspan/core/profile/reachability_binding.dart';
 import 'package:soundspan/core/storage/app/app_settings_store.dart';
 import 'package:soundspan/core/storage/providers.dart';
 import 'package:soundspan/platform/capabilities/capabilities.dart';
@@ -97,9 +98,13 @@ void main() {
     expect(sink.entries.first.fields, {'library': 'test'});
   });
 
-  test('the capability refresh starts after the first frame', () {
-    expect(postFirstFrameTasks, contains(startCapabilityRefresh));
-  });
+  test(
+    'reachability and the capability refresh start after the first frame',
+    () {
+      expect(postFirstFrameTasks, contains(startCapabilityRefresh));
+      expect(postFirstFrameTasks, contains(startReachability));
+    },
+  );
 
   test('userAgentFor names the version and the operating system', () {
     expect(userAgentFor('0.1.0', os: 'web'), 'soundspan-client/0.1.0 (web)');

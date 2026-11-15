@@ -34,6 +34,12 @@ class FakeReachability implements ReachabilityController {
   @override
   void reportCallOutcome({required bool success}) => outcomes.add(success);
 
+  /// How many times [probeNow] was called.
+  int probes = 0;
+
+  @override
+  Future<void> probeNow() async => probes++;
+
   /// Moves to [state] and emits it on [changes] when it differs.
   void set(Reachability state) {
     if (state == _current) return;

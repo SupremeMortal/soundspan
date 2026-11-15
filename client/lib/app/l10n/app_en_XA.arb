@@ -681,6 +681,22 @@
   "@appBannerDismiss": {
     "description": "Tooltip and accessibility label of the close button of an inline notice at the top of a screen."
   },
+  "offlineBannerNoNetwork": "[Ýöû’ŕé öffļîñé. Šĥöŵîñĝ ŵĥåţ’š šåvéð öñ ţĥîš ðévîçé. one two three four five]",
+  "@offlineBannerNoNetwork": {
+    "description": "Notice at the top of Home and Library when the device has no network connection."
+  },
+  "offlineBannerServerUnreachable": "[Çåñ’ţ ŕéåçĥ ţĥé šéŕvéŕ. Šĥöŵîñĝ ŵĥåţ’š šåvéð öñ ţĥîš ðévîçé. one two three four five]",
+  "@offlineBannerServerUnreachable": {
+    "description": "Notice at the top of Home and Library when the network is up but the server does not answer."
+  },
+  "offlineBannerForced": "[Öffļîñé möðé îš öñ. one two]",
+  "@offlineBannerForced": {
+    "description": "Notice at the top of Home and Library when the user turned offline mode on."
+  },
+  "offlineBannerRetry": "[Ŕéţŕý one]",
+  "@offlineBannerRetry": {
+    "description": "Button of the server-unreachable notice that asks the server again at once."
+  },
   "libraryTabPlaylists": "[Þļåýļîšţš one]",
   "@libraryTabPlaylists": {
     "description": "Library tab that lists the user's playlists."

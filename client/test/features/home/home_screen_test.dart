@@ -9,6 +9,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:soundspan/app/shell/window_class.dart';
 import 'package:soundspan/core/auth/active_profile.dart';
 import 'package:soundspan/core/auth/profile.dart';
+import 'package:soundspan/core/connectivity/reachability.dart';
 import 'package:soundspan/core/profile/capabilities.dart';
 import 'package:soundspan/core/profile/version.dart';
 import 'package:soundspan/core/profile/version_notice.dart';
@@ -24,6 +25,7 @@ import 'package:soundspan_api/soundspan_api.dart'
     show FeatureDisabled, Offline, ServerError;
 
 import '../../helpers/fake_clock.dart';
+import '../../helpers/fake_reachability.dart';
 import '../../helpers/fake_repositories.dart';
 import '../../helpers/guidelines.dart';
 import '../../helpers/pump_app.dart';
@@ -145,9 +147,11 @@ Future<void> settleAll(WidgetTester tester) async {
 void main() {
   late FakeRepositories repositories;
   late int capabilityRefreshes;
+  late FakeReachability reachability;
 
   setUp(() {
     repositories = _seeded();
+    reachability = FakeReachability();
     capabilityRefreshes = 0;
     _FakeVersionNotice.dismissals = 0;
   });
@@ -191,6 +195,7 @@ void main() {
       capabilityRefreshProvider.overrideWithValue(() => capabilityRefreshes++),
       profilesProvider.overrideWith((ref) => Stream.value(const <Profile>[])),
       initialActiveProfileIdProvider.overrideWithValue(null),
+      reachabilityProvider.overrideWithValue(reachability),
     ];
     await tester.pumpApp(
       WindowClassScope(
@@ -541,6 +546,62 @@ void main() {
 
     expect(_FakeVersionNotice.dismissals, 1);
     expect(find.text(message), findsNothing);
+  });
+
+  const offlineTexts = {
+    Reachability.noNetwork:
+        'You’re offline. Showing what’s saved on this device.',
+    Reachability.serverUnreachable:
+        'Can’t reach the server. Showing what’s saved on this device.',
+    Reachability.forcedOffline: 'Offline mode is on.',
+  };
+
+  for (final MapEntry(key: state, value: text) in offlineTexts.entries) {
+    testWidgets('${state.name} shows its offline banner above the greeting '
+        'over the cached shelves, requesting no refresh', (tester) async {
+      reachability.set(state);
+      await pump(tester);
+
+      expect(find.text(text), findsOneWidget);
+      expect(
+        tester.widget<AppBanner>(find.byType(AppBanner)).kind,
+        AppBannerKind.offline,
+      );
+      expect(
+        tester.getBottomLeft(find.text(text)).dy,
+        lessThan(tester.getTopLeft(find.textContaining('Good ')).dy),
+      );
+      expect(card('Radiohead'), findsOneWidget);
+      expect(home().refreshCalls, isEmpty);
+      expect(
+        find.text('Retry'),
+        state == Reachability.serverUnreachable ? findsOneWidget : findsNothing,
+      );
+    });
+  }
+
+  testWidgets('Retry on the server-unreachable banner probes at once', (
+    tester,
+  ) async {
+    reachability.set(Reachability.serverUnreachable);
+    await pump(tester);
+
+    await tester.tap(find.text('Retry'));
+    await tester.pump();
+
+    expect(reachability.probes, 1);
+  });
+
+  testWidgets('the offline banner goes when the state returns to online', (
+    tester,
+  ) async {
+    reachability.set(Reachability.noNetwork);
+    await pump(tester);
+
+    reachability.set(Reachability.online);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(AppBanner), findsNothing);
   });
 
   testWidgets('no notice in range', (tester) async {

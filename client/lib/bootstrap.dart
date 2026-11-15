@@ -18,6 +18,7 @@ import 'package:soundspan/core/logging/console_log_sink.dart';
 import 'package:soundspan/core/profile/capability_refresher.dart';
 import 'package:soundspan/core/profile/profile_providers.dart';
 import 'package:soundspan/core/profile/profile_runtime.dart';
+import 'package:soundspan/core/profile/reachability_binding.dart';
 import 'package:soundspan/core/storage/app/app_database.dart';
 import 'package:soundspan/core/storage/app/app_settings_store.dart';
 import 'package:soundspan/core/storage/providers.dart';
@@ -36,10 +37,11 @@ final AppLogger _log = AppLogger.scope('App');
 /// Bootstrap Sequence, step 8).
 typedef PostFirstFrameTask = Future<void> Function(ProviderContainer root);
 
-/// The tasks [bootstrap] starts, in parallel, after the first frame: the
-/// capability refresh, the cache pruning and the outbox worker of every
-/// profile that becomes active. Later features append theirs.
+/// The tasks [bootstrap] starts, in parallel, after the first frame:
+/// reachability, and the capability refresh, the cache pruning and the
+/// outbox worker of every profile that becomes active. Later features append theirs.
 final List<PostFirstFrameTask> postFirstFrameTasks = [
+  startReachability,
   startCapabilityRefresh,
   startCachePruning,
   startOutbox,

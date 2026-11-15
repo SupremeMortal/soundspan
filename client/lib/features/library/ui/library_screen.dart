@@ -11,6 +11,7 @@ import 'package:soundspan/features/library/ui/albums_tab.dart';
 import 'package:soundspan/features/library/ui/artists_tab.dart';
 import 'package:soundspan/features/library/ui/playlists_tab.dart';
 import 'package:soundspan/features/library/ui/songs_tab.dart';
+import 'package:soundspan/shared/widgets/offline_banner.dart';
 
 /// The localized name of [tab].
 String libraryTabLabel(AppLocalizations l10n, LibraryTab tab) => switch (tab) {
@@ -20,8 +21,8 @@ String libraryTabLabel(AppLocalizations l10n, LibraryTab tab) => switch (tab) {
   LibraryTab.songs => l10n.libraryTabSongs,
 };
 
-/// The Library destination (doc 09, Library): tabs Playlists, Artists,
-/// Albums and Songs over the selected tab's list.
+/// The Library destination (doc 09, Library): the offline notice, then
+/// tabs Playlists, Artists, Albums and Songs over the selected tab's list.
 ///
 /// The selected tab is [tab], the route's parameter; selecting another tab
 /// goes to its location. Each tab is built when first shown and keeps its
@@ -89,19 +90,26 @@ class _LibraryScreenState extends State<LibraryScreen>
             ],
           ),
         ),
-        body: IndexedStack(
-          index: widget.tab.index,
+        body: Column(
           children: [
-            for (final tab in LibraryTab.values)
-              if (!_built.contains(tab))
-                const SizedBox.shrink()
-              else
-                switch (tab) {
-                  LibraryTab.playlists => const PlaylistsTab(),
-                  LibraryTab.artists => const ArtistsTab(),
-                  LibraryTab.albums => const AlbumsTab(),
-                  LibraryTab.songs => const SongsTab(),
-                },
+            const OfflineBanner(),
+            Expanded(
+              child: IndexedStack(
+                index: widget.tab.index,
+                children: [
+                  for (final tab in LibraryTab.values)
+                    if (!_built.contains(tab))
+                      const SizedBox.shrink()
+                    else
+                      switch (tab) {
+                        LibraryTab.playlists => const PlaylistsTab(),
+                        LibraryTab.artists => const ArtistsTab(),
+                        LibraryTab.albums => const AlbumsTab(),
+                        LibraryTab.songs => const SongsTab(),
+                      },
+                ],
+              ),
+            ),
           ],
         ),
       ),

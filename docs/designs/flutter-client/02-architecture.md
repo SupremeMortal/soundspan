@@ -271,6 +271,7 @@ Each seam is an abstract class in `lib/platform/<name>/<name>.dart` with `_io.da
 | QR scanner | `QrScanner` | `mobile_scanner` (Android, iOS, macOS); unavailable on Windows and Linux | `mobile_scanner` |
 | Deep links | `DeepLinks` | `app_links` | URL on load |
 | Notifications | `LocalNotifications` | `flutter_local_notifications` | No-op |
+| Connectivity | `ConnectivitySource` | `connectivity_plus` | `connectivity_plus` |
 | Capabilities | `PlatformCapabilities` | Constants per OS | Constants |
 | Persistent log sink | `createPersistentLogSink` (returns a `LogSink`) | `RollingFileLogSink` | `RingLogSink` |
 

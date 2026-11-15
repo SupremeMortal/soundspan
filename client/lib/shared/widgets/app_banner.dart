@@ -8,7 +8,7 @@ import 'package:soundspan/app/theme/typography.dart';
 
 /// The kinds of [AppBanner].
 enum AppBannerKind {
-  /// The server cannot be reached; neutral.
+  /// The app is offline or the server cannot be reached; `warning`.
   offline,
 
   /// The device link expires soon; `warning`.
@@ -56,10 +56,7 @@ class AppBanner extends StatelessWidget {
     final colors = context.colors;
     final typography = context.typography;
     final (IconData icon, Color iconColor) = switch (kind) {
-      AppBannerKind.offline => (
-        Icons.cloud_off_rounded,
-        colors.contentSecondary,
-      ),
+      AppBannerKind.offline => (Icons.cloud_off_rounded, colors.warning),
       AppBannerKind.linkExpiring => (Icons.schedule_rounded, colors.warning),
       AppBannerKind.serverNotice => (
         Icons.info_outline_rounded,
@@ -105,7 +102,15 @@ class AppBanner extends StatelessWidget {
                 ),
                 if (actionLabel != null && onAction != null) ...[
                   const SizedBox(width: Spacing.x8),
-                  TextButton(onPressed: onAction, child: Text(actionLabel)),
+                  // `content`, not the button's `brand`: only `content`
+                  // keeps 4.5:1 on `surfaceActive` in every theme.
+                  TextButton(
+                    style: TextButton.styleFrom(
+                      foregroundColor: colors.content,
+                    ),
+                    onPressed: onAction,
+                    child: Text(actionLabel),
+                  ),
                 ],
                 if (onDismiss != null)
                   IconButton(

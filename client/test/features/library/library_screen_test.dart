@@ -3,11 +3,15 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:soundspan/app/router/routes.dart';
+import 'package:soundspan/core/connectivity/reachability.dart';
 import 'package:soundspan/features/library/library.dart';
 import 'package:soundspan/features/library/ui/playlists_tab.dart';
 import 'package:soundspan/features/library/ui/songs_tab.dart';
 import 'package:soundspan/shared/domain/domain.dart';
+import 'package:soundspan/shared/widgets/app_banner.dart';
+import 'package:soundspan/shared/widgets/offline_banner.dart';
 
+import '../../helpers/fake_reachability.dart';
 import '../../helpers/fake_repositories.dart';
 import '../../helpers/guidelines.dart';
 import '../../helpers/pump_app.dart';
@@ -91,6 +95,53 @@ void main() {
     expect(find.byType(PlaylistsTab), findsOneWidget);
     expect(harness.playlists.sources, hasLength(1));
     expect(harness.library.queries, [const TrackQuery()]);
+  });
+
+  for (final (state, text) in [
+    (
+      Reachability.noNetwork,
+      'You’re offline. Showing what’s saved on this device.',
+    ),
+    (
+      Reachability.serverUnreachable,
+      'Can’t reach the server. Showing what’s saved on this device.',
+    ),
+    (Reachability.forcedOffline, 'Offline mode is on.'),
+  ]) {
+    testWidgets('${state.name} shows its offline banner at the top over the '
+        'cached list, requesting no refresh', (tester) async {
+      final harness = await tester.pumpLibrary(
+        library: seeded(),
+        reachability: FakeReachability(initial: state),
+      );
+
+      expect(find.text(text), findsOneWidget);
+      expect(
+        tester.getBottomLeft(find.byType(OfflineBanner)).dy,
+        lessThanOrEqualTo(tester.getTopLeft(find.byType(IndexedStack)).dy),
+      );
+      expect(find.text('Album 0'), findsOneWidget);
+      expect(harness.sources.map((s) => s.refreshCount), everyElement(0));
+    });
+  }
+
+  testWidgets('no offline banner while online', (tester) async {
+    await tester.pumpLibrary(library: seeded());
+    expect(find.byType(AppBanner), findsNothing);
+  });
+
+  testWidgets('Retry on the server-unreachable banner probes at once', (
+    tester,
+  ) async {
+    final reachability = FakeReachability(
+      initial: Reachability.serverUnreachable,
+    );
+    await tester.pumpLibrary(reachability: reachability);
+
+    await tester.tap(find.text('Retry'));
+    await tester.pump();
+
+    expect(reachability.probes, 1);
   });
 
   for (final size in [TestSizes.compact, TestSizes.expanded]) {
