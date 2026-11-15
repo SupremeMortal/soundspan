@@ -27,6 +27,7 @@ import 'package:soundspan/platform/log_sink/log_sink.dart';
 import 'package:soundspan/platform/paths/paths.dart';
 import 'package:soundspan/platform/secrets/secrets.dart';
 import 'package:soundspan/shared/providers/images.dart';
+import 'package:soundspan/shared/providers/repositories.dart';
 
 final AppLogger _log = AppLogger.scope('App');
 
@@ -35,9 +36,12 @@ final AppLogger _log = AppLogger.scope('App');
 typedef PostFirstFrameTask = Future<void> Function(ProviderContainer root);
 
 /// The tasks [bootstrap] starts, in parallel, after the first frame: the
-/// capability refresh of every profile that becomes active. Later features
-/// append theirs.
-final List<PostFirstFrameTask> postFirstFrameTasks = [startCapabilityRefresh];
+/// capability refresh and the cache pruning of every profile that becomes
+/// active. Later features append theirs.
+final List<PostFirstFrameTask> postFirstFrameTasks = [
+  startCapabilityRefresh,
+  startCachePruning,
+];
 
 /// Starts the app (doc 02, Bootstrap Sequence): error hooks, the decoded-image
 /// memory cache limits, the bundled licences (read only when the licences screen asks), paths,

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 
 import 'package:soundspan/shared/data/cache_store.dart';
+import 'package:soundspan/shared/data/paged_source_impl.dart';
 import 'package:soundspan/shared/data/playlist/playlist_remote_source.dart';
 import 'package:soundspan/shared/data/swr.dart';
 import 'package:soundspan/shared/domain/domain.dart';
@@ -9,14 +10,17 @@ import 'package:soundspan/shared/domain/domain.dart';
 ///
 /// A detail is stored whole as the blob `playlist:<id>`; the playlist row is
 /// upserted with its detail time, and the items' tracks are also written as
-/// the list `playlist:<id>`.
+/// the list `playlist:<id>`. The playlists list comes from [_pages] as the
+/// list `playlists`.
 class CachedPlaylistRepository implements PlaylistRepository {
-  /// A repository reading [_remote] into [_store] through [_swr].
-  new(this._remote, this._store, this._swr);
+  /// A repository reading [_remote] into [_store] through [_swr] and
+  /// [_pages].
+  new(this._remote, this._store, this._swr, this._pages);
 
   final PlaylistRemoteSource _remote;
   final CacheStore _store;
   final Swr _swr;
+  final PagedSources _pages;
 
   @override
   Stream<Cached<PlaylistDetail>> playlist(String id) => _swr.watch(
@@ -32,6 +36,23 @@ class CachedPlaylistRepository implements PlaylistRepository {
   @override
   Future<void> refreshPlaylist(String id) =>
       _swr.refresh('playlist:$id', () => _fetch(id));
+
+  @override
+  PagedSource<PlaylistSummary> playlists() => _pages.create(
+    listKey: 'playlists',
+    pageSize: listPageSize,
+    fetchPage: (request) async {
+      final page = await _remote.playlists(
+        offset: request.offset,
+        limit: request.limit,
+      );
+      return FetchedPage(
+        items: page.items,
+        hasMore: page.hasMore,
+        total: page.total,
+      );
+    },
+  );
 
   Future<void> _fetch(String id) async {
     final detail = await _remote.playlist(id);

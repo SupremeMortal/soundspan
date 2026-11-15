@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 
 import 'package:soundspan/shared/domain/cached.dart';
+import 'package:soundspan/shared/domain/paged_source.dart';
 import 'package:soundspan/shared/domain/playlist.dart';
 
 /// Playlist reads, served from the cache and refreshed in the background
@@ -11,4 +12,7 @@ abstract interface class PlaylistRepository {
 
   /// Fetches the playlist [id] again, whatever its age.
   Future<void> refreshPlaylist(String id);
+
+  /// The user's playlists, newest first, in pages of [listPageSize].
+  PagedSource<PlaylistSummary> playlists();
 }
