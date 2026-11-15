@@ -14,6 +14,7 @@ import 'package:soundspan/features/album/album.dart';
 import 'package:soundspan/features/home/home.dart';
 import 'package:soundspan/features/library/library.dart';
 import 'package:soundspan/features/playlist/playlist.dart';
+import 'package:soundspan/features/search/search.dart';
 
 /// The detail routes, attached as children of every branch root so a detail
 /// opens inside the branch it was opened from.
@@ -53,6 +54,13 @@ GoRoute libraryTabRoute() => GoRoute(
   routes: detailRoutes(),
 );
 
+/// The Search location of [query]: `/search?q=<query>`, or `/search` when
+/// [query] is empty.
+String searchLocation(String query) => Uri(
+  path: RoutePaths.search,
+  queryParameters: query.isEmpty ? null : {'q': query},
+).toString();
+
 /// The shell: one branch per [ShellDestination], each with its own
 /// navigation stack, inside the profile scope. [location] follows the
 /// selected branch and [history] records each branch's locations for the
@@ -76,12 +84,10 @@ StatefulShellRoute buildShellRoute(
           selectedIndex: branch,
           onDestinationSelected: (index) =>
               shell.goBranch(index, initialLocation: index == branch),
-          onSearch: (query) => router.go(
-            Uri(
-              path: RoutePaths.search,
-              queryParameters: {'q': query},
-            ).toString(),
-          ),
+          onSearch: (query) => router.go(searchLocation(query)),
+          onSearchChanged: branch == ShellDestination.search.index
+              ? (query) => router.go(searchLocation(query))
+              : null,
           onBack: canBack
               ? () {
                   history.back(branch);
@@ -113,10 +119,8 @@ StatefulShellRoute buildShellRoute(
       routes: [
         GoRoute(
           path: RoutePaths.search,
-          builder: (context, _) => PlaceholderScreen(
-            AppLocalizations.of(context).navSearch,
-            branchRoot: true,
-          ),
+          builder: (_, state) =>
+              SearchScreen(query: state.uri.queryParameters['q']),
           routes: detailRoutes(),
         ),
       ],

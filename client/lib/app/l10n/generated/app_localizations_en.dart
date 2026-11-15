@@ -678,6 +678,90 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get playlistEmpty => 'This playlist has no songs yet';
+
+  @override
+  String get searchFieldHint => 'Songs, artists, albums or podcasts';
+
+  @override
+  String get searchClear => 'Clear search';
+
+  @override
+  String get searchScopeAll => 'All';
+
+  @override
+  String get searchScopeLibrary => 'Library';
+
+  @override
+  String get searchScopeDiscover => 'Discover';
+
+  @override
+  String get searchScopePodcasts => 'Podcasts';
+
+  @override
+  String get searchRecentTitle => 'Recent searches';
+
+  @override
+  String get searchRecentClearAll => 'Clear all';
+
+  @override
+  String searchRecentRemove(String query) {
+    return 'Remove $query';
+  }
+
+  @override
+  String get searchPrompt => 'Search for songs, artists, albums and podcasts';
+
+  @override
+  String searchNoResults(String query) {
+    return 'No results for “$query”';
+  }
+
+  @override
+  String get searchTopResult => 'Top result';
+
+  @override
+  String get searchSectionSongs => 'Songs';
+
+  @override
+  String get searchSectionArtists => 'Artists';
+
+  @override
+  String get searchSectionAlbums => 'Albums';
+
+  @override
+  String get searchSectionPlaylists => 'Playlists';
+
+  @override
+  String get searchSectionPodcasts => 'Podcasts';
+
+  @override
+  String get searchShowAll => 'Show all';
+
+  @override
+  String get searchShowLess => 'Show less';
+
+  @override
+  String get searchNotPlayable => 'Not playable';
+
+  @override
+  String get searchKindArtist => 'Artist';
+
+  @override
+  String get searchKindSong => 'Song';
+
+  @override
+  String get searchKindPodcast => 'Podcast';
+
+  @override
+  String searchPlaylistSongs(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count songs',
+      one: '1 song',
+    );
+    return '$_temp0';
+  }
 }
 
 /// The translations for English (`en_XA`).
@@ -1369,4 +1453,90 @@ class AppLocalizationsEnXa extends AppLocalizationsEn {
 
   @override
   String get playlistEmpty => '[Ţĥîš þļåýļîšţ ĥåš ñö šöñĝš ýéţ one two three]';
+
+  @override
+  String get searchFieldHint =>
+      '[Šöñĝš, åŕţîšţš, åļbûmš öŕ þöðçåšţš one two three]';
+
+  @override
+  String get searchClear => '[Çļéåŕ šéåŕçĥ one two]';
+
+  @override
+  String get searchScopeAll => '[Åļļ one]';
+
+  @override
+  String get searchScopeLibrary => '[Ļîbŕåŕý one]';
+
+  @override
+  String get searchScopeDiscover => '[Ðîšçövéŕ one]';
+
+  @override
+  String get searchScopePodcasts => '[Þöðçåšţš one]';
+
+  @override
+  String get searchRecentTitle => '[Ŕéçéñţ šéåŕçĥéš one two]';
+
+  @override
+  String get searchRecentClearAll => '[Çļéåŕ åļļ one]';
+
+  @override
+  String searchRecentRemove(String query) {
+    return '[Ŕémövé $query one]';
+  }
+
+  @override
+  String get searchPrompt =>
+      '[Šéåŕçĥ föŕ šöñĝš, åŕţîšţš, åļbûmš åñð þöðçåšţš one two three four]';
+
+  @override
+  String searchNoResults(String query) {
+    return '[Ñö ŕéšûļţš föŕ “$query” one two]';
+  }
+
+  @override
+  String get searchTopResult => '[Ţöþ ŕéšûļţ one]';
+
+  @override
+  String get searchSectionSongs => '[Šöñĝš one]';
+
+  @override
+  String get searchSectionArtists => '[Åŕţîšţš one]';
+
+  @override
+  String get searchSectionAlbums => '[Åļbûmš one]';
+
+  @override
+  String get searchSectionPlaylists => '[Þļåýļîšţš one]';
+
+  @override
+  String get searchSectionPodcasts => '[Þöðçåšţš one]';
+
+  @override
+  String get searchShowAll => '[Šĥöŵ åļļ one]';
+
+  @override
+  String get searchShowLess => '[Šĥöŵ ļéšš one]';
+
+  @override
+  String get searchNotPlayable => '[Ñöţ þļåýåbļé one two]';
+
+  @override
+  String get searchKindArtist => '[Åŕţîšţ one]';
+
+  @override
+  String get searchKindSong => '[Šöñĝ one]';
+
+  @override
+  String get searchKindPodcast => '[Þöðçåšţ one]';
+
+  @override
+  String searchPlaylistSongs(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count šöñĝš one',
+      one: '1 šöñĝ one',
+    );
+    return '[$_temp0]';
+  }
 }

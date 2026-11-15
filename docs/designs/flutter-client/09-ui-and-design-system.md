@@ -153,6 +153,9 @@ Greeting (`headline`), then shelves in this order, each hidden when empty or dis
 - Field with a clear button; 300 ms debounce; recent searches (from `state.db`) when empty.
 - Filter chips: All, Library, Discover, Podcasts.
 - Results: Top result card, then Songs, Artists, Albums, Playlists, Podcasts, each showing up to 5 with "Show all". Library results come from `GET /search`; catalogue results from `GET /search/discover` and the `remoteTracks` / `remoteAlbums` keys. They are merged into the same sections in the order the server returned them. No source badges.
+- Top result: the first artist whose name equals the query without case, else the first song, else the first album, else the first artist; it is not repeated in its section. An item in both searches appears once (tracks by `playbackId`, albums and artists by id). Playlists are the user's own playlists whose name contains the query, because neither search endpoint returns playlists.
+- The query lives in the route (`/search?q=`). On expanded windows the top bar's field is the search field: while Search is selected it updates the route with the same 300 ms debounce.
+- Recent searches: the last 20 per profile, recorded when the field is submitted or a result is opened.
 - Offline: local results only, labelled.
 
 ### Library (M0; Downloads tab M3)

@@ -335,6 +335,9 @@ class FakeHomeRepository with _FakeReads implements HomeRepository {
 
 /// An in-memory [SearchRepository]: [results] by query, empty results for
 /// any other query. Every search is recorded in [searches].
+///
+/// A search over a scope in [scopeErrors] errors with that error; a search
+/// of a query in [delays] answers after that delay.
 class FakeSearchRepository with _FakeReads implements SearchRepository {
   /// Results by query text.
   final Map<String, SearchResults> results = {};
@@ -342,10 +345,23 @@ class FakeSearchRepository with _FakeReads implements SearchRepository {
   /// The searches, in order.
   final List<(String, SearchScope)> searches = [];
 
+  /// Errors by scope.
+  final Map<SearchScope, Exception> scopeErrors = {};
+
+  /// Answer delays by query text.
+  final Map<String, Duration> delays = {};
+
   @override
   Stream<Cached<SearchResults>> search(String query, SearchScope scope) {
     searches.add((query, scope));
-    return _read('search', results[query] ?? const SearchResults());
+    final read = switch (scopeErrors[scope]) {
+      final error? => Stream<Cached<SearchResults>>.error(error),
+      null => _read('search', results[query] ?? const SearchResults()),
+    };
+    final delay = delays[query];
+    if (delay == null) return read;
+    return Stream.fromFuture(Future<void>.delayed(delay))
+        .asyncExpand((_) => read);
   }
 
   @override

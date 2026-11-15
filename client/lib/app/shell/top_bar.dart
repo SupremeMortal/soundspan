@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 
+import 'dart:async';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:soundspan/app/l10n/generated/app_localizations.dart';
 import 'package:soundspan/app/theme/dimens.dart';
@@ -16,6 +18,7 @@ class TopBar extends StatefulWidget {
     required this.onForward,
     required this.onSearch,
     required this.avatar,
+    this.onSearchChanged,
     super.key,
   });
 
@@ -35,6 +38,14 @@ class TopBar extends StatefulWidget {
   /// not empty.
   final ValueChanged<String> onSearch;
 
+  /// Called with the trimmed text, empty included, once typing in the
+  /// search field pauses for [searchDebounce]; null while the field only
+  /// searches on submit.
+  final ValueChanged<String>? onSearchChanged;
+
+  /// How long typing pauses before [onSearchChanged] is called.
+  static const Duration searchDebounce = Duration(milliseconds: 300);
+
   /// The avatar button.
   final Widget avatar;
 
@@ -44,14 +55,31 @@ class TopBar extends StatefulWidget {
 
 class _TopBarState extends State<TopBar> {
   final TextEditingController _query = TextEditingController();
+  Timer? _debounce;
+
+  @override
+  void didUpdateWidget(TopBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.onSearchChanged == null) _debounce?.cancel();
+  }
 
   @override
   void dispose() {
+    _debounce?.cancel();
     _query.dispose();
     super.dispose();
   }
 
+  void _changed(String text) {
+    _debounce?.cancel();
+    if (widget.onSearchChanged == null) return;
+    _debounce = Timer(TopBar.searchDebounce, () {
+      widget.onSearchChanged?.call(text.trim());
+    });
+  }
+
   void _submit(String text) {
+    _debounce?.cancel();
     final query = text.trim();
     if (query.isNotEmpty) widget.onSearch(query);
   }
@@ -95,6 +123,7 @@ class _TopBarState extends State<TopBar> {
                     key: TopBar.searchFieldKey,
                     controller: _query,
                     textInputAction: TextInputAction.search,
+                    onChanged: _changed,
                     onSubmitted: _submit,
                     style: context.typography.body.copyWith(
                       color: colors.content,

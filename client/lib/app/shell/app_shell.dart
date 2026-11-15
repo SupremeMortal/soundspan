@@ -19,6 +19,7 @@ class AppShell extends StatelessWidget {
     required this.onDestinationSelected,
     required this.onSearch,
     required this.child,
+    this.onSearchChanged,
     this.onBack,
     this.onForward,
     super.key,
@@ -32,6 +33,10 @@ class AppShell extends StatelessWidget {
 
   /// Called with the query submitted in the top bar.
   final ValueChanged<String> onSearch;
+
+  /// Called with the top bar's text as it is typed, after a pause, while
+  /// the Search destination is selected; null otherwise.
+  final ValueChanged<String>? onSearchChanged;
 
   /// Goes back in the current branch; null disables Back.
   final VoidCallback? onBack;
@@ -50,6 +55,7 @@ class AppShell extends StatelessWidget {
       onBack: onBack,
       onForward: onForward,
       onSearch: onSearch,
+      onSearchChanged: onSearchChanged,
       avatar: const AvatarButton(),
     ),
     railTrailing: const AvatarButton(),

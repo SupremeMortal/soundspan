@@ -1206,6 +1206,150 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This playlist has no songs yet'**
   String get playlistEmpty;
+
+  /// Placeholder and accessibility label of the field on the Search screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Songs, artists, albums or podcasts'**
+  String get searchFieldHint;
+
+  /// Tooltip and accessibility label of the button that empties the field on the Search screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear search'**
+  String get searchClear;
+
+  /// Filter chip on the Search screen: results from everywhere.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get searchScopeAll;
+
+  /// Filter chip on the Search screen: only results from the user's library.
+  ///
+  /// In en, this message translates to:
+  /// **'Library'**
+  String get searchScopeLibrary;
+
+  /// Filter chip on the Search screen: only results from outside the user's library.
+  ///
+  /// In en, this message translates to:
+  /// **'Discover'**
+  String get searchScopeDiscover;
+
+  /// Filter chip on the Search screen: only podcasts.
+  ///
+  /// In en, this message translates to:
+  /// **'Podcasts'**
+  String get searchScopePodcasts;
+
+  /// Heading of the list of the user's recent searches, shown on the Search screen while the field is empty.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent searches'**
+  String get searchRecentTitle;
+
+  /// Button next to the recent searches heading: forgets every recent search.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear all'**
+  String get searchRecentClearAll;
+
+  /// Tooltip and accessibility label of the button that forgets one recent search.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {query}'**
+  String searchRecentRemove(String query);
+
+  /// Shown on the Search screen while the field is empty and there are no recent searches.
+  ///
+  /// In en, this message translates to:
+  /// **'Search for songs, artists, albums and podcasts'**
+  String get searchPrompt;
+
+  /// Shown on the Search screen when nothing matches the query.
+  ///
+  /// In en, this message translates to:
+  /// **'No results for “{query}”'**
+  String searchNoResults(String query);
+
+  /// Heading of the large card of the best match on the Search screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Top result'**
+  String get searchTopResult;
+
+  /// Heading of the songs section of the Search screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Songs'**
+  String get searchSectionSongs;
+
+  /// Heading of the artists section of the Search screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Artists'**
+  String get searchSectionArtists;
+
+  /// Heading of the albums section of the Search screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Albums'**
+  String get searchSectionAlbums;
+
+  /// Heading of the section of the user's playlists on the Search screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Playlists'**
+  String get searchSectionPlaylists;
+
+  /// Heading of the podcasts section of the Search screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Podcasts'**
+  String get searchSectionPodcasts;
+
+  /// Button in a section header of the Search screen: shows every result of that section in place.
+  ///
+  /// In en, this message translates to:
+  /// **'Show all'**
+  String get searchShowAll;
+
+  /// Button in an expanded section header of the Search screen: shows the first results only again.
+  ///
+  /// In en, this message translates to:
+  /// **'Show less'**
+  String get searchShowLess;
+
+  /// Tooltip and spoken reason of a song row on the Search screen that cannot be played.
+  ///
+  /// In en, this message translates to:
+  /// **'Not playable'**
+  String get searchNotPlayable;
+
+  /// Second line of an artist card on the Search screen: what kind of item it is.
+  ///
+  /// In en, this message translates to:
+  /// **'Artist'**
+  String get searchKindArtist;
+
+  /// Second line of the top result card on the Search screen when it is a song with no artist name.
+  ///
+  /// In en, this message translates to:
+  /// **'Song'**
+  String get searchKindSong;
+
+  /// Second line of a podcast card on the Search screen when the podcast has no author.
+  ///
+  /// In en, this message translates to:
+  /// **'Podcast'**
+  String get searchKindPodcast;
+
+  /// Second line of a playlist card on the Search screen: how many songs the playlist has.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 song} other{{count} songs}}'**
+  String searchPlaylistSongs(int count);
 }
 
 class _AppLocalizationsDelegate

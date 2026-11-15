@@ -874,5 +874,118 @@
   "playlistEmpty": "[Ţĥîš þļåýļîšţ ĥåš ñö šöñĝš ýéţ one two three]",
   "@playlistEmpty": {
     "description": "Shown on a playlist page when the playlist has no songs."
+  },
+  "searchFieldHint": "[Šöñĝš, åŕţîšţš, åļbûmš öŕ þöðçåšţš one two three]",
+  "@searchFieldHint": {
+    "description": "Placeholder and accessibility label of the field on the Search screen."
+  },
+  "searchClear": "[Çļéåŕ šéåŕçĥ one two]",
+  "@searchClear": {
+    "description": "Tooltip and accessibility label of the button that empties the field on the Search screen."
+  },
+  "searchScopeAll": "[Åļļ one]",
+  "@searchScopeAll": {
+    "description": "Filter chip on the Search screen: results from everywhere."
+  },
+  "searchScopeLibrary": "[Ļîbŕåŕý one]",
+  "@searchScopeLibrary": {
+    "description": "Filter chip on the Search screen: only results from the user's library."
+  },
+  "searchScopeDiscover": "[Ðîšçövéŕ one]",
+  "@searchScopeDiscover": {
+    "description": "Filter chip on the Search screen: only results from outside the user's library."
+  },
+  "searchScopePodcasts": "[Þöðçåšţš one]",
+  "@searchScopePodcasts": {
+    "description": "Filter chip on the Search screen: only podcasts."
+  },
+  "searchRecentTitle": "[Ŕéçéñţ šéåŕçĥéš one two]",
+  "@searchRecentTitle": {
+    "description": "Heading of the list of the user's recent searches, shown on the Search screen while the field is empty."
+  },
+  "searchRecentClearAll": "[Çļéåŕ åļļ one]",
+  "@searchRecentClearAll": {
+    "description": "Button next to the recent searches heading: forgets every recent search."
+  },
+  "searchRecentRemove": "[Ŕémövé {query} one]",
+  "@searchRecentRemove": {
+    "description": "Tooltip and accessibility label of the button that forgets one recent search.",
+    "placeholders": {
+      "query": {
+        "type": "String",
+        "example": "miles davis"
+      }
+    }
+  },
+  "searchPrompt": "[Šéåŕçĥ föŕ šöñĝš, åŕţîšţš, åļbûmš åñð þöðçåšţš one two three four]",
+  "@searchPrompt": {
+    "description": "Shown on the Search screen while the field is empty and there are no recent searches."
+  },
+  "searchNoResults": "[Ñö ŕéšûļţš föŕ “{query}” one two]",
+  "@searchNoResults": {
+    "description": "Shown on the Search screen when nothing matches the query.",
+    "placeholders": {
+      "query": {
+        "type": "String",
+        "example": "miles davis"
+      }
+    }
+  },
+  "searchTopResult": "[Ţöþ ŕéšûļţ one]",
+  "@searchTopResult": {
+    "description": "Heading of the large card of the best match on the Search screen."
+  },
+  "searchSectionSongs": "[Šöñĝš one]",
+  "@searchSectionSongs": {
+    "description": "Heading of the songs section of the Search screen."
+  },
+  "searchSectionArtists": "[Åŕţîšţš one]",
+  "@searchSectionArtists": {
+    "description": "Heading of the artists section of the Search screen."
+  },
+  "searchSectionAlbums": "[Åļbûmš one]",
+  "@searchSectionAlbums": {
+    "description": "Heading of the albums section of the Search screen."
+  },
+  "searchSectionPlaylists": "[Þļåýļîšţš one]",
+  "@searchSectionPlaylists": {
+    "description": "Heading of the section of the user's playlists on the Search screen."
+  },
+  "searchSectionPodcasts": "[Þöðçåšţš one]",
+  "@searchSectionPodcasts": {
+    "description": "Heading of the podcasts section of the Search screen."
+  },
+  "searchShowAll": "[Šĥöŵ åļļ one]",
+  "@searchShowAll": {
+    "description": "Button in a section header of the Search screen: shows every result of that section in place."
+  },
+  "searchShowLess": "[Šĥöŵ ļéšš one]",
+  "@searchShowLess": {
+    "description": "Button in an expanded section header of the Search screen: shows the first results only again."
+  },
+  "searchNotPlayable": "[Ñöţ þļåýåbļé one two]",
+  "@searchNotPlayable": {
+    "description": "Tooltip and spoken reason of a song row on the Search screen that cannot be played."
+  },
+  "searchKindArtist": "[Åŕţîšţ one]",
+  "@searchKindArtist": {
+    "description": "Second line of an artist card on the Search screen: what kind of item it is."
+  },
+  "searchKindSong": "[Šöñĝ one]",
+  "@searchKindSong": {
+    "description": "Second line of the top result card on the Search screen when it is a song with no artist name."
+  },
+  "searchKindPodcast": "[Þöðçåšţ one]",
+  "@searchKindPodcast": {
+    "description": "Second line of a podcast card on the Search screen when the podcast has no author."
+  },
+  "searchPlaylistSongs": "[{count, plural, =1{1 šöñĝ one} other{{count} šöñĝš one}}]",
+  "@searchPlaylistSongs": {
+    "description": "Second line of a playlist card on the Search screen: how many songs the playlist has.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   }
 }
