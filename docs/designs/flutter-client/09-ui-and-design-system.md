@@ -157,9 +157,9 @@ Greeting (`headline`), then shelves in this order, each hidden when empty or dis
 
 ### Library (M0; Downloads tab M3)
 
-Tabs: Playlists, Artists, Albums, Songs, Downloads. A sort menu and filter chips (All, Local, Peers, Remote map to the server's `origin` parameter and are shown only when `federation` is on or remote items exist; labels are about where content lives in the user's library, which is not a playback source decision).
+Tabs: Playlists, Artists, Albums, Songs, Downloads. A sort menu (exactly the server's `sortBy` values of the list; no choice sends no parameter, the server's default) and filter chips (All, Local, Peers, Remote map to the server's `origin` parameter and are shown only when `federation` is on, since whether remote items exist cannot be known without an extra request; labels are about where content lives in the user's library, which is not a playback source decision) sit above the list and stay in place while it scrolls. Sort and filter last as long as the profile is active and are not persisted; changing either opens a new list and returns to the top. Each tab keeps its scroll position while the Library is open.
 
-- **Artists, Albums:** grid. Columns from available width at a 160 px minimum tile (2 on a phone, up to 8 on a wide desktop). Page size 60.
+- **Artists, Albums:** grid. Columns from available width at a 160 px minimum tile with 16 px spacing, `clamp(floor((width + 16) / (160 + 16)), 2, 8)` (2 on a phone, up to 8 on a wide desktop); the grid spans the content width less the page gutter minus the card padding, so artwork lines up with the gutter as in shelves. Tiles have a fixed height (square artwork and two text lines). Page size 60. Pull-to-refresh on touch and a refresh button with a mouse refetch the visible pages.
 - **Songs:** `TrackRow` list with a sticky "Shuffle all" header; page size 100; alphabetical fast-scroll thumb on touch.
 - **Playlists:** list with mosaic artwork (first four covers), Liked Songs pinned, "New playlist".
 - **Downloads:** collections with progress, total size, and a storage summary; filter "In progress".

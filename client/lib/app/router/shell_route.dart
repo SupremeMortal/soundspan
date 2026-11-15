@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 
 import 'package:go_router/go_router.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:soundspan/app/l10n/generated/app_localizations.dart';
 import 'package:soundspan/app/router/placeholder_screen.dart';
 import 'package:soundspan/app/router/routes.dart';
@@ -9,6 +10,7 @@ import 'package:soundspan/app/shell/app_shell.dart';
 import 'package:soundspan/app/shell/local_data_too_new_screen.dart';
 import 'package:soundspan/app/shell/shell_history.dart';
 import 'package:soundspan/core/profile/profile_scope.dart';
+import 'package:soundspan/features/library/library.dart';
 
 /// The detail routes, attached as children of every branch root so a detail
 /// opens inside the branch it was opened from.
@@ -20,6 +22,25 @@ List<RouteBase> detailRoutes() => [
           PlaceholderScreen(kind.title(AppLocalizations.of(context))),
     ),
 ];
+
+/// The `:tab` route under `/library`: the [LibraryScreen] of a
+/// [LibraryTab], with the detail routes as children. An unknown tab
+/// redirects to Playlists. Every tab is the same page, so switching tabs
+/// keeps the screen and the state of each tab.
+GoRoute libraryTabRoute() => GoRoute(
+  path: ':tab',
+  redirect: (_, state) =>
+      LibraryTab.tryParse(state.pathParameters['tab']!) == null
+      ? '${RoutePaths.library}/${LibraryTab.playlists.name}'
+      : null,
+  pageBuilder: (context, state) => MaterialPage<void>(
+    key: const ValueKey<String>(RoutePaths.library),
+    child: LibraryScreen(
+      tab: LibraryTab.tryParse(state.pathParameters['tab']!)!,
+    ),
+  ),
+  routes: detailRoutes(),
+);
 
 /// The shell: one branch per [ShellDestination], each with its own
 /// navigation stack, inside the profile scope. [location] follows the
@@ -100,20 +121,7 @@ StatefulShellRoute buildShellRoute(
           redirect: (_, state) => state.uri.pathSegments.length == 1
               ? '${RoutePaths.library}/${LibraryTab.playlists.name}'
               : null,
-          routes: [
-            GoRoute(
-              path: ':tab',
-              redirect: (_, state) =>
-                  LibraryTab.tryParse(state.pathParameters['tab']!) == null
-                  ? '${RoutePaths.library}/${LibraryTab.playlists.name}'
-                  : null,
-              builder: (context, _) => PlaceholderScreen(
-                AppLocalizations.of(context).navLibrary,
-                branchRoot: true,
-              ),
-              routes: detailRoutes(),
-            ),
-          ],
+          routes: [libraryTabRoute()],
         ),
       ],
     ),

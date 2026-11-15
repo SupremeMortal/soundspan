@@ -662,5 +662,77 @@
   "appBannerDismiss": "Dismiss",
   "@appBannerDismiss": {
     "description": "Tooltip and accessibility label of the close button of an inline notice at the top of a screen."
+  },
+  "libraryTabPlaylists": "Playlists",
+  "@libraryTabPlaylists": {
+    "description": "Library tab that lists the user's playlists."
+  },
+  "libraryTabArtists": "Artists",
+  "@libraryTabArtists": {
+    "description": "Library tab that lists the artists in the user's library."
+  },
+  "libraryTabAlbums": "Albums",
+  "@libraryTabAlbums": {
+    "description": "Library tab that lists the albums in the user's library."
+  },
+  "libraryTabSongs": "Songs",
+  "@libraryTabSongs": {
+    "description": "Library tab that lists the songs in the user's library."
+  },
+  "librarySort": "Sort",
+  "@librarySort": {
+    "description": "Tooltip and accessibility label of the button above a library list that opens the choice of sort order."
+  },
+  "librarySortNameAsc": "Name (A-Z)",
+  "@librarySortNameAsc": {
+    "description": "Sort order of a library list: by name, A to Z."
+  },
+  "librarySortNameDesc": "Name (Z-A)",
+  "@librarySortNameDesc": {
+    "description": "Sort order of a library list: by name, Z to A."
+  },
+  "librarySortYearNewest": "Year (newest)",
+  "@librarySortYearNewest": {
+    "description": "Sort order of the albums list: newest release year first."
+  },
+  "librarySortMostTracks": "Most tracks",
+  "@librarySortMostTracks": {
+    "description": "Sort order of the artists list: artists with the most tracks first."
+  },
+  "libraryOriginAll": "All",
+  "@libraryOriginAll": {
+    "description": "Filter chip above a library list: shows everything in the library, wherever it lives."
+  },
+  "libraryOriginLocal": "Local",
+  "@libraryOriginLocal": {
+    "description": "Filter chip above a library list: shows only what lives in this server's own music folder."
+  },
+  "libraryOriginPeers": "Peers",
+  "@libraryOriginPeers": {
+    "description": "Filter chip above a library list: shows only what lives on connected peer servers."
+  },
+  "libraryOriginRemote": "Remote",
+  "@libraryOriginRemote": {
+    "description": "Filter chip above a library list: shows only what lives in connected streaming services."
+  },
+  "libraryRefresh": "Refresh",
+  "@libraryRefresh": {
+    "description": "Tooltip and accessibility label of the button above a library list that loads the list again from the server."
+  },
+  "libraryRefreshFailed": "Couldn’t refresh the list",
+  "@libraryRefreshFailed": {
+    "description": "Short message shown at the bottom of the screen when a library list could not be loaded again; the list already shown stays."
+  },
+  "libraryAlbumsEmpty": "No albums yet",
+  "@libraryAlbumsEmpty": {
+    "description": "Shown in place of the albums list when the library holds no albums."
+  },
+  "libraryArtistsEmpty": "No artists yet",
+  "@libraryArtistsEmpty": {
+    "description": "Shown in place of the artists list when the library holds no artists."
+  },
+  "libraryArtistCardSubtitle": "Artist",
+  "@libraryArtistCardSubtitle": {
+    "description": "Second line of an artist card in the library grid, under the artist's name."
   }
 }

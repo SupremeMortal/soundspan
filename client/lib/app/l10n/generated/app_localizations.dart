@@ -930,6 +930,114 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Dismiss'**
   String get appBannerDismiss;
+
+  /// Library tab that lists the user's playlists.
+  ///
+  /// In en, this message translates to:
+  /// **'Playlists'**
+  String get libraryTabPlaylists;
+
+  /// Library tab that lists the artists in the user's library.
+  ///
+  /// In en, this message translates to:
+  /// **'Artists'**
+  String get libraryTabArtists;
+
+  /// Library tab that lists the albums in the user's library.
+  ///
+  /// In en, this message translates to:
+  /// **'Albums'**
+  String get libraryTabAlbums;
+
+  /// Library tab that lists the songs in the user's library.
+  ///
+  /// In en, this message translates to:
+  /// **'Songs'**
+  String get libraryTabSongs;
+
+  /// Tooltip and accessibility label of the button above a library list that opens the choice of sort order.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort'**
+  String get librarySort;
+
+  /// Sort order of a library list: by name, A to Z.
+  ///
+  /// In en, this message translates to:
+  /// **'Name (A-Z)'**
+  String get librarySortNameAsc;
+
+  /// Sort order of a library list: by name, Z to A.
+  ///
+  /// In en, this message translates to:
+  /// **'Name (Z-A)'**
+  String get librarySortNameDesc;
+
+  /// Sort order of the albums list: newest release year first.
+  ///
+  /// In en, this message translates to:
+  /// **'Year (newest)'**
+  String get librarySortYearNewest;
+
+  /// Sort order of the artists list: artists with the most tracks first.
+  ///
+  /// In en, this message translates to:
+  /// **'Most tracks'**
+  String get librarySortMostTracks;
+
+  /// Filter chip above a library list: shows everything in the library, wherever it lives.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get libraryOriginAll;
+
+  /// Filter chip above a library list: shows only what lives in this server's own music folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Local'**
+  String get libraryOriginLocal;
+
+  /// Filter chip above a library list: shows only what lives on connected peer servers.
+  ///
+  /// In en, this message translates to:
+  /// **'Peers'**
+  String get libraryOriginPeers;
+
+  /// Filter chip above a library list: shows only what lives in connected streaming services.
+  ///
+  /// In en, this message translates to:
+  /// **'Remote'**
+  String get libraryOriginRemote;
+
+  /// Tooltip and accessibility label of the button above a library list that loads the list again from the server.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh'**
+  String get libraryRefresh;
+
+  /// Short message shown at the bottom of the screen when a library list could not be loaded again; the list already shown stays.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t refresh the list'**
+  String get libraryRefreshFailed;
+
+  /// Shown in place of the albums list when the library holds no albums.
+  ///
+  /// In en, this message translates to:
+  /// **'No albums yet'**
+  String get libraryAlbumsEmpty;
+
+  /// Shown in place of the artists list when the library holds no artists.
+  ///
+  /// In en, this message translates to:
+  /// **'No artists yet'**
+  String get libraryArtistsEmpty;
+
+  /// Second line of an artist card in the library grid, under the artist's name.
+  ///
+  /// In en, this message translates to:
+  /// **'Artist'**
+  String get libraryArtistCardSubtitle;
 }
 
 class _AppLocalizationsDelegate

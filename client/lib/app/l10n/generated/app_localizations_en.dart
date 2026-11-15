@@ -516,6 +516,60 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get appBannerDismiss => 'Dismiss';
+
+  @override
+  String get libraryTabPlaylists => 'Playlists';
+
+  @override
+  String get libraryTabArtists => 'Artists';
+
+  @override
+  String get libraryTabAlbums => 'Albums';
+
+  @override
+  String get libraryTabSongs => 'Songs';
+
+  @override
+  String get librarySort => 'Sort';
+
+  @override
+  String get librarySortNameAsc => 'Name (A-Z)';
+
+  @override
+  String get librarySortNameDesc => 'Name (Z-A)';
+
+  @override
+  String get librarySortYearNewest => 'Year (newest)';
+
+  @override
+  String get librarySortMostTracks => 'Most tracks';
+
+  @override
+  String get libraryOriginAll => 'All';
+
+  @override
+  String get libraryOriginLocal => 'Local';
+
+  @override
+  String get libraryOriginPeers => 'Peers';
+
+  @override
+  String get libraryOriginRemote => 'Remote';
+
+  @override
+  String get libraryRefresh => 'Refresh';
+
+  @override
+  String get libraryRefreshFailed => 'Couldn’t refresh the list';
+
+  @override
+  String get libraryAlbumsEmpty => 'No albums yet';
+
+  @override
+  String get libraryArtistsEmpty => 'No artists yet';
+
+  @override
+  String get libraryArtistCardSubtitle => 'Artist';
 }
 
 /// The translations for English (`en_XA`).
@@ -1043,4 +1097,59 @@ class AppLocalizationsEnXa extends AppLocalizationsEn {
 
   @override
   String get appBannerDismiss => '[Ðîšmîšš one]';
+
+  @override
+  String get libraryTabPlaylists => '[Þļåýļîšţš one]';
+
+  @override
+  String get libraryTabArtists => '[Åŕţîšţš one]';
+
+  @override
+  String get libraryTabAlbums => '[Åļbûmš one]';
+
+  @override
+  String get libraryTabSongs => '[Šöñĝš one]';
+
+  @override
+  String get librarySort => '[Šöŕţ one]';
+
+  @override
+  String get librarySortNameAsc => '[Ñåmé (Å-Ž) one]';
+
+  @override
+  String get librarySortNameDesc => '[Ñåmé (Ž-Å) one]';
+
+  @override
+  String get librarySortYearNewest => '[Ýéåŕ (ñéŵéšţ) one two]';
+
+  @override
+  String get librarySortMostTracks => '[Möšţ ţŕåçķš one two]';
+
+  @override
+  String get libraryOriginAll => '[Åļļ one]';
+
+  @override
+  String get libraryOriginLocal => '[Ļöçåļ one]';
+
+  @override
+  String get libraryOriginPeers => '[Þééŕš one]';
+
+  @override
+  String get libraryOriginRemote => '[Ŕémöţé one]';
+
+  @override
+  String get libraryRefresh => '[Ŕéfŕéšĥ one]';
+
+  @override
+  String get libraryRefreshFailed =>
+      '[Çöûļðñ’ţ ŕéfŕéšĥ ţĥé ļîšţ one two three]';
+
+  @override
+  String get libraryAlbumsEmpty => '[Ñö åļbûmš ýéţ one two]';
+
+  @override
+  String get libraryArtistsEmpty => '[Ñö åŕţîšţš ýéţ one two]';
+
+  @override
+  String get libraryArtistCardSubtitle => '[Åŕţîšţ one]';
 }

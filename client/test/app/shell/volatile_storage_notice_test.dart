@@ -24,7 +24,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text(notice), findsNothing);
 
-    root.container.read(routerProvider).go('/library/albums');
+    root.container.read(routerProvider).go('/library/playlists');
     await tester.pumpAndSettle();
     root.container.read(routerProvider).go('/settings');
     await tester.pumpAndSettle();

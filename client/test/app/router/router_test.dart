@@ -13,6 +13,7 @@ import 'package:soundspan/core/profile/profile_providers.dart';
 import 'package:soundspan/core/profile/profile_runtime.dart';
 import 'package:soundspan/features/connect/connect.dart';
 import 'package:soundspan/features/connect/ui/probe_controller.dart';
+import 'package:soundspan/features/library/library.dart';
 import 'package:soundspan_api/soundspan_api.dart';
 
 import '../../features/connect/connect_harness.dart';
@@ -52,8 +53,13 @@ void main() {
     matching: find.text(label),
   );
 
-  BuildContext screen(WidgetTester tester) =>
-      tester.element(find.byType(PlaceholderScreen).last);
+  // The routing tests stay on the Library tab that reads no repository:
+  // the full app has no server to answer one.
+  Finder screens() => find.byWidgetPredicate(
+    (widget) => widget is PlaceholderScreen || widget is LibraryScreen,
+  );
+
+  BuildContext screen(WidgetTester tester) => tester.element(screens().last);
 
   int selectedIndex(WidgetTester tester) =>
       tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex;
@@ -63,10 +69,11 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  String visibleScreen(WidgetTester tester) => tester
-      .widgetList<PlaceholderScreen>(find.byType(PlaceholderScreen))
-      .last
-      .name;
+  String visibleScreen(WidgetTester tester) =>
+      switch (tester.widgetList(screens()).last) {
+        final PlaceholderScreen placeholder => placeholder.name,
+        _ => 'Library',
+      };
 
   List<String> recordTitles(WidgetTester tester) {
     final titles = <String>[];
@@ -149,17 +156,17 @@ void main() {
 
   testWidgets('/ redirects to /home', (tester) async {
     final root = await tester.pumpSoundspanApp(stored: StoredProfile.signedIn);
-    await go(tester, root, '/library/albums');
+    await go(tester, root, '/library/playlists');
     await go(tester, root, '/');
     expect(location(root), '/home');
   });
 
   testWidgets('each branch keeps its own stack', (tester) async {
     final root = await tester.pumpSoundspanApp(stored: StoredProfile.signedIn);
-    await go(tester, root, '/library/albums');
+    await go(tester, root, '/library/playlists');
     DetailNavigation.openAlbum(screen(tester), 'a1');
     await tester.pumpAndSettle();
-    expect(location(root), '/library/albums/album/a1');
+    expect(location(root), '/library/playlists/album/a1');
     expect(find.text('Album'), findsOneWidget);
 
     await tester.tap(destination('Home'));
@@ -169,7 +176,7 @@ void main() {
 
     await tester.tap(destination('Library'));
     await tester.pumpAndSettle();
-    expect(location(root), '/library/albums/album/a1');
+    expect(location(root), '/library/playlists/album/a1');
     expect(find.text('Album'), findsOneWidget);
   });
 
@@ -178,7 +185,7 @@ void main() {
       stored: StoredProfile.signedIn,
       size: const Size(1440, 900),
     );
-    await go(tester, root, '/library/albums');
+    await go(tester, root, '/library/playlists');
     DetailNavigation.openAlbum(screen(tester), 'a5');
     await tester.pumpAndSettle();
 
@@ -186,7 +193,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(NavigationBar), findsOneWidget);
     expect(find.text('Album'), findsOneWidget);
-    expect(location(root), '/library/albums/album/a5');
+    expect(location(root), '/library/playlists/album/a5');
   });
 
   testWidgets('an album opened from Search keeps Search selected', (
@@ -247,26 +254,26 @@ void main() {
 
   testWidgets('a detail opened from a detail stacks', (tester) async {
     final root = await tester.pumpSoundspanApp(stored: StoredProfile.signedIn);
-    await go(tester, root, '/library/albums');
+    await go(tester, root, '/library/playlists');
     DetailNavigation.openAlbum(screen(tester), 'a1');
     await tester.pumpAndSettle();
     DetailNavigation.openArtist(screen(tester), 'r1');
     await tester.pumpAndSettle();
-    expect(location(root), '/library/albums/artist/r1');
+    expect(location(root), '/library/playlists/artist/r1');
     DetailNavigation.openAlbum(screen(tester), 'a2');
     await tester.pumpAndSettle();
-    expect(location(root), '/library/albums/album/a2');
+    expect(location(root), '/library/playlists/album/a2');
     expect(visibleScreen(tester), 'Album');
     expect(selectedIndex(tester), ShellDestination.library.index);
 
     await back(tester, root);
-    expect(location(root), '/library/albums/artist/r1');
+    expect(location(root), '/library/playlists/artist/r1');
     expect(visibleScreen(tester), 'Artist');
     await back(tester, root);
-    expect(location(root), '/library/albums/album/a1');
+    expect(location(root), '/library/playlists/album/a1');
     expect(visibleScreen(tester), 'Album');
     await back(tester, root);
-    expect(location(root), '/library/albums');
+    expect(location(root), '/library/playlists');
     expect(visibleScreen(tester), 'Library');
     expect(selectedIndex(tester), ShellDestination.library.index);
   });
