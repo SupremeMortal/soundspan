@@ -47,6 +47,17 @@ jest.mock("../../services/discoverMusicSearch", () => ({
     resolveUsableSearchProviders: jest.fn(),
     searchDiscoverMusic: jest.fn(),
 }));
+jest.mock("../../services/listenTogether", () => ({}));
+jest.mock("../../services/listenTogetherManager", () => ({
+    GroupError: class extends Error {},
+}));
+jest.mock("../../services/socialPresenceEvents", () => ({
+    publishSocialPresenceUpdate: jest.fn(),
+}));
+jest.mock("../../services/federationPresence", () => ({}));
+jest.mock("../../services/federationPeerPlaylists", () => ({
+    PeerPlaylistError: class extends Error {},
+}));
 jest.mock("../../middleware/auth", () => {
     const pass = (_req: unknown, _res: unknown, next: () => void) => next();
     return new Proxy({}, { get: () => pass });

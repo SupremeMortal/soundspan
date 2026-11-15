@@ -12,6 +12,8 @@ export const CLIENT_SURFACE_MOUNTS: Record<string, () => Router> = {
     "/api/device-link": () => require("../../../routes/deviceLink").default,
     "/api/discover": () => require("../../../routes/discover").default,
     "/api/library": () => require("../../../routes/library").default,
+    "/api/listen-together": () =>
+        require("../../../routes/listenTogether").default,
     "/api/mixes": () => require("../../../routes/mixes").default,
     "/api/lyrics": () => require("../../../routes/lyrics").default,
     "/api/offline": () => require("../../../routes/offline").default,
@@ -26,6 +28,7 @@ export const CLIENT_SURFACE_MOUNTS: Record<string, () => Router> = {
         require("../../../routes/recommendations").default,
     "/api/search": () => require("../../../routes/search").default,
     "/api/settings": () => require("../../../routes/settings").default,
+    "/api/social": () => require("../../../routes/social").default,
     "/api/system": () => require("../../../routes/system").default,
     "/api/vibe": () => require("../../../routes/vibe").default,
 };

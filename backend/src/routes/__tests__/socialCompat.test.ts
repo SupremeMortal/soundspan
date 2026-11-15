@@ -63,6 +63,7 @@ jest.mock("../../utils/db", () => ({
 import router from "../social";
 import { redisClient } from "../../utils/redis";
 import { prisma } from "../../utils/db";
+import { withClientSurfaceValidation } from "./helpers/expectClientSurfaceResponse";
 
 const mockScanIterator = redisClient.scanIterator as jest.Mock;
 const mockMGet = redisClient.mGet as jest.Mock;
@@ -121,9 +122,15 @@ function createRes() {
 }
 
 describe("social presence compatibility", () => {
-    const onlineHandler = getGetHandler("/online");
+    const onlineHandler = withClientSurfaceValidation(
+        "listOnlineUsers",
+        getGetHandler("/online"),
+    );
     const connectedHandler = getGetHandler("/connected");
-    const heartbeatHandler = getPostHandler("/presence/heartbeat");
+    const heartbeatHandler = withClientSurfaceValidation(
+        "sendPresenceHeartbeat",
+        getPostHandler("/presence/heartbeat"),
+    );
 
     beforeEach(() => {
         jest.clearAllMocks();
@@ -1122,6 +1129,26 @@ describe("social presence compatibility", () => {
             success: true,
             ttlSeconds: 75,
         });
+    });
+
+    it("records the same heartbeat whatever the body says about playback", async () => {
+        mockSet.mockResolvedValue("OK");
+        const bodies = [
+            { isPlaying: true, title: "Song One", artist: "Artist" },
+            { isPlaying: false },
+        ];
+
+        for (const body of bodies) {
+            const res = createRes();
+
+            await heartbeatHandler(
+                { user: { id: "user-1", role: "user" }, body } as any,
+                res,
+            );
+
+            expect(res.statusCode).toBe(200);
+            expect(res.body).toEqual({ success: true, ttlSeconds: 75 });
+        }
     });
 
     it("returns 503 when presence heartbeat storage fails", async () => {

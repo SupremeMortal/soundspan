@@ -8,12 +8,14 @@ import {
 import { buildClientSurfaceDocument } from "./document";
 import { discoveryOperations } from "./operations/discovery";
 import { libraryOperations } from "./operations/library";
+import { listenTogetherOperations } from "./operations/listenTogether";
 import { offlineOperations } from "./operations/offline";
 import { playbackOperations } from "./operations/playback";
 import { playlistOperations } from "./operations/playlists";
 import { podcastOperations } from "./operations/podcasts";
 import { searchOperations } from "./operations/search";
 import { sessionOperations } from "./operations/session";
+import { socialOperations } from "./operations/social";
 
 export type { ClientSurfaceOperation } from "./defineOperation";
 
@@ -37,6 +39,8 @@ export const clientSurfaceOperations: ClientSurface = createClientSurface([
     ...podcastOperations,
     ...playbackOperations,
     ...offlineOperations,
+    ...listenTogetherOperations,
+    ...socialOperations,
 ]);
 
 /** The registered operation with `operationId`; throws when there is none. */

@@ -21,6 +21,7 @@ import {
     endGroup,
 } from "../services/listenTogether";
 import { GroupError } from "../services/listenTogetherManager";
+import { JoinListenGroupRequest } from "../openapi/schemas/listenTogether";
 
 const router = Router();
 router.use(requireAuth);
@@ -74,9 +75,7 @@ const createGroupSchema = z.object({
     isPlaying: z.boolean().optional(),
 });
 
-const joinGroupSchema = z.object({
-    joinCode: z.string().min(1).max(64),
-});
+const joinGroupSchema = JoinListenGroupRequest;
 
 // ---------------------------------------------------------------------------
 // Error handler
@@ -118,48 +117,6 @@ function handleError(label: string, error: unknown, res: Response) {
 // Routes
 // ---------------------------------------------------------------------------
 
-/**
- * @openapi
- * /api/listen-together:
- *   post:
- *     summary: Create a new Listen Together group
- *     tags: [Listen Together]
- *     security:
- *       - apiKeyAuth: []
- *     requestBody:
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               queueTracks:
- *                 type: array
- *                 description: >-
- *                   Initial queue. Each item is `{ playbackId, metadata? }`
- *                   (the playbackId wins over legacy fields) or exactly one of
- *                   trackId, tidalTrackId, youtubeVideoId.
- *                 items:
- *                   type: object
- *                   properties:
- *                     playbackId:
- *                       type: string
- *                       description: "Opaque track identifier. Do not parse."
- *                     metadata:
- *                       type: object
- *                       description: Display metadata used when a remote track must be created.
- *                       properties:
- *                         title: { type: string, minLength: 1 }
- *                         artist: { type: string, minLength: 1 }
- *                         album: { type: string, minLength: 1 }
- *                         durationSec: { type: integer, minimum: 0 }
- *                         artworkUrl: { type: string, minLength: 1 }
- *                         isrc: { type: string, minLength: 1 }
- *     responses:
- *       201:
- *         description: Group created
- *       400:
- *         description: Invalid request, or an unparseable playbackId (code INVALID_PLAYBACK_ID)
- */
 router.post("/", async (req, res) => {
     try {
         const user = req.user!;
@@ -171,18 +128,6 @@ router.post("/", async (req, res) => {
     }
 });
 
-/**
- * @openapi
- * /api/listen-together/join:
- *   post:
- *     summary: Join a Listen Together group by code
- *     tags: [Listen Together]
- *     security:
- *       - apiKeyAuth: []
- *     responses:
- *       200:
- *         description: Joined group
- */
 router.post("/join", async (req, res) => {
     try {
         const user = req.user!;
@@ -198,18 +143,6 @@ router.post("/join", async (req, res) => {
     }
 });
 
-/**
- * @openapi
- * /api/listen-together/discover:
- *   get:
- *     summary: Discover public Listen Together groups
- *     tags: [Listen Together]
- *     security:
- *       - apiKeyAuth: []
- *     responses:
- *       200:
- *         description: Discoverable groups
- */
 router.get("/discover", async (req, res) => {
     try {
         const groups = await discoverGroups(req.user!.id);
@@ -240,18 +173,6 @@ router.get("/active-count", async (_req, res) => {
     }
 });
 
-/**
- * @openapi
- * /api/listen-together/mine:
- *   get:
- *     summary: Get the current user's active Listen Together group
- *     tags: [Listen Together]
- *     security:
- *       - apiKeyAuth: []
- *     responses:
- *       200:
- *         description: Active group or null
- */
 router.get("/mine", async (req, res) => {
     try {
         const snapshot = await getMyGroup(req.user!.id);
@@ -261,18 +182,6 @@ router.get("/mine", async (req, res) => {
     }
 });
 
-/**
- * @openapi
- * /api/listen-together/{groupId}/leave:
- *   post:
- *     summary: Leave a Listen Together group
- *     tags: [Listen Together]
- *     security:
- *       - apiKeyAuth: []
- *     responses:
- *       200:
- *         description: Leave result
- */
 router.post("/:groupId/leave", async (req, res) => {
     try {
         const result = await leaveGroup(req.user!.id, req.params.groupId);
@@ -282,18 +191,6 @@ router.post("/:groupId/leave", async (req, res) => {
     }
 });
 
-/**
- * @openapi
- * /api/listen-together/{groupId}/end:
- *   post:
- *     summary: End a Listen Together group (host only)
- *     tags: [Listen Together]
- *     security:
- *       - apiKeyAuth: []
- *     responses:
- *       200:
- *         description: Group ended
- */
 router.post("/:groupId/end", async (req, res) => {
     try {
         await endGroup(req.user!.id, req.params.groupId);

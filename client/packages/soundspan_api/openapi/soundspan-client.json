@@ -834,6 +834,49 @@
         ],
         "type": "object"
       },
+      "CreateListenGroupRequest": {
+        "properties": {
+          "currentTimeMs": {
+            "maximum": 86400000,
+            "minimum": 0,
+            "type": "number"
+          },
+          "currentTrackId": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "isPlaying": {
+            "type": "boolean"
+          },
+          "name": {
+            "maxLength": 80,
+            "minLength": 1,
+            "type": "string"
+          },
+          "queueTrackIds": {
+            "description": "Library track ids of the initial queue.",
+            "items": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "queueTracks": {
+            "items": {
+              "$ref": "#/components/schemas/ListenQueueTrackInput"
+            },
+            "type": "array"
+          },
+          "visibility": {
+            "enum": [
+              "public",
+              "private"
+            ],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
       "CreatePlaylistRequest": {
         "properties": {
           "isPublic": {
@@ -1233,6 +1276,18 @@
         ],
         "type": "object"
       },
+      "EndListenGroupResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "success": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "success"
+        ],
+        "type": "object"
+      },
       "EpisodeProgress": {
         "additionalProperties": false,
         "properties": {
@@ -1295,6 +1350,41 @@
           "status",
           "uptimeSeconds",
           "version"
+        ],
+        "type": "object"
+      },
+      "JoinListenGroupRequest": {
+        "properties": {
+          "joinCode": {
+            "maxLength": 64,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "joinCode"
+        ],
+        "type": "object"
+      },
+      "LeaveListenGroupResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "ended": {
+            "type": "boolean"
+          },
+          "newHostUserId": {
+            "type": "string"
+          },
+          "newHostUsername": {
+            "type": "string"
+          },
+          "success": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "ended",
+          "success"
         ],
         "type": "object"
       },
@@ -1647,6 +1737,341 @@
           "playlist",
           "total",
           "tracks"
+        ],
+        "type": "object"
+      },
+      "ListenGroupMember": {
+        "additionalProperties": false,
+        "properties": {
+          "isConnected": {
+            "description": "Whether the member has a live socket connection.",
+            "type": "boolean"
+          },
+          "isHost": {
+            "type": "boolean"
+          },
+          "joinedAt": {
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+            "type": "string"
+          },
+          "userId": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "isConnected",
+          "isHost",
+          "joinedAt",
+          "userId",
+          "username"
+        ],
+        "type": "object"
+      },
+      "ListenGroupPlayback": {
+        "additionalProperties": false,
+        "properties": {
+          "currentIndex": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "isPlaying": {
+            "type": "boolean"
+          },
+          "positionMs": {
+            "type": "number"
+          },
+          "queue": {
+            "items": {
+              "$ref": "#/components/schemas/ListenQueueItem"
+            },
+            "type": "array"
+          },
+          "serverTime": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "stateVersion": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "trackId": {
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "required": [
+          "currentIndex",
+          "isPlaying",
+          "positionMs",
+          "queue",
+          "serverTime",
+          "stateVersion",
+          "trackId"
+        ],
+        "type": "object"
+      },
+      "ListenGroupSnapshot": {
+        "additionalProperties": false,
+        "properties": {
+          "groupType": {
+            "enum": [
+              "host-follower",
+              "collaborative"
+            ],
+            "type": "string"
+          },
+          "hostUserId": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "joinCode": {
+            "type": "string"
+          },
+          "members": {
+            "items": {
+              "$ref": "#/components/schemas/ListenGroupMember"
+            },
+            "type": "array"
+          },
+          "membershipVersion": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "playback": {
+            "$ref": "#/components/schemas/ListenGroupPlayback"
+          },
+          "readyDeadlineMs": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "nullable": true,
+            "type": "integer"
+          },
+          "readyUserIds": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "syncState": {
+            "enum": [
+              "idle",
+              "waiting",
+              "playing",
+              "paused"
+            ],
+            "type": "string"
+          },
+          "visibility": {
+            "enum": [
+              "public",
+              "private"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "groupType",
+          "hostUserId",
+          "id",
+          "isActive",
+          "joinCode",
+          "members",
+          "name",
+          "playback",
+          "syncState",
+          "visibility"
+        ],
+        "type": "object"
+      },
+      "ListenGroupSummary": {
+        "additionalProperties": false,
+        "properties": {
+          "currentTrack": {
+            "additionalProperties": false,
+            "nullable": true,
+            "properties": {
+              "artistName": {
+                "type": "string"
+              },
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "artistName",
+              "id",
+              "title"
+            ],
+            "type": "object"
+          },
+          "groupType": {
+            "enum": [
+              "host-follower",
+              "collaborative"
+            ],
+            "type": "string"
+          },
+          "host": {
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "username": {
+                "description": "The host's display name, or username without one.",
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "username"
+            ],
+            "type": "object"
+          },
+          "id": {
+            "type": "string"
+          },
+          "isMember": {
+            "type": "boolean"
+          },
+          "isPlaying": {
+            "type": "boolean"
+          },
+          "joinCode": {
+            "type": "string"
+          },
+          "memberCount": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "visibility": {
+            "enum": [
+              "public",
+              "private"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "currentTrack",
+          "groupType",
+          "host",
+          "id",
+          "isMember",
+          "isPlaying",
+          "joinCode",
+          "memberCount",
+          "name",
+          "visibility"
+        ],
+        "type": "object"
+      },
+      "ListenQueueItem": {
+        "additionalProperties": false,
+        "properties": {
+          "album": {
+            "additionalProperties": false,
+            "properties": {
+              "coverArt": {
+                "nullable": true,
+                "type": "string"
+              },
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "coverArt",
+              "id",
+              "title"
+            ],
+            "type": "object"
+          },
+          "artist": {
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ],
+            "type": "object"
+          },
+          "duration": {
+            "description": "Seconds",
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "id": {
+            "type": "string"
+          },
+          "playbackId": {
+            "description": "Opaque track identifier. Do not parse.",
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "album",
+          "artist",
+          "duration",
+          "id",
+          "title"
+        ],
+        "type": "object"
+      },
+      "ListenQueueTrackInput": {
+        "properties": {
+          "metadata": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PlaybackMetadata"
+              }
+            ]
+          },
+          "playbackId": {
+            "description": "Opaque track identifier. Do not parse.",
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "playbackId"
         ],
         "type": "object"
       },
@@ -2045,6 +2470,121 @@
         "required": [
           "hasAccount",
           "needsOnboarding"
+        ],
+        "type": "object"
+      },
+      "OnlineUser": {
+        "additionalProperties": false,
+        "properties": {
+          "displayName": {
+            "type": "string"
+          },
+          "hasProfilePicture": {
+            "type": "boolean"
+          },
+          "id": {
+            "type": "string"
+          },
+          "isInListenTogetherGroup": {
+            "type": "boolean"
+          },
+          "lastHeartbeatAt": {
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+            "type": "string"
+          },
+          "listeningStatus": {
+            "enum": [
+              "playing",
+              "paused",
+              "idle"
+            ],
+            "type": "string"
+          },
+          "listeningTrack": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OnlineUserTrack"
+              }
+            ],
+            "nullable": true
+          },
+          "username": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "displayName",
+          "hasProfilePicture",
+          "id",
+          "isInListenTogetherGroup",
+          "lastHeartbeatAt",
+          "listeningStatus",
+          "listeningTrack",
+          "username"
+        ],
+        "type": "object"
+      },
+      "OnlineUserTrack": {
+        "additionalProperties": false,
+        "properties": {
+          "albumId": {
+            "nullable": true,
+            "type": "string"
+          },
+          "albumTitle": {
+            "type": "string"
+          },
+          "artistId": {
+            "nullable": true,
+            "type": "string"
+          },
+          "artistName": {
+            "type": "string"
+          },
+          "coverArt": {
+            "nullable": true,
+            "type": "string"
+          },
+          "duration": {
+            "description": "Seconds",
+            "type": "number"
+          },
+          "id": {
+            "type": "string"
+          },
+          "playbackId": {
+            "description": "Opaque track identifier. Do not parse.",
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "albumId",
+          "albumTitle",
+          "artistId",
+          "artistName",
+          "coverArt",
+          "duration",
+          "id",
+          "title"
+        ],
+        "type": "object"
+      },
+      "OnlineUsersResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "users": {
+            "items": {
+              "$ref": "#/components/schemas/OnlineUser"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "users"
         ],
         "type": "object"
       },
@@ -2916,6 +3456,25 @@
           "neutral"
         ],
         "type": "string"
+      },
+      "PresenceHeartbeatResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "ttlSeconds": {
+            "description": "Seconds until the presence expires without a heartbeat.",
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "success",
+          "ttlSeconds"
+        ],
+        "type": "object"
       },
       "RadioAudioFeatures": {
         "additionalProperties": false,
@@ -6943,6 +7502,486 @@
         ]
       }
     },
+    "/api/listen-together": {
+      "post": {
+        "description": "Each `queueTracks` entry needs a `playbackId`, which wins over the legacy queue item fields (`trackId` and display fields), still accepted and not described here. 400 with code `INVALID_PLAYBACK_ID` for a `playbackId` that cannot be parsed, and without a code for an invalid body. 409 when a concurrent change to the group wins; the request can be retried.",
+        "operationId": "createListenGroup",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateListenGroupRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListenGroupSnapshot"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Create a Listen Together group hosted by the user",
+        "tags": [
+          "listenTogether"
+        ]
+      }
+    },
+    "/api/listen-together/discover": {
+      "get": {
+        "description": "At most 50 groups.",
+        "operationId": "discoverListenGroups",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ListenGroupSummary"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Active public groups, most recently updated first",
+        "tags": [
+          "listenTogether"
+        ]
+      }
+    },
+    "/api/listen-together/join": {
+      "post": {
+        "description": "400 for an invalid join code. 403 when the user may not join. 404 when no active group has the code. 409 when a concurrent change to the group wins; the request can be retried.",
+        "operationId": "joinListenGroup",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JoinListenGroupRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListenGroupSnapshot"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Join a group by its join code",
+        "tags": [
+          "listenTogether"
+        ]
+      }
+    },
+    "/api/listen-together/mine": {
+      "get": {
+        "description": "Answers `null` when the user is in no active group.",
+        "operationId": "getMyListenGroup",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ListenGroupSnapshot"
+                    }
+                  ],
+                  "nullable": true
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "The active group the user is a member of",
+        "tags": [
+          "listenTogether"
+        ]
+      }
+    },
+    "/api/listen-together/{groupId}/end": {
+      "post": {
+        "description": "403 when the user is not the host. 404 when the group does not exist. 409 when a concurrent change to the group wins; the request can be retried.",
+        "operationId": "endListenGroup",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "groupId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EndListenGroupResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "End a group for every member",
+        "tags": [
+          "listenTogether"
+        ]
+      }
+    },
+    "/api/listen-together/{groupId}/leave": {
+      "post": {
+        "description": "403 when the user is not a member. 404 when the group does not exist. 409 when a concurrent change to the group wins; the request can be retried.",
+        "operationId": "leaveListenGroup",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "groupId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LeaveListenGroupResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Leave a group",
+        "tags": [
+          "listenTogether"
+        ]
+      }
+    },
     "/api/lyrics/{trackId}": {
       "get": {
         "description": "Synced (LRC) or plain lyrics, from the cache, the file's embedded tags, or LRCLIB. For a library track the stored metadata drives the lookup; for any other path value the `artist`, `title`, `album` and `duration` parameters do, and without `artist` and `title` the answer is `source: none`. 504 when the lookup times out.",
@@ -9607,6 +10646,110 @@
         "summary": "Update the current user's settings",
         "tags": [
           "session"
+        ]
+      }
+    },
+    "/api/social/online": {
+      "get": {
+        "description": "When federation is on the answer also carries `peers`, the presence of federated servers, which is not described here.",
+        "operationId": "listOnlineUsers",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OnlineUsersResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Online users who share their presence",
+        "tags": [
+          "social"
+        ]
+      }
+    },
+    "/api/social/presence/heartbeat": {
+      "post": {
+        "description": "Takes no body. The presence lasts `ttlSeconds`; clients send a heartbeat well within it. What the user is playing is read from the stored playback state, not from the heartbeat. 503 when presence cannot be stored.",
+        "operationId": "sendPresenceHeartbeat",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PresenceHeartbeatResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Mark the user online",
+        "tags": [
+          "social"
         ]
       }
     },

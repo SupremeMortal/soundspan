@@ -514,33 +514,6 @@ function rosterPayload(
     return peers === undefined ? { users } : { users, peers };
 }
 
-/**
- * @openapi
- * /api/social/presence/heartbeat:
- *   post:
- *     summary: Send a presence heartbeat
- *     description: Updates the user's online presence timestamp in Redis with a TTL. Called periodically by the client to indicate the user is online.
- *     tags: [Social]
- *     security:
- *       - apiKeyAuth: []
- *     responses:
- *       200:
- *         description: Heartbeat recorded
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 ttlSeconds:
- *                   type: integer
- *                   description: TTL in seconds before presence expires
- *       401:
- *         description: Not authenticated
- *       503:
- *         description: Presence service unavailable
- */
 router.post("/presence/heartbeat", async (req, res) => {
     try {
         const userId = req.user!.id;
@@ -566,69 +539,6 @@ router.post("/presence/heartbeat", async (req, res) => {
     }
 });
 
-/**
- * @openapi
- * /api/social/online:
- *   get:
- *     summary: Get online users
- *     description: Returns a list of users who are currently online and have opted to share their online presence. Includes listening status and track info for users who share that.
- *     tags: [Social]
- *     security:
- *       - apiKeyAuth: []
- *     responses:
- *       200:
- *         description: List of online users with presence and listening info
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 users:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       id:
- *                         type: string
- *                       username:
- *                         type: string
- *                       displayName:
- *                         type: string
- *                       hasProfilePicture:
- *                         type: boolean
- *                       isInListenTogetherGroup:
- *                         type: boolean
- *                       listeningStatus:
- *                         type: string
- *                         enum: [playing, paused, idle]
- *                       listeningTrack:
- *                         type: object
- *                         nullable: true
- *                         properties:
- *                           playbackId:
- *                             type: string
- *                             description: "Opaque track identifier. Do not parse."
- *                       lastHeartbeatAt:
- *                         type: string
- *                         format: date-time
- *                 peers:
- *                   type: array
- *                   description: Included when federation is enabled and peer snapshots can be read; empty when no snapshots exist
- *                   items:
- *                     type: object
- *                     required: [peerId, peerName, users, fetchedAt]
- *                     properties:
- *                       peerId: { type: string }
- *                       peerName: { type: string }
- *                       users:
- *                         type: array
- *                         maxItems: 100
- *                         items:
- *                           type: object
- *                       fetchedAt: { type: string, format: date-time }
- *       401:
- *         description: Not authenticated
- */
 router.get("/online", async (_req, res) => {
     try {
         const [onlinePresenceByUserId, peers] = await Promise.all([

@@ -237,6 +237,7 @@ The operations the Flutter client calls are described by a typed registry under 
 - Operations are declared with `defineOperation` in `backend/src/openapi/operations/<tag>.ts`, one module per tag, and collected by `backend/src/openapi/clientSurface.ts`.
 - `backend/src/config/swagger.ts` merges the registry over the comment-derived document served at `/api/docs.json`.
 - A registered operation has no `@openapi` comment; `backend/src/openapi/__tests__/clientSurface.test.ts` fails when one does, and when a registered operation is not mounted.
+- The registered operations are exactly the endpoint inventory of [`docs/designs/flutter-client/03-api-layer.md`](../../../docs/designs/flutter-client/03-api-layer.md#endpoint-inventory); `backend/src/openapi/__tests__/clientSurface.inventory.test.ts` holds that list and fails when a registration is added or removed without it.
 - Nothing under `backend/src/openapi/` imports routes, services, `config.ts` or the database client, so the registry loads with an empty environment.
 
 ## Conventions
