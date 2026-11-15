@@ -37,7 +37,7 @@ class const ArtistDetail({
 
   @JsonKey(required: true, disallowNullValue: true) required final String name,
 
-  @JsonKey(disallowNullValue: true, includeIfNull: false) final PeerRef? peer,
+  @JsonKey(includeIfNull: false) final PeerRef? peer,
 
   @JsonKey(disallowNullValue: true, includeIfNull: false)
   final List<SimilarArtist>? similarArtists,

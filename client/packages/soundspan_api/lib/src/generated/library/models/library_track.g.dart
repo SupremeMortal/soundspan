@@ -23,7 +23,6 @@ LibraryTrack _$LibraryTrackFromJson(Map<String, dynamic> json) {
       'discNo',
       'duration',
       'id',
-      'peer',
       'playbackId',
       'source',
       'title',

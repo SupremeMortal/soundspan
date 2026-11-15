@@ -50,7 +50,7 @@ class const RadioTrack({
 
   @JsonKey(includeIfNull: false) final num? loudnessLufs,
 
-  @JsonKey(disallowNullValue: true, includeIfNull: false) final PeerRef? peer,
+  @JsonKey(includeIfNull: false) final PeerRef? peer,
 
   @JsonKey(required: true, disallowNullValue: true)
   required final String playbackId,

@@ -68,6 +68,7 @@ void main() {
         'schemas': {
           'Item': {
             'type': 'object',
+            'required': ['always'],
             'properties': {
               'maybe': _nullableRef('Track'),
               'always': _ref('Track'),
@@ -77,6 +78,64 @@ void main() {
           },
           'Track': _object(),
           'Peer': _object(),
+        },
+      },
+    };
+
+    expect(normalizeSpec(input), input);
+  });
+
+  test('references from optional properties do not keep a component '
+      'non-null', () {
+    final spec = normalizeSpec({
+      'components': {
+        'schemas': {
+          'Album': {
+            'type': 'object',
+            'required': ['id'],
+            'properties': {
+              'id': {'type': 'string'},
+              'peer': {
+                'allOf': [_ref('Peer')],
+              },
+              'origin': _ref('Peer'),
+            },
+          },
+          'Hit': {
+            'type': 'object',
+            'properties': {'peer': _nullableRef('Peer')},
+          },
+          'Peer': _object(),
+        },
+      },
+    });
+
+    expect(_schemas(spec)['Peer'], {..._object(), 'nullable': true});
+  });
+
+  test('a required or array reference keeps a component non-null', () {
+    final input = {
+      'components': {
+        'schemas': {
+          'Album': {
+            'type': 'object',
+            'required': ['peer'],
+            'properties': {
+              'peer': {
+                'allOf': [_ref('Peer')],
+              },
+              'others': {'type': 'array', 'items': _ref('Other')},
+            },
+          },
+          'Hit': {
+            'type': 'object',
+            'properties': {
+              'peer': _nullableRef('Peer'),
+              'other': _nullableRef('Other'),
+            },
+          },
+          'Peer': _object(),
+          'Other': _object(),
         },
       },
     };

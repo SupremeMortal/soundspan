@@ -23,7 +23,7 @@ class const SearchArtist({
 
   @JsonKey(required: true, disallowNullValue: true) required final String name,
 
-  @JsonKey(disallowNullValue: true, includeIfNull: false) final PeerRef? peer,
+  @JsonKey(includeIfNull: false) final PeerRef? peer,
 
   @JsonKey(required: true, disallowNullValue: true) required final num rank,
 

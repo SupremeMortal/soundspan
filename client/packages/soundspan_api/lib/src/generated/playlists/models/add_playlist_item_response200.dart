@@ -255,7 +255,7 @@ bool _matches60(Object? value) =>
     (value is! Map<String, Object?> ||
         !value.containsKey("online") ||
         _matches66(value["online"])) &&
-    ((value is Map<String, Object?>));
+    ((value is Map<String, Object?>) || (value == null));
 bool _matches64(Object? value) => ((value is String));
 bool _matches65(Object? value) => ((value is String));
 bool _matches66(Object? value) => ((value is bool));

@@ -25,7 +25,6 @@ ArtistDetail _$ArtistDetailFromJson(Map<String, dynamic> json) {
       'genres',
       'id',
       'name',
-      'peer',
       'similarArtists',
       'source',
       'topTracks',

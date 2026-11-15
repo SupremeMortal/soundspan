@@ -18,7 +18,6 @@ ArtistTopTrack _$ArtistTopTrackFromJson(Map<String, dynamic> json) {
       'duration',
       'id',
       'listeners',
-      'peer',
       'playCount',
       'playbackId',
       'title',

@@ -17,7 +17,6 @@ TrackSummary _$TrackSummaryFromJson(Map<String, dynamic> json) {
       'discNo',
       'duration',
       'id',
-      'peer',
       'playbackId',
       'title',
     ],

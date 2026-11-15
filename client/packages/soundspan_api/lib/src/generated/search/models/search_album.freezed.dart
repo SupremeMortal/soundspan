@@ -51,7 +51,7 @@ abstract mixin class $SearchAlbumCopyWith<$Res>  {
   factory $SearchAlbumCopyWith(SearchAlbum value, $Res Function(SearchAlbum) _then) = _$SearchAlbumCopyWithImpl;
 @useResult
 $Res call({
-@JsonKey(required: true, disallowNullValue: true) ArtistRef artist,@JsonKey(required: true, disallowNullValue: true) String artistId,@JsonKey(required: true) String? coverUrl,@JsonKey(required: true, disallowNullValue: true) String id,@JsonKey(disallowNullValue: true, includeIfNull: false) PeerRef? peer,@JsonKey(disallowNullValue: true, includeIfNull: false, fromJson: SearchAlbum._read_source, toJson: SearchAlbum._write_source) SearchAlbumSource? source,@JsonKey(required: true, disallowNullValue: true) String title,@JsonKey(required: true, fromJson: SearchAlbum._read_year, toJson: SearchAlbum._write_year) int? year,@JsonKey(readValue: SearchAlbum._extras, fromJson: SearchAlbum._readExtras, includeToJson: false) Map<String, Object?> additionalProperties
+@JsonKey(required: true, disallowNullValue: true) ArtistRef artist,@JsonKey(required: true, disallowNullValue: true) String artistId,@JsonKey(required: true) String? coverUrl,@JsonKey(required: true, disallowNullValue: true) String id,@JsonKey(includeIfNull: false) PeerRef? peer,@JsonKey(disallowNullValue: true, includeIfNull: false, fromJson: SearchAlbum._read_source, toJson: SearchAlbum._write_source) SearchAlbumSource? source,@JsonKey(required: true, disallowNullValue: true) String title,@JsonKey(required: true, fromJson: SearchAlbum._read_year, toJson: SearchAlbum._write_year) int? year,@JsonKey(readValue: SearchAlbum._extras, fromJson: SearchAlbum._readExtras, includeToJson: false) Map<String, Object?> additionalProperties
 });
 
 
