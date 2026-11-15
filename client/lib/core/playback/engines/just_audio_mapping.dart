@@ -112,14 +112,16 @@ const Duration _staleWindow = Duration(seconds: 1);
 /// transition before it is taken for the previous item's end position.
 const Duration _staleMargin = Duration(milliseconds: 150);
 
-/// The position to report for the player position [raw].
+/// The position to report for the player position [raw], or null when
+/// [raw] is not yet a position of the current item.
 ///
 /// Clamped to `[0, duration]`, and [duration] once [ended]. [sinceAdvance]
 /// is the time since the last [AdvancedToNext]: on iOS and macOS the index
 /// change can arrive before the position reset, so for a second after a
-/// transition a position further ahead than the time since it is the
-/// previous item's end and the time since the transition is reported.
-Duration reportedPosition({
+/// transition a position further ahead than the time since it is still the
+/// previous item's end, and null is returned until the player reports the
+/// new item's own position. No position is invented.
+Duration? reportedPosition({
   required Duration raw,
   required Duration? duration,
   required bool ended,
@@ -131,7 +133,7 @@ Duration reportedPosition({
   if (sinceAdvance != null &&
       sinceAdvance < _staleWindow &&
       position > sinceAdvance + _staleMargin) {
-    return sinceAdvance;
+    return null;
   }
   return position;
 }

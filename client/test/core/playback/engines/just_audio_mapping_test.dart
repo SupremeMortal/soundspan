@@ -271,7 +271,8 @@ void main() {
       );
     });
 
-    test('ignores the previous item end position just after a transition', () {
+    test('is unknown while the player still reports the previous item end '
+        'just after a transition', () {
       expect(
         reportedPosition(
           raw: const Duration(milliseconds: 2980),
@@ -279,7 +280,7 @@ void main() {
           ended: false,
           sinceAdvance: const Duration(milliseconds: 10),
         ),
-        const Duration(milliseconds: 10),
+        isNull,
       );
     });
 

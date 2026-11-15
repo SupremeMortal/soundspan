@@ -48,6 +48,9 @@ final class JustAudioEngine implements PlayerEngine {
   /// How often the position is reported while playing: ten times a second.
   static const Duration _tick = Duration(milliseconds: 100);
 
+  /// How soon a held state is checked again after a transition.
+  static const Duration _recheckDelay = Duration(milliseconds: 10);
+
   /// Which `just_audio` implementation runs, for its error codes.
   final PlayerFamily family;
 
@@ -79,6 +82,7 @@ final class JustAudioEngine implements PlayerEngine {
   bool _loading = false;
   bool _ended = false;
   Stopwatch? _sinceAdvance;
+  Timer? _recheck;
   EngineState _latest = EngineState.idle;
   bool _disposed = false;
 
@@ -235,6 +239,7 @@ final class JustAudioEngine implements PlayerEngine {
     _disposed = true;
     _generation++;
     _ticker.cancel();
+    _recheck?.cancel();
     for (final subscription in _subscriptions) {
       await subscription.cancel();
     }
@@ -409,9 +414,25 @@ final class JustAudioEngine implements PlayerEngine {
       status = player == EngineStatus.ended ? EngineStatus.ready : player;
     }
     final duration = current == null ? null : _player.duration;
-    final since = _sinceAdvance?.elapsed;
-    if (since != null && since > const Duration(seconds: 1)) {
+    var position = Duration.zero;
+    if (current != null) {
+      final reported = reportedPosition(
+        raw: _player.position,
+        duration: duration,
+        ended: _ended,
+        sinceAdvance: _sinceAdvance?.elapsed,
+      );
+      if (reported == null) {
+        // The player still reports the previous item's end; hold the state
+        // until it reports the new item's own position.
+        _recheck ??= Timer(_recheckDelay, () {
+          _recheck = null;
+          _report();
+        });
+        return;
+      }
       _sinceAdvance = null;
+      position = reported;
     }
     final next = EngineState(
       status: status,
@@ -421,14 +442,7 @@ final class JustAudioEngine implements PlayerEngine {
               status == EngineStatus.buffering ||
               status == EngineStatus.loading),
       currentQueueItemId: current?.queueItemId,
-      position: current == null
-          ? Duration.zero
-          : reportedPosition(
-              raw: _player.position,
-              duration: duration,
-              ended: _ended,
-              sinceAdvance: since,
-            ),
+      position: position,
       bufferedPosition: current == null
           ? Duration.zero
           : _player.bufferedPosition,

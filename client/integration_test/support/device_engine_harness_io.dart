@@ -65,10 +65,9 @@ final class _NativeHarness extends DeviceEngineHarnessBase {
   Future<void> disableNetwork() async => _server.reachable = false;
 
   /// 20 ms, except on macOS: there the transition between the two loaded
-  /// items is not reliably gapless (doc 06, Spike S1 finding) and CI
-  /// measured 47 ms, so the hosted runner gets the largest tolerance doc 06
-  /// allows, 100 ms. Gapless playback on a Mac is confirmed on real
-  /// hardware.
+  /// items is not reliably gapless on the hosted runner (doc 06, Spike S1
+  /// finding), so it gets the largest tolerance doc 06 allows, 100 ms.
+  /// Gapless playback on a Mac is confirmed on real hardware.
   @override
   Duration get gapTolerance => Platform.isMacOS
       ? const Duration(milliseconds: 100)
