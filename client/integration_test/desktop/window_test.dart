@@ -16,6 +16,7 @@ import 'package:soundspan/app/theme/theme.dart';
 import 'package:soundspan/core/storage/app/app_database.dart';
 import 'package:soundspan/core/storage/app/app_settings_store.dart';
 import 'package:soundspan/platform/desktop_shell/desktop_shell.dart';
+import 'package:window_manager/window_manager.dart' show WindowManager;
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -111,6 +112,24 @@ void main() {
       expect(restored.top, closeTo(saved.top, 64));
     },
   );
+
+  testWidgets('a window restored before it is shown keeps the saved frame '
+      'size', (tester) async {
+    const saved = WindowBounds(left: 80, top: 60, width: 900, height: 700);
+    await tester.runAsync(
+      () => settings.write(AppSettingKeys.windowBounds, saved),
+    );
+    // A hidden window measures no decorations, as on a fresh launch.
+    WindowManager.instance.getCurrent()!.hide();
+    await settleWindow(tester);
+
+    await tester.runAsync(newController().start);
+    await settleWindow(tester);
+
+    final restored = (await tester.runAsync(shell.getBounds))!;
+    expect(restored.width, closeTo(saved.width, 2));
+    expect(restored.height, closeTo(saved.height, 2));
+  });
 
   testWidgets('the shell renders its navigation at the restored size', (
     tester,

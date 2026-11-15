@@ -225,7 +225,7 @@ Implemented with `Shortcuts`/`Actions` at the shell so they are discoverable to 
 - **Selection:** click selects, Ctrl/Shift extend, in track lists on pointer devices. Context menu and drag act on the selection.
 - **Drag and drop:** drag tracks or an album onto a sidebar playlist (add) or onto the queue panel (insert at the drop position).
 - **Context menus:** right-click, and the Menu key / Shift+F10.
-- **Window:** minimum size 480 × 600; bounds and maximised state persisted; title "Track — Artist · soundspan" while playing.
+- **Window:** minimum size 480 × 600; bounds and maximised state persisted, as the frame (title bar included), and restored before the window is shown; on Linux a window manager's title bar cannot be measured on a hidden window, so `DesktopShell` re-applies bounds requested while hidden once the shown window measures its decorations, and the restored frame matches the saved one within 2 px; title "Track — Artist · soundspan" while playing.
 - **Tray** (Windows, Linux, macOS menu bar optional): Play/Pause, Next, Previous, current track (disabled label), Show window, Quit.
 
 ## Performance Rules

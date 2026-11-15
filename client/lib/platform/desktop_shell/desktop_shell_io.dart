@@ -27,6 +27,23 @@ class WindowManagerDesktopShell implements DesktopShell {
 
   Window? _window;
 
+  /// Bounds requested while the window was hidden on Linux, re-applied when
+  /// the shown window measures its decorations.
+  WindowBounds? _hiddenRequest;
+
+  /// Counts [setBounds] calls, so a later request wins over a pending
+  /// re-application.
+  int _requests = 0;
+
+  /// How long [showAndFocus] waits for a shown window's decorations.
+  static const Duration _decorationsTimeout = Duration(milliseconds: 600);
+
+  /// How often a hidden request is re-applied at most.
+  static const int _maxReapplies = 3;
+
+  /// How long a re-application is given to land before the next one.
+  static const Duration _reapplyGap = Duration(milliseconds: 120);
+
   Window get _current => _window ?? (throw StateError('init() not called'));
 
   /// Attaches to the window; a later call does nothing.
@@ -76,9 +93,20 @@ class WindowManagerDesktopShell implements DesktopShell {
     );
   }
 
+  /// Moves and resizes the window. On Linux the window manager's title bar
+  /// cannot be measured while the window is hidden, so a request made then
+  /// sizes the content, not the frame; [showAndFocus] re-applies it once
+  /// the shown window measures them.
   @override
-  Future<void> setBounds(WindowBounds bounds) async =>
-      _current.bounds = Rect.fromLTWH(
+  Future<void> setBounds(WindowBounds bounds) async {
+    _requests++;
+    final window = _current;
+    _hiddenRequest = Platform.isLinux && !window.isVisible ? bounds : null;
+    _apply(window, bounds);
+  }
+
+  static void _apply(Window window, WindowBounds bounds) =>
+      window.bounds = Rect.fromLTWH(
         bounds.left,
         bounds.top,
         bounds.width,
@@ -98,6 +126,45 @@ class WindowManagerDesktopShell implements DesktopShell {
     window
       ..show()
       ..focus();
+    final request = _hiddenRequest;
+    _hiddenRequest = null;
+    if (request != null) unawaited(_reapplyWhenDecorated(window, request));
+  }
+
+  /// Waits until the shown [window] has a frame larger than its content and
+  /// re-applies [request] while the frame's size is not the requested one:
+  /// at most [_maxReapplies] times, [_reapplyGap] apart, so a resize the
+  /// window manager has half applied is not taken for the result.
+  /// A window without decorations, or a later [setBounds], ends the wait.
+  Future<void> _reapplyWhenDecorated(
+    Window window,
+    WindowBounds request,
+  ) async {
+    final generation = _requests;
+    final deadline = DateTime.now().add(_decorationsTimeout);
+    var reapplies = 0;
+    DateTime? lastApplied;
+    while (DateTime.now().isBefore(deadline)) {
+      await Future<void>.delayed(const Duration(milliseconds: 16));
+      if (generation != _requests) return;
+      final frame = window.bounds;
+      final content = window.contentBounds;
+      if (frame.width == content.width && frame.height == content.height) {
+        continue;
+      }
+      if ((frame.width - request.width).abs() <= 2 &&
+          (frame.height - request.height).abs() <= 2) {
+        return;
+      }
+      if (reapplies >= _maxReapplies) return;
+      final now = DateTime.now();
+      if (lastApplied != null && now.difference(lastApplied) < _reapplyGap) {
+        continue;
+      }
+      _apply(window, request);
+      reapplies++;
+      lastApplied = now;
+    }
   }
 
   @override
