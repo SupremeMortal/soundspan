@@ -51,6 +51,7 @@ class Track {
   final Preference preference;    // liked | disliked | neutral
   final int? discNumber;
   final int? trackNumber;
+  final String? libraryTrackId;   // the track id the server sent; for lyrics and vibe lookups only
 }
 
 sealed class QueueItem {
@@ -61,7 +62,12 @@ class EpisodeQueueItem extends QueueItem { final Episode episode; final Podcast 
 
 /// Where the item was queued from. Drives loudness "auto" mode and playlist radio.
 enum QueueContextKind { album, playlist, artist, mix, radio, search, library, single }
+class QueueContext { final QueueContextKind kind; final String? id; final String? title; }
 ```
+
+`libraryTrackId` is the `id` the server sent on the track payload. It is passed to `GET /lyrics/:trackId` and the vibe lookups, says nothing about where the track comes from, and is never used to decide playability or to branch.
+
+Browse entities carry only the fields the screens of [09](09-ui-and-design-system.md) show: `Album` (id, title, artist name and id, year, artwork ref, track count, release type), `AlbumDetail` (album, tracks, owned), `Artist` (id, name, artwork ref), `ArtistDetail` (artist, albums, top tracks, similar artists, biography, genres) and `SimilarArtist` (name, artwork ref, library id when the library holds the artist). `Album.trackCount` is set only when the server sent the tracks, and `Album.releaseType` stays empty while the library endpoints send none. Query values (`LibraryOrigin`, and the sort and filter enums of the artists, albums and tracks lists) carry exactly the server's parameter values. The network half of the library repositories, `lib/shared/data/library/library_remote_source.dart`, maps the generated models to these types with the mappers beside it: a wire track without `playbackId` becomes a `Track` with `playbackId == null`, a missing or unknown preference is `neutral` (tracks of the liked list are `liked`), and timestamps are UTC.
 
 The domain `Track` has no source field. Server fields `streamSource`, `tidalTrackId`, `youtubeVideoId`, `provider`, and `mediaSource` are not declared on the wire models either, so they cannot leak in.
 

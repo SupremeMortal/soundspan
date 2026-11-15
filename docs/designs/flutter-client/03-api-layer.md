@@ -279,6 +279,8 @@ class ImageUrls {
 }
 ```
 
+`authHeaders(Credentials)` and `withQueryToken(Uri, JwtCredentials)` are also top-level functions of `urls.dart`, used by the artwork widget; `StreamUrls` delegates to them.
+
 `reportPlay: false` adds the P7 marker ([12](12-server-prerequisites-p6-p9.md)). The client always passes `false`.
 
 `ImageUrls.cover` reproduces the three cases of the web builder (`frontend/lib/api/media.ts`): an id or hash → `/library/cover-art/<encoded>?size=`; an `http(s)://` value → `/library/cover-art?url=<encoded>&size=`; a value starting with `/podcasts/` or `/audiobooks/` → `/api<path>`.
@@ -388,6 +390,8 @@ Three server styles exist; each gets one reusable Dart type.
 | Offset (`limit`, `offset`, `total`) | Albums, tracks, playlists list, search | `OffsetPage<T>` |
 | Offset with optional cursor (`nextCursor`) | Artists | `OffsetPage<T>`; the cursor is passed back when present |
 | Keyset (`cursorLikedAt`, `cursorTrackId`, `hasMore`) | Liked tracks | `KeysetPage<T, C>` |
+
+`OffsetPage<T>` holds `items`, `offset`, `limit`, an optional `total` and an optional `nextCursor`; `hasMore` compares `offset + items.length` with `total` when it is known and otherwise treats a full page as having more, and `nextOffset` is `offset + items.length`. `KeysetPage<T, C>` holds `items`, the server's `hasMore`, an optional `total` and the next cursor (`null` on the last page).
 
 Page size is 100 for lists and 60 for grids. The repository exposes a `PagedSource<T>` that the UI drives from scroll position ([09](09-ui-and-design-system.md)); cached pages are served first ([05](05-local-data.md)).
 
