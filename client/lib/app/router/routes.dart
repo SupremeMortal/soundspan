@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
@@ -147,6 +149,10 @@ Uri? branchBaseOf(Uri location) {
 
 /// Opens detail screens inside the selected branch, so screens never build
 /// detail paths themselves.
+///
+/// From a branch root the detail replaces the branch's location
+/// (`/<branch root>/<kind>/<id>`); from a detail it is pushed onto the
+/// branch's stack, so Back returns to the detail it was opened from.
 abstract final class DetailNavigation {
   /// Opens album [id].
   static void openAlbum(BuildContext context, String id) =>
@@ -160,8 +166,24 @@ abstract final class DetailNavigation {
   static void openPlaylist(BuildContext context, String id) =>
       _open(context, DetailKind.playlist, id);
 
+  /// Opens the top-level detail [location] (`/album/42`, the form deep links
+  /// use) in [router]'s selected branch, pushing it when that branch already
+  /// shows a detail.
+  static void openLocation(GoRouter router, String location) {
+    final current = router.routerDelegate.currentConfiguration.uri;
+    final base = branchBaseOf(current);
+    if (base != null && base.path != current.path) {
+      unawaited(router.push<void>(location));
+    } else {
+      router.go(location);
+    }
+  }
+
   static void _open(BuildContext context, DetailKind kind, String id) =>
-      GoRouter.of(context).go('/${kind.name}/${Uri.encodeComponent(id)}');
+      openLocation(
+        GoRouter.of(context),
+        '/${kind.name}/${Uri.encodeComponent(id)}',
+      );
 }
 
 /// Builds the app's router over [gate]. [initialLocation] is where it
@@ -170,6 +192,9 @@ GoRouter createRouter(
   AuthGateState gate, {
   String initialLocation = RoutePaths.home,
 }) {
+  // A detail pushed onto a branch's stack is what the window shows, so the
+  // browser URL follows it (doc 02, Routing).
+  GoRouter.optionURLReflectsImperativeAPIs = true;
   final location = ShellLocation();
   final history = ShellHistory();
   return GoRouter(
