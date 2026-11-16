@@ -7,9 +7,11 @@ import 'package:material_ui/material_ui.dart';
 import 'package:soundspan/app/router/routes.dart';
 import 'package:soundspan/features/library/ui/library_controls.dart';
 import 'package:soundspan/shared/domain/domain.dart';
+import 'package:soundspan/shared/providers/likes.dart';
 import 'package:soundspan/shared/widgets/artwork.dart';
 import 'package:soundspan/shared/widgets/empty_state.dart';
 import 'package:soundspan/shared/widgets/error_view.dart';
+import 'package:soundspan/shared/widgets/like_button.dart';
 import 'package:soundspan/shared/widgets/track_row.dart';
 import 'package:soundspan_api/soundspan_api.dart' show ServerError;
 
@@ -189,6 +191,73 @@ void main() {
     );
     expect(tester.takeException(), isNull);
     expect(find.text('Song 0'), findsOneWidget);
+  });
+
+  group('likes', () {
+    Finder heart(String title) =>
+        find.descendant(of: row(title), matching: find.byType(LikeButton));
+
+    FakeTrackLikes likesOf(LibraryHarness harness) =>
+        harness.container.read(trackLikesProvider) as FakeTrackLikes;
+
+    testWidgets('a tap on the heart toggles the like of that track once', (
+      tester,
+    ) async {
+      final lib = library(3)
+        ..trackList = [
+          track(0).copyWith(preference: Preference.liked),
+          track(1),
+          track(2).copyWith(preference: Preference.disliked),
+        ];
+      final harness = await tester.pumpLibrary(
+        tab: LibraryTab.songs,
+        library: lib,
+      );
+
+      expect(tester.widget<LikeButton>(heart('Song 0')).liked, isTrue);
+      expect(tester.widget<LikeButton>(heart('Song 1')).liked, isFalse);
+      expect(
+        tester.widget<LikeButton>(heart('Song 2')).liked,
+        isFalse,
+        reason: 'a disliked track shows as not liked',
+      );
+
+      await tester.tap(heart('Song 1'));
+      await tester.pump();
+
+      expect(likesOf(harness).toggled, [lib.trackList[1]]);
+    });
+
+    testWidgets('a track without a playbackId has no heart', (tester) async {
+      await tester.pumpLibrary(
+        tab: LibraryTab.songs,
+        library: library(3, unplayable: {1}),
+      );
+
+      expect(heart('Song 0'), findsOneWidget);
+      expect(heart('Song 1'), findsNothing);
+    });
+
+    testWidgets("the row's like action toggles the like", (tester) async {
+      final lib = library(2);
+      final harness = await tester.pumpLibrary(
+        tab: LibraryTab.songs,
+        library: lib,
+      );
+
+      final semantics = tester.widget<Semantics>(
+        find
+            .descendant(of: row('Song 0'), matching: find.byType(Semantics))
+            .first,
+      );
+      final actions = semantics.properties.customSemanticsActions!;
+      expect(actions.keys.single.label, 'Like');
+      actions.values.single();
+      await tester.pump();
+
+      expect(likesOf(harness).toggled, [lib.trackList[0]]);
+      await expectMeetsGuidelines(tester);
+    });
   });
 }
 

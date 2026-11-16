@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 
+import 'package:soundspan/core/sync/outbox/optimistic_overlay.dart';
 import 'package:soundspan/shared/data/cache_store.dart';
+import 'package:soundspan/shared/data/preference_overlay.dart';
 import 'package:soundspan/shared/data/search/search_remote_source.dart';
 import 'package:soundspan/shared/data/swr.dart';
 import 'package:soundspan/shared/domain/domain.dart';
@@ -11,26 +13,34 @@ import 'package:soundspan/shared/domain/domain.dart';
 /// so a result is served offline only for the exact query and scope that
 /// were cached. [SearchScope.all] and [SearchScope.library] call the library
 /// search, [SearchScope.all] and [SearchScope.discover] the catalogue search,
-/// and [SearchScope.podcasts] the library search for podcasts.
+/// and [SearchScope.podcasts] the library search for podcasts. Results show
+/// the pending likes of the outbox ([PendingOps]).
 class CachedSearchRepository implements SearchRepository {
-  /// A repository reading [_remote] into [_store] through [_swr].
-  new(this._remote, this._store, this._swr);
+  /// A repository reading [_remote] into [_store] through [_swr], overlaid
+  /// with the ops [_pending] answers.
+  new(this._remote, this._store, this._swr, {this._pending = noPendingOps});
 
   final SearchRemoteSource _remote;
   final CacheStore _store;
   final Swr _swr;
+  final PendingOps _pending;
 
   @override
   Stream<Cached<SearchResults>> search(String query, SearchScope scope) {
     final key = _key(query, scope);
-    return _swr.watch(
-      key: key,
-      ttl: searchTtl,
-      cache: () => _store.watchBlob(
-        key,
-        (json) => SearchResults.fromJson(json! as Map<String, Object?>),
+    return overlay(
+      _swr.watch(
+        key: key,
+        ttl: searchTtl,
+        cache: () => _store.watchBlob(
+          key,
+          (json) => SearchResults.fromJson(json! as Map<String, Object?>),
+        ),
+        fetch: () => _fetch(key, query, scope),
       ),
-      fetch: () => _fetch(key, query, scope),
+      _pending(albumPreferenceOps),
+      overlaySearchResults,
+      hold: preferenceHold,
     );
   }
 

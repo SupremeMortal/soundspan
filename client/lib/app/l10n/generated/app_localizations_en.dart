@@ -704,6 +704,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get detailRefreshFailed => 'Couldn’t refresh. Showing saved content.';
 
   @override
+  String get likeButtonLike => 'Like';
+
+  @override
+  String get likeButtonRemove => 'Remove like';
+
+  @override
   String get trackNotPlayable => 'Not playable';
 
   @override
@@ -1735,6 +1741,12 @@ class AppLocalizationsEnXa extends AppLocalizationsEn {
   @override
   String get detailRefreshFailed =>
       '[Çöûļðñ’ţ ŕéfŕéšĥ. Šĥöŵîñĝ šåvéð çöñţéñţ. one two three four]';
+
+  @override
+  String get likeButtonLike => '[Ļîķé one]';
+
+  @override
+  String get likeButtonRemove => '[Ŕémövé ļîķé one two]';
 
   @override
   String get trackNotPlayable => '[Ñöţ þļåýåbļé one two]';

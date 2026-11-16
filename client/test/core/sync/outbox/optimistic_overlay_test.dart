@@ -2,6 +2,7 @@
 
 import 'dart:async';
 
+import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:soundspan/core/sync/outbox/optimistic_overlay.dart';
 import 'package:soundspan/core/sync/outbox/outbox_op.dart';
@@ -113,6 +114,65 @@ void main() {
     await rig.pass();
 
     expect(values.last, 'Old');
+  });
+
+  test('with a hold, a confirmed op stays applied until the base catches '
+      'up', () async {
+    final base = StreamController<Cached<String>>.broadcast();
+    final values = <String>[];
+    final sub = overlay(
+      base.stream,
+      rig.store.watchPending(),
+      _applyRenames,
+      hold: const Duration(seconds: 5),
+    ).listen((c) => values.add(c.value));
+    addTearDown(sub.cancel);
+    base.add(_cached('Old'));
+    await rig.put(const PlaylistRenameOp(playlistId: 'p', name: 'New'));
+    await rig.settle();
+    expect(values.last, 'New');
+
+    // The op is deleted before the slow base shows the written value.
+    await rig.pass();
+    expect(await rig.pending(), isEmpty);
+    expect(values.last, 'New');
+
+    base.add(_cached('New'));
+    await rig.settle();
+    expect(values.skip(1), everyElement('New'));
+  });
+
+  test('with a hold, a dropped op is rolled back once the hold has passed', () {
+    fakeAsync((async) {
+      final base = StreamController<Cached<String>>();
+      final pending = StreamController<List<OutboxEntry>>();
+      final values = <String>[];
+      overlay(
+        base.stream,
+        pending.stream,
+        _applyRenames,
+        hold: const Duration(milliseconds: 250),
+      ).listen((c) => values.add(c.value));
+      final entry = OutboxEntry(
+        seq: 1,
+        op: const PlaylistRenameOp(playlistId: 'p', name: 'New'),
+        createdAt: DateTime.utc(2025),
+        attempts: 0,
+      );
+      base.add(_cached('Old'));
+      pending.add([entry]);
+      async.flushMicrotasks();
+      expect(values.last, 'New');
+
+      pending.add(const []);
+      async
+        ..flushMicrotasks()
+        ..elapse(const Duration(milliseconds: 200));
+      expect(values.last, 'New');
+
+      async.elapse(const Duration(milliseconds: 100));
+      expect(values.last, 'Old');
+    });
   });
 
   test('ops apply in seq order', () async {

@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 
+import 'dart:async';
+
 import 'package:dio/dio.dart' show CancelToken, Options;
 import 'package:soundspan_api/soundspan_api.dart' as api;
 
@@ -15,6 +17,102 @@ final class FakeApi {
 
   /// The discovery resource: `rest.discovery`.
   final FakeDiscoveryClient discovery = FakeDiscoveryClient();
+
+  /// The library resource's preference endpoints: `rest.library2`.
+  final FakeLibraryClient library = FakeLibraryClient();
+}
+
+/// An in-memory model of the server's preference endpoints (doc 03,
+/// `POST /library/preferences`, `POST /library/albums/:id/preference`):
+/// the state of each track and album, every request body in [requests],
+/// and per-call failures in [failures]. Other library calls are not
+/// modelled.
+final class FakeLibraryClient implements api.LibraryClient {
+  /// The state of each track, by `playbackId`; absent is `neutral`.
+  final Map<String, String> tracks = {};
+
+  /// The state of each album, by album id; absent is `neutral`.
+  final Map<String, String> albums = {};
+
+  /// Every preference request body, in order.
+  final List<Object> requests = [];
+
+  /// Exceptions the next preference calls throw, oldest first; a call takes
+  /// one when any is left.
+  final List<api.ApiException> failures = [];
+
+  /// While set, preference calls wait for it before answering, so a test
+  /// can look at the client before the server answers.
+  Completer<void>? gate;
+
+  static String _state(api.PreferenceSignal signal) =>
+      switch (signal.toJson()) {
+        'thumbs_up' => 'liked',
+        'thumbs_down' => 'disliked',
+        _ => 'neutral',
+      };
+
+  static int _score(String state) => switch (state) {
+    'liked' => 1,
+    'disliked' => -1,
+    _ => 0,
+  };
+
+  Future<void> _answer() async {
+    await gate?.future;
+    if (failures.isNotEmpty) throw failures.removeAt(0);
+  }
+
+  @override
+  Future<api.TrackPreferenceResponse> setTrackPreference({
+    required api.TrackPreferenceRequest body,
+    Map<String, Object?> extra = const {},
+    CancelToken? cancelToken,
+    Options? options,
+  }) async {
+    requests.add(body);
+    await _answer();
+    final state = _state(body.signal);
+    tracks[body.playbackId] = state;
+    return api.TrackPreferenceResponse.fromJson({
+      'playbackId': body.playbackId,
+      'trackId': 'track-${body.playbackId}',
+      'signal': body.signal.toJson(),
+      'state': state,
+      'score': _score(state),
+      'likedAt': state == 'liked' ? '2026-01-01T00:00:00.000Z' : null,
+      'dislikedAt': state == 'disliked' ? '2026-01-01T00:00:00.000Z' : null,
+      'updatedAt': '2026-01-01T00:00:00.000Z',
+    });
+  }
+
+  @override
+  Future<api.AlbumPreferenceResponse> setAlbumPreference({
+    required String id,
+    required api.AlbumPreferenceRequest body,
+    Map<String, Object?> extra = const {},
+    CancelToken? cancelToken,
+    Options? options,
+  }) async {
+    requests.add(body);
+    await _answer();
+    final state = _state(body.signal);
+    albums[id] = state;
+    return api.AlbumPreferenceResponse.fromJson({
+      'albumId': id,
+      'trackCount': 0,
+      'signal': body.signal.toJson(),
+      'state': state,
+      'score': _score(state),
+      'likedAt': state == 'liked' ? '2026-01-01T00:00:00.000Z' : null,
+      'dislikedAt': state == 'disliked' ? '2026-01-01T00:00:00.000Z' : null,
+      'updatedAt': '2026-01-01T00:00:00.000Z',
+    });
+  }
+
+  @override
+  Never noSuchMethod(Invocation invocation) =>
+      throw UnimplementedError('${invocation.memberName}');
 }
 
 /// One file a device reported as written.

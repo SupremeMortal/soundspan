@@ -1231,6 +1231,18 @@ abstract class AppLocalizations {
   /// **'Couldn’t refresh. Showing saved content.'**
   String get detailRefreshFailed;
 
+  /// Tooltip, accessibility label and track-row action of the heart button of a track that is not liked.
+  ///
+  /// In en, this message translates to:
+  /// **'Like'**
+  String get likeButtonLike;
+
+  /// Tooltip, accessibility label and track-row action of the heart button of a liked track.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove like'**
+  String get likeButtonRemove;
+
   /// Tooltip and accessibility reason of a track row that cannot be played.
   ///
   /// In en, this message translates to:

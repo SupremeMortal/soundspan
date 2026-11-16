@@ -6,6 +6,7 @@ import 'dart:math' as math;
 import 'package:flutter_riverpod/flutter_riverpod.dart' show AsyncData;
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:soundspan/shared/domain/domain.dart';
+import 'package:soundspan/shared/providers/likes.dart';
 import 'package:soundspan/shared/providers/repositories.dart';
 import 'package:soundspan_api/soundspan_api.dart' show ApiException, NotFound;
 
@@ -395,11 +396,26 @@ class FakeRepositories {
   /// The search fake.
   final FakeSearchRepository search;
 
-  /// Overrides of the four repository providers with these fakes.
+  /// The like command fake.
+  final FakeTrackLikes likes = FakeTrackLikes();
+
+  /// Overrides of the four repository providers and the like command with
+  /// these fakes.
   List<Override> get overrides => [
     libraryRepositoryProvider.overrideWithValue(AsyncData(library)),
     playlistRepositoryProvider.overrideWithValue(AsyncData(playlists)),
     homeRepositoryProvider.overrideWithValue(AsyncData(home)),
     searchRepositoryProvider.overrideWithValue(AsyncData(search)),
+    trackLikesProvider.overrideWithValue(likes),
   ];
+}
+
+/// A [TrackLikes] that records each toggle; read it back from a screen
+/// test's container through `trackLikesProvider`.
+class FakeTrackLikes implements TrackLikes {
+  /// The tracks toggled, in order: each one is one outbox op.
+  final List<Track> toggled = [];
+
+  @override
+  Future<void> toggleLike(Track track) async => toggled.add(track);
 }

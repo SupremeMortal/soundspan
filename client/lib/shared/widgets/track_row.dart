@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 
+import 'package:flutter/semantics.dart' show CustomSemanticsAction;
 import 'package:material_ui/material_ui.dart';
 import 'package:soundspan/app/l10n/generated/app_localizations.dart';
 import 'package:soundspan/app/theme/dimens.dart';
@@ -7,6 +8,7 @@ import 'package:soundspan/app/theme/extensions.dart';
 import 'package:soundspan/app/theme/typography.dart';
 import 'package:soundspan/shared/util/duration_format.dart';
 import 'package:soundspan/shared/widgets/artwork.dart';
+import 'package:soundspan/shared/widgets/like_button.dart';
 
 /// What a [TrackRow] starts with: the track's number or its cover.
 sealed class TrackRowLeading {
@@ -48,6 +50,10 @@ final class TrackRowThumbnail extends TrackRowLeading {
 /// and gives [disabledReason] as its tooltip. Screen readers get one node,
 /// "title, artist, spoken duration[, reason]", which is a button only when
 /// [onTap] is set and the row is enabled.
+///
+/// With [onToggleLike], a [LikeButton] showing [liked] sits before the
+/// duration and the node gains a "Like" or "Remove like" custom action;
+/// without it the slot is left out, as for a track with no `playbackId`.
 class TrackRow extends StatefulWidget {
   /// Creates a row for the track [title] by [artist].
   const new({
@@ -61,6 +67,8 @@ class TrackRow extends StatefulWidget {
     this.disabledReason,
     this.onTap,
     this.selected = false,
+    this.liked = false,
+    this.onToggleLike,
     super.key,
   });
 
@@ -96,6 +104,13 @@ class TrackRow extends StatefulWidget {
 
   /// Draws the row in `surfaceActive`.
   final bool selected;
+
+  /// Whether the heart is filled.
+  final bool liked;
+
+  /// Called when the heart or the row's like action is used; null leaves
+  /// the heart out.
+  final VoidCallback? onToggleLike;
 
   /// The key of the focus ring while it is shown.
   static const Key focusRingKey = ValueKey('TrackRow.focusRing');
@@ -140,6 +155,7 @@ class _TrackRowState extends State<TrackRow> {
     final typography = context.typography;
     final l10n = AppLocalizations.of(context);
     final onTap = widget.enabled ? widget.onTap : null;
+    final onToggleLike = widget.onToggleLike;
     final reason = widget.enabled ? null : widget.disabledReason;
     final withThumbnail = widget.leading is TrackRowThumbnail;
 
@@ -207,6 +223,9 @@ class _TrackRowState extends State<TrackRow> {
               ),
             )
           : null,
+      like: onToggleLike == null
+          ? null
+          : LikeButton(liked: widget.liked, onToggle: onToggleLike),
       duration: Text(
         formatTrackDuration(widget.duration),
         maxLines: 1,
@@ -254,6 +273,15 @@ class _TrackRowState extends State<TrackRow> {
       label: label,
       excludeSemantics: true,
       onTap: onTap,
+      customSemanticsActions: onToggleLike == null
+          ? null
+          : {
+              CustomSemanticsAction(
+                label: widget.liked
+                    ? l10n.likeButtonRemove
+                    : l10n.likeButtonLike,
+              ): onToggleLike,
+            },
       child: FocusableActionDetector(
         enabled: onTap != null,
         mouseCursor: onTap != null
@@ -302,12 +330,14 @@ class _RowLayout extends StatelessWidget {
     required this.titleAndArtist,
     required this.duration,
     this.album,
+    this.like,
   });
 
   final bool withThumbnail;
   final Widget leading;
   final Widget titleAndArtist;
   final Widget? album;
+  final Widget? like;
   final Widget duration;
 
   /// The width of the index column.
@@ -320,6 +350,7 @@ class _RowLayout extends StatelessWidget {
   Widget build(BuildContext context) {
     final scaler = MediaQuery.textScalerOf(context);
     final album = this.album;
+    final like = this.like;
     return ConstrainedBox(
       constraints: BoxConstraints(
         minHeight: withThumbnail ? Sizes.trackRow : Sizes.albumTrackRow,
@@ -341,6 +372,7 @@ class _RowLayout extends StatelessWidget {
               const SizedBox(width: Spacing.x16),
               Expanded(flex: 2, child: album),
             ],
+            if (like != null) ...[const SizedBox(width: Spacing.x8), like],
             const SizedBox(width: Spacing.x16),
             SizedBox(
               width: scaler.scale(_durationWidth),

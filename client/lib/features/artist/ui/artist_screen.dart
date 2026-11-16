@@ -13,6 +13,7 @@ import 'package:soundspan/app/theme/dimens.dart';
 import 'package:soundspan/app/theme/extensions.dart';
 import 'package:soundspan/app/theme/typography.dart';
 import 'package:soundspan/shared/domain/domain.dart';
+import 'package:soundspan/shared/providers/likes.dart';
 import 'package:soundspan/shared/providers/repositories.dart';
 import 'package:soundspan/shared/widgets/artwork.dart';
 import 'package:soundspan/shared/widgets/detail_header.dart';
@@ -270,13 +271,17 @@ class _PopularSectionState extends State<_PopularSection> {
             itemBuilder: (context, index) {
               final track = tracks[index];
               final artist = track.meta.artist;
-              return TrackRow(
-                title: track.meta.title,
-                artist: artist == widget.artistName ? '' : artist,
-                duration: Duration(seconds: track.meta.durationSec),
-                leading: TrackRowLeading.index(index + 1),
-                enabled: track.playbackId != null,
-                disabledReason: l10n.trackNotPlayable,
+              return Consumer(
+                builder: (context, ref, _) => TrackRow(
+                  title: track.meta.title,
+                  artist: artist == widget.artistName ? '' : artist,
+                  duration: Duration(seconds: track.meta.durationSec),
+                  leading: TrackRowLeading.index(index + 1),
+                  enabled: track.playbackId != null,
+                  disabledReason: l10n.trackNotPlayable,
+                  liked: track.isLiked,
+                  onToggleLike: toggleLikeOf(ref, track),
+                ),
               );
             },
           ),

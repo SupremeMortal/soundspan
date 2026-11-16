@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 
 import 'package:flutter/gestures.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:soundspan/app/theme/extensions.dart';
 import 'package:soundspan/shared/widgets/artwork.dart';
+import 'package:soundspan/shared/widgets/like_button.dart';
 import 'package:soundspan/shared/widgets/track_row.dart';
 
 import '../../helpers/guidelines.dart';
@@ -24,6 +26,8 @@ void main() {
     String? disabledReason,
     VoidCallback? onTap,
     bool selected = false,
+    bool liked = false,
+    VoidCallback? onToggleLike,
   }) => Align(
     alignment: Alignment.topCenter,
     child: TrackRow(
@@ -37,6 +41,8 @@ void main() {
       disabledReason: disabledReason,
       onTap: onTap,
       selected: selected,
+      liked: liked,
+      onToggleLike: onToggleLike,
     ),
   );
 
@@ -280,5 +286,60 @@ void main() {
     }
     expect(tester.getSize(find.byType(TrackRow)).height, 48);
     expect(find.text('3:41'), findsOneWidget);
+  });
+
+  testWidgets('no heart without onToggleLike', (tester) async {
+    await tester.pumpApp(row(onTap: () {}));
+
+    expect(find.byType(LikeButton), findsNothing);
+    final node = tester.getSemantics(find.byType(TrackRow));
+    expect(node.getSemanticsData().customSemanticsActionIds, isEmpty);
+  });
+
+  testWidgets('the heart toggles without activating the row', (tester) async {
+    var taps = 0;
+    var toggles = 0;
+    await tester.pumpApp(
+      row(onTap: () => taps++, liked: true, onToggleLike: () => toggles++),
+    );
+
+    expect(tester.widget<LikeButton>(find.byType(LikeButton)).liked, isTrue);
+    await tester.tap(find.byType(LikeButton));
+    await tester.pump();
+
+    expect(toggles, 1);
+    expect(taps, 0);
+    await expectMeetsGuidelines(tester);
+  });
+
+  testWidgets('the row node carries a Like or Remove like action', (
+    tester,
+  ) async {
+    var toggles = 0;
+    await tester.pumpApp(row(onTap: () {}, onToggleLike: () => toggles++));
+
+    final node = tester.getSemantics(find.byType(TrackRow));
+    final ids = node.getSemanticsData().customSemanticsActionIds!;
+    expect(ids, hasLength(1));
+    expect(CustomSemanticsAction.getAction(ids.single)!.label, 'Like');
+    final semantics = tester.widget<Semantics>(
+      find
+          .descendant(
+            of: find.byType(TrackRow),
+            matching: find.byType(Semantics),
+          )
+          .first,
+    );
+    semantics.properties.customSemanticsActions!.values.single();
+    expect(toggles, 1);
+
+    await tester.pumpApp(row(onTap: () {}, liked: true, onToggleLike: () {}));
+    final liked = tester.getSemantics(find.byType(TrackRow));
+    expect(
+      CustomSemanticsAction.getAction(
+        liked.getSemanticsData().customSemanticsActionIds!.single,
+      )!.label,
+      'Remove like',
+    );
   });
 }

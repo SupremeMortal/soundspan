@@ -36,6 +36,10 @@ abstract class Album with _$Album {
 
     /// The release type (album, EP, single), when the server sent one.
     String? releaseType,
+
+    /// The user's preference; the album payloads carry none, so it is
+    /// [Preference.neutral] until a like through this client is confirmed.
+    @Default(Preference.neutral) Preference preference,
   }) = _Album;
 
   /// Decodes an album written by [Album.toJson].

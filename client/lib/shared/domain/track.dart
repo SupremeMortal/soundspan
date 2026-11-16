@@ -114,3 +114,10 @@ abstract class Track with _$Track {
   /// Decodes a track written by [Track.toJson].
   factory fromJson(Map<String, Object?> json) => _$TrackFromJson(json);
 }
+
+/// What the like button of a track shows.
+extension TrackLike on Track {
+  /// Whether the heart is filled: the client has two states, so a disliked
+  /// track shows as not liked.
+  bool get isLiked => preference == Preference.liked;
+}

@@ -2,44 +2,112 @@
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:soundspan/core/sync/data/plays_repository.dart';
+import 'package:soundspan/core/sync/data/preference_remote_source.dart';
 import 'package:soundspan/core/sync/data/preference_repository.dart';
 import 'package:soundspan/core/sync/outbox/outbox_handler.dart';
 import 'package:soundspan/core/sync/outbox/outbox_op.dart';
 import 'package:soundspan/core/sync/sync_providers.dart';
+import 'package:soundspan/shared/data/cache_store.dart';
+import 'package:soundspan/shared/domain/library_repository.dart';
 import 'package:soundspan/shared/domain/playback_id.dart';
 import 'package:soundspan/shared/domain/track.dart';
+import 'package:soundspan/shared/providers/cache.dart';
+import 'package:soundspan/shared/providers/repositories.dart';
 
-/// The domain [Preference] of [signal].
-Preference preferenceOfSignal(PreferenceSignal signal) => switch (signal) {
-  PreferenceSignal.thumbsUp => Preference.liked,
-  PreferenceSignal.thumbsDown => Preference.disliked,
-  PreferenceSignal.clear => Preference.neutral,
-};
+export 'package:soundspan/core/sync/data/preference_repository.dart'
+    show preferenceOfSignal;
 
-/// Send-only handlers for `preference`, `albumPreference` and `play` over
-/// [preferences] and [plays].
+/// The local data the preference handlers update: the profile's cache and
+/// its library repository, both opened on first use.
+typedef PreferenceCacheAccess = ({
+  Future<CacheStore> Function() store,
+  Future<LibraryRepository> Function() library,
+});
+
+/// Delivers `preference` ops and applies the server's answer (doc 07,
+/// Worker).
+///
+/// On success the answered state is written into every cached copy of the
+/// track and the `liked` list is marked stale, so its next read refetches.
+/// On a conflict the track's album is fetched again when the cache knows
+/// it; any other drop needs nothing, since removing the op removes the
+/// overlay.
+final class TrackPreferenceHandler implements OutboxHandler<PreferenceOp> {
+  /// Creates the handler over [_remote] and [_cache].
+  const new(this._remote, this._cache);
+
+  final PreferenceRemoteSource _remote;
+  final PreferenceCacheAccess _cache;
+
+  @override
+  Future<Object?> send(PreferenceOp op) => _remote.setTrackPreference(
+    PlaybackId(op.playbackId),
+    preferenceOfSignal(op.signal),
+    meta: TrackMeta.fromJson(op.metadata),
+  );
+
+  @override
+  Future<void> onSuccess(PreferenceOp op, Object? response) async {
+    final store = await _cache.store();
+    if (response is Preference) {
+      await store.setTrackPreference(op.playbackId, response);
+    }
+    await store.markListStale('liked');
+  }
+
+  @override
+  Future<void> onDropped(PreferenceOp op, OutboxDropReason reason) async {
+    if (reason != OutboxDropReason.conflict) return;
+    final store = await _cache.store();
+    await store.markListStale('liked');
+    final cached = await store.watchTrack(op.playbackId).first;
+    final albumId = cached?.value.albumId;
+    if (albumId == null) return;
+    await (await _cache.library()).refreshAlbum(albumId);
+  }
+}
+
+/// Delivers `albumPreference` ops and applies the server's answer: on
+/// success the answered state is written into every cached copy of the
+/// album; on a conflict the album is fetched again.
+final class AlbumPreferenceHandler implements OutboxHandler<AlbumPreferenceOp> {
+  /// Creates the handler over [_remote] and [_cache].
+  const new(this._remote, this._cache);
+
+  final PreferenceRemoteSource _remote;
+  final PreferenceCacheAccess _cache;
+
+  @override
+  Future<Object?> send(AlbumPreferenceOp op) =>
+      _remote.setAlbumPreference(op.albumId, preferenceOfSignal(op.signal));
+
+  @override
+  Future<void> onSuccess(AlbumPreferenceOp op, Object? response) async {
+    if (response is! Preference) return;
+    await (await _cache.store()).setAlbumPreference(op.albumId, response);
+  }
+
+  @override
+  Future<void> onDropped(AlbumPreferenceOp op, OutboxDropReason reason) async {
+    if (reason != OutboxDropReason.conflict) return;
+    await (await _cache.library()).refreshAlbum(op.albumId);
+  }
+}
+
+/// The handlers for `preference`, `albumPreference` and `play` over
+/// [preferences], [plays] and the local data of [cache].
 List<OutboxHandlerEntry> syncOutboxHandlers(
-  PreferenceRepository preferences,
+  PreferenceRemoteSource preferences,
   PlaysRepository plays,
+  PreferenceCacheAccess cache,
 ) => [
   outboxHandlerEntry(
     PreferenceOp.type,
-    SendOnlyOutboxHandler<PreferenceOp>(
-      (op) => preferences.setTrackPreference(
-        PlaybackId(op.playbackId),
-        preferenceOfSignal(op.signal),
-        meta: TrackMeta.fromJson(op.metadata),
-      ),
-    ),
+    TrackPreferenceHandler(preferences, cache),
   ),
   outboxHandlerEntry(
     AlbumPreferenceOp.type,
-    SendOnlyOutboxHandler<AlbumPreferenceOp>(
-      (op) => preferences.setAlbumPreference(
-        op.albumId,
-        preferenceOfSignal(op.signal),
-      ),
-    ),
+    AlbumPreferenceHandler(preferences, cache),
   ),
   outboxHandlerEntry(
     PlayOp.type,
@@ -58,8 +126,17 @@ List<OutboxHandlerEntry> syncOutboxHandlers(
 final Provider<List<OutboxHandlerEntry>> syncOutboxHandlersProvider =
     Provider<List<OutboxHandlerEntry>>(
       (ref) => syncOutboxHandlers(
-        ref.watch(preferenceRepositoryProvider),
+        ref.watch(preferenceRemoteSourceProvider),
         ref.watch(playsRepositoryProvider),
+        (
+          store: () => ref.read(cacheStoreProvider.future),
+          library: () => ref.read(libraryRepositoryProvider.future),
+        ),
       ),
-      dependencies: [preferenceRepositoryProvider, playsRepositoryProvider],
+      dependencies: [
+        preferenceRemoteSourceProvider,
+        playsRepositoryProvider,
+        cacheStoreProvider,
+        libraryRepositoryProvider,
+      ],
     );

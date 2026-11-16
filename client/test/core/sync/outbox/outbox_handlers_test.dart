@@ -3,7 +3,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:soundspan/core/sync/data/plays_repository.dart';
-import 'package:soundspan/core/sync/data/preference_repository.dart';
+import 'package:soundspan/core/sync/data/preference_remote_source.dart';
 import 'package:soundspan/core/sync/data/sync_outbox_handlers.dart';
 import 'package:soundspan/core/sync/outbox/outbox_handler.dart';
 import 'package:soundspan/core/sync/outbox/outbox_op.dart';
@@ -58,8 +58,12 @@ void main() {
     playlists = _MockPlaylistsClient();
     registry = OutboxHandlerRegistry([
       ...syncOutboxHandlers(
-        PreferenceRepository(library),
+        PreferenceRemoteSource(library),
         PlaysRepository(playback),
+        (
+          store: () => throw StateError('no cache in this test'),
+          library: () => throw StateError('no library in this test'),
+        ),
       ),
       ...playlistOutboxHandlers(PlaylistRemoteSource(playlists)),
     ]);

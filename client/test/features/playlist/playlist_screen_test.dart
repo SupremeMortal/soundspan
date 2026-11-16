@@ -5,6 +5,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:soundspan/features/playlist/playlist.dart';
 import 'package:soundspan/shared/domain/domain.dart';
 import 'package:soundspan/shared/widgets/empty_state.dart';
+import 'package:soundspan/shared/widgets/like_button.dart';
 import 'package:soundspan/shared/widgets/mosaic_artwork.dart';
 import 'package:soundspan/shared/widgets/track_row.dart';
 import 'package:soundspan_api/soundspan_api.dart' show ServerError;
@@ -166,7 +167,11 @@ void main() {
     );
     expect(find.byType(ReorderableListView), findsNothing);
     expect(find.byType(ReorderableDragStartListener), findsNothing);
-    expect(find.byType(IconButton), findsNothing);
+    // The only buttons in the list are the tracks' hearts.
+    expect(
+      find.byType(IconButton),
+      findsNWidgets(find.byType(LikeButton).evaluate().length),
+    );
     expect(find.byType(TextField), findsNothing);
     expect(_rows(tester).every((row) => row.onTap == null), isTrue);
   });

@@ -15,6 +15,9 @@ _Album _$AlbumFromJson(Map<String, dynamic> json) => _Album(
   artworkRef: json['artworkRef'] as String?,
   trackCount: (json['trackCount'] as num?)?.toInt(),
   releaseType: json['releaseType'] as String?,
+  preference:
+      $enumDecodeNullable(_$PreferenceEnumMap, json['preference']) ??
+      Preference.neutral,
 );
 
 Map<String, dynamic> _$AlbumToJson(_Album instance) => <String, dynamic>{
@@ -26,6 +29,13 @@ Map<String, dynamic> _$AlbumToJson(_Album instance) => <String, dynamic>{
   'artworkRef': instance.artworkRef,
   'trackCount': instance.trackCount,
   'releaseType': instance.releaseType,
+  'preference': _$PreferenceEnumMap[instance.preference]!,
+};
+
+const _$PreferenceEnumMap = {
+  Preference.liked: 'liked',
+  Preference.disliked: 'disliked',
+  Preference.neutral: 'neutral',
 };
 
 _AlbumDetail _$AlbumDetailFromJson(Map<String, dynamic> json) => _AlbumDetail(

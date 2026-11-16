@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 
+import 'package:soundspan/core/sync/outbox/optimistic_overlay.dart';
 import 'package:soundspan/shared/data/cache_store.dart';
 import 'package:soundspan/shared/data/paged_source_impl.dart';
 import 'package:soundspan/shared/data/playlist/playlist_remote_source.dart';
+import 'package:soundspan/shared/data/preference_overlay.dart';
 import 'package:soundspan/shared/data/swr.dart';
 import 'package:soundspan/shared/domain/domain.dart';
 
@@ -11,26 +13,39 @@ import 'package:soundspan/shared/domain/domain.dart';
 /// A detail is stored whole as the blob `playlist:<id>`; the playlist row is
 /// upserted with its detail time, and the items' tracks are also written as
 /// the list `playlist:<id>`. The playlists list comes from [_pages] as the
-/// list `playlists`.
+/// list `playlists`. A detail shows the pending likes of the outbox
+/// ([PendingOps]).
 class CachedPlaylistRepository implements PlaylistRepository {
   /// A repository reading [_remote] into [_store] through [_swr] and
-  /// [_pages].
-  new(this._remote, this._store, this._swr, this._pages);
+  /// [_pages], overlaid with the ops [_pending] answers.
+  new(
+    this._remote,
+    this._store,
+    this._swr,
+    this._pages, {
+    this._pending = noPendingOps,
+  });
 
   final PlaylistRemoteSource _remote;
   final CacheStore _store;
   final Swr _swr;
   final PagedSources _pages;
+  final PendingOps _pending;
 
   @override
-  Stream<Cached<PlaylistDetail>> playlist(String id) => _swr.watch(
-    key: 'playlist:$id',
-    ttl: detailTtl,
-    cache: () => _store.watchBlob(
-      'playlist:$id',
-      (json) => PlaylistDetail.fromJson(json! as Map<String, Object?>),
+  Stream<Cached<PlaylistDetail>> playlist(String id) => overlay(
+    _swr.watch(
+      key: 'playlist:$id',
+      ttl: detailTtl,
+      cache: () => _store.watchBlob(
+        'playlist:$id',
+        (json) => PlaylistDetail.fromJson(json! as Map<String, Object?>),
+      ),
+      fetch: () => _fetch(id),
     ),
-    fetch: () => _fetch(id),
+    _pending(trackPreferenceOps),
+    overlayPlaylistDetail,
+    hold: preferenceHold,
   );
 
   @override

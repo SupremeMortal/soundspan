@@ -11,6 +11,7 @@ import 'package:soundspan/app/theme/dimens.dart';
 import 'package:soundspan/app/theme/extensions.dart';
 import 'package:soundspan/app/theme/typography.dart';
 import 'package:soundspan/shared/domain/domain.dart';
+import 'package:soundspan/shared/providers/likes.dart';
 import 'package:soundspan/shared/providers/repositories.dart';
 import 'package:soundspan/shared/widgets/detail_header.dart';
 import 'package:soundspan/shared/widgets/detail_page.dart';
@@ -167,6 +168,8 @@ class AlbumScreen extends ConsumerWidget {
                     ),
                     enabled: track.playbackId != null,
                     disabledReason: l10n.trackNotPlayable,
+                    liked: track.isLiked,
+                    onToggleLike: toggleLikeOf(ref, track),
                   );
                 },
               ),

@@ -15,11 +15,13 @@ import 'package:soundspan/core/logging/app_logger.dart';
 import 'package:soundspan/core/profile/profile_context.dart';
 import 'package:soundspan/core/profile/profile_runtime.dart';
 import 'package:soundspan/core/storage/cache/cache_pruner.dart';
+import 'package:soundspan/core/sync/outbox/outbox_store.dart';
 import 'package:soundspan/shared/clock.dart';
 import 'package:soundspan/shared/data/home/cached_home_repository.dart';
 import 'package:soundspan/shared/data/library/cached_library_repository.dart';
 import 'package:soundspan/shared/data/paged_source_impl.dart';
 import 'package:soundspan/shared/data/playlist/cached_playlist_repository.dart';
+import 'package:soundspan/shared/data/preference_overlay.dart';
 import 'package:soundspan/shared/data/search/cached_search_repository.dart';
 import 'package:soundspan/shared/data/swr.dart';
 import 'package:soundspan/shared/domain/domain.dart';
@@ -49,6 +51,12 @@ final FutureProvider<PagedSources> pagedSourcesProvider =
       dependencies: [cacheStoreProvider],
     );
 
+/// The pending ops the profile's repositories overlay on their reads.
+final Provider<PendingOps> pendingOpsProvider = Provider<PendingOps>((ref) {
+  final store = ref.watch(outboxStoreProvider);
+  return (opTypes) => store.watchPending(opTypes: opTypes);
+}, dependencies: [outboxStoreProvider]);
+
 /// The profile's [LibraryRepository].
 final FutureProvider<LibraryRepository> libraryRepositoryProvider =
     FutureProvider<LibraryRepository>(
@@ -57,12 +65,14 @@ final FutureProvider<LibraryRepository> libraryRepositoryProvider =
         await ref.watch(cacheStoreProvider.future),
         ref.watch(swrProvider),
         await ref.watch(pagedSourcesProvider.future),
+        pending: ref.watch(pendingOpsProvider),
       ),
       dependencies: [
         libraryRemoteSourceProvider,
         cacheStoreProvider,
         swrProvider,
         pagedSourcesProvider,
+        pendingOpsProvider,
       ],
     );
 
@@ -74,12 +84,14 @@ final FutureProvider<PlaylistRepository> playlistRepositoryProvider =
         await ref.watch(cacheStoreProvider.future),
         ref.watch(swrProvider),
         await ref.watch(pagedSourcesProvider.future),
+        pending: ref.watch(pendingOpsProvider),
       ),
       dependencies: [
         playlistRemoteSourceProvider,
         cacheStoreProvider,
         swrProvider,
         pagedSourcesProvider,
+        pendingOpsProvider,
       ],
     );
 
@@ -101,11 +113,13 @@ final FutureProvider<SearchRepository> searchRepositoryProvider =
         ref.watch(searchRemoteSourceProvider),
         await ref.watch(cacheStoreProvider.future),
         ref.watch(swrProvider),
+        pending: ref.watch(pendingOpsProvider),
       ),
       dependencies: [
         searchRemoteSourceProvider,
         cacheStoreProvider,
         swrProvider,
+        pendingOpsProvider,
       ],
     );
 

@@ -197,6 +197,102 @@ class CacheStore {
         return true;
       });
 
+  /// Writes [preference] into every cached copy of the track [playbackId]:
+  /// its row and each blob holding it (details, search results), keeping
+  /// their fetch times. Lists read the rows, so they show it too.
+  Future<void> setTrackPreference(String playbackId, Preference preference) =>
+      _db.transaction(() async {
+        final rows = await (_db.select(
+          _db.tracks,
+        )..where((t) => t.playbackId.equals(playbackId))).get();
+        for (final row in rows) {
+          final track = _decode(row.json, Track.fromJson);
+          if (track == null || track.preference == preference) continue;
+          await (_db.update(
+            _db.tracks,
+          )..where((t) => t.key.equals(row.key))).write(
+            TracksCompanion(
+              json: Value(jsonEncode(track.copyWith(preference: preference))),
+            ),
+          );
+        }
+        await _patchBlobs(
+          jsonEncode(playbackId),
+          (node) => node['playbackId'] == playbackId && node['meta'] is Map,
+          preference,
+        );
+      });
+
+  /// Writes [preference] into every cached copy of the album [albumId]: its
+  /// row and each blob holding it, keeping their fetch times.
+  Future<void> setAlbumPreference(String albumId, Preference preference) =>
+      _db.transaction(() async {
+        final row = await (_db.select(
+          _db.albums,
+        )..where((a) => a.id.equals(albumId))).getSingleOrNull();
+        final album = row == null ? null : _decode(row.json, Album.fromJson);
+        if (album != null && album.preference != preference) {
+          await (_db.update(
+            _db.albums,
+          )..where((a) => a.id.equals(albumId))).write(
+            AlbumsCompanion(
+              json: Value(jsonEncode(album.copyWith(preference: preference))),
+            ),
+          );
+        }
+        await _patchBlobs(
+          jsonEncode(albumId),
+          (node) => node['id'] == albumId && node.containsKey('artistName'),
+          preference,
+        );
+      });
+
+  /// Sets `preference` on each JSON object [matches] accepts inside the
+  /// blobs whose text holds [needle].
+  Future<void> _patchBlobs(
+    String needle,
+    bool Function(Map<String, Object?> node) matches,
+    Preference preference,
+  ) async {
+    final blobs = await (_db.select(
+      _db.blobs,
+    )..where((b) => b.json.contains(needle))).get();
+    for (final blob in blobs) {
+      final Object? json;
+      try {
+        json = jsonDecode(blob.json);
+      } on FormatException {
+        continue;
+      }
+      if (!_patchPreference(json, matches, preference.name)) continue;
+      await (_db.update(_db.blobs)..where((b) => b.key.equals(blob.key))).write(
+        BlobsCompanion(json: Value(jsonEncode(json))),
+      );
+    }
+  }
+
+  static bool _patchPreference(
+    Object? node,
+    bool Function(Map<String, Object?> node) matches,
+    String value,
+  ) {
+    var changed = false;
+    if (node is Map<String, Object?>) {
+      if (matches(node) && node['preference'] != value) {
+        node['preference'] = value;
+        changed = true;
+      }
+      for (final child in node.values) {
+        changed = _patchPreference(child, matches, value) || changed;
+      }
+    } else if (node is List<Object?>) {
+      for (final child in node) {
+        changed = _patchPreference(child, matches, value) || changed;
+      }
+    }
+    return changed;
+  }
+
   /// Marks the list [listKey] as fetched at the epoch, so the next read
   /// fetches it whatever its TTL. Its entries stay for offline reads.
   Future<void> markListStale(String listKey) async {

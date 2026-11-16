@@ -60,6 +60,9 @@ final class PagedSnapshot<T> {
   /// How many items are loaded.
   int get loadedCount => _items.length;
 
+  /// The loaded items by index.
+  Map<int, T> get loaded => Map.unmodifiable(_items);
+
   @override
   String toString() =>
       'PagedSnapshot(total: $total, loaded: ${_items.length}, '

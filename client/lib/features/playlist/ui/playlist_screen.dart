@@ -11,6 +11,7 @@ import 'package:soundspan/app/shell/window_class.dart';
 import 'package:soundspan/app/theme/dimens.dart';
 import 'package:soundspan/app/theme/extensions.dart';
 import 'package:soundspan/shared/domain/domain.dart';
+import 'package:soundspan/shared/providers/likes.dart';
 import 'package:soundspan/shared/providers/repositories.dart';
 import 'package:soundspan/shared/widgets/detail_header.dart';
 import 'package:soundspan/shared/widgets/detail_page.dart';
@@ -281,6 +282,8 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
     leading: TrackRowLeading.thumbnail(track.meta.artworkRef),
     enabled: enabled,
     disabledReason: reason,
+    liked: track.isLiked,
+    onToggleLike: toggleLikeOf(ref, track),
   );
 }
 

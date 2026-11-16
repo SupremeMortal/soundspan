@@ -11,8 +11,8 @@ import '../../helpers/golden.dart';
 
 const Duration _duration = Duration(minutes: 3, seconds: 41);
 
-/// Index, thumbnail, with the album column, selected, disabled, and both
-/// skeletons.
+/// Index (liked), thumbnail (not liked), with the album column, selected,
+/// disabled, and both skeletons.
 Widget _rows(BuildContext context) => Padding(
   padding: const EdgeInsets.all(16),
   child: Column(
@@ -25,6 +25,8 @@ Widget _rows(BuildContext context) => Padding(
         duration: _duration,
         leading: const TrackRowLeading.index(1),
         onTap: () {},
+        liked: true,
+        onToggleLike: () {},
       ),
       TrackRow(
         title: 'So What',
@@ -33,6 +35,7 @@ Widget _rows(BuildContext context) => Padding(
         duration: const Duration(minutes: 9, seconds: 22),
         leading: const TrackRowLeading.thumbnail('album-2'),
         onTap: () {},
+        onToggleLike: () {},
       ),
       TrackRow(
         title: 'A title far too long to fit on one line of any window',

@@ -24,7 +24,9 @@ mixin _$Album {
  int? get year;/// The value to pass to the cover-art endpoint, if any.
  String? get artworkRef;/// The number of tracks, when the server sent the tracks.
  int? get trackCount;/// The release type (album, EP, single), when the server sent one.
- String? get releaseType;
+ String? get releaseType;/// The user's preference; the album payloads carry none, so it is
+/// [Preference.neutral] until a like through this client is confirmed.
+ Preference get preference;
 /// Create a copy of Album
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -38,20 +40,20 @@ $AlbumCopyWith<Album> get copyWith => _$AlbumCopyWithImpl<Album>(this as Album, 
 @override
 bool operator ==(Object other) {
   final _this = this as Album;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Album&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.title, _this.title) || other.title == _this.title)&&(identical(other.artistName, _this.artistName) || other.artistName == _this.artistName)&&(identical(other.artistId, _this.artistId) || other.artistId == _this.artistId)&&(identical(other.year, _this.year) || other.year == _this.year)&&(identical(other.artworkRef, _this.artworkRef) || other.artworkRef == _this.artworkRef)&&(identical(other.trackCount, _this.trackCount) || other.trackCount == _this.trackCount)&&(identical(other.releaseType, _this.releaseType) || other.releaseType == _this.releaseType));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Album&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.title, _this.title) || other.title == _this.title)&&(identical(other.artistName, _this.artistName) || other.artistName == _this.artistName)&&(identical(other.artistId, _this.artistId) || other.artistId == _this.artistId)&&(identical(other.year, _this.year) || other.year == _this.year)&&(identical(other.artworkRef, _this.artworkRef) || other.artworkRef == _this.artworkRef)&&(identical(other.trackCount, _this.trackCount) || other.trackCount == _this.trackCount)&&(identical(other.releaseType, _this.releaseType) || other.releaseType == _this.releaseType)&&(identical(other.preference, _this.preference) || other.preference == _this.preference));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
   final _this = this as Album;
-  return Object.hash(runtimeType,_this.id,_this.title,_this.artistName,_this.artistId,_this.year,_this.artworkRef,_this.trackCount,_this.releaseType);
+  return Object.hash(runtimeType,_this.id,_this.title,_this.artistName,_this.artistId,_this.year,_this.artworkRef,_this.trackCount,_this.releaseType,_this.preference);
 }
 
 @override
 String toString() {
   final _this = this as Album;
-  return 'Album(id: ${_this.id}, title: ${_this.title}, artistName: ${_this.artistName}, artistId: ${_this.artistId}, year: ${_this.year}, artworkRef: ${_this.artworkRef}, trackCount: ${_this.trackCount}, releaseType: ${_this.releaseType})';
+  return 'Album(id: ${_this.id}, title: ${_this.title}, artistName: ${_this.artistName}, artistId: ${_this.artistId}, year: ${_this.year}, artworkRef: ${_this.artworkRef}, trackCount: ${_this.trackCount}, releaseType: ${_this.releaseType}, preference: ${_this.preference})';
 }
 
 
@@ -62,7 +64,7 @@ abstract mixin class $AlbumCopyWith<$Res>  {
   factory $AlbumCopyWith(Album value, $Res Function(Album) _then) = _$AlbumCopyWithImpl;
 @useResult
 $Res call({
- String id, String title, String artistName, String artistId, int? year, String? artworkRef, int? trackCount, String? releaseType
+ String id, String title, String artistName, String artistId, int? year, String? artworkRef, int? trackCount, String? releaseType, Preference preference
 });
 
 
@@ -79,7 +81,7 @@ class _$AlbumCopyWithImpl<$Res>
 
 /// Create a copy of Album
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? title = null,Object? artistName = null,Object? artistId = null,Object? year = freezed,Object? artworkRef = freezed,Object? trackCount = freezed,Object? releaseType = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? title = null,Object? artistName = null,Object? artistId = null,Object? year = freezed,Object? artworkRef = freezed,Object? trackCount = freezed,Object? releaseType = freezed,Object? preference = null,}) {
   return _then(Album(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
@@ -89,7 +91,8 @@ as String,year: freezed == year ? _self.year : year // ignore: cast_nullable_to_
 as int?,artworkRef: freezed == artworkRef ? _self.artworkRef : artworkRef // ignore: cast_nullable_to_non_nullable
 as String?,trackCount: freezed == trackCount ? _self.trackCount : trackCount // ignore: cast_nullable_to_non_nullable
 as int?,releaseType: freezed == releaseType ? _self.releaseType : releaseType // ignore: cast_nullable_to_non_nullable
-as String?,
+as String?,preference: null == preference ? _self.preference : preference // ignore: cast_nullable_to_non_nullable
+as Preference,
   ));
 }
 
@@ -174,10 +177,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String title,  String artistName,  String artistId,  int? year,  String? artworkRef,  int? trackCount,  String? releaseType)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String title,  String artistName,  String artistId,  int? year,  String? artworkRef,  int? trackCount,  String? releaseType,  Preference preference)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Album() when $default != null:
-return $default(_that.id,_that.title,_that.artistName,_that.artistId,_that.year,_that.artworkRef,_that.trackCount,_that.releaseType);case _:
+return $default(_that.id,_that.title,_that.artistName,_that.artistId,_that.year,_that.artworkRef,_that.trackCount,_that.releaseType,_that.preference);case _:
   return orElse();
 
 }
@@ -195,10 +198,10 @@ return $default(_that.id,_that.title,_that.artistName,_that.artistId,_that.year,
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String title,  String artistName,  String artistId,  int? year,  String? artworkRef,  int? trackCount,  String? releaseType)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String title,  String artistName,  String artistId,  int? year,  String? artworkRef,  int? trackCount,  String? releaseType,  Preference preference)  $default,) {final _that = this;
 switch (_that) {
 case _Album():
-return $default(_that.id,_that.title,_that.artistName,_that.artistId,_that.year,_that.artworkRef,_that.trackCount,_that.releaseType);case _:
+return $default(_that.id,_that.title,_that.artistName,_that.artistId,_that.year,_that.artworkRef,_that.trackCount,_that.releaseType,_that.preference);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -215,10 +218,10 @@ return $default(_that.id,_that.title,_that.artistName,_that.artistId,_that.year,
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String title,  String artistName,  String artistId,  int? year,  String? artworkRef,  int? trackCount,  String? releaseType)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String title,  String artistName,  String artistId,  int? year,  String? artworkRef,  int? trackCount,  String? releaseType,  Preference preference)?  $default,) {final _that = this;
 switch (_that) {
 case _Album() when $default != null:
-return $default(_that.id,_that.title,_that.artistName,_that.artistId,_that.year,_that.artworkRef,_that.trackCount,_that.releaseType);case _:
+return $default(_that.id,_that.title,_that.artistName,_that.artistId,_that.year,_that.artworkRef,_that.trackCount,_that.releaseType,_that.preference);case _:
   return null;
 
 }
@@ -230,7 +233,7 @@ return $default(_that.id,_that.title,_that.artistName,_that.artistId,_that.year,
 @JsonSerializable()
 
 class _Album implements Album {
-  const _Album({required this.id, required this.title, required this.artistName, required this.artistId, this.year, this.artworkRef, this.trackCount, this.releaseType});
+  const _Album({required this.id, required this.title, required this.artistName, required this.artistId, this.year, this.artworkRef, this.trackCount, this.releaseType, this.preference = Preference.neutral});
   factory _Album.fromJson(Map<String, dynamic> json) => _$AlbumFromJson(json);
 
 /// The server's album id.
@@ -249,6 +252,9 @@ class _Album implements Album {
 @override final  int? trackCount;
 /// The release type (album, EP, single), when the server sent one.
 @override final  String? releaseType;
+/// The user's preference; the album payloads carry none, so it is
+/// [Preference.neutral] until a like through this client is confirmed.
+@override@JsonKey() final  Preference preference;
 
 /// Create a copy of Album
 /// with the given fields replaced by the non-null parameter values.
@@ -263,18 +269,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _Album&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.artistName, artistName) || other.artistName == artistName)&&(identical(other.artistId, artistId) || other.artistId == artistId)&&(identical(other.year, year) || other.year == year)&&(identical(other.artworkRef, artworkRef) || other.artworkRef == artworkRef)&&(identical(other.trackCount, trackCount) || other.trackCount == trackCount)&&(identical(other.releaseType, releaseType) || other.releaseType == releaseType));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _Album&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.artistName, artistName) || other.artistName == artistName)&&(identical(other.artistId, artistId) || other.artistId == artistId)&&(identical(other.year, year) || other.year == year)&&(identical(other.artworkRef, artworkRef) || other.artworkRef == artworkRef)&&(identical(other.trackCount, trackCount) || other.trackCount == trackCount)&&(identical(other.releaseType, releaseType) || other.releaseType == releaseType)&&(identical(other.preference, preference) || other.preference == preference));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
-    return Object.hash(runtimeType,id,title,artistName,artistId,year,artworkRef,trackCount,releaseType);
+    return Object.hash(runtimeType,id,title,artistName,artistId,year,artworkRef,trackCount,releaseType,preference);
 }
 
 @override
 String toString() {
-    return 'Album(id: $id, title: $title, artistName: $artistName, artistId: $artistId, year: $year, artworkRef: $artworkRef, trackCount: $trackCount, releaseType: $releaseType)';
+    return 'Album(id: $id, title: $title, artistName: $artistName, artistId: $artistId, year: $year, artworkRef: $artworkRef, trackCount: $trackCount, releaseType: $releaseType, preference: $preference)';
 }
 
 
@@ -285,7 +291,7 @@ abstract mixin class _$AlbumCopyWith<$Res> implements $AlbumCopyWith<$Res> {
   factory _$AlbumCopyWith(_Album value, $Res Function(_Album) _then) = __$AlbumCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String title, String artistName, String artistId, int? year, String? artworkRef, int? trackCount, String? releaseType
+ String id, String title, String artistName, String artistId, int? year, String? artworkRef, int? trackCount, String? releaseType, Preference preference
 });
 
 
@@ -302,7 +308,7 @@ class __$AlbumCopyWithImpl<$Res>
 
 /// Create a copy of Album
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? title = null,Object? artistName = null,Object? artistId = null,Object? year = freezed,Object? artworkRef = freezed,Object? trackCount = freezed,Object? releaseType = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? title = null,Object? artistName = null,Object? artistId = null,Object? year = freezed,Object? artworkRef = freezed,Object? trackCount = freezed,Object? releaseType = freezed,Object? preference = null,}) {
   return _then(_Album(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
@@ -312,7 +318,8 @@ as String,year: freezed == year ? _self.year : year // ignore: cast_nullable_to_
 as int?,artworkRef: freezed == artworkRef ? _self.artworkRef : artworkRef // ignore: cast_nullable_to_non_nullable
 as String?,trackCount: freezed == trackCount ? _self.trackCount : trackCount // ignore: cast_nullable_to_non_nullable
 as int?,releaseType: freezed == releaseType ? _self.releaseType : releaseType // ignore: cast_nullable_to_non_nullable
-as String?,
+as String?,preference: null == preference ? _self.preference : preference // ignore: cast_nullable_to_non_nullable
+as Preference,
   ));
 }
 

@@ -16,6 +16,7 @@ import 'package:soundspan/app/theme/typography.dart';
 import 'package:soundspan/features/search/domain/search_sections.dart';
 import 'package:soundspan/features/search/ui/search_view_model.dart';
 import 'package:soundspan/shared/domain/domain.dart';
+import 'package:soundspan/shared/providers/likes.dart';
 import 'package:soundspan/shared/widgets/artwork.dart';
 import 'package:soundspan/shared/widgets/empty_state.dart';
 import 'package:soundspan/shared/widgets/error_view.dart';
@@ -475,14 +476,18 @@ class _SectionItems extends StatelessWidget {
   }
 }
 
-Widget _songRow(BuildContext context, Track track) => TrackRow(
-  title: track.meta.title,
-  artist: track.meta.artist,
-  album: track.meta.album,
-  duration: Duration(seconds: track.meta.durationSec),
-  leading: TrackRowThumbnail(track.meta.artworkRef),
-  enabled: track.playbackId != null,
-  disabledReason: AppLocalizations.of(context).searchNotPlayable,
+Widget _songRow(BuildContext context, Track track) => Consumer(
+  builder: (context, ref, _) => TrackRow(
+    title: track.meta.title,
+    artist: track.meta.artist,
+    album: track.meta.album,
+    duration: Duration(seconds: track.meta.durationSec),
+    leading: TrackRowThumbnail(track.meta.artworkRef),
+    enabled: track.playbackId != null,
+    disabledReason: AppLocalizations.of(context).searchNotPlayable,
+    liked: track.isLiked,
+    onToggleLike: toggleLikeOf(ref, track),
+  ),
 );
 
 /// The card of [item]; it opens a page only when the item has one.

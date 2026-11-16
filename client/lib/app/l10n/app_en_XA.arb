@@ -898,6 +898,14 @@
   "@detailRefreshFailed": {
     "description": "Snackbar when an album or playlist page could not be refreshed and the saved copy stays on screen."
   },
+  "likeButtonLike": "[Ļîķé one]",
+  "@likeButtonLike": {
+    "description": "Tooltip, accessibility label and track-row action of the heart button of a track that is not liked."
+  },
+  "likeButtonRemove": "[Ŕémövé ļîķé one two]",
+  "@likeButtonRemove": {
+    "description": "Tooltip, accessibility label and track-row action of the heart button of a liked track."
+  },
   "trackNotPlayable": "[Ñöţ þļåýåbļé one two]",
   "@trackNotPlayable": {
     "description": "Tooltip and accessibility reason of a track row that cannot be played."

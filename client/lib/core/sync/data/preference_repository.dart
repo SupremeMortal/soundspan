@@ -1,65 +1,60 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 
-import 'package:soundspan/core/sync/data/playback_metadata.dart';
-import 'package:soundspan/shared/domain/playback_id.dart';
+import 'package:soundspan/core/sync/outbox/outbox.dart';
+import 'package:soundspan/core/sync/outbox/outbox_op.dart';
 import 'package:soundspan/shared/domain/track.dart';
-import 'package:soundspan_api/soundspan_api.dart' as api;
 
-/// Writes track and album preferences (likes) to the server
-/// (`POST /library/preferences`, `POST /library/albums/:id/preference`).
-/// One request per call; `ApiException` propagates.
+/// Likes and unlikes tracks and albums through the outbox (doc 07, Outbox).
+///
+/// The client has two states, liked and not liked: liking sends
+/// `thumbs_up` and unliking sends `clear`, whatever the server held before,
+/// so a disliked track is liked by one tap. `thumbs_down` is never sent.
+/// Reads show the change at once through their optimistic overlays; the
+/// outbox handlers are the only callers of the preference endpoints.
 final class PreferenceRepository {
-  /// Creates a repository over the generated library client.
-  new(this._client);
+  /// Creates a repository that enqueues into [_outbox].
+  new(this._outbox);
 
-  final api.LibraryClient _client;
+  final Outbox _outbox;
 
-  /// Sets the preference of the track [id] to [value] and answers the state
-  /// the server holds afterwards. [meta] is sent as the request's
-  /// `metadata`.
-  Future<Preference> setTrackPreference(
-    PlaybackId id,
-    Preference value, {
-    required TrackMeta meta,
-  }) async {
-    final response = await _client.setTrackPreference(
-      body: api.TrackPreferenceRequest(
+  /// Likes [track] when [liked] is true and removes its like otherwise.
+  ///
+  /// Throws [StateError] when [track] has no `playbackId`: such a track
+  /// cannot be liked, and the UI offers no heart for it.
+  Future<void> setTrackLiked(Track track, {required bool liked}) async {
+    final id = track.playbackId;
+    if (id == null) {
+      throw StateError('A track without a playbackId cannot be liked');
+    }
+    await _outbox.enqueue(
+      PreferenceOp(
         playbackId: id.value,
-        signal: preferenceSignal(value),
-        metadata: playbackMetadataFromMeta(meta),
+        signal: likeSignal(liked: liked),
+        metadata: track.meta.toJson(),
       ),
     );
-    return preferenceFromState(response.state);
   }
 
-  /// Sets the preference of the album [albumId] to [value] and answers the
-  /// state the server holds afterwards.
-  Future<Preference> setAlbumPreference(
-    String albumId,
-    Preference value,
-  ) async {
-    final response = await _client.setAlbumPreference(
-      id: albumId,
-      body: api.AlbumPreferenceRequest(signal: preferenceSignal(value)),
+  /// Likes the album [albumId] when [liked] is true and removes its like
+  /// otherwise.
+  Future<void> setAlbumLiked(String albumId, {required bool liked}) async {
+    await _outbox.enqueue(
+      AlbumPreferenceOp(
+        albumId: albumId,
+        signal: likeSignal(liked: liked),
+      ),
     );
-    return preferenceFromState(response.state);
   }
 }
 
-/// The `signal` that sets a preference to [value].
-api.PreferenceSignal preferenceSignal(Preference value) => switch (value) {
-  Preference.liked => api.PreferenceSignal.thumbsUp,
-  Preference.disliked => api.PreferenceSignal.thumbsDown,
-  Preference.neutral => api.PreferenceSignal.clear,
-};
+/// The signal that sets a like: `thumbs_up` when [liked], `clear`
+/// otherwise.
+PreferenceSignal likeSignal({required bool liked}) =>
+    liked ? PreferenceSignal.thumbsUp : PreferenceSignal.clear;
 
-/// The domain preference of a server `state`; a state this client does not
-/// know is [Preference.neutral].
-Preference preferenceFromState(api.PreferenceState state) => switch (state) {
-  api.PreferenceStateKnown(value: api.PreferenceStateValue.liked) =>
-    Preference.liked,
-  api.PreferenceStateKnown(value: api.PreferenceStateValue.disliked) =>
-    Preference.disliked,
-  api.PreferenceStateKnown(value: api.PreferenceStateValue.neutral) ||
-  api.PreferenceStateUnknown() => Preference.neutral,
+/// The domain [Preference] of [signal].
+Preference preferenceOfSignal(PreferenceSignal signal) => switch (signal) {
+  PreferenceSignal.thumbsUp => Preference.liked,
+  PreferenceSignal.thumbsDown => Preference.disliked,
+  PreferenceSignal.clear => Preference.neutral,
 };

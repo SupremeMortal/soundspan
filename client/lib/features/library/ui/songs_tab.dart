@@ -12,6 +12,7 @@ import 'package:soundspan/features/library/ui/library_controls.dart';
 import 'package:soundspan/features/library/ui/library_queries.dart';
 import 'package:soundspan/features/library/ui/paged_library_view.dart';
 import 'package:soundspan/shared/domain/domain.dart';
+import 'package:soundspan/shared/providers/likes.dart';
 import 'package:soundspan/shared/widgets/track_row.dart';
 
 /// The localized name of a tracks order.
@@ -104,15 +105,19 @@ class SongsTab extends ConsumerWidget {
           if (track == null) {
             return const TrackRowSkeleton(withThumbnail: true);
           }
-          return TrackRow(
-            title: track.meta.title,
-            artist: track.meta.artist,
-            album: track.meta.album,
-            showAlbumColumn: windowClass == WindowClass.expanded,
-            duration: Duration(seconds: track.meta.durationSec),
-            leading: TrackRowLeading.thumbnail(track.meta.artworkRef),
-            enabled: track.playbackId != null,
-            disabledReason: l10n.trackNotPlayable,
+          return Consumer(
+            builder: (context, ref, _) => TrackRow(
+              title: track.meta.title,
+              artist: track.meta.artist,
+              album: track.meta.album,
+              showAlbumColumn: windowClass == WindowClass.expanded,
+              duration: Duration(seconds: track.meta.durationSec),
+              leading: TrackRowLeading.thumbnail(track.meta.artworkRef),
+              enabled: track.playbackId != null,
+              disabledReason: l10n.trackNotPlayable,
+              liked: track.isLiked,
+              onToggleLike: toggleLikeOf(ref, track),
+            ),
           );
         },
       ),

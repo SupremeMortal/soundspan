@@ -4,7 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:soundspan/core/profile/api_provider.dart';
 import 'package:soundspan/core/sync/data/playback_state_repository.dart';
 import 'package:soundspan/core/sync/data/plays_repository.dart';
+import 'package:soundspan/core/sync/data/preference_remote_source.dart';
 import 'package:soundspan/core/sync/data/preference_repository.dart';
+import 'package:soundspan/core/sync/outbox/outbox.dart';
 
 /// The [PlaysRepository] of the profile scope.
 final Provider<PlaysRepository> playsRepositoryProvider =
@@ -22,10 +24,19 @@ final Provider<PlaybackStateRepository> playbackStateRepositoryProvider =
       dependencies: [soundspanApiProvider],
     );
 
-/// The [PreferenceRepository] of the profile scope.
+/// The [PreferenceRemoteSource] of the profile scope, for the outbox
+/// handlers.
+final Provider<PreferenceRemoteSource> preferenceRemoteSourceProvider =
+    Provider<PreferenceRemoteSource>(
+      (ref) =>
+          PreferenceRemoteSource(ref.watch(soundspanApiProvider).rest.library2),
+      dependencies: [soundspanApiProvider],
+    );
+
+/// The [PreferenceRepository] of the profile scope: likes through its
+/// outbox.
 final Provider<PreferenceRepository> preferenceRepositoryProvider =
     Provider<PreferenceRepository>(
-      (ref) =>
-          PreferenceRepository(ref.watch(soundspanApiProvider).rest.library2),
-      dependencies: [soundspanApiProvider],
+      (ref) => PreferenceRepository(ref.watch(outboxProvider)),
+      dependencies: [outboxProvider],
     );
