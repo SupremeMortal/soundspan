@@ -143,13 +143,15 @@ Every build job except the dry run passes `--dart-define-from-file=config/dev.js
 
 macOS minutes are the expensive ones, so on pull requests the Apple job runs only when the diff against the base branch touches `client/ios/**`, `client/macos/**`, `client/pubspec.lock`, `client/lib/platform/**`, `client-quality.yml`, or the composite action, and always on a push to `main`. Whenever it runs it is blocking, so a pull request cannot leave the Apple builds broken.
 
+**macOS switch.** Hosted macOS runners can queue for a long time, so every job on a macOS runner in `client-quality.yml` runs only when the repository variable `CLIENT_MACOS_CI` is `true` (`gh variable set CLIENT_MACOS_CI --body true`): `client-build-macos-ios`, `engine-conformance-ios` and `engine-conformance-macos`, and `build-macos` in the dry run (`client-quality.yml` passes `macos: ${{ vars.CLIENT_MACOS_CI == 'true' }}` to `client-build.yml`). With the variable unset these jobs are skipped, and a skipped job does not fail the pull request. The tag-triggered release always builds macOS.
+
 Actions are pinned by commit SHA, as in the existing workflows. Flutter and pub caches are keyed on `.fvmrc` and `pubspec.lock`.
 
 ### `client-build.yml`
 
 Reusable (`workflow_call` only), `permissions: contents: read`, actions pinned by commit SHA, Flutter from `client/.fvmrc` through the composite action. It builds and publishes nothing beyond workflow artifacts, which it keeps for 7 days.
 
-Inputs: `version` (required, for example `0.1.0`), `build-number` (required), `ref` (default: the calling ref). Every build runs with `--release --build-name <version> --build-number <build-number> --dart-define-from-file=config/release.json`.
+Inputs: `version` (required, for example `0.1.0`), `build-number` (required), `ref` (default: the calling ref), `macos` (default `true`; `false` skips `build-macos`, and `checksums` then passes `--no-macos`). Every build runs with `--release --build-name <version> --build-number <build-number> --dart-define-from-file=config/release.json`.
 
 | Job | Runner | Build | Artifact |
 |---|---|---|---|
@@ -158,17 +160,17 @@ Inputs: `version` (required, for example `0.1.0`), `build-number` (required), `r
 | `build-windows` | windows | `flutter build windows`; the x64 CRT DLLs of the newest MSVC redistributable copied next to the executable | `soundspan-<version>-windows-x64-unsigned.zip` (the `Release/` directory) |
 | `build-macos` | macos | `flutter build macos`: universal, ad-hoc signed by the toolchain | `soundspan-<version>-macos-universal-unsigned.zip` (`ditto -c -k --keepParent` of the `.app`) |
 | `build-web` | ubuntu | `flutter build web --base-href /app/` | `soundspan-<version>-web.tar.gz` (the `web/` directory) |
-| `checksums` | ubuntu, after all five | Downloads every artifact; `dart run tool/release/check_artifacts.dart --dir <dir> --version <version> --write-sums`; `sha256sum --check` | `client-release-files`: the five files and `SHA256SUMS` |
+| `checksums` | ubuntu, after all five (a skipped `build-macos` does not block it) | Downloads every artifact; `dart run tool/release/check_artifacts.dart --dir <dir> --version <version> --write-sums`; `sha256sum --check` | `client-release-files`: the five files and `SHA256SUMS` |
 
 There is no iOS artifact and no AAB (it needs the upload key); both wait for signing.
 
-`tool/release/check_artifacts.dart` holds the one list of expected artifact names. It fails when an expected file for the version is missing, an unexpected file is present (another version's file included), or a file is empty. With `--write-sums` it writes `SHA256SUMS` in `sha256sum` format, sorted by file name and not listing itself; without it, it verifies an existing `SHA256SUMS` against the files. Installers and packages add their names to the list.
+`tool/release/check_artifacts.dart` holds the one list of expected artifact names. It fails when an expected file for the version is missing, an unexpected file is present (another version's file included), or a file is empty. With `--no-macos` it expects no macOS file. With `--write-sums` it writes `SHA256SUMS` in `sha256sum` format, sorted by file name and not listing itself; without it, it verifies an existing `SHA256SUMS` against the files. Installers and packages add their names to the list.
 
 **Dry run.** A tag trigger cannot run from a pull request, so `client-quality.yml` calls `client-build.yml` as `client-build-dry-run` whenever `release_build` is true. Its green run is the proof that a release build works.
 
 ### `client-device-tests.yml`
 
-Reusable (`workflow_call` only), `permissions: contents: read`, actions pinned by commit SHA, Flutter from `client/.fvmrc` through the composite action. Each job runs `integration_test/engine_conformance_test.dart` against the platform's real `PlayerEngine`, built by `createPlayerEngine()`. Natively the test starts the tone server (`integration_test/support/tone_server.dart`, a `shelf` server of WAV tones generated in Dart, with Range support, dedicated 404 and 401 paths, a throttled 60 s tone and the headers recorded per path) inside the app on the loopback interface and writes the local-file tone to the app's temporary directory. The gap tolerance is 20 ms on the Android emulator, Linux and Windows, and 100 ms on the iOS simulator, whose index and position reports jitter around a transition (the `engine-conformance-ios` job passes `--dart-define=CONFORMANCE_GAP_TOLERANCE_MS=100`, because the app on a simulator cannot tell from its environment that it is not on hardware), and on macOS, whose transition is not reliably gapless ([06](06-playback.md)). Every job runs the engine with its production configuration, except the Windows job's null audio output, and is blocking.
+Reusable (`workflow_call` only), `permissions: contents: read`, actions pinned by commit SHA, Flutter from `client/.fvmrc` through the composite action. Each job runs `integration_test/engine_conformance_test.dart` against the platform's real `PlayerEngine`, built by `createPlayerEngine()`. Natively the test starts the tone server (`integration_test/support/tone_server.dart`, a `shelf` server of WAV tones generated in Dart, with Range support, dedicated 404 and 401 paths, a throttled 60 s tone and the headers recorded per path) inside the app on the loopback interface and writes the local-file tone to the app's temporary directory. The gap tolerance is 20 ms on the Android emulator, Linux and Windows, and 100 ms on the iOS simulator, whose index and position reports jitter around a transition (the `engine-conformance-ios` job passes `--dart-define=CONFORMANCE_GAP_TOLERANCE_MS=100`, because the app on a simulator cannot tell from its environment that it is not on hardware), and on macOS, whose transition is not reliably gapless ([06](06-playback.md)). Every job runs the engine with its production configuration, except the Windows job's null audio output, and is blocking. The iOS and macOS jobs run only when `CLIENT_MACOS_CI` is `true` (see **macOS switch**).
 
 | Job | Runner | Device and audio |
 |---|---|---|

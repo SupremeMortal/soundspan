@@ -596,7 +596,9 @@ jobs:
   client-build-macos-ios:
     name: client-build-macos-ios
     needs: changes
-    if: needs.changes.outputs.apple == 'true'
+    # macOS runners are slow to start, so the job runs only when the
+    # repository variable CLIENT_MACOS_CI is 'true'.
+    if: needs.changes.outputs.apple == 'true' && vars.CLIENT_MACOS_CI == 'true'
     runs-on: macos-latest
     timeout-minutes: 60
     steps:
@@ -633,6 +635,7 @@ jobs:
     with:
       version: ${{ needs.changes.outputs.version }}
       build-number: "${{ github.run_number }}"
+      macos: ${{ vars.CLIENT_MACOS_CI == 'true' }}
 
   # The release workflow's tag validation and notes, without a tag: the
   # pubspec version as the tag and the notes against main's changelog.

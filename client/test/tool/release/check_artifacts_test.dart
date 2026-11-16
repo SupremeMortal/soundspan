@@ -144,4 +144,57 @@ void main() {
     expect(listed, _expected);
     expect(listed, isNot(contains('SHA256SUMS')));
   });
+
+  group('without macOS', () {
+    const macos = 'soundspan-0.1.0-macos-universal-unsigned.zip';
+
+    void writeSetWithoutMacos() {
+      writeFullSet();
+      File(p.join(dir.path, macos)).deleteSync();
+    }
+
+    test('expected names leave out the macOS zip', () {
+      expect(
+        expectedArtifactNames(_version, macos: false)..sort(),
+        [..._expected]..remove(macos),
+      );
+    });
+
+    test('the set without the macOS zip passes and is summed', () {
+      writeSetWithoutMacos();
+
+      final result = checkArtifacts(
+        dir: dir,
+        version: _version,
+        writeSums: true,
+        macos: false,
+      );
+
+      expect(result.ok, isTrue, reason: result.lines.join('\n'));
+      expect(sums().readAsStringSync(), isNot(contains(macos)));
+    });
+
+    test('a macOS zip that is present fails as unexpected', () {
+      writeFullSet();
+
+      final result = checkArtifacts(
+        dir: dir,
+        version: _version,
+        writeSums: true,
+        macos: false,
+      );
+
+      expect(result.ok, isFalse);
+      expect(result.lines, contains('unexpected: $macos'));
+    });
+
+    test('the default still requires the macOS zip', () {
+      writeSetWithoutMacos();
+
+      final result = run(writeSums: true);
+
+      expect(result.ok, isFalse);
+      expect(result.lines, contains('missing: $macos'));
+    });
+  });
 }

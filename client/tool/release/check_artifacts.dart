@@ -8,21 +8,29 @@ import 'package:path/path.dart' as p;
 /// The name of the checksum file written beside the release artifacts.
 const sumsFileName = 'SHA256SUMS';
 
+/// The macOS artifact, with `{version}` standing for the version.
+const macosArtifactNameTemplate =
+    'soundspan-{version}-macos-universal-unsigned.zip';
+
 /// Every release artifact, with `{version}` standing for the version.
 ///
 /// This is the one list of expected file names; packaging adds to it.
-const artifactNameTemplates = [
+const List<String> artifactNameTemplates = [
   'soundspan-{version}-android-unsigned.apk',
   'soundspan-{version}-linux-x64-unsigned.tar.gz',
   'soundspan-{version}-windows-x64-unsigned.zip',
-  'soundspan-{version}-macos-universal-unsigned.zip',
+  macosArtifactNameTemplate,
   'soundspan-{version}-web.tar.gz',
 ];
 
 /// The expected artifact file names for [version].
-List<String> expectedArtifactNames(String version) => [
+///
+/// With [macos] false the macOS artifact is left out, for a build that
+/// skipped the macOS job.
+List<String> expectedArtifactNames(String version, {bool macos = true}) => [
   for (final template in artifactNameTemplates)
-    template.replaceAll('{version}', version),
+    if (macos || template != macosArtifactNameTemplate)
+      template.replaceAll('{version}', version),
 ];
 
 /// The outcome of [checkArtifacts].
@@ -43,14 +51,16 @@ class ArtifactCheck {
 /// Fails when an expected file is missing, an unexpected entry is present,
 /// or a file is empty. With [writeSums] it then writes `SHA256SUMS` in
 /// `sha256sum` format, sorted by file name; without it, it verifies an
-/// existing `SHA256SUMS` against the files.
+/// existing `SHA256SUMS` against the files. With [macos] false the macOS
+/// artifact is not expected (see [expectedArtifactNames]).
 ArtifactCheck checkArtifacts({
   required Directory dir,
   required String version,
   required bool writeSums,
+  bool macos = true,
 }) {
   final problems = <String>[];
-  final expected = expectedArtifactNames(version).toSet();
+  final expected = expectedArtifactNames(version, macos: macos).toSet();
   final present = <String>{};
 
   for (final entity in dir.listSync()) {
@@ -124,13 +134,14 @@ ArtifactCheck checkArtifacts({
 
 const _usage =
     'usage: dart run tool/release/check_artifacts.dart '
-    '--dir <dir> --version <version> [--write-sums]';
+    '--dir <dir> --version <version> [--write-sums] [--no-macos]';
 
 /// Runs [checkArtifacts] from the command line.
 void main(List<String> args) {
   String? dir;
   String? version;
   var writeSums = false;
+  var macos = true;
   for (var i = 0; i < args.length; i++) {
     switch (args[i]) {
       case '--dir' when i + 1 < args.length:
@@ -139,6 +150,8 @@ void main(List<String> args) {
         version = args[++i];
       case '--write-sums':
         writeSums = true;
+      case '--no-macos':
+        macos = false;
       default:
         stderr.writeln(_usage);
         exitCode = 64;
@@ -161,6 +174,7 @@ void main(List<String> args) {
     dir: directory,
     version: version,
     writeSums: writeSums,
+    macos: macos,
   );
   (result.ok ? stdout : stderr).writeln(result.lines.join('\n'));
   if (!result.ok) exitCode = 1;

@@ -49,8 +49,11 @@ jobs:
           working-directory: client
           script: flutter test integration_test/engine_conformance_test.dart -d emulator-5554
 
+  # The iOS and macOS jobs run only when the repository variable
+  # CLIENT_MACOS_CI is 'true', because macOS runners are slow to start.
   engine-conformance-ios:
     name: engine-conformance-ios
+    if: vars.CLIENT_MACOS_CI == 'true'
     runs-on: macos-latest
     timeout-minutes: 60
     steps:
@@ -81,6 +84,7 @@ jobs:
 
   engine-conformance-macos:
     name: engine-conformance-macos
+    if: vars.CLIENT_MACOS_CI == 'true'
     runs-on: macos-latest
     timeout-minutes: 60
     steps:

@@ -21,6 +21,11 @@ on:
         type: string
         required: false
         default: ""
+      macos:
+        description: Build the macOS artifact; false skips build-macos and leaves the macOS zip out of SHA256SUMS
+        type: boolean
+        required: false
+        default: true
 
 permissions:
   contents: read
@@ -182,6 +187,7 @@ jobs:
 
   build-macos:
     name: build-macos
+    if: inputs.macos
     runs-on: macos-latest
     timeout-minutes: 60
     steps:
@@ -251,6 +257,9 @@ jobs:
   checksums:
     name: checksums
     needs: [build-android, build-linux, build-windows, build-macos, build-web]
+    # Runs after a skipped build-macos too; any failed or cancelled build
+    # still skips it.
+    if: ${{ !cancelled() && !failure() }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -271,7 +280,13 @@ jobs:
 
       - name: Check artifacts and write SHA256SUMS
         working-directory: client
-        run: dart run tool/release/check_artifacts.dart --dir ../release --version "$VERSION" --write-sums
+        env:
+          MACOS: ${{ inputs.macos }}
+        run: |
+          set -euo pipefail
+          args=(--dir ../release --version "$VERSION" --write-sums)
+          if [ "$MACOS" != true ]; then args+=(--no-macos); fi
+          dart run tool/release/check_artifacts.dart "${args[@]}"
 
       - name: Verify SHA256SUMS
         working-directory: release
