@@ -6,9 +6,11 @@ list(APPEND FLUTTER_PLUGIN_LIST
   app_links
   connectivity_plus
   dynamic_color
+  file_selector_windows
   flutter_secure_storage_windows
   media_kit_libs_windows_audio
   url_launcher_windows
+  share_plus
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST

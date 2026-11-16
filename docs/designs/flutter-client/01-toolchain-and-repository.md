@@ -105,6 +105,7 @@ environment:
 
 dependencies:
   app_links: ^7.2.0
+  archive: ^4.7.1                # Log export zip; tool/gen_icons.dart (pure-Dart deflate)
   audio_service: ^0.18.19
   audio_service_mpris: ^0.2.1
   audio_session: ^0.2.4
@@ -116,6 +117,7 @@ dependencies:
   drift: ^2.35.0
   drift_flutter: ^0.3.0
   dynamic_color: ^2.1.0          # Only to read the platform contrast setting; palette is fixed
+  file_selector: ^1.1.0          # Save dialog of the desktop log export
   flutter: { sdk: flutter }
   flutter_cache_manager: any
   flutter_local_notifications: ^23.0.0
@@ -139,6 +141,7 @@ dependencies:
   path_provider: ^2.1.6
   riverpod_annotation: ^4.0.0
   screen_retriever: ^0.4.0       # Displays, for window-bounds restore
+  share_plus: ^13.3.1            # Share sheet of the mobile log export
   socket_io_client: ^3.1.6
   soundspan_api: { path: packages/soundspan_api }
   tray_manager: ^0.9.0
@@ -148,7 +151,6 @@ dependencies:
 dev_dependencies:
   alchemist: ^0.14.0
   analyzer: ^14.7.0              # tool/check_imports.dart
-  archive: ^4.7.1                # tool/gen_icons.dart (pure-Dart deflate)
   build_runner: any
   dio: any                       # Fake HTTP adapters in tests
   drift_dev: ^2.35.0

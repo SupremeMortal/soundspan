@@ -445,6 +445,52 @@ abstract class AppLocalizations {
   /// **'Pending changes: {count}'**
   String settingsAboutPendingChanges(int count);
 
+  /// Row title in Settings → About; the row shows the app's version below it.
+  ///
+  /// In en, this message translates to:
+  /// **'Version'**
+  String get settingsAboutVersion;
+
+  /// The app's version and build number under the Version row in Settings → About.
+  ///
+  /// In en, this message translates to:
+  /// **'{version} ({build})'**
+  String settingsAboutVersionValue(String version, String build);
+
+  /// The app's version, build number and release channel (for example dev) under the Version row in Settings → About, on builds that are not stable releases.
+  ///
+  /// In en, this message translates to:
+  /// **'{version} ({build}) · {channel}'**
+  String settingsAboutVersionWithChannel(
+    String version,
+    String build,
+    String channel,
+  );
+
+  /// Row in Settings → About that saves or shares this device's diagnostic logs, to attach to a bug report.
+  ///
+  /// In en, this message translates to:
+  /// **'Export logs'**
+  String get settingsAboutExportLogs;
+
+  /// Snackbar after the logs were saved, shared or downloaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Logs exported'**
+  String get settingsAboutExportLogsDone;
+
+  /// Snackbar when Export logs found no logs on this device.
+  ///
+  /// In en, this message translates to:
+  /// **'No logs to export'**
+  String get settingsAboutExportLogsNothing;
+
+  /// Snackbar when Export logs failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t export logs'**
+  String get settingsAboutExportLogsFailed;
+
   /// Snackbar: changes made on this device were discarded because the track or playlist they apply to was deleted on the server.
   ///
   /// In en, this message translates to:

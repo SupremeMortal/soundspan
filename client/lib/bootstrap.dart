@@ -25,6 +25,7 @@ import 'package:soundspan/core/storage/providers.dart';
 import 'package:soundspan/core/sync/outbox/outbox.dart';
 import 'package:soundspan/platform/capabilities/capabilities.dart';
 import 'package:soundspan/platform/database_opener/database_opener.dart';
+import 'package:soundspan/platform/log_export/log_export.dart';
 import 'package:soundspan/platform/log_sink/log_sink.dart';
 import 'package:soundspan/platform/paths/paths.dart';
 import 'package:soundspan/platform/secrets/secrets.dart';
@@ -62,14 +63,19 @@ Future<void> bootstrap() async {
       registerBundledLicenses(rootBundle);
       if (kIsWeb) usePathUrlStrategy();
       final paths = await resolveAppPaths();
+      final persistentSink = createPersistentLogSink(
+        directory: kIsWeb ? null : paths.logs,
+      );
       AppLogging.configure(
-        sinks: [
-          if (kDebugMode) ConsoleLogSink(),
-          createPersistentLogSink(directory: kIsWeb ? null : paths.logs),
-        ],
+        sinks: [if (kDebugMode) ConsoleLogSink(), persistentSink],
         releaseMode: kReleaseMode,
       );
-      final root = await createRootContainer(paths: paths);
+      final root = await createRootContainer(
+        paths: paths,
+        overrides: [
+          persistentLogSinkProvider.overrideWithValue(persistentSink),
+        ],
+      );
       await restoreWindow(root);
       runApp(
         UncontrolledProviderScope(container: root, child: const SoundspanApp()),

@@ -260,6 +260,58 @@
       }
     }
   },
+  "settingsAboutVersion": "Version",
+  "@settingsAboutVersion": {
+    "description": "Row title in Settings → About; the row shows the app's version below it."
+  },
+  "settingsAboutVersionValue": "{version} ({build})",
+  "@settingsAboutVersionValue": {
+    "description": "The app's version and build number under the Version row in Settings → About.",
+    "placeholders": {
+      "version": {
+        "type": "String",
+        "example": "1.2.3"
+      },
+      "build": {
+        "type": "String",
+        "example": "45"
+      }
+    }
+  },
+  "settingsAboutVersionWithChannel": "{version} ({build}) · {channel}",
+  "@settingsAboutVersionWithChannel": {
+    "description": "The app's version, build number and release channel (for example dev) under the Version row in Settings → About, on builds that are not stable releases.",
+    "placeholders": {
+      "version": {
+        "type": "String",
+        "example": "1.2.3"
+      },
+      "build": {
+        "type": "String",
+        "example": "45"
+      },
+      "channel": {
+        "type": "String",
+        "example": "dev"
+      }
+    }
+  },
+  "settingsAboutExportLogs": "Export logs",
+  "@settingsAboutExportLogs": {
+    "description": "Row in Settings → About that saves or shares this device's diagnostic logs, to attach to a bug report."
+  },
+  "settingsAboutExportLogsDone": "Logs exported",
+  "@settingsAboutExportLogsDone": {
+    "description": "Snackbar after the logs were saved, shared or downloaded."
+  },
+  "settingsAboutExportLogsNothing": "No logs to export",
+  "@settingsAboutExportLogsNothing": {
+    "description": "Snackbar when Export logs found no logs on this device."
+  },
+  "settingsAboutExportLogsFailed": "Couldn’t export logs",
+  "@settingsAboutExportLogsFailed": {
+    "description": "Snackbar when Export logs failed."
+  },
   "outboxItemsGoneMessage": "Some changes couldn’t be saved because the item no longer exists",
   "@outboxItemsGoneMessage": {
     "description": "Snackbar: changes made on this device were discarded because the track or playlist they apply to was deleted on the server."

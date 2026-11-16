@@ -252,7 +252,7 @@ _log.info('task finished', {'bytes': size});
 
 - Sinks: debug console in debug builds; a rolling file (`<appSupport>/logs/app.<n>.log`, 5 files × 1 MB) on native targets; an in-memory ring (500 entries) on web.
 - Redaction happens in the logger, before any sink: values of keys named `token`, `refreshToken`, `apiKey`, `password`, `authorization`, `x-api-key`; any `?token=` query value; the host and path prefix of the active profile's base URL (replaced with `<server>`).
-- `Settings → About → Export logs` zips the rolling files through the platform share or save dialog.
+- `Settings → About → Export logs` goes through the `LogExporter` seam (`lib/platform/log_export/`). On native targets it flushes the file sink, zips every `app.<n>.log` into a temporary `soundspan-logs-<yyyyMMdd-HHmmss>.zip` (time from the `Clock`), and hands it to the share sheet on Android and iOS or copies it to the path a save dialog answers on Windows, macOS and Linux; the temporary zip is then deleted. On web it downloads the ring's entries as `soundspan-logs-<yyyyMMdd-HHmmss>.txt`, one JSON object per line, as the file sink writes them. Entries were redacted when logged, and the bundle holds nothing but log entries.
 - A sink that throws does not reach the caller: the logger reports the first failure of each sink through `dart:developer` and keeps delivering to the other sinks.
 - Levels: `fine` for per-request detail (off in release), `info` for lifecycle, `warning` for recovered failures, `severe` for unrecovered ones.
 
@@ -276,6 +276,7 @@ Each seam is an abstract class in `lib/platform/<name>/<name>.dart` with `_io.da
 | Connectivity | `ConnectivitySource` | `connectivity_plus` | `connectivity_plus` |
 | Capabilities | `PlatformCapabilities` | Constants per OS | Constants |
 | Persistent log sink | `createPersistentLogSink` (returns a `LogSink`) | `RollingFileLogSink` | `RingLogSink` |
+| Log export | `LogExporter` | Zip through `share_plus` (Android, iOS) or a `file_selector` save dialog (desktop) | Download of the ring as text |
 
 `PlatformCapabilities` is the only place UI asks "can this platform do X": `canDownload`, `canScanQr`, `hasTray`, `hasBackgroundPlayback`, `supportsApiKeyStreaming`, `isDesktop`, and `allowsPublicCleartextHttp` (false on iOS and macOS, where App Transport Security blocks a public `http://` server). Screens hide features by capability, never by `Platform.isX`.
 

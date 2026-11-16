@@ -48,8 +48,11 @@ class RollingFileLogSink implements LogSink {
     _queue = _queue.then((_) => _append(line)).catchError(_report);
   }
 
+  /// Completes once every entry written so far is in the files.
+  Future<void> flush() => _queue;
+
   @override
-  Future<void> close() => _queue;
+  Future<void> close() => flush();
 
   Future<void> _append(List<int> line) async {
     final current = _file(0);

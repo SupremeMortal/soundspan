@@ -196,6 +196,35 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get settingsAboutVersion => 'Version';
+
+  @override
+  String settingsAboutVersionValue(String version, String build) {
+    return '$version ($build)';
+  }
+
+  @override
+  String settingsAboutVersionWithChannel(
+    String version,
+    String build,
+    String channel,
+  ) {
+    return '$version ($build) · $channel';
+  }
+
+  @override
+  String get settingsAboutExportLogs => 'Export logs';
+
+  @override
+  String get settingsAboutExportLogsDone => 'Logs exported';
+
+  @override
+  String get settingsAboutExportLogsNothing => 'No logs to export';
+
+  @override
+  String get settingsAboutExportLogsFailed => 'Couldn’t export logs';
+
+  @override
   String get outboxItemsGoneMessage =>
       'Some changes couldn’t be saved because the item no longer exists';
 
@@ -1218,6 +1247,35 @@ class AppLocalizationsEnXa extends AppLocalizationsEn {
   String settingsAboutPendingChanges(int count) {
     return '[Þéñðîñĝ çĥåñĝéš: $count one two]';
   }
+
+  @override
+  String get settingsAboutVersion => '[Véŕšîöñ one]';
+
+  @override
+  String settingsAboutVersionValue(String version, String build) {
+    return '[$version ($build) one]';
+  }
+
+  @override
+  String settingsAboutVersionWithChannel(
+    String version,
+    String build,
+    String channel,
+  ) {
+    return '[$version ($build) · $channel one]';
+  }
+
+  @override
+  String get settingsAboutExportLogs => '[Éxþöŕţ ļöĝš one two]';
+
+  @override
+  String get settingsAboutExportLogsDone => '[Ļöĝš éxþöŕţéð one two]';
+
+  @override
+  String get settingsAboutExportLogsNothing => '[Ñö ļöĝš ţö éxþöŕţ one two]';
+
+  @override
+  String get settingsAboutExportLogsFailed => '[Çöûļðñ’ţ éxþöŕţ ļöĝš one two]';
 
   @override
   String get outboxItemsGoneMessage =>
