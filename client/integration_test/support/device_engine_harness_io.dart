@@ -3,7 +3,9 @@
 import 'dart:io';
 
 import 'package:path_provider/path_provider.dart';
+import 'package:soundspan/core/playback/engines/media_kit_engine.dart';
 import 'package:soundspan/core/playback/engines/player_engine.dart';
+import 'package:soundspan_api/soundspan_api.dart';
 
 import 'device_engine_harness_base.dart';
 import 'device_gap_tolerance.dart';
@@ -47,6 +49,21 @@ final class _NativeHarness extends DeviceEngineHarnessBase {
 
   @override
   bool get credentialsInQuery => false;
+
+  /// The platform's engine; on Windows the same `MediaKitEngine` with mpv's
+  /// timing-accurate null audio output, because a hosted Windows runner has
+  /// no audio endpoint and a virtual sound card cannot be installed on it
+  /// unattended (doc 06).
+  @override
+  PlayerEngine buildEngine() {
+    if (!Platform.isWindows) return super.buildEngine();
+    MediaKitEngine.ensureInitialized();
+    final probe = StreamStatusProbe();
+    return MediaKitEngine(
+      statusOf: (uri, headers) => probe.status(uri, headers: headers),
+      audioOutputOverride: 'null',
+    );
+  }
 
   @override
   EngineSource localFile(String queueItemId) {

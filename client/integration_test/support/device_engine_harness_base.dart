@@ -61,9 +61,12 @@ abstract class DeviceEngineHarnessBase implements EngineHarness {
     );
   }
 
+  /// Builds the engine under test: the platform's `createPlayerEngine()`.
+  PlayerEngine buildEngine() => createPlayerEngine();
+
   @override
   PlayerEngine createEngine() {
-    final engine = createPlayerEngine();
+    final engine = buildEngine();
     _engines.add(engine);
     engine.state.listen(null, onDone: () => _closed.add(engine));
     return engine;

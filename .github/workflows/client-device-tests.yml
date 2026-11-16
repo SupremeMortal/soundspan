@@ -200,43 +200,10 @@ jobs:
       - name: Set up Flutter
         uses: ./.github/actions/client-flutter
 
-      # A hosted Windows runner has no audio endpoint, so mpv's WASAPI output
-      # cannot open. The Scream virtual sound card gives it one, so the engine
-      # runs with its production configuration.
-      - name: Install a virtual audio device
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-          Set-Service -Name Audiosrv -StartupType Automatic
-          Set-Service -Name AudioEndpointBuilder -StartupType Automatic
-          Start-Service -Name AudioEndpointBuilder
-          Start-Service -Name Audiosrv
-          $zip = Join-Path $env:RUNNER_TEMP 'Scream4.0.zip'
-          $dir = Join-Path $env:RUNNER_TEMP 'Scream'
-          Invoke-WebRequest -Uri 'https://github.com/duncanthrax/scream/releases/download/4.0/Scream4.0.zip' -OutFile $zip
-          Expand-Archive -Path $zip -DestinationPath $dir
-          $inf = Get-ChildItem -Path $dir -Recurse -Filter Scream.inf |
-            Where-Object { $_.FullName -match 'x64' } | Select-Object -First 1
-          $sys = Get-ChildItem -Path $inf.DirectoryName -Filter Scream.sys | Select-Object -First 1
-          $devcon = Get-ChildItem -Path $dir -Recurse -Filter 'devcon*.exe' |
-            Sort-Object { $_.Name -notmatch 'x64' } | Select-Object -First 1
-          Write-Host "Driver: $($inf.FullName); devcon: $($devcon.FullName)"
-          # Trust the driver's publisher so the install needs no prompt.
-          $cert = (Get-AuthenticodeSignature $sys.FullName).SignerCertificate
-          $store = [System.Security.Cryptography.X509Certificates.X509Store]::new('TrustedPublisher', 'LocalMachine')
-          $store.Open('ReadWrite')
-          $store.Add($cert)
-          $store.Close()
-          Push-Location $inf.DirectoryName
-          & $devcon.FullName install Scream.inf '*Scream'
-          if ($LASTEXITCODE -ne 0) { throw "devcon exited with $LASTEXITCODE" }
-          Pop-Location
-          Restart-Service -Name Audiosrv -Force
-          Get-CimInstance Win32_SoundDevice | Format-Table Name, Status
-          if (-not (Get-CimInstance Win32_SoundDevice | Where-Object { $_.Name -match 'Scream' })) {
-            throw 'no Scream sound device after the install'
-          }
-
+      # A hosted Windows runner has no audio endpoint, and the Scream virtual
+      # sound card's driver install waits for a prompt nobody can answer, so
+      # the harness gives MediaKitEngine mpv's timing-accurate null output
+      # (integration_test/support/device_engine_harness_io.dart, doc 06).
       - name: Engine conformance on Windows
         working-directory: client
         run: flutter test integration_test/engine_conformance_test.dart -d windows

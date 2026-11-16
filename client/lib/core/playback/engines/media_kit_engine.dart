@@ -18,7 +18,12 @@ final class MediaKitEngine implements PlayerEngine {
   ///
   /// `statusOf` is asked for the HTTP status of a stream source that failed
   /// when mpv's log did not carry it (a 401 is never logged).
-  new({required this._statusOf}) {
+  ///
+  /// [audioOutputOverride] sets mpv's `ao`. Production code never sets it;
+  /// the Windows device-test harness passes `'null'`, mpv's timing-accurate
+  /// null output, because a hosted Windows runner has no audio endpoint
+  /// (doc 06).
+  new({required this._statusOf, this.audioOutputOverride}) {
     _subscriptions.addAll([
       _player.stream.playlist.listen(_onPlaylist),
       _player.stream.completed.listen(_onCompleted),
@@ -58,10 +63,17 @@ final class MediaKitEngine implements PlayerEngine {
   /// point before it reports the source ready anyway.
   static const Duration _startAtWait = Duration(seconds: 2);
 
+  /// How long [dispose] waits for a pending player call and for the
+  /// player's own dispose.
+  static const Duration _disposeWait = Duration(seconds: 5);
+
   /// How soon a held state is checked again after a transition.
   static const Duration _recheckDelay = Duration(milliseconds: 10);
 
   final StreamStatusOf _statusOf;
+
+  /// mpv's `ao` when set; null keeps mpv's default audio output.
+  final String? audioOutputOverride;
 
   // ffmpeg logs `HTTP error <status>` at level warn, so the player listens
   // from that level up.
@@ -85,6 +97,12 @@ final class MediaKitEngine implements PlayerEngine {
   bool _loading = false;
   bool _ended = false;
   bool _playIntent = false;
+
+  /// The position mpv's clock is expected to move on from after playback
+  /// started, resumed or seeked; null once it moved. Until then the status
+  /// is [EngineStatus.buffering]: the audio output may take a while to
+  /// start consuming (a PulseAudio sink can take two seconds).
+  Duration? _clockFrom;
   Duration _position = Duration.zero;
   Stopwatch? _sinceAdvance;
   Timer? _recheck;
@@ -164,6 +182,7 @@ final class MediaKitEngine implements PlayerEngine {
     if (current.startAt > Duration.zero) await _awaitStartAt(current.startAt);
     if (generation != _generation || _error != null) return;
     _loading = false;
+    if (_playIntent) _clockFrom = _position;
     _report();
   }
 
@@ -199,6 +218,7 @@ final class MediaKitEngine implements PlayerEngine {
   Future<void> play() async {
     _checkNotDisposed();
     if (_current == null || _error != null) return;
+    if (!_playIntent) _clockFrom = _position;
     _playIntent = true;
     _report();
     await _run(_player.play);
@@ -225,6 +245,7 @@ final class MediaKitEngine implements PlayerEngine {
           _position;
     });
     _playIntent = false;
+    _clockFrom = null;
     _report();
   }
 
@@ -238,6 +259,7 @@ final class MediaKitEngine implements PlayerEngine {
     _ended = false;
     _sinceAdvance = null;
     await _run(() => _player.seek(target));
+    if (_playIntent) _clockFrom = target;
     _report();
   }
 
@@ -253,6 +275,7 @@ final class MediaKitEngine implements PlayerEngine {
     _loading = false;
     _ended = false;
     _playIntent = false;
+    _clockFrom = null;
     _position = Duration.zero;
     _sinceAdvance = null;
     _settle();
@@ -282,10 +305,11 @@ final class MediaKitEngine implements PlayerEngine {
     for (final subscription in _subscriptions) {
       await subscription.cancel();
     }
-    await _serial;
-    await _player.dispose();
     await _states.close();
     await _events.close();
+    // A player call that never returns must not keep the engine alive.
+    await _serial.timeout(_disposeWait, onTimeout: () {});
+    await _player.dispose().timeout(_disposeWait, onTimeout: () {});
   }
 
   void _checkNotDisposed() {
@@ -298,6 +322,8 @@ final class MediaKitEngine implements PlayerEngine {
     for (final MapEntry(:key, :value) in _properties.entries) {
       await native.setProperty(key, value);
     }
+    final ao = audioOutputOverride;
+    if (ao != null) await native.setProperty('ao', ao);
   }
 
   Future<void> _run(Future<void> Function() action) {
@@ -356,6 +382,7 @@ final class MediaKitEngine implements PlayerEngine {
     _current = _next;
     _next = null;
     _sinceAdvance = Stopwatch()..start();
+    _clockFrom = null;
     _events.add(event);
     final generation = _generation;
     unawaited(
@@ -396,6 +423,7 @@ final class MediaKitEngine implements PlayerEngine {
       return;
     }
     _sinceAdvance = null;
+    if (_clockFrom != null && reported != _clockFrom) _clockFrom = null;
     _position = reported;
     _report();
   }
@@ -505,7 +533,7 @@ final class MediaKitEngine implements PlayerEngine {
       status = EngineStatus.ended;
     } else if (_loading) {
       status = EngineStatus.loading;
-    } else if (_player.state.buffering) {
+    } else if (_player.state.buffering || (_playIntent && _clockFrom != null)) {
       status = EngineStatus.buffering;
     } else {
       status = EngineStatus.ready;
