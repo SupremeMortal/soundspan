@@ -10,8 +10,15 @@ enum PlaybackErrorKind {
   /// The engine could not play the item.
   itemFailed,
 
-  /// The item cannot be streamed at all (it has no `playbackId`).
+  /// The item cannot be streamed at all: it has no `playbackId`, or the
+  /// server answered that it does not exist or cannot be played.
   itemUnavailable,
+
+  /// The server rejected the credential again after it was renewed.
+  unauthorized,
+
+  /// Three items in a row failed, so playback stopped.
+  serverUnreachable,
 }
 
 /// Why the current item is not playing.
@@ -130,4 +137,54 @@ final class ItemsDropped extends PlaybackNotice {
 
   @override
   String toString() => 'ItemsDropped($count)';
+}
+
+/// The failed entry [queueItemId] was skipped (doc 06, Failure policy).
+final class ItemSkipped extends PlaybackNotice {
+  /// Creates the notice for the entry [queueItemId] that failed with [kind].
+  const new(this.queueItemId, this.kind);
+
+  /// The entry that was skipped.
+  final String queueItemId;
+
+  /// Why it failed.
+  final PlaybackErrorKind kind;
+
+  @override
+  // Every field is final and the class is immutable.
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  bool operator ==(Object other) =>
+      other is ItemSkipped &&
+      other.queueItemId == queueItemId &&
+      other.kind == kind;
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes, see ==.
+  int get hashCode => Object.hash(ItemSkipped, queueItemId, kind);
+
+  @override
+  String toString() => 'ItemSkipped($queueItemId, ${kind.name})';
+}
+
+/// Playback stopped because of [kind] (doc 06, Failure policy); the queue
+/// is kept.
+final class PlaybackStopped extends PlaybackNotice {
+  /// Creates the notice.
+  const new(this.kind);
+
+  /// Why playback stopped.
+  final PlaybackErrorKind kind;
+
+  @override
+  // Every field is final and the class is immutable.
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  bool operator ==(Object other) =>
+      other is PlaybackStopped && other.kind == kind;
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes, see ==.
+  int get hashCode => Object.hash(PlaybackStopped, kind);
+
+  @override
+  String toString() => 'PlaybackStopped(${kind.name})';
 }

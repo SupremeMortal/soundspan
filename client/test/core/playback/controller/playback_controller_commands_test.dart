@@ -145,48 +145,8 @@ void main() {
     });
   });
 
-  group('failures', () {
-    test('an unplayable current item sets snapshot.error and pauses, with no '
-        'engine call', () async {
-      final h = ControllerHarness();
-      h.resolver.unplayable.add('a');
-
-      await h.controller.playItems(trackItems(['a', 'b']));
-      await h.settle();
-
-      expect(h.calls, isEmpty);
-      expect(
-        h.controller.snapshot.error,
-        const PlaybackError(
-          PlaybackErrorKind.itemUnavailable,
-          queueItemId: 'a',
-        ),
-      );
-      expect(h.controller.snapshot.playing, isFalse);
-    });
-
-    test('a failed current item sets snapshot.error and pauses, with no '
-        'further engine call', () async {
-      final h = ControllerHarness();
-      h.fake.sources.remove(uriOf('a'));
-
-      await h.controller.playItems(trackItems(['a', 'b']));
-      await h.settle();
-      final calls = List.of(h.calls);
-      await h.play(const Duration(seconds: 2));
-
-      expect(_withoutNext(calls), ['load(a, autoPlay: true, at: $_zero)']);
-      expect(h.calls, calls);
-      expect(
-        h.controller.snapshot.error,
-        const PlaybackError(PlaybackErrorKind.itemFailed, queueItemId: 'a'),
-      );
-      expect(h.controller.snapshot.playing, isFalse);
-    });
-  });
-
   test('dropped items emit itemsDropped', () async {
-    final h = ControllerHarness();
+    final h = ControllerHarness(ids: ['i0']);
     final ids = [for (var i = 0; i < 5001; i++) 'i$i'];
 
     await h.controller.playItems(trackItems(ids));

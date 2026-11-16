@@ -2,8 +2,11 @@
 
 import 'dart:async';
 
+import 'package:soundspan/core/auth/session_controller.dart';
 import 'package:soundspan/core/logging/app_logger.dart';
+import 'package:soundspan/core/playback/data/playback_info_repository.dart';
 import 'package:soundspan/core/playback/engines/player_engine.dart';
+import 'package:soundspan/core/playback/failure_policy.dart';
 import 'package:soundspan/core/playback/playback_command.dart';
 import 'package:soundspan/core/playback/playback_snapshot.dart';
 import 'package:soundspan/core/playback/queue/queue_command.dart';
@@ -11,10 +14,26 @@ import 'package:soundspan/core/playback/queue/queue_reducer.dart';
 import 'package:soundspan/core/playback/queue/queue_state.dart';
 import 'package:soundspan/core/playback/snapshot_publisher.dart';
 import 'package:soundspan/core/playback/source_resolver.dart';
+import 'package:soundspan/core/playback/stream_quality_info.dart';
 import 'package:soundspan/shared/clock.dart';
+import 'package:soundspan/shared/domain/playback_id.dart';
 import 'package:soundspan/shared/domain/queue_item.dart';
 
 final AppLogger _log = AppLogger.scope('Playback');
+
+/// Creates the timer of a failure retry; [Timer.new] outside tests.
+typedef PlaybackTimerFactory = Timer Function(
+  Duration delay,
+  void Function() callback,
+);
+
+/// Takes the queue and transport commands of a `PlaybackController` while
+/// it is attached, such as Listen Together sending them to the server
+/// (doc 06, Listen Together Hook).
+abstract interface class RemoteDriver {
+  /// Receives every queue and transport command issued while the driver is attached.
+  Future<void> onCommand(PlaybackCommand command);
+}
 
 /// The one object UI, OS controls and Listen Together talk to (doc 06,
 /// Component Responsibilities).
@@ -23,13 +42,19 @@ final AppLogger _log = AppLogger.scope('Playback');
 /// [PlaybackSnapshot]s, turns commands and queue effects into engine calls,
 /// and keeps the engine's preloaded next source equal to the queue's
 /// `upNext`. Nothing else calls the engine.
+///
+/// A failed current item is retried, skipped or stops playback by the
+/// [FailurePolicy]; a 401 renews the credential through [_session] once.
 class PlaybackController {
   /// Creates the controller of one profile; it owns [_engine] from now on.
   new({
     required this._engine,
     required this._resolver,
+    required this._info,
+    required this._session,
     required Clock clock,
     this._reducer = const QueueReducer(),
+    this._createTimer = Timer.new,
   }) : _publisher = SnapshotPublisher(clock) {
     _stateSubscription = _engine.state.listen(_onEngineState);
     _eventSubscription = _engine.events.listen(
@@ -39,6 +64,9 @@ class PlaybackController {
 
   final PlayerEngine _engine;
   final SourceResolver _resolver;
+  final PlaybackInfoRepository _info;
+  final SessionController _session;
+  final PlaybackTimerFactory _createTimer;
   final QueueReducer _reducer;
   final SnapshotPublisher _publisher;
   final StreamController<PlaybackNotice> _notices =
@@ -67,6 +95,28 @@ class PlaybackController {
   double _userVolume = 1;
   final Map<String, double> _volumeFactors = {};
 
+  final FailurePolicy _failures = FailurePolicy();
+
+  /// The waiting retry of the current item, if any.
+  Timer? _retryTimer;
+
+  /// Counts changes of the current item and stops; a retry of an older
+  /// generation is dropped.
+  int _generation = 0;
+
+  /// Whether the failure of the current load was handled already; a second
+  /// `Failed` for the same load is ignored.
+  bool _failureHandled = false;
+
+  /// The last position the engine reported for the current item.
+  Duration _lastPosition = Duration.zero;
+
+  /// The entry whose quality info is known or being fetched.
+  String? _qualityOf;
+  StreamQualityInfo? _quality;
+
+  RemoteDriver? _driver;
+
   /// The snapshots; a new listener receives the latest one first. Changes
   /// of the position alone arrive at most four times a second.
   Stream<PlaybackSnapshot> get snapshots => _publisher.stream;
@@ -80,12 +130,34 @@ class PlaybackController {
   /// The user volume, 0.0–1.0.
   double get volume => _userVolume;
 
-  /// Applies [command] after every command that arrived before it.
+  /// Whether a [RemoteDriver] takes the queue and transport commands.
+  bool get hasRemoteDriver => _driver != null;
+
+  /// Routes every queue and transport command to [driver] until
+  /// [detachRemoteDriver]; `setVolume` stays local. Throws [StateError]
+  /// when a driver is attached already.
+  void attachRemoteDriver(RemoteDriver driver) {
+    if (_driver != null) {
+      throw StateError('A RemoteDriver is attached already');
+    }
+    _driver = driver;
+  }
+
+  /// Applies commands locally again.
+  void detachRemoteDriver() => _driver = null;
+
+  /// Applies [command] after every command that arrived before it, or
+  /// hands it to the attached [RemoteDriver].
   ///
   /// Completes when the command is applied and the engine's next source
   /// it caused is set.
-  Future<void> dispatch(PlaybackCommand command) =>
-      _enqueue(() => _apply(command));
+  Future<void> dispatch(PlaybackCommand command) {
+    final driver = _driver;
+    if (driver != null && command is! SetVolumeCommand) {
+      return driver.onCommand(command);
+    }
+    return _enqueue(() => _apply(command));
+  }
 
   /// Replaces the queue with [items] and plays from [startIndex].
   Future<void> playItems(
@@ -160,6 +232,7 @@ class PlaybackController {
   Future<void> dispose() async {
     if (_disposed) return;
     _disposed = true;
+    _retryTimer?.cancel();
     await _stateSubscription.cancel();
     await _eventSubscription.cancel();
     await _publisher.close();
@@ -185,6 +258,7 @@ class PlaybackController {
     switch (command) {
       case PlayItemsCommand(:final items, :final startIndex, :final context):
         _playIntent = true;
+        _failures.resetCount();
         await _reduce(
           ReplaceAll(items, startIndex: startIndex, context: context),
         );
@@ -210,6 +284,7 @@ class PlaybackController {
         await _reduce(Previous(_engineState.position));
       case JumpToCommand(:final queueItemId):
         _playIntent = true;
+        _failures.resetCount();
         await _reduce(JumpTo(queueItemId));
       case PlayNextCommand(:final items):
         await _reduce(PlayNext(items));
@@ -271,26 +346,30 @@ class PlaybackController {
 
   Future<void> _stopEngine() async {
     _playIntent = false;
+    _cancelRetry();
     _clearNextSlot();
     _currentSource = null;
     await _engine.stop();
   }
 
   /// Resolves the queue's current item and loads it; the engine's next slot
-  /// is empty afterwards.
-  Future<void> _loadCurrent() async {
+  /// is empty afterwards. A [retry] loads the same item again and keeps its
+  /// used retries and its quality info.
+  Future<void> _loadCurrent({bool retry = false}) async {
     final item = _queue.current;
     _clearNextSlot();
     _currentSource = null;
     _error = null;
+    if (!retry) _onItemChanged(item);
     if (item == null) return;
     final startAt = _pendingStartAt;
     _pendingStartAt = Duration.zero;
+    _lastPosition = startAt;
     final EngineSource source;
     try {
       source = await _resolver.resolve(item, startAt: startAt);
     } on NotPlayable {
-      _onCurrentItemFailed(PlaybackErrorKind.itemUnavailable, item.queueItemId);
+      await _onCurrentItemFailed(_failures.onNotPlayable(), item);
       return;
     } on Object catch (error, stackTrace) {
       _log.warning(
@@ -299,19 +378,129 @@ class PlaybackController {
         error,
         stackTrace,
       );
-      _onCurrentItemFailed(PlaybackErrorKind.itemFailed, item.queueItemId);
+      await _onCurrentItemFailed(_failures.onResolveError(), item);
       return;
     }
     _currentSource = source;
+    _failureHandled = false;
+    _fetchQuality(item, source);
     _publish();
     await _engine.load(source, autoPlay: _playIntent);
   }
 
-  /// What happens when the current item cannot be played.
-  void _onCurrentItemFailed(PlaybackErrorKind kind, String queueItemId) {
-    _error = PlaybackError(kind, queueItemId: queueItemId);
-    _playIntent = false;
+  /// A different item (or none) is current: its retries are unused, a
+  /// waiting retry of the previous one is cancelled, and the quality info
+  /// of another entry is dropped.
+  void _onItemChanged(QueueItem? item) {
+    _cancelRetry();
+    _failures.onNewItem();
+    if (item?.queueItemId != _qualityOf) {
+      _qualityOf = null;
+      _quality = null;
+    }
+  }
+
+  void _cancelRetry() {
+    _retryTimer?.cancel();
+    _retryTimer = null;
+    _generation++;
+  }
+
+  /// Fetches the stream info of [item] once while it is current, when it
+  /// is a streamed track (doc 06, Quality badge).
+  void _fetchQuality(QueueItem item, EngineSource source) {
+    if (_qualityOf == item.queueItemId) return;
+    if (item is! TrackQueueItem || source.uri.isScheme('file')) return;
+    final playbackId = item.track.playbackId;
+    if (playbackId == null) return;
+    _qualityOf = item.queueItemId;
+    unawaited(_loadQuality(item.queueItemId, playbackId, source.streamQuality));
+  }
+
+  Future<void> _loadQuality(
+    String queueItemId,
+    PlaybackId playbackId,
+    String? quality,
+  ) async {
+    final StreamQualityInfo info;
+    try {
+      info = await _info.streamInfo(playbackId, quality: quality);
+    } on Object catch (error, stackTrace) {
+      _log.warning('Fetching stream info failed', const {}, error, stackTrace);
+      return;
+    }
+    if (_disposed || _qualityOf != queueItemId) return;
+    _quality = info;
     _publish();
+  }
+
+  /// Carries out [decision] about a failure of the current [item].
+  Future<void> _onCurrentItemFailed(
+    FailureDecision decision,
+    QueueItem item,
+  ) async {
+    final id = item.queueItemId;
+    switch (decision) {
+      case RetryAfter(:final delay):
+        final generation = _generation;
+        final position = _lastPosition;
+        _publish();
+        _retryTimer = _createTimer(delay, () {
+          _retryTimer = null;
+          unawaited(
+            _enqueue(() async {
+              if (generation != _generation || _queue.current != item) return;
+              await _reload(position);
+            }),
+          );
+        });
+      case RefreshAndRetry():
+        final position = _lastPosition;
+        try {
+          await _session.refreshNow();
+        } on Object catch (error) {
+          _log.info('Renewing the credential failed', {'error': '$error'});
+          await _onCurrentItemFailed(_failures.onRefreshFailed(), item);
+          return;
+        }
+        if (_queue.current != item) return;
+        await _reload(position);
+      case SkipItem(:final kind):
+        _error = PlaybackError(kind, queueItemId: id);
+        _notices.add(ItemSkipped(id, kind));
+        _publish();
+        await _skipFailed();
+      case StopPlayback(:final kind):
+        await _stopEngine();
+        _error = PlaybackError(kind, queueItemId: id);
+        _notices.add(PlaybackStopped(kind));
+        _publish();
+    }
+  }
+
+  /// Loads the current item again at [position], keeping the play intent.
+  Future<void> _reload(Duration position) async {
+    _pendingStartAt = position;
+    await _loadCurrent(retry: true);
+    _publish();
+    _syncNext();
+  }
+
+  /// Advances past a failed item as `Next` would; at the end of the queue
+  /// with nothing to wrap to, stops and keeps the item's error.
+  Future<void> _skipFailed() async {
+    final transition = _reducer.reduce(_queue, const Next());
+    if (transition.effect != QueueEffect.loadCurrent) {
+      final error = _error;
+      await _stopEngine();
+      _error = error;
+      _publish();
+      return;
+    }
+    _queue = transition.state;
+    await _loadCurrent();
+    _publish();
+    _syncNext();
   }
 
   Future<void> _onEngineEvent(EngineEvent event) async {
@@ -320,8 +509,8 @@ class PlaybackController {
         await _onAdvanced(queueItemId);
       case Completed(:final queueItemId):
         await _reduce(ItemFinished(queueItemId));
-      case Failed(:final queueItemId):
-        _onFailed(queueItemId);
+      case Failed(:final queueItemId, :final error):
+        await _onFailed(queueItemId, error);
     }
   }
 
@@ -333,7 +522,11 @@ class PlaybackController {
       final transition = _reducer.reduce(_queue, ItemFinished(finished));
       _queue = transition.state;
       if (_queue.current?.queueItemId == queueItemId) {
+        _onItemChanged(_queue.current);
         _currentSource = preloaded;
+        _failureHandled = false;
+        _lastPosition = Duration.zero;
+        if (preloaded != null) _fetchQuality(_queue.current!, preloaded);
       } else {
         await _applyEffect(
           transition.effect == QueueEffect.stop
@@ -346,12 +539,16 @@ class PlaybackController {
     _syncNext();
   }
 
-  void _onFailed(String queueItemId) {
+  Future<void> _onFailed(String queueItemId, EngineError error) async {
+    final current = _queue.current;
     final isCurrent =
-        _queue.current?.queueItemId == queueItemId &&
+        current?.queueItemId == queueItemId &&
+        _currentSource != null &&
         (_nextId != queueItemId || _engineState.status == EngineStatus.error);
     if (isCurrent) {
-      _onCurrentItemFailed(PlaybackErrorKind.itemFailed, queueItemId);
+      if (_failureHandled) return;
+      _failureHandled = true;
+      await _onCurrentItemFailed(_failures.onEngineError(error), current!);
     } else if (_nextId == queueItemId) {
       _nextSource = null;
       _nextSync = _engine.setNext(null);
@@ -404,6 +601,21 @@ class PlaybackController {
 
   void _onEngineState(EngineState state) {
     _engineState = state;
+    final id = state.currentQueueItemId;
+    if (id != null && id == _queue.current?.queueItemId) {
+      switch (state.status) {
+        case EngineStatus.ready || EngineStatus.buffering:
+          _lastPosition = state.position;
+          if (state.status == EngineStatus.ready && state.playing) {
+            _failures.resetCount();
+          }
+        case EngineStatus.idle ||
+            EngineStatus.loading ||
+            EngineStatus.ended ||
+            EngineStatus.error:
+          break;
+      }
+    }
     _publish();
   }
 
@@ -419,6 +631,7 @@ class PlaybackController {
         position: state.position,
         buffered: state.bufferedPosition,
         duration: state.duration,
+        quality: _quality,
         error: _error,
         isLocalFile: _currentSource?.uri.isScheme('file') ?? false,
       ),

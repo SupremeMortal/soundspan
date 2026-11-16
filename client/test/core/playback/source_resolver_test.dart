@@ -69,12 +69,14 @@ void main() {
     expect(source.queueItemId, 'q1');
     expect(source.uri.path, '/sub/api/playback/stream/p1');
     expect(source.uri.queryParameters, {'quality': 'high', 'report': '0'});
+    expect(source.streamQuality, 'high');
   });
 
   test('the server-default quality leaves the parameter out', () async {
     await settings.write(qualityWifiKey, serverDefaultQuality);
     final source = await resolver.resolve(_track('q1', playbackId: 'p1'));
     expect(source.uri.queryParameters, {'report': '0'});
+    expect(source.streamQuality, isNull);
   });
 
   test('an episode URL names the podcast and the episode', () async {
@@ -96,6 +98,7 @@ void main() {
       'https://music.example.com/sub/api/podcasts/pod1/episodes/e1/stream',
     );
     expect(source.knownDuration, const Duration(hours: 1));
+    expect(source.streamQuality, isNull);
   });
 
   test('startAt and knownDuration are carried', () async {

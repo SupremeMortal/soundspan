@@ -61,15 +61,25 @@ final Provider<SourceResolver> sourceResolverProvider =
     );
 
 /// The [PlaybackController] of the profile scope, alive as long as the
-/// scope. Ending the scope stops playback and disposes the engine.
+/// scope, with the scope's stream-info repository and session controller. Ending the scope stops playback and disposes the engine.
 final Provider<PlaybackController> playbackControllerProvider =
-    Provider<PlaybackController>((ref) {
-      final controller = PlaybackController(
-        engine: ref.watch(playerEngineBuilderProvider)(),
-        resolver: ref.watch(sourceResolverProvider),
-        clock: ref.watch(clockProvider),
-      );
-      ref.watch(profileDisposerProvider).register(controller.dispose);
-      ref.onDispose(() => unawaited(controller.dispose()));
-      return controller;
-    }, dependencies: [sourceResolverProvider, profileDisposerProvider]);
+    Provider<PlaybackController>(
+      (ref) {
+        final controller = PlaybackController(
+          engine: ref.watch(playerEngineBuilderProvider)(),
+          resolver: ref.watch(sourceResolverProvider),
+          info: ref.watch(playbackInfoRepositoryProvider),
+          session: ref.watch(sessionControllerProvider),
+          clock: ref.watch(clockProvider),
+        );
+        ref.watch(profileDisposerProvider).register(controller.dispose);
+        ref.onDispose(() => unawaited(controller.dispose()));
+        return controller;
+      },
+      dependencies: [
+        sourceResolverProvider,
+        playbackInfoRepositoryProvider,
+        sessionControllerProvider,
+        profileDisposerProvider,
+      ],
+    );

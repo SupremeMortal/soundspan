@@ -70,11 +70,12 @@ class SourceResolver {
     final credentials = await _ensureFresh(
       minRemaining: streamCredentialMinRemaining,
     );
+    final quality = item is TrackQueueItem ? await _quality.current() : null;
     final (Uri url, int? durationSec) = switch (item) {
       TrackQueueItem(:final track) => (
         _urls.track(
           track.playbackId!.value,
-          quality: await _quality.current(),
+          quality: quality,
           // ignore: avoid_redundant_argument_values, plays are reported by PlayReporter, never by the stream request (P7).
           reportPlay: false,
         ),
@@ -94,6 +95,7 @@ class SourceResolver {
           ? Duration(seconds: durationSec)
           : null,
       startAt: startAt,
+      streamQuality: quality,
     );
   }
 }

@@ -21,6 +21,7 @@ final class EngineSource {
     this.headers = const {},
     this.knownDuration,
     this.startAt = Duration.zero,
+    this.streamQuality,
   });
 
   /// The queue entry this source plays; events name it.
@@ -38,6 +39,10 @@ final class EngineSource {
 
   /// Where playback starts: a resume position, zero normally.
   final Duration startAt;
+
+  /// The `quality` a track stream was requested at; null for the server
+  /// default, for episodes and for files. Engines ignore it.
+  final String? streamQuality;
 
   @override
   String toString() => 'EngineSource($queueItemId, $uri)';

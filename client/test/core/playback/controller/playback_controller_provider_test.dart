@@ -2,11 +2,14 @@
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:soundspan/core/auth/session_controller.dart';
 import 'package:soundspan/core/logging/app_logger.dart';
+import 'package:soundspan/core/playback/data/playback_info_repository.dart';
 import 'package:soundspan/core/playback/engines/fake_engine.dart';
 import 'package:soundspan/core/playback/engines/player_engine_provider.dart';
 import 'package:soundspan/core/playback/playback_providers.dart';
 import 'package:soundspan/core/profile/profile_disposer.dart';
+import 'package:soundspan/core/profile/profile_providers.dart';
 import 'package:soundspan/shared/clock.dart';
 
 import '../../../helpers/fake_clock.dart';
@@ -25,6 +28,16 @@ void main() {
       overrides: [
         playerEngineBuilderProvider.overrideWithValue(() => engine),
         sourceResolverProvider.overrideWithValue(FakeResolver()),
+        playbackInfoRepositoryProvider.overrideWithValue(
+          PlaybackInfoRepository(MockPlaybackClient()),
+        ),
+        sessionControllerProvider.overrideWithValue(
+          SessionController(
+            profileId: 'p1',
+            repository: MockProfileRepository(),
+            clock: FakeClock(),
+          ),
+        ),
         profileDisposerProvider.overrideWithValue(disposer),
         clockProvider.overrideWithValue(FakeClock()),
       ],

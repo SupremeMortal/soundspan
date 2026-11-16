@@ -57,6 +57,7 @@ class EngineSource {
   final Map<String, String> headers;     // Empty for files and on web
   final Duration? knownDuration;
   final Duration startAt;                // Resume position; zero normally
+  final String? streamQuality;           // Track stream's requested quality; null for server default, episodes, files
 }
 
 enum EngineStatus { idle, loading, ready, buffering, ended, error }
@@ -225,7 +226,7 @@ class PlaybackSnapshot {
 - **Failure policy:** on `Failed` for the current item, retry once after 1 s (network and HTTP 5xx kinds only). If it fails again, mark the item failed in the snapshot, show a snackbar, and advance. Three consecutive failed items stop playback with "Can't reach the server" instead of skipping through the whole queue.
 - **`SourceUnavailable` / `notFound`:** no retry; skip with a per-item message.
 - **Connection type change** (Wi-Fi → mobile data) does not interrupt the current item; the quality setting applies from the next resolved source.
-- **Quality badge:** when an item becomes current and is streamed, `GET /playback/stream-info/:id` is fetched once (cached per `playbackId` + quality for the session) and shown as e.g. "FLAC · 24/96 kHz". For a downloaded file the badge shows "Downloaded" plus the stored quality. The badge has one neutral style; it does not vary by source.
+- **Quality badge:** when an item becomes current and is streamed, `GET /playback/stream-info/:id` is fetched once, at the quality the source was built with (`EngineSource.streamQuality`; cached per `playbackId` + quality for the session) and shown as e.g. "FLAC · 24/96 kHz". For a downloaded file the badge shows "Downloaded" plus the stored quality. The badge has one neutral style; it does not vary by source.
 
 ## Loudness
 
@@ -346,6 +347,15 @@ The handler holds no state of its own; it renders the controller's snapshot. Thi
 ## Listen Together Hook
 
 `PlaybackController` exposes a `RemoteDriver` attachment point used by [08](08-realtime.md). While a driver is attached, queue and transport commands from the UI are routed to the driver (which sends them to the server) instead of mutating local state, and the controller applies server state as it arrives. Play reporting and playback-state sync continue unchanged.
+
+```dart
+abstract interface class RemoteDriver {
+  /// Receives every queue and transport command issued while the driver is attached.
+  Future<void> onCommand(PlaybackCommand command);
+}
+```
+
+`attachRemoteDriver(driver)` throws `StateError` when a driver is attached already; `detachRemoteDriver()` applies commands locally again. `setVolume` always stays local.
 
 ## Spike S1 finding
 

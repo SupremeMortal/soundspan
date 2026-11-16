@@ -160,6 +160,21 @@ final class FakeEngine implements PlayerEngine {
     if (next != null) _prepareNext(next);
   }
 
+  /// Makes the current source fail now with [error], as a stream that
+  /// breaks during playback would; the position is kept.
+  void failCurrent(EngineError error) {
+    _checkNotDisposed();
+    final current = _current;
+    if (current == null) return;
+    _current = null;
+    _next = null;
+    _status = EngineStatus.error;
+    _playing = false;
+    _error = error;
+    _report();
+    _events.add(Failed(current.source.queueItemId, error));
+  }
+
   @override
   Future<void> setNext(EngineSource? next) async {
     _checkNotDisposed();
