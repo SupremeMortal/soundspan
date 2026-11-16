@@ -164,7 +164,7 @@ Tabs: Playlists, Artists, Albums, Songs, Downloads. A sort menu (exactly the ser
 
 - **Artists, Albums:** grid. Columns from available width at a 160 px minimum tile with 16 px spacing, `clamp(floor((width + 16) / (160 + 16)), 2, 8)` (2 on a phone, up to 8 on a wide desktop); the grid spans the content width less the page gutter minus the card padding, so artwork lines up with the gutter as in shelves. Tiles have a fixed height (square artwork and two text lines). Page size 60. Pull-to-refresh on touch and a refresh button with a mouse refetch the visible pages.
 - **Songs:** `TrackRow` list with a sticky "Shuffle all" header; page size 100; alphabetical fast-scroll thumb on touch.
-- **Playlists:** list with mosaic artwork (first four covers), Liked Songs pinned, "New playlist".
+- **Playlists:** list with mosaic artwork (first four covers), Liked Songs pinned, then "New playlist", which names the playlist in a dialog, creates it and opens it. The expanded sidebar has the same "New playlist" row after Liked Songs.
 - **Downloads:** collections with progress, total size, and a storage summary; filter "In progress".
 - Paging: `PagedSource<T>` requests the page containing the first visible index plus one ahead; unloaded rows render as skeletons of fixed height so scroll extent is stable for 10,000-track libraries.
 
@@ -174,7 +174,7 @@ Header: artwork (140 compact, 192 medium, 232 expanded), overline type label, ti
 
 - **Album:** tracks grouped by disc, rows without thumbnails (index, title, artist when it differs from the album artist, duration). "More by this artist" shelf.
 - **Artist:** round artwork; Popular (top 5, expandable to 10), Albums, Singles and EPs, Similar Artists; biography collapsed to 3 lines.
-- **Playlist:** rows with thumbnails and an album column on expanded; owner can rename, reorder (drag handle on touch, drag on desktop), remove, and delete. Items the server marks `playback.isPlayable == false` are disabled with the server's `message`.
+- **Playlist:** rows with thumbnails and an album column on expanded; owner can rename, reorder (drag handle on touch, drag on desktop), remove, and delete. Touch means Android and iOS. The name dialog disables its confirm action while the trimmed name is empty; delete confirms in `danger`; "Add to playlist" picks from the user's own playlists and "New playlist" in a bottom sheet on touch and a dialog otherwise, and confirms "Added N to <name>". A playlist opened under its temporary id stays on screen when the server assigns its id, and the location takes the new id. Items the server marks `playback.isPlayable == false` are disabled with the server's `message`.
 
 ### Now Playing, Queue, Lyrics (M1)
 

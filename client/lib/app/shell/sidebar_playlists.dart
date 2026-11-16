@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:soundspan/app/l10n/generated/app_localizations.dart';
@@ -7,6 +9,7 @@ import 'package:soundspan/app/router/routes.dart';
 import 'package:soundspan/app/theme/dimens.dart';
 import 'package:soundspan/app/theme/extensions.dart';
 import 'package:soundspan/app/theme/typography.dart';
+import 'package:soundspan/features/playlist/playlist.dart';
 import 'package:soundspan/shared/providers/playlist_list.dart';
 import 'package:soundspan/shared/widgets/built_range_reporter.dart';
 
@@ -14,7 +17,9 @@ import 'package:soundspan/shared/widgets/built_range_reporter.dart';
 /// Class): Liked Songs pinned, then the user's playlists as one-line text
 /// rows, scrolling inside the sidebar under the fixed destinations.
 ///
-/// It reads the same paged source as the Library's Playlists tab. The row
+/// A "New playlist" row after Liked Songs names, creates and opens a
+/// playlist. It reads the same paged source as the Library's Playlists
+/// tab. The row
 /// of [selectedPlaylistId] (`liked` for Liked Songs) is drawn selected;
 /// tapping a row opens the playlist in the current branch.
 class SidebarPlaylists extends ConsumerStatefulWidget {
@@ -26,6 +31,9 @@ class SidebarPlaylists extends ConsumerStatefulWidget {
 
   /// The key of the list's scroll view.
   static const Key listKey = Key('shell.sidebarPlaylists');
+
+  /// The key of the "New playlist" row.
+  static const Key createKey = Key('shell.sidebarPlaylists.new');
 
   /// The height of a row at the ambient text scale.
   static double extentFor(BuildContext context) {
@@ -75,7 +83,7 @@ class _SidebarPlaylistsState extends ConsumerState<SidebarPlaylists> {
             ),
             sliver: SliverFixedExtentList.builder(
               itemExtent: extent,
-              itemCount: 1 + (snapshot?.total ?? 0),
+              itemCount: 2 + (snapshot?.total ?? 0),
               itemBuilder: (context, index) {
                 if (index == 0) {
                   return _SidebarPlaylistRow(
@@ -85,8 +93,17 @@ class _SidebarPlaylistsState extends ConsumerState<SidebarPlaylists> {
                         DetailNavigation.openPlaylist(context, 'liked'),
                   );
                 }
-                _reporter.built(index - 1);
-                final playlist = snapshot?.itemAt(index - 1);
+                if (index == 1) {
+                  return _SidebarPlaylistRow(
+                    key: SidebarPlaylists.createKey,
+                    name: l10n.playlistNew,
+                    icon: Icons.add_rounded,
+                    selected: false,
+                    onTap: () => unawaited(createPlaylistAndOpen(context, ref)),
+                  );
+                }
+                _reporter.built(index - 2);
+                final playlist = snapshot?.itemAt(index - 2);
                 if (playlist == null) return const SizedBox.shrink();
                 return _SidebarPlaylistRow(
                   name: playlist.name,
@@ -104,11 +121,18 @@ class _SidebarPlaylistsState extends ConsumerState<SidebarPlaylists> {
 }
 
 class _SidebarPlaylistRow extends StatelessWidget {
-  const new({required this.name, required this.selected, required this.onTap});
+  const new({
+    required this.name,
+    required this.selected,
+    required this.onTap,
+    this.icon,
+    super.key,
+  });
 
   final String name;
   final bool selected;
   final VoidCallback onTap;
+  final IconData? icon;
 
   @override
   Widget build(BuildContext context) {
@@ -124,16 +148,25 @@ class _SidebarPlaylistRow extends StatelessWidget {
           borderRadius: BorderRadius.circular(Radii.small),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: Spacing.x16),
-            child: Align(
-              alignment: AlignmentDirectional.centerStart,
-              child: Text(
-                name,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: context.typography.body.copyWith(
-                  color: selected ? colors.content : colors.contentSecondary,
+            child: Row(
+              children: [
+                if (icon case final icon?) ...[
+                  Icon(icon, size: 20, color: colors.contentSecondary),
+                  const SizedBox(width: Spacing.x8),
+                ],
+                Expanded(
+                  child: Text(
+                    name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: context.typography.body.copyWith(
+                      color: selected
+                          ? colors.content
+                          : colors.contentSecondary,
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
           ),
         ),

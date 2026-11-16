@@ -11,12 +11,14 @@ import 'package:soundspan/app/theme/dimens.dart';
 import 'package:soundspan/app/theme/extensions.dart';
 import 'package:soundspan/app/theme/typography.dart';
 import 'package:soundspan/features/library/ui/paged_library_view.dart';
+import 'package:soundspan/features/playlist/playlist.dart';
 import 'package:soundspan/shared/providers/playlist_list.dart';
 import 'package:soundspan/shared/widgets/built_range_reporter.dart';
 import 'package:soundspan/shared/widgets/error_view.dart';
 import 'package:soundspan/shared/widgets/mosaic_artwork.dart';
 
-/// The Playlists tab: Liked Songs pinned first, then the user's playlists
+/// The Playlists tab: Liked Songs pinned first and "New playlist", which
+/// names, creates and opens a playlist, then the user's playlists
 /// as rows of one fixed height with a mosaic, the name and the track count
 /// (doc 09, Library). Tapping a row opens the playlist in the Library
 /// branch.
@@ -32,6 +34,9 @@ class PlaylistsTab extends ConsumerStatefulWidget {
 
   /// The edge of a row's artwork.
   static const double artworkSize = 40;
+
+  /// The key of the "New playlist" row.
+  static const Key newKey = Key('library.playlists.new');
 
   /// The key of the empty-list hint.
   static const Key hintKey = Key('library.playlists.hint');
@@ -156,6 +161,18 @@ class _PlaylistsTabState extends ConsumerState<PlaylistsTab> {
                     ),
                   ),
                 ),
+                SliverToBoxAdapter(
+                  child: SizedBox(
+                    height: extent,
+                    child: PlaylistRow(
+                      key: PlaylistsTab.newKey,
+                      name: l10n.playlistNew,
+                      artwork: const _NewPlaylistArtwork(),
+                      onTap: () =>
+                          unawaited(createPlaylistAndOpen(context, ref)),
+                    ),
+                  ),
+                ),
                 body,
               ],
             ),
@@ -190,6 +207,32 @@ class LikedSongsArtwork extends StatelessWidget {
             Icons.favorite_rounded,
             size: size / 2,
             color: colors.brand,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The square of the "New playlist" row: a plus on `surfaceHighlight`.
+class _NewPlaylistArtwork extends StatelessWidget {
+  const new();
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    return ExcludeSemantics(
+      child: SizedBox.square(
+        dimension: PlaylistsTab.artworkSize,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: colors.surfaceHighlight,
+            borderRadius: BorderRadius.circular(Radii.small),
+          ),
+          child: Icon(
+            Icons.add_rounded,
+            size: PlaylistsTab.artworkSize / 2,
+            color: colors.content,
           ),
         ),
       ),

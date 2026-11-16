@@ -995,6 +995,69 @@
   "@playlistEmpty": {
     "description": "Shown on a playlist page when the playlist has no songs."
   },
+  "playlistNew": "[Ñéŵ þļåýļîšţ one two]",
+  "@playlistNew": {
+    "description": "Button in the Library's Playlists tab and the sidebar that creates a playlist, and the title of the dialog that names it."
+  },
+  "playlistRenameTitle": "[Ŕéñåmé þļåýļîšţ one two]",
+  "@playlistRenameTitle": {
+    "description": "Title of the dialog that renames a playlist."
+  },
+  "playlistNameLabel": "[Ñåmé one]",
+  "@playlistNameLabel": {
+    "description": "Label of the playlist name field in the create and rename dialogs."
+  },
+  "playlistCreate": "[Çŕéåţé one]",
+  "@playlistCreate": {
+    "description": "Confirm button of the dialog that creates a playlist."
+  },
+  "playlistRename": "[Ŕéñåmé one]",
+  "@playlistRename": {
+    "description": "Confirm button of the dialog that renames a playlist."
+  },
+  "playlistCancel": "[Çåñçéļ one]",
+  "@playlistCancel": {
+    "description": "Button that closes a playlist dialog without changing anything."
+  },
+  "playlistDeleteTitle": "[Ðéļéţé {name}? one]",
+  "@playlistDeleteTitle": {
+    "description": "Title of the dialog confirming that a playlist is deleted.",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "Road Trip"
+      }
+    }
+  },
+  "playlistDeleteBody": "[Ţĥé þļåýļîšţ îš ŕémövéð fŕöm ýöûŕ ļîbŕåŕý. Ţĥé šöñĝš îñ îţ šţåý. one two three four five six]",
+  "@playlistDeleteBody": {
+    "description": "Body of the dialog confirming that a playlist is deleted."
+  },
+  "playlistDelete": "[Ðéļéţé one]",
+  "@playlistDelete": {
+    "description": "Destructive confirm button of the dialog that deletes a playlist."
+  },
+  "playlistAddToTitle": "[Åðð ţö þļåýļîšţ one two]",
+  "@playlistAddToTitle": {
+    "description": "Title of the sheet or dialog that picks the playlist to add songs to."
+  },
+  "playlistAdded": "[{count, plural, =1{Åððéð 1 šöñĝ ţö {name} one two} other{Åððéð {count} šöñĝš ţö {name} one two}}]",
+  "@playlistAdded": {
+    "description": "Snackbar after songs were added to a playlist.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "name": {
+        "type": "String",
+        "example": "Road Trip"
+      }
+    }
+  },
+  "playlistReorderHandle": "[Ðŕåĝ ţö ŕéöŕðéŕ one two]",
+  "@playlistReorderHandle": {
+    "description": "Tooltip and screen-reader label of the drag handle that moves a song within a playlist."
+  },
   "artistOverline": "[Åŕţîšţ one]",
   "@artistOverline": {
     "description": "Type label above the name on an artist page."

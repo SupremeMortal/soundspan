@@ -329,6 +329,13 @@ class FakePlaylistRepository with _FakeReads implements PlaylistRepository {
   @override
   Future<void> reorder(String id, List<PlaybackId> order) async =>
       edits.add('reorder $id ${[for (final p in order) p.value].join(',')}');
+
+  /// Emits on [resolvedIds]; tests add the ids the server gave.
+  final StreamController<PlaylistIdResolved> resolved =
+      StreamController<PlaylistIdResolved>.broadcast();
+
+  @override
+  Stream<PlaylistIdResolved> get resolvedIds => resolved.stream;
 }
 
 /// An in-memory [HomeRepository]; every shelf is empty until seeded.

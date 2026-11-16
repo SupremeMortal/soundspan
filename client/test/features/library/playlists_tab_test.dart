@@ -27,7 +27,8 @@ void main() {
     );
     final rows = tester.widgetList<PlaylistRow>(find.byType(PlaylistRow));
     expect(rows.first.name, 'Liked Songs');
-    expect(rows.elementAt(1).name, 'Playlist 0');
+    expect(rows.elementAt(1).name, 'New playlist');
+    expect(rows.elementAt(2).name, 'Playlist 0');
     expect(
       tester.getTopLeft(row('Liked Songs')).dy,
       lessThan(tester.getTopLeft(row('Playlist 0')).dy),
@@ -78,7 +79,7 @@ void main() {
     expect(find.text('Liked Songs'), findsOneWidget);
     expect(find.byKey(PlaylistsTab.hintKey), findsOneWidget);
     expect(find.text('Playlists you create appear here'), findsOneWidget);
-    expect(find.byType(PlaylistRow), findsOneWidget);
+    expect(find.byType(PlaylistRow), findsNWidgets(2));
   });
 
   testWidgets('a failed load keeps Liked Songs above the error view', (

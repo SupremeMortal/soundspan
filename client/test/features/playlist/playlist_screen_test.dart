@@ -26,14 +26,18 @@ PlaylistItem _item(int n, {bool playable = true, String? message}) =>
       message: message,
     );
 
-FakeRepositories _playlist(List<PlaylistItem> items, {bool isPublic = true}) {
+FakeRepositories _playlist(
+  List<PlaylistItem> items, {
+  bool isPublic = true,
+  bool isOwner = true,
+}) {
   final repositories = FakeRepositories();
   repositories.playlists.playlistDetails['pl-1'] = PlaylistDetail(
     summary: PlaylistSummary(
       id: 'pl-1',
       name: 'Road Trip',
       trackCount: items.length,
-      isOwner: true,
+      isOwner: isOwner,
       isPublic: isPublic,
       coverRefs: const ['a', 'b', 'c', 'd'],
     ),
@@ -158,12 +162,12 @@ void main() {
     expect(find.text('Song 1.250'), findsOneWidget);
   });
 
-  testWidgets('no edit controls are present', (tester) async {
+  testWidgets('a non-owner sees no edit controls', (tester) async {
     await pumpDetail(
       tester,
       _screen,
       size: TestSizes.expanded,
-      repositories: _playlist([_item(1), _item(2)]),
+      repositories: _playlist([_item(1), _item(2)], isOwner: false),
     );
     expect(find.byType(ReorderableListView), findsNothing);
     expect(find.byType(ReorderableDragStartListener), findsNothing);

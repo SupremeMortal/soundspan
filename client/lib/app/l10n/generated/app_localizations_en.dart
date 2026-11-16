@@ -765,6 +765,53 @@ class AppLocalizationsEn extends AppLocalizations {
   String get playlistEmpty => 'This playlist has no songs yet';
 
   @override
+  String get playlistNew => 'New playlist';
+
+  @override
+  String get playlistRenameTitle => 'Rename playlist';
+
+  @override
+  String get playlistNameLabel => 'Name';
+
+  @override
+  String get playlistCreate => 'Create';
+
+  @override
+  String get playlistRename => 'Rename';
+
+  @override
+  String get playlistCancel => 'Cancel';
+
+  @override
+  String playlistDeleteTitle(String name) {
+    return 'Delete $name?';
+  }
+
+  @override
+  String get playlistDeleteBody =>
+      'The playlist is removed from your library. The songs in it stay.';
+
+  @override
+  String get playlistDelete => 'Delete';
+
+  @override
+  String get playlistAddToTitle => 'Add to playlist';
+
+  @override
+  String playlistAdded(int count, String name) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Added $count songs to $name',
+      one: 'Added 1 song to $name',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get playlistReorderHandle => 'Drag to reorder';
+
+  @override
   String get artistOverline => 'Artist';
 
   @override
@@ -1831,6 +1878,53 @@ class AppLocalizationsEnXa extends AppLocalizationsEn {
 
   @override
   String get playlistEmpty => '[Ţĥîš þļåýļîšţ ĥåš ñö šöñĝš ýéţ one two three]';
+
+  @override
+  String get playlistNew => '[Ñéŵ þļåýļîšţ one two]';
+
+  @override
+  String get playlistRenameTitle => '[Ŕéñåmé þļåýļîšţ one two]';
+
+  @override
+  String get playlistNameLabel => '[Ñåmé one]';
+
+  @override
+  String get playlistCreate => '[Çŕéåţé one]';
+
+  @override
+  String get playlistRename => '[Ŕéñåmé one]';
+
+  @override
+  String get playlistCancel => '[Çåñçéļ one]';
+
+  @override
+  String playlistDeleteTitle(String name) {
+    return '[Ðéļéţé $name? one]';
+  }
+
+  @override
+  String get playlistDeleteBody =>
+      '[Ţĥé þļåýļîšţ îš ŕémövéð fŕöm ýöûŕ ļîbŕåŕý. Ţĥé šöñĝš îñ îţ šţåý. one two three four five six]';
+
+  @override
+  String get playlistDelete => '[Ðéļéţé one]';
+
+  @override
+  String get playlistAddToTitle => '[Åðð ţö þļåýļîšţ one two]';
+
+  @override
+  String playlistAdded(int count, String name) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Åððéð $count šöñĝš ţö $name one two',
+      one: 'Åððéð 1 šöñĝ ţö $name one two',
+    );
+    return '[$_temp0]';
+  }
+
+  @override
+  String get playlistReorderHandle => '[Ðŕåĝ ţö ŕéöŕðéŕ one two]';
 
   @override
   String get artistOverline => '[Åŕţîšţ one]';

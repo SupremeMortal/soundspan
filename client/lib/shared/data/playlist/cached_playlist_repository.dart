@@ -213,6 +213,13 @@ class CachedPlaylistRepository implements PlaylistRepository {
     );
   }
 
+  @override
+  Stream<PlaylistIdResolved> get resolvedIds =>
+      _outbox?.resolved.map(
+        (event) => (tempId: event.tempId, realId: event.realId),
+      ) ??
+      const Stream.empty();
+
   Outbox _requireOutbox() =>
       _outbox ?? (throw StateError('This repository has no outbox'));
 

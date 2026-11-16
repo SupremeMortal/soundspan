@@ -1,15 +1,19 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show StreamProviderFamily;
+import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:soundspan/app/l10n/generated/app_localizations.dart';
 import 'package:soundspan/app/router/placeholder_screen.dart';
 import 'package:soundspan/app/shell/window_class.dart';
 import 'package:soundspan/app/theme/dimens.dart';
 import 'package:soundspan/app/theme/extensions.dart';
+import 'package:soundspan/features/playlist/ui/playlist_dialogs.dart';
+import 'package:soundspan/features/playlist/ui/playlist_view_model.dart';
 import 'package:soundspan/shared/domain/domain.dart';
 import 'package:soundspan/shared/providers/likes.dart';
 import 'package:soundspan/shared/providers/repositories.dart';
@@ -67,7 +71,13 @@ final StreamProvider<PagedSnapshot<Track>> likedTracksProvider =
 /// windows). An item the server cannot play is disabled with the server's
 /// message. The reserved id [likedPlaylistId] shows Liked Songs from the
 /// paged [LibraryRepository.likedTracks], with skeleton rows for pages not
-/// yet loaded. Read-only: no editing controls, and rows do nothing on tap.
+/// yet loaded. The owner of a playlist whose items all have a `playbackId`
+/// reorders them by dragging: a drag handle on touch platforms, the row
+/// itself with a pointer. Other viewers see no edit affordance.
+///
+/// A playlist created on this device opens under its temporary id; when
+/// the server assigns its id the page stays mounted, follows the new id
+/// and replaces the location with it.
 class PlaylistScreen extends ConsumerStatefulWidget {
   /// Creates the page of playlist [playlistId].
   const new({required this.playlistId, super.key});
@@ -84,7 +94,52 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
   int? _last;
   bool _reportScheduled = false;
 
+  String? _resolvedId;
+  StreamSubscription<PlaylistIdResolved>? _resolvedSub;
+
   bool get _liked => widget.playlistId == likedPlaylistId;
+
+  /// The id the page shows: the server's once a temporary id is replaced.
+  String get _id => _resolvedId ?? widget.playlistId;
+
+  @override
+  void initState() {
+    super.initState();
+    if (!_liked) unawaited(_listenForResolvedIds());
+  }
+
+  Future<void> _listenForResolvedIds() async {
+    final repository = await ref.read(playlistRepositoryProvider.future);
+    if (!mounted) return;
+    _resolvedSub = repository.resolvedIds.listen(_onResolved);
+  }
+
+  void _onResolved(PlaylistIdResolved event) {
+    if (!mounted || event.tempId != _id) return;
+    setState(() => _resolvedId = event.realId);
+    final router = GoRouter.maybeOf(context);
+    if (router == null) return;
+    final location = router.routerDelegate.currentConfiguration.uri;
+    final segments = [...location.pathSegments];
+    if (segments.isEmpty || segments.last != event.tempId) return;
+    segments.last = event.realId;
+    // `replace` keeps the page, so the screen is not built again.
+    unawaited(
+      router.replace<void>(location.replace(pathSegments: segments).toString()),
+    );
+  }
+
+  @override
+  void didUpdateWidget(PlaylistScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.playlistId == _resolvedId) _resolvedId = null;
+  }
+
+  @override
+  void dispose() {
+    unawaited(_resolvedSub?.cancel());
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -99,7 +154,7 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
   }
 
   Widget _playlistPage() {
-    final id = widget.playlistId;
+    final id = _id;
     final detail = ref.watch(playlistDetailProvider(id));
     return DetailPage<PlaylistDetail>(
       value: detail.whenData((cached) => cached.value),
@@ -147,23 +202,80 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
                 ),
               ),
             )
+          else if (canReorderPlaylist(detail))
+            _reorderableRows(context, detail, windowClass)
           else
             _rows(
               windowClass,
               itemCount: items.length,
-              itemBuilder: (context, index) {
-                final item = items[index];
-                return _row(
-                  item.track,
-                  windowClass,
-                  enabled: item.isPlayable && item.track.playbackId != null,
-                  reason: item.message ?? l10n.trackNotPlayable,
-                );
-              },
+              itemBuilder: (context, index) => _itemRow(items[index], l10n),
             ),
         ],
       ),
     ];
+  }
+
+  Widget _itemRow(PlaylistItem item, AppLocalizations l10n) => _row(
+    item.track,
+    WindowClass.of(context),
+    enabled: item.isPlayable && item.track.playbackId != null,
+    reason: item.message ?? l10n.trackNotPlayable,
+  );
+
+  /// The owner's rows, reordered by dragging: by a trailing handle on touch
+  /// platforms and by the whole row with a pointer.
+  Widget _reorderableRows(
+    BuildContext context,
+    PlaylistDetail detail,
+    WindowClass windowClass,
+  ) {
+    final l10n = AppLocalizations.of(context);
+    final items = detail.items;
+    final touch = isTouchPlatform(context);
+    final viewModel = ref.read(playlistViewModelProvider(_id));
+    return SliverPadding(
+      padding: EdgeInsets.fromLTRB(
+        pageGutter(windowClass) - Spacing.x8,
+        0,
+        pageGutter(windowClass) - Spacing.x8,
+        Spacing.x32,
+      ),
+      sliver: SliverReorderableList(
+        itemCount: items.length,
+        onReorderItem: (oldIndex, newIndex) =>
+            unawaited(viewModel.reorder(items, oldIndex, newIndex)),
+        itemBuilder: (context, index) {
+          final item = items[index];
+          final row = _itemRow(item, l10n);
+          if (!touch) {
+            return ReorderableDragStartListener(
+              key: ValueKey(item.id),
+              index: index,
+              child: row,
+            );
+          }
+          return Row(
+            key: ValueKey(item.id),
+            children: [
+              Expanded(child: row),
+              ReorderableDragStartListener(
+                index: index,
+                child: SizedBox.square(
+                  dimension: Sizes.touchTarget,
+                  child: Tooltip(
+                    message: l10n.playlistReorderHandle,
+                    child: Icon(
+                      Icons.drag_handle_rounded,
+                      color: context.colors.contentSecondary,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
   }
 
   Widget _likedPage() {

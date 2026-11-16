@@ -1337,6 +1337,78 @@ abstract class AppLocalizations {
   /// **'This playlist has no songs yet'**
   String get playlistEmpty;
 
+  /// Button in the Library's Playlists tab and the sidebar that creates a playlist, and the title of the dialog that names it.
+  ///
+  /// In en, this message translates to:
+  /// **'New playlist'**
+  String get playlistNew;
+
+  /// Title of the dialog that renames a playlist.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename playlist'**
+  String get playlistRenameTitle;
+
+  /// Label of the playlist name field in the create and rename dialogs.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get playlistNameLabel;
+
+  /// Confirm button of the dialog that creates a playlist.
+  ///
+  /// In en, this message translates to:
+  /// **'Create'**
+  String get playlistCreate;
+
+  /// Confirm button of the dialog that renames a playlist.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename'**
+  String get playlistRename;
+
+  /// Button that closes a playlist dialog without changing anything.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get playlistCancel;
+
+  /// Title of the dialog confirming that a playlist is deleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {name}?'**
+  String playlistDeleteTitle(String name);
+
+  /// Body of the dialog confirming that a playlist is deleted.
+  ///
+  /// In en, this message translates to:
+  /// **'The playlist is removed from your library. The songs in it stay.'**
+  String get playlistDeleteBody;
+
+  /// Destructive confirm button of the dialog that deletes a playlist.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get playlistDelete;
+
+  /// Title of the sheet or dialog that picks the playlist to add songs to.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to playlist'**
+  String get playlistAddToTitle;
+
+  /// Snackbar after songs were added to a playlist.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Added 1 song to {name}} other{Added {count} songs to {name}}}'**
+  String playlistAdded(int count, String name);
+
+  /// Tooltip and screen-reader label of the drag handle that moves a song within a playlist.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag to reorder'**
+  String get playlistReorderHandle;
+
   /// Type label above the name on an artist page.
   ///
   /// In en, this message translates to:

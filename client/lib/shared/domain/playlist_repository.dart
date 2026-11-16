@@ -46,7 +46,14 @@ abstract interface class PlaylistRepository {
   /// Puts the items of the playlist [id] in [order], which names every
   /// item's `playbackId`.
   Future<void> reorder(String id, List<PlaybackId> order);
+
+  /// Every temporary id of [create] the server replaced with its own.
+  Stream<PlaylistIdResolved> get resolvedIds;
 }
+
+/// The temporary id of a playlist created on this device and the id the
+/// server gave it.
+typedef PlaylistIdResolved = ({String tempId, String realId});
 
 /// Whether the items of [detail] can be reordered: the playlist is the
 /// user's and every item has a `playbackId`, because a reorder names the

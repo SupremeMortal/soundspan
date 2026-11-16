@@ -995,6 +995,69 @@
   "@playlistEmpty": {
     "description": "Shown on a playlist page when the playlist has no songs."
   },
+  "playlistNew": "New playlist",
+  "@playlistNew": {
+    "description": "Button in the Library's Playlists tab and the sidebar that creates a playlist, and the title of the dialog that names it."
+  },
+  "playlistRenameTitle": "Rename playlist",
+  "@playlistRenameTitle": {
+    "description": "Title of the dialog that renames a playlist."
+  },
+  "playlistNameLabel": "Name",
+  "@playlistNameLabel": {
+    "description": "Label of the playlist name field in the create and rename dialogs."
+  },
+  "playlistCreate": "Create",
+  "@playlistCreate": {
+    "description": "Confirm button of the dialog that creates a playlist."
+  },
+  "playlistRename": "Rename",
+  "@playlistRename": {
+    "description": "Confirm button of the dialog that renames a playlist."
+  },
+  "playlistCancel": "Cancel",
+  "@playlistCancel": {
+    "description": "Button that closes a playlist dialog without changing anything."
+  },
+  "playlistDeleteTitle": "Delete {name}?",
+  "@playlistDeleteTitle": {
+    "description": "Title of the dialog confirming that a playlist is deleted.",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "Road Trip"
+      }
+    }
+  },
+  "playlistDeleteBody": "The playlist is removed from your library. The songs in it stay.",
+  "@playlistDeleteBody": {
+    "description": "Body of the dialog confirming that a playlist is deleted."
+  },
+  "playlistDelete": "Delete",
+  "@playlistDelete": {
+    "description": "Destructive confirm button of the dialog that deletes a playlist."
+  },
+  "playlistAddToTitle": "Add to playlist",
+  "@playlistAddToTitle": {
+    "description": "Title of the sheet or dialog that picks the playlist to add songs to."
+  },
+  "playlistAdded": "{count, plural, =1{Added 1 song to {name}} other{Added {count} songs to {name}}}",
+  "@playlistAdded": {
+    "description": "Snackbar after songs were added to a playlist.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "name": {
+        "type": "String",
+        "example": "Road Trip"
+      }
+    }
+  },
+  "playlistReorderHandle": "Drag to reorder",
+  "@playlistReorderHandle": {
+    "description": "Tooltip and screen-reader label of the drag handle that moves a song within a playlist."
+  },
   "artistOverline": "Artist",
   "@artistOverline": {
     "description": "Type label above the name on an artist page."
