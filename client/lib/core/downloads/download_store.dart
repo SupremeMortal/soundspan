@@ -3,6 +3,7 @@
 import 'dart:convert';
 
 import 'package:drift/drift.dart';
+import 'package:flutter/foundation.dart' show immutable;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:soundspan/core/downloads/download_keys.dart';
 import 'package:soundspan/core/downloads/download_state_machine.dart';
@@ -212,14 +213,70 @@ class DownloadStore {
             ..orderBy([(i) => OrderingTerm.asc(i.requestedAt)]))
           .get();
 
-  /// The state-machine view of [row]. `nextAttemptAt` is not stored and is
-  /// always null here.
+  /// The item whose transfer task is [taskId], or null.
+  Future<DownloadItem?> itemByTaskId(String taskId) =>
+      (_db.select(_db.downloadItems)
+            ..where((i) => i.taskId.equals(taskId))
+            ..limit(1))
+          .getSingleOrNull();
+
+  /// The `queued` items in the order the scheduler starts them (doc 07,
+  /// Transfers): first items of a single-track or single-episode
+  /// collection, oldest request first; then items of other collections by
+  /// the collection's request time and, inside one, in membership order;
+  /// then items with no membership. Ties keep the items' request order.
+  Future<List<ScheduledDownload>> queuedInScheduleOrder() async {
+    final items = await itemsByStatus(DownloadStatus.queued);
+    if (items.isEmpty) return const [];
+    final m = _db.downloadMembership;
+    final c = _db.downloadCollections;
+    final memberships = await _db.select(m).join([
+      innerJoin(c, c.kind.equalsExp(m.kind) & c.refId.equalsExp(m.refId)),
+    ]).get();
+    final ranks = <String, _ScheduleRank>{};
+    for (final row in memberships) {
+      final membership = row.readTable(m);
+      final collection = row.readTable(c);
+      final single =
+          collection.kind == DownloadCollectionKind.track.name ||
+          collection.kind == DownloadCollectionKind.episode.name;
+      final rank = _ScheduleRank(
+        single ? 0 : 1,
+        collection.requestedAt,
+        single ? 0 : membership.position,
+      );
+      final best = ranks[membership.itemKey];
+      if (best == null || rank.compareTo(best) < 0) {
+        ranks[membership.itemKey] = rank;
+      }
+    }
+    final ordered =
+        [
+          for (final (index, item) in items.indexed)
+            (
+              item: item,
+              index: index,
+              rank:
+                  ranks[item.itemKey] ?? _ScheduleRank(2, item.requestedAt, 0),
+            ),
+        ]..sort((a, b) {
+          final byRank = a.rank.compareTo(b.rank);
+          return byRank != 0 ? byRank : a.index.compareTo(b.index);
+        });
+    return [
+      for (final entry in ordered)
+        ScheduledDownload(entry.item, userInitiated: entry.rank.group == 0),
+    ];
+  }
+
+  /// The state-machine view of [row].
   static DownloadItemState stateOf(DownloadItem row) => DownloadItemState(
     status: row.status,
     attempts: row.attempts,
     taskId: row.taskId,
     serverConfirmed: row.serverConfirmed,
     failureCode: row.failureCode,
+    nextAttemptAt: row.nextAttemptAt,
     waitingFor: _waitReason(row.waitingFor),
     sizeBytes: row.sizeBytes,
     relativePath: row.relativePath,
@@ -249,6 +306,7 @@ class DownloadStore {
             sizeBytes: Value(next.sizeBytes),
             relativePath: Value(next.relativePath),
             completedAt: Value(next.completedAt),
+            nextAttemptAt: Value(next.nextAttemptAt),
           ),
         );
     if (updated == 0) throw StateError('no download item $key');
@@ -261,6 +319,32 @@ class DownloadStore {
         key,
         DownloadItemsCompanion(receivedBytes: Value(receivedBytes)),
       );
+
+  /// Records what the first response of item [key]'s transfer said: its
+  /// [etag], and [contentLength] as the expected size when the server
+  /// announced none, so verification can compare with it.
+  Future<void> recordResponse(
+    DownloadItemKey key, {
+    String? etag,
+    int? contentLength,
+  }) => _db.transaction(() async {
+    final row = await item(key);
+    if (row == null) return;
+    await _writeItem(
+      key,
+      DownloadItemsCompanion(
+        etag: Value(etag),
+        expectedBytes: row.expectedBytes == null && contentLength != null
+            ? Value(contentLength)
+            : const Value.absent(),
+      ),
+    );
+  });
+
+  /// Sets why item [key] waits, or clears it with null, without changing
+  /// its status.
+  Future<void> setWaitingFor(DownloadItemKey key, DownloadWaitReason? reason) =>
+      _writeItem(key, DownloadItemsCompanion(waitingFor: Value(reason?.name)));
 
   /// Records that item [key] was played [at].
   Future<void> touchLastPlayed(DownloadItemKey key, DateTime at) =>
@@ -379,11 +463,49 @@ class DownloadStore {
     String refId,
   ) => c.kind.equals(kind.name) & c.refId.equals(refId);
 
+  /// Why [row] waits, read from its `waitingFor` column; null when it does
+  /// not or the value is unknown.
+  static DownloadWaitReason? waitReasonOf(DownloadItem row) =>
+      _waitReason(row.waitingFor);
+
   static DownloadWaitReason? _waitReason(String? name) {
     for (final reason in DownloadWaitReason.values) {
       if (reason.name == name) return reason;
     }
     return null;
+  }
+}
+
+/// A `queued` item in schedule order, as
+/// [DownloadStore.queuedInScheduleOrder] returns it.
+@immutable
+final class ScheduledDownload {
+  /// Creates the entry.
+  const new(this.item, {required this.userInitiated});
+
+  /// The item's row.
+  final DownloadItem item;
+
+  /// Whether a single-track or single-episode collection asked for it, so
+  /// the platform runs it first where it can.
+  final bool userInitiated;
+}
+
+/// Where an item falls in the schedule: its group, then the collection's
+/// request time, then its position in the collection.
+final class _ScheduleRank implements Comparable<_ScheduleRank> {
+  const new(this.group, this.requestedAt, this.position);
+
+  final int group;
+  final DateTime requestedAt;
+  final int position;
+
+  @override
+  int compareTo(_ScheduleRank other) {
+    if (group != other.group) return group.compareTo(other.group);
+    final byTime = requestedAt.compareTo(other.requestedAt);
+    if (byTime != 0) return byTime;
+    return position.compareTo(other.position);
   }
 }
 

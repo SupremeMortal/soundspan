@@ -16,6 +16,7 @@ import 'package:soundspan/app/router/deep_link_router.dart';
 import 'package:soundspan/app/router/notification_taps.dart';
 import 'package:soundspan/app/shell/window_state_controller.dart';
 import 'package:soundspan/core/auth/active_profile.dart';
+import 'package:soundspan/core/downloads/download_scheduler.dart';
 import 'package:soundspan/core/logging/app_logger.dart';
 import 'package:soundspan/core/logging/console_log_sink.dart';
 import 'package:soundspan/core/profile/capability_refresher.dart';
@@ -44,15 +45,16 @@ final AppLogger _log = AppLogger.scope('App');
 typedef PostFirstFrameTask = Future<void> Function(ProviderContainer root);
 
 /// The tasks [bootstrap] starts, in parallel, after the first frame:
-/// reachability, the capability refresh, the cache pruning and the
-/// outbox worker and the key-expiry monitor of every profile that becomes
-/// active, the deep-link listener and the notification-tap listener. Later
-/// features append theirs.
+/// reachability, the capability refresh, the cache pruning, the outbox
+/// worker, the download scheduler and the key-expiry monitor of every
+/// profile that becomes active, the deep-link listener and the
+/// notification-tap listener. Later features append theirs.
 final List<PostFirstFrameTask> postFirstFrameTasks = [
   startReachability,
   startCapabilityRefresh,
   startCachePruning,
   startOutbox,
+  startDownloads,
   startDeepLinks,
   startKeyExpiryMonitor,
   startNotificationTaps,

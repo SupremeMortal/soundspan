@@ -423,6 +423,23 @@ void main() {
     });
   });
 
+  test(
+    'connectionTypeChanges emits each change of the interface kind once',
+    () {
+      fakeAsync((async) {
+        final rig = _Rig(async);
+        final types = <ConnectionType>[];
+        rig.controller.connectionTypeChanges.listen(types.add);
+        rig
+          ..emit(_cellular)
+          ..emit(_cellular)
+          ..emit(ConnectivityInfo.none);
+        async.flushMicrotasks();
+        expect(types, [ConnectionType.cellular, ConnectionType.none]);
+      });
+    },
+  );
+
   test('dispose cancels the pending probe', () {
     fakeAsync((async) {
       final rig = _Rig(async)..goUnreachable();

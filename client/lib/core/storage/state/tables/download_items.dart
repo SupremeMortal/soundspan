@@ -54,6 +54,10 @@ class DownloadItems extends Table {
   /// Transfer attempts since the last reset.
   IntColumn get attempts => integer().withDefault(const Constant(0))();
 
+  /// When a `failedRetryable` item may run again, so the retry survives a
+  /// restart. Null in every other status.
+  DateTimeColumn get nextAttemptAt => dateTime().nullable()();
+
   /// Whether the server acknowledged the completed download.
   BoolColumn get serverConfirmed =>
       boolean().withDefault(const Constant(false))();

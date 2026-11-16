@@ -37,7 +37,7 @@ class StateDatabase extends _$StateDatabase {
   new(super.e);
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -45,7 +45,12 @@ class StateDatabase extends _$StateDatabase {
     onUpgrade: (m, from, to) async {
       if (from > to) throw DatabaseTooNewException('state.db', from, to);
       // Generated from drift_schemas/state/; a new version adds a step here.
-      await stepByStep()(m, from, to);
+      await stepByStep(
+        from1To2: (m, schema) => m.addColumn(
+          schema.downloadItems,
+          schema.downloadItems.nextAttemptAt,
+        ),
+      )(m, from, to);
     },
     beforeOpen: (details) => customStatement('PRAGMA foreign_keys = ON'),
   );

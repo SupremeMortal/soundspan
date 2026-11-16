@@ -1878,6 +1878,18 @@ class $DownloadItemsTable extends DownloadItems
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _nextAttemptAtMeta = const VerificationMeta(
+    'nextAttemptAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> nextAttemptAt =
+      GeneratedColumn<DateTime>(
+        'next_attempt_at',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
   static const VerificationMeta _serverConfirmedMeta = const VerificationMeta(
     'serverConfirmed',
   );
@@ -1943,6 +1955,7 @@ class $DownloadItemsTable extends DownloadItems
     relativePath,
     failureCode,
     attempts,
+    nextAttemptAt,
     serverConfirmed,
     requestedAt,
     completedAt,
@@ -2057,6 +2070,15 @@ class $DownloadItemsTable extends DownloadItems
         attempts.isAcceptableOrUnknown(data['attempts']!, _attemptsMeta),
       );
     }
+    if (data.containsKey('next_attempt_at')) {
+      context.handle(
+        _nextAttemptAtMeta,
+        nextAttemptAt.isAcceptableOrUnknown(
+          data['next_attempt_at']!,
+          _nextAttemptAtMeta,
+        ),
+      );
+    }
     if (data.containsKey('server_confirmed')) {
       context.handle(
         _serverConfirmedMeta,
@@ -2168,6 +2190,10 @@ class $DownloadItemsTable extends DownloadItems
         DriftSqlType.int,
         data['${effectivePrefix}attempts'],
       )!,
+      nextAttemptAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}next_attempt_at'],
+      ),
       serverConfirmed: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}server_confirmed'],
@@ -2245,6 +2271,10 @@ class DownloadItem extends DataClass implements Insertable<DownloadItem> {
   /// Transfer attempts since the last reset.
   final int attempts;
 
+  /// When a `failedRetryable` item may run again, so the retry survives a
+  /// restart. Null in every other status.
+  final DateTime? nextAttemptAt;
+
   /// Whether the server acknowledged the completed download.
   final bool serverConfirmed;
 
@@ -2272,6 +2302,7 @@ class DownloadItem extends DataClass implements Insertable<DownloadItem> {
     this.relativePath,
     this.failureCode,
     required this.attempts,
+    this.nextAttemptAt,
     required this.serverConfirmed,
     required this.requestedAt,
     this.completedAt,
@@ -2321,6 +2352,9 @@ class DownloadItem extends DataClass implements Insertable<DownloadItem> {
       map['failure_code'] = Variable<String>(failureCode);
     }
     map['attempts'] = Variable<int>(attempts);
+    if (!nullToAbsent || nextAttemptAt != null) {
+      map['next_attempt_at'] = Variable<DateTime>(nextAttemptAt);
+    }
     map['server_confirmed'] = Variable<bool>(serverConfirmed);
     map['requested_at'] = Variable<DateTime>(requestedAt);
     if (!nullToAbsent || completedAt != null) {
@@ -2365,6 +2399,9 @@ class DownloadItem extends DataClass implements Insertable<DownloadItem> {
           ? const Value.absent()
           : Value(failureCode),
       attempts: Value(attempts),
+      nextAttemptAt: nextAttemptAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(nextAttemptAt),
       serverConfirmed: Value(serverConfirmed),
       requestedAt: Value(requestedAt),
       completedAt: completedAt == null && nullToAbsent
@@ -2401,6 +2438,7 @@ class DownloadItem extends DataClass implements Insertable<DownloadItem> {
       relativePath: serializer.fromJson<String?>(json['relativePath']),
       failureCode: serializer.fromJson<String?>(json['failureCode']),
       attempts: serializer.fromJson<int>(json['attempts']),
+      nextAttemptAt: serializer.fromJson<DateTime?>(json['nextAttemptAt']),
       serverConfirmed: serializer.fromJson<bool>(json['serverConfirmed']),
       requestedAt: serializer.fromJson<DateTime>(json['requestedAt']),
       completedAt: serializer.fromJson<DateTime?>(json['completedAt']),
@@ -2430,6 +2468,7 @@ class DownloadItem extends DataClass implements Insertable<DownloadItem> {
       'relativePath': serializer.toJson<String?>(relativePath),
       'failureCode': serializer.toJson<String?>(failureCode),
       'attempts': serializer.toJson<int>(attempts),
+      'nextAttemptAt': serializer.toJson<DateTime?>(nextAttemptAt),
       'serverConfirmed': serializer.toJson<bool>(serverConfirmed),
       'requestedAt': serializer.toJson<DateTime>(requestedAt),
       'completedAt': serializer.toJson<DateTime?>(completedAt),
@@ -2453,6 +2492,7 @@ class DownloadItem extends DataClass implements Insertable<DownloadItem> {
     Value<String?> relativePath = const Value.absent(),
     Value<String?> failureCode = const Value.absent(),
     int? attempts,
+    Value<DateTime?> nextAttemptAt = const Value.absent(),
     bool? serverConfirmed,
     DateTime? requestedAt,
     Value<DateTime?> completedAt = const Value.absent(),
@@ -2475,6 +2515,9 @@ class DownloadItem extends DataClass implements Insertable<DownloadItem> {
     relativePath: relativePath.present ? relativePath.value : this.relativePath,
     failureCode: failureCode.present ? failureCode.value : this.failureCode,
     attempts: attempts ?? this.attempts,
+    nextAttemptAt: nextAttemptAt.present
+        ? nextAttemptAt.value
+        : this.nextAttemptAt,
     serverConfirmed: serverConfirmed ?? this.serverConfirmed,
     requestedAt: requestedAt ?? this.requestedAt,
     completedAt: completedAt.present ? completedAt.value : this.completedAt,
@@ -2509,6 +2552,9 @@ class DownloadItem extends DataClass implements Insertable<DownloadItem> {
           ? data.failureCode.value
           : this.failureCode,
       attempts: data.attempts.present ? data.attempts.value : this.attempts,
+      nextAttemptAt: data.nextAttemptAt.present
+          ? data.nextAttemptAt.value
+          : this.nextAttemptAt,
       serverConfirmed: data.serverConfirmed.present
           ? data.serverConfirmed.value
           : this.serverConfirmed,
@@ -2542,6 +2588,7 @@ class DownloadItem extends DataClass implements Insertable<DownloadItem> {
           ..write('relativePath: $relativePath, ')
           ..write('failureCode: $failureCode, ')
           ..write('attempts: $attempts, ')
+          ..write('nextAttemptAt: $nextAttemptAt, ')
           ..write('serverConfirmed: $serverConfirmed, ')
           ..write('requestedAt: $requestedAt, ')
           ..write('completedAt: $completedAt, ')
@@ -2567,6 +2614,7 @@ class DownloadItem extends DataClass implements Insertable<DownloadItem> {
     relativePath,
     failureCode,
     attempts,
+    nextAttemptAt,
     serverConfirmed,
     requestedAt,
     completedAt,
@@ -2591,6 +2639,7 @@ class DownloadItem extends DataClass implements Insertable<DownloadItem> {
           other.relativePath == this.relativePath &&
           other.failureCode == this.failureCode &&
           other.attempts == this.attempts &&
+          other.nextAttemptAt == this.nextAttemptAt &&
           other.serverConfirmed == this.serverConfirmed &&
           other.requestedAt == this.requestedAt &&
           other.completedAt == this.completedAt &&
@@ -2613,6 +2662,7 @@ class DownloadItemsCompanion extends UpdateCompanion<DownloadItem> {
   final Value<String?> relativePath;
   final Value<String?> failureCode;
   final Value<int> attempts;
+  final Value<DateTime?> nextAttemptAt;
   final Value<bool> serverConfirmed;
   final Value<DateTime> requestedAt;
   final Value<DateTime?> completedAt;
@@ -2634,6 +2684,7 @@ class DownloadItemsCompanion extends UpdateCompanion<DownloadItem> {
     this.relativePath = const Value.absent(),
     this.failureCode = const Value.absent(),
     this.attempts = const Value.absent(),
+    this.nextAttemptAt = const Value.absent(),
     this.serverConfirmed = const Value.absent(),
     this.requestedAt = const Value.absent(),
     this.completedAt = const Value.absent(),
@@ -2656,6 +2707,7 @@ class DownloadItemsCompanion extends UpdateCompanion<DownloadItem> {
     this.relativePath = const Value.absent(),
     this.failureCode = const Value.absent(),
     this.attempts = const Value.absent(),
+    this.nextAttemptAt = const Value.absent(),
     this.serverConfirmed = const Value.absent(),
     required DateTime requestedAt,
     this.completedAt = const Value.absent(),
@@ -2682,6 +2734,7 @@ class DownloadItemsCompanion extends UpdateCompanion<DownloadItem> {
     Expression<String>? relativePath,
     Expression<String>? failureCode,
     Expression<int>? attempts,
+    Expression<DateTime>? nextAttemptAt,
     Expression<bool>? serverConfirmed,
     Expression<DateTime>? requestedAt,
     Expression<DateTime>? completedAt,
@@ -2704,6 +2757,7 @@ class DownloadItemsCompanion extends UpdateCompanion<DownloadItem> {
       if (relativePath != null) 'relative_path': relativePath,
       if (failureCode != null) 'failure_code': failureCode,
       if (attempts != null) 'attempts': attempts,
+      if (nextAttemptAt != null) 'next_attempt_at': nextAttemptAt,
       if (serverConfirmed != null) 'server_confirmed': serverConfirmed,
       if (requestedAt != null) 'requested_at': requestedAt,
       if (completedAt != null) 'completed_at': completedAt,
@@ -2728,6 +2782,7 @@ class DownloadItemsCompanion extends UpdateCompanion<DownloadItem> {
     Value<String?>? relativePath,
     Value<String?>? failureCode,
     Value<int>? attempts,
+    Value<DateTime?>? nextAttemptAt,
     Value<bool>? serverConfirmed,
     Value<DateTime>? requestedAt,
     Value<DateTime?>? completedAt,
@@ -2750,6 +2805,7 @@ class DownloadItemsCompanion extends UpdateCompanion<DownloadItem> {
       relativePath: relativePath ?? this.relativePath,
       failureCode: failureCode ?? this.failureCode,
       attempts: attempts ?? this.attempts,
+      nextAttemptAt: nextAttemptAt ?? this.nextAttemptAt,
       serverConfirmed: serverConfirmed ?? this.serverConfirmed,
       requestedAt: requestedAt ?? this.requestedAt,
       completedAt: completedAt ?? this.completedAt,
@@ -2810,6 +2866,9 @@ class DownloadItemsCompanion extends UpdateCompanion<DownloadItem> {
     if (attempts.present) {
       map['attempts'] = Variable<int>(attempts.value);
     }
+    if (nextAttemptAt.present) {
+      map['next_attempt_at'] = Variable<DateTime>(nextAttemptAt.value);
+    }
     if (serverConfirmed.present) {
       map['server_confirmed'] = Variable<bool>(serverConfirmed.value);
     }
@@ -2846,6 +2905,7 @@ class DownloadItemsCompanion extends UpdateCompanion<DownloadItem> {
           ..write('relativePath: $relativePath, ')
           ..write('failureCode: $failureCode, ')
           ..write('attempts: $attempts, ')
+          ..write('nextAttemptAt: $nextAttemptAt, ')
           ..write('serverConfirmed: $serverConfirmed, ')
           ..write('requestedAt: $requestedAt, ')
           ..write('completedAt: $completedAt, ')
@@ -5448,6 +5508,7 @@ typedef $$DownloadItemsTableCreateCompanionBuilder =
       Value<String?> relativePath,
       Value<String?> failureCode,
       Value<int> attempts,
+      Value<DateTime?> nextAttemptAt,
       Value<bool> serverConfirmed,
       required DateTime requestedAt,
       Value<DateTime?> completedAt,
@@ -5471,6 +5532,7 @@ typedef $$DownloadItemsTableUpdateCompanionBuilder =
       Value<String?> relativePath,
       Value<String?> failureCode,
       Value<int> attempts,
+      Value<DateTime?> nextAttemptAt,
       Value<bool> serverConfirmed,
       Value<DateTime> requestedAt,
       Value<DateTime?> completedAt,
@@ -5597,6 +5659,11 @@ class $$DownloadItemsTableFilterComposer
 
   ColumnFilters<int> get attempts => $composableBuilder(
     column: $table.attempts,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get nextAttemptAt => $composableBuilder(
+    column: $table.nextAttemptAt,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -5730,6 +5797,11 @@ class $$DownloadItemsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<DateTime> get nextAttemptAt => $composableBuilder(
+    column: $table.nextAttemptAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get serverConfirmed => $composableBuilder(
     column: $table.serverConfirmed,
     builder: (column) => ColumnOrderings(column),
@@ -5816,6 +5888,11 @@ class $$DownloadItemsTableAnnotationComposer
 
   GeneratedColumn<int> get attempts =>
       $composableBuilder(column: $table.attempts, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get nextAttemptAt => $composableBuilder(
+    column: $table.nextAttemptAt,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<bool> get serverConfirmed => $composableBuilder(
     column: $table.serverConfirmed,
@@ -5909,6 +5986,7 @@ class $$DownloadItemsTableTableManager
                 Value<String?> relativePath = const Value.absent(),
                 Value<String?> failureCode = const Value.absent(),
                 Value<int> attempts = const Value.absent(),
+                Value<DateTime?> nextAttemptAt = const Value.absent(),
                 Value<bool> serverConfirmed = const Value.absent(),
                 Value<DateTime> requestedAt = const Value.absent(),
                 Value<DateTime?> completedAt = const Value.absent(),
@@ -5930,6 +6008,7 @@ class $$DownloadItemsTableTableManager
                 relativePath: relativePath,
                 failureCode: failureCode,
                 attempts: attempts,
+                nextAttemptAt: nextAttemptAt,
                 serverConfirmed: serverConfirmed,
                 requestedAt: requestedAt,
                 completedAt: completedAt,
@@ -5953,6 +6032,7 @@ class $$DownloadItemsTableTableManager
                 Value<String?> relativePath = const Value.absent(),
                 Value<String?> failureCode = const Value.absent(),
                 Value<int> attempts = const Value.absent(),
+                Value<DateTime?> nextAttemptAt = const Value.absent(),
                 Value<bool> serverConfirmed = const Value.absent(),
                 required DateTime requestedAt,
                 Value<DateTime?> completedAt = const Value.absent(),
@@ -5974,6 +6054,7 @@ class $$DownloadItemsTableTableManager
                 relativePath: relativePath,
                 failureCode: failureCode,
                 attempts: attempts,
+                nextAttemptAt: nextAttemptAt,
                 serverConfirmed: serverConfirmed,
                 requestedAt: requestedAt,
                 completedAt: completedAt,

@@ -97,8 +97,8 @@ final class DownloadItemState {
   /// Why the item failed or is unavailable; null otherwise.
   final String? failureCode;
 
-  /// When a retryable failure may run again. Not stored: the scheduler
-  /// keeps it from the [ScheduleRetry] effect.
+  /// When a retryable failure may run again; stored so the scheduler can
+  /// re-arm the retry after a restart.
   final DateTime? nextAttemptAt;
 
   /// Why a queued or paused item is not running.

@@ -156,7 +156,7 @@ The UI reads repositories through the profile-scoped providers in `lib/shared/pr
    - `FileDownloader` start-up: re-attach to tasks that ran while the app was dead.
    - `Reachability.start()`.
    - Capability refresh for the active profile ([04](04-auth-and-server-profiles.md)).
-   - Outbox replay and download reconciliation.
+   - Outbox replay and download reconciliation; `startDownloads` starts the active profile's `DownloadScheduler` where `canDownload` is true.
    - Cache pruning of the active profile's `cache.db` ([05](05-local-data.md#pruning)).
    - Deep-link listener (`app_links`), including the link that launched the app.
 
@@ -268,6 +268,7 @@ Each seam is an abstract class in `lib/platform/<name>/<name>.dart` with `_io.da
 | Player engine factory | `createPlayerEngine()` (`lib/platform/player_engine/`) | `JustAudioEngine` or `MediaKitEngine` by OS | `JustAudioEngine` |
 | Media controls | `MediaControls` | `audio_service` (Android, iOS, macOS, Linux via MPRIS), SMTC adapter (Windows) | `audio_service` (Media Session API) |
 | Downloader | `Downloader` | `background_downloader` | `UnsupportedDownloader` (feature hidden) |
+| Disk space | `DiskSpace` (`freeBytes(path)`, null when unknown) | `disk_space_2` (Android, iOS, Windows, Linux); null on macOS, which it does not cover | `UnknownDiskSpace` (null) |
 | Stream credentials | `StreamAuth` | Header | `?token=` query |
 | Window and tray | `DesktopShell` | `window_manager`, `tray_manager` | No-op |
 | QR scanner | `QrScanner` | `mobile_scanner` (Android, iOS, macOS); unavailable on Windows and Linux | `mobile_scanner` |

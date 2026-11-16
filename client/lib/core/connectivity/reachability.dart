@@ -54,6 +54,9 @@ abstract interface class ReachabilityController {
   /// The kind of network the device is on now.
   ConnectionType get connectionType;
 
+  /// Every change of [connectionType], from the same connectivity listener.
+  Stream<ConnectionType> get connectionTypeChanges;
+
   /// Reports the outcome of a real API call: any response is a success, an
   /// `Offline` exception a failure.
   void reportCallOutcome({required bool success});

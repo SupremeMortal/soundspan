@@ -101,6 +101,7 @@ class DownloadItems extends Table {
   TextColumn get relativePath => text().nullable()();   // Under profiles/<id>/media
   TextColumn get failureCode => text().nullable()();
   IntColumn get attempts => integer().withDefault(const Constant(0))();
+  DateTimeColumn get nextAttemptAt => dateTime().nullable()(); // failedRetryable only: when the retry is due, so it survives a restart (schema v2)
   BoolColumn get serverConfirmed => boolean().withDefault(const Constant(false))();
   DateTimeColumn get requestedAt => dateTime()();
   DateTimeColumn get completedAt => dateTime().nullable()();

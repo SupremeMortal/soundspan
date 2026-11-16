@@ -10,7 +10,7 @@
 
 import 'dart:io';
 
-import 'package:drift/drift.dart';
+import 'package:drift/drift.dart' hide isNull;
 import 'package:drift/native.dart';
 import 'package:drift_dev/api/migrations_native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -47,13 +47,44 @@ void main() {
   );
 
   test(
+    'a database created at version 2 matches drift_schema_v2.json',
+    () async {
+      final schema = await verifier.schemaAt(2);
+      final db = StateDatabase(schema.newConnection());
+      addTearDown(db.close);
+      await verifier.migrateAndValidate(db, 2);
+    },
+  );
+
+  test('version 1 migrates to 2: download items keep their rows and gain '
+      'an empty nextAttemptAt', () async {
+    final schema = await verifier.schemaAt(1);
+    schema.rawDatabase.execute(
+      'INSERT INTO download_items '
+      '(item_key, media_type, meta_json, status, attempts, requested_at) '
+      "VALUES ('t:pb-1', 'track', '{}', 'failedRetryable', 2, "
+      "'2026-01-01T00:00:00.000Z')",
+    );
+    final db = StateDatabase(schema.newConnection());
+    addTearDown(db.close);
+
+    await verifier.migrateAndValidate(db, 2);
+
+    final row = await db.select(db.downloadItems).getSingle();
+    expect(row.itemKey, 't:pb-1');
+    expect(row.attempts, 2);
+    expect(row.requestedAt, DateTime.utc(2026));
+    expect(row.nextAttemptAt, isNull);
+  });
+
+  test(
     'a database from a newer app fails to open and is left untouched',
     () async {
       final dir = Directory.systemTemp.createTempSync('state_db_migration');
       addTearDown(() => dir.deleteSync(recursive: true));
       final file = File(p.join(dir.path, 'state.db'));
 
-      final newer = _VersionedDatabase(NativeDatabase(file), 2);
+      final newer = _VersionedDatabase(NativeDatabase(file), 3);
       await newer.customStatement('CREATE TABLE future (x TEXT)');
       await newer.close();
       final before = file.readAsBytesSync();
@@ -64,8 +95,8 @@ void main() {
         throwsA(
           isA<DatabaseTooNewException>()
               .having((e) => e.database, 'database', 'state.db')
-              .having((e) => e.found, 'found', 2)
-              .having((e) => e.supported, 'supported', 1),
+              .having((e) => e.found, 'found', 3)
+              .having((e) => e.supported, 'supported', 2),
         ),
       );
       await db.close();

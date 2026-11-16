@@ -4,6 +4,7 @@
 
 list(APPEND FLUTTER_PLUGIN_LIST
   app_links_linux
+  disk_space_2
   dynamic_color
   file_selector_linux
   flutter_secure_storage_linux

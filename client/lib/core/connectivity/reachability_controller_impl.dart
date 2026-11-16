@@ -66,6 +66,8 @@ class ReachabilityControllerImpl implements ReachabilityController {
   final Clock _clock;
   final StreamController<Reachability> _changes =
       StreamController<Reachability>.broadcast();
+  final StreamController<ConnectionType> _connectionTypeChanges =
+      StreamController<ConnectionType>.broadcast();
 
   Reachability _current = Reachability.online;
   bool _hasInterface = true;
@@ -94,6 +96,10 @@ class ReachabilityControllerImpl implements ReachabilityController {
   /// the platform reports one.
   @override
   ConnectionType get connectionType => _connectionType;
+
+  @override
+  Stream<ConnectionType> get connectionTypeChanges =>
+      _connectionTypeChanges.stream;
 
   /// Starts following connectivity (doc 02, Bootstrap Sequence, step 8).
   /// Later calls do nothing.
@@ -151,17 +157,22 @@ class ReachabilityControllerImpl implements ReachabilityController {
     unawaited(_connectivitySubscription?.cancel());
     unawaited(_forcedSubscription?.cancel());
     unawaited(_changes.close());
+    unawaited(_connectionTypeChanges.close());
   }
 
   void _onConnectivity(ConnectivityInfo info) {
     _hasInterface = info.hasInterface;
-    _connectionType = !info.hasInterface
+    final type = !info.hasInterface
         ? ConnectionType.none
         : switch (info.type) {
             ConnectivityType.wifi => ConnectionType.wifi,
             ConnectivityType.cellular => ConnectionType.cellular,
             ConnectivityType.other => ConnectionType.other,
           };
+    if (type != _connectionType) {
+      _connectionType = type;
+      _connectionTypeChanges.add(type);
+    }
     if (_forced) return;
     if (!info.hasInterface) {
       _stopProbing();

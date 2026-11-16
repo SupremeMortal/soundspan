@@ -28,7 +28,8 @@ Coverage: `flutter test --coverage` merged with the API package's; floor 80 % li
 | `FakeEngine` | `PlayerEngine` | Virtual clock; scripted durations and failures; passes the conformance suite |
 | `FakeApi` | `SoundspanApi` resource classes | In-memory server model (tracks, playlists, likes) so repository and outbox tests exercise real request sequences |
 | `FakeDownloader` | `Downloader` | Emits progress and completion on demand; can inject 401, 404, and truncated files |
-| `FakeReachability` | `ReachabilityController` | |
+| `FakeReachability` | `ReachabilityController` | Setting `connectionType` emits on `connectionTypeChanges` |
+| `FakeDiskSpace` | `DiskSpace` | Settable free bytes, null for unknown; records the paths asked about |
 | `FakeClock` | `Clock` (injected everywhere time is read; `DateTime.now()` is banned by lint outside `lib/platform/`) | |
 | In-memory drift | Databases | `NativeDatabase.memory()`; migrations tested with generated schema helpers |
 | `InMemorySecretStore` | `SecretStore` | |
