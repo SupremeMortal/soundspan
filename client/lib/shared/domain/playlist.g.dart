@@ -37,6 +37,7 @@ _PlaylistItem _$PlaylistItemFromJson(Map<String, dynamic> json) =>
       track: Track.fromJson(json['track'] as Map<String, dynamic>),
       isPlayable: json['isPlayable'] as bool,
       message: json['message'] as String?,
+      pendingOpUuid: json['pendingOpUuid'] as String?,
     );
 
 Map<String, dynamic> _$PlaylistItemToJson(_PlaylistItem instance) =>
@@ -46,6 +47,7 @@ Map<String, dynamic> _$PlaylistItemToJson(_PlaylistItem instance) =>
       'track': instance.track,
       'isPlayable': instance.isPlayable,
       'message': instance.message,
+      'pendingOpUuid': instance.pendingOpUuid,
     };
 
 _PlaylistDetail _$PlaylistDetailFromJson(Map<String, dynamic> json) =>

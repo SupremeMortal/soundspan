@@ -20,6 +20,276 @@ final class FakeApi {
 
   /// The library resource's preference endpoints: `rest.library2`.
   final FakeLibraryClient library = FakeLibraryClient();
+
+  /// The playlists resource: `rest.playlists`.
+  final FakePlaylistsClient playlists = FakePlaylistsClient();
+}
+
+/// One request [FakePlaylistsClient] received: the operation and its
+/// arguments.
+typedef FakePlaylistRequest = ({String op, String? id, Object? body});
+
+/// One entry of a playlist in [FakePlaylistsClient].
+typedef FakePlaylistEntry = ({String itemId, String playbackId, String title});
+
+/// One playlist of [FakePlaylistsClient].
+final class FakePlaylist {
+  /// Creates the playlist [name].
+  new(this.name);
+
+  /// Its name.
+  String name;
+
+  /// Its entries in order.
+  final List<FakePlaylistEntry> entries = [];
+}
+
+/// An in-memory model of the server's playlist endpoints (doc 03): the
+/// user's playlists by id, every request in [requests] and per-call
+/// failures in [failures]. Ids are `pl-1`, `pl-2`, … in creation order.
+final class FakePlaylistsClient implements api.PlaylistsClient {
+  /// The playlists by id.
+  final Map<String, FakePlaylist> playlists = {};
+
+  /// Every request, in order.
+  final List<FakePlaylistRequest> requests = [];
+
+  /// Exceptions the next calls throw, oldest first; a call takes one when
+  /// any is left.
+  final List<api.ApiException> failures = [];
+
+  int _nextId = 0;
+  int _nextItem = 0;
+
+  /// The requests other than reads, as `op id` strings.
+  List<String> get writes => [
+    for (final request in requests)
+      if (request.op != 'list' && request.op != 'get')
+        '${request.op} ${request.id}',
+  ];
+
+  /// Adds a playlist named [name] directly, as if created elsewhere, with
+  /// the tracks [playbackIds]; answers its id.
+  String seed(String name, {List<String> playbackIds = const []}) {
+    final id = 'pl-${++_nextId}';
+    final playlist = FakePlaylist(name);
+    for (final playbackId in playbackIds) {
+      playlist.entries.add((
+        itemId: 'item-${++_nextItem}',
+        playbackId: playbackId,
+        title: 'Song $playbackId',
+      ));
+    }
+    playlists[id] = playlist;
+    return id;
+  }
+
+  void _record(String op, String? id, [Object? body]) {
+    requests.add((op: op, id: id, body: body));
+    if (failures.isNotEmpty) throw failures.removeAt(0);
+  }
+
+  FakePlaylist _find(String id) =>
+      playlists[id] ??
+      (throw const api.NotFound(status: 404, code: 'PLAYLIST_NOT_FOUND'));
+
+  Map<String, Object?> _base(String id, FakePlaylist playlist) => {
+    'id': id,
+    'name': playlist.name,
+    'trackCount': playlist.entries.length,
+    'isOwner': true,
+    'isPublic': false,
+    'isHidden': false,
+    'createdAt': '2026-01-01T00:00:00.000Z',
+    'updatedAt': '2026-01-01T00:00:00.000Z',
+    'user': {'username': 'me'},
+    'userId': 'u-1',
+  };
+
+  static Map<String, Object?> _itemJson(
+    String playlistId,
+    FakePlaylistEntry entry,
+    int sort,
+  ) => {
+    'id': entry.itemId,
+    'playlistId': playlistId,
+    'sort': sort,
+    'type': 'track',
+    'playback': {'isPlayable': true, 'reason': null, 'message': null},
+    'track': {
+      'id': 'track-${entry.playbackId}',
+      'title': entry.title,
+      'duration': 30,
+      'trackNo': 1,
+      'source': 'local',
+      'albumId': 'al-1',
+      'artistId': 'ar-1',
+      'playbackId': entry.playbackId,
+      'album': {'id': 'al-1', 'title': 'First Light', 'coverArt': null},
+      'artist': {'id': 'ar-1', 'name': 'Contract Aurora'},
+    },
+  };
+
+  api.PlaylistRecord _recordOf(String id, FakePlaylist playlist) =>
+      api.PlaylistRecord.fromJson({
+        'id': id,
+        'name': playlist.name,
+        'isPublic': false,
+        'userId': 'u-1',
+        'mixId': null,
+        'spotifyPlaylistId': null,
+        'spotifyPlaylistUrl': null,
+        'createdAt': '2026-01-01T00:00:00.000Z',
+        'updatedAt': '2026-01-01T00:00:00.000Z',
+      });
+
+  static const _written = api.PlaylistWriteResult(message: 'ok');
+
+  @override
+  Future<List<api.PlaylistSummary>> listPlaylists({
+    Map<String, Object?> extra = const {},
+    CancelToken? cancelToken,
+    Options? options,
+    int? limit,
+    int? offset,
+  }) async {
+    _record('list', null);
+    final ids = playlists.keys.toList().reversed.toList();
+    final start = (offset ?? 0).clamp(0, ids.length);
+    final end = (start + (limit ?? 500)).clamp(0, ids.length);
+    return [
+      for (final id in ids.sublist(start, end))
+        api.PlaylistSummary.fromJson({
+          ..._base(id, playlists[id]!),
+          'items': <Object?>[],
+        }),
+    ];
+  }
+
+  @override
+  Future<api.PlaylistDetail> getPlaylist({
+    required String id,
+    Map<String, Object?> extra = const {},
+    CancelToken? cancelToken,
+    Options? options,
+  }) async {
+    _record('get', id);
+    final playlist = _find(id);
+    return api.PlaylistDetail.fromJson({
+      ..._base(id, playlist),
+      'items': [
+        for (final (index, entry) in playlist.entries.indexed)
+          _itemJson(id, entry, index),
+      ],
+      'pendingCount': 0,
+      'totalItemCount': playlist.entries.length,
+      'truncated': false,
+    });
+  }
+
+  @override
+  Future<api.PlaylistRecord> createPlaylist({
+    required api.CreatePlaylistRequest body,
+    Map<String, Object?> extra = const {},
+    CancelToken? cancelToken,
+    Options? options,
+  }) async {
+    _record('create', null, body);
+    final id = seed(body.name);
+    return _recordOf(id, playlists[id]!);
+  }
+
+  @override
+  Future<api.PlaylistRecord> updatePlaylist({
+    required String id,
+    required api.UpdatePlaylistRequest body,
+    Map<String, Object?> extra = const {},
+    CancelToken? cancelToken,
+    Options? options,
+  }) async {
+    _record('rename', id, body);
+    final playlist = _find(id);
+    if (body.name case final name?) playlist.name = name;
+    return _recordOf(id, playlist);
+  }
+
+  @override
+  Future<api.PlaylistWriteResult> deletePlaylist({
+    required String id,
+    Map<String, Object?> extra = const {},
+    CancelToken? cancelToken,
+    Options? options,
+  }) async {
+    _record('delete', id);
+    _find(id);
+    playlists.remove(id);
+    return _written;
+  }
+
+  @override
+  Future<api.AddPlaylistItemResponse200> addPlaylistItem({
+    required String id,
+    required api.AddPlaylistItemRequest body,
+    Map<String, Object?> extra = const {},
+    CancelToken? cancelToken,
+    Options? options,
+  }) async {
+    _record('add', id, body);
+    final playlist = _find(id);
+    final entry = (
+      itemId: 'item-${++_nextItem}',
+      playbackId: body.playbackId,
+      title: body.metadata?.title ?? 'Song ${body.playbackId}',
+    );
+    playlist.entries.add(entry);
+    return api.AddPlaylistItemResponse200.fromJson(
+      _itemJson(id, entry, playlist.entries.length - 1),
+    );
+  }
+
+  @override
+  Future<api.PlaylistWriteResult> reorderPlaylistItems({
+    required String id,
+    required api.ReorderPlaylistItemsRequest body,
+    Map<String, Object?> extra = const {},
+    CancelToken? cancelToken,
+    Options? options,
+  }) async {
+    _record('reorder', id, body);
+    final playlist = _find(id);
+    final rank = {
+      for (final (index, playbackId) in body.playbackIds.indexed)
+        playbackId: index,
+    };
+    final sorted = [...playlist.entries]
+      ..sort(
+        (a, b) => (rank[a.playbackId] ?? rank.length).compareTo(
+          rank[b.playbackId] ?? rank.length,
+        ),
+      );
+    playlist.entries
+      ..clear()
+      ..addAll(sorted);
+    return _written;
+  }
+
+  @override
+  Future<api.PlaylistWriteResult> removePlaylistItem({
+    required String id,
+    required String playbackId,
+    Map<String, Object?> extra = const {},
+    CancelToken? cancelToken,
+    Options? options,
+  }) async {
+    final decoded = Uri.decodeComponent(playbackId);
+    _record('remove', id, decoded);
+    _find(id).entries.removeWhere((entry) => entry.playbackId == decoded);
+    return _written;
+  }
+
+  @override
+  Never noSuchMethod(Invocation invocation) =>
+      throw UnimplementedError('${invocation.memberName}');
 }
 
 /// An in-memory model of the server's preference endpoints (doc 03,

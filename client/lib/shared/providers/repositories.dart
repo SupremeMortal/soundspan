@@ -15,6 +15,7 @@ import 'package:soundspan/core/logging/app_logger.dart';
 import 'package:soundspan/core/profile/profile_context.dart';
 import 'package:soundspan/core/profile/profile_runtime.dart';
 import 'package:soundspan/core/storage/cache/cache_pruner.dart';
+import 'package:soundspan/core/sync/outbox/outbox.dart';
 import 'package:soundspan/core/sync/outbox/outbox_store.dart';
 import 'package:soundspan/shared/clock.dart';
 import 'package:soundspan/shared/data/home/cached_home_repository.dart';
@@ -85,6 +86,7 @@ final FutureProvider<PlaylistRepository> playlistRepositoryProvider =
         ref.watch(swrProvider),
         await ref.watch(pagedSourcesProvider.future),
         pending: ref.watch(pendingOpsProvider),
+        outbox: ref.watch(outboxProvider),
       ),
       dependencies: [
         playlistRemoteSourceProvider,
@@ -92,6 +94,7 @@ final FutureProvider<PlaylistRepository> playlistRepositoryProvider =
         swrProvider,
         pagedSourcesProvider,
         pendingOpsProvider,
+        outboxProvider,
       ],
     );
 

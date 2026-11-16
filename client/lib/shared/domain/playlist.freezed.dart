@@ -326,7 +326,9 @@ mixin _$PlaylistItem {
  Track get track;/// Whether the server can play the item; a row that cannot is shown
 /// disabled.
  bool get isPlayable;/// The server's explanation when the item cannot be played.
- String? get message;
+ String? get message;/// The `opUuid` of the pending add that shows this item before the
+/// server has it; null for an item the server sent.
+ String? get pendingOpUuid;
 /// Create a copy of PlaylistItem
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -340,20 +342,20 @@ $PlaylistItemCopyWith<PlaylistItem> get copyWith => _$PlaylistItemCopyWithImpl<P
 @override
 bool operator ==(Object other) {
   final _this = this as PlaylistItem;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is PlaylistItem&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.sort, _this.sort) || other.sort == _this.sort)&&(identical(other.track, _this.track) || other.track == _this.track)&&(identical(other.isPlayable, _this.isPlayable) || other.isPlayable == _this.isPlayable)&&(identical(other.message, _this.message) || other.message == _this.message));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is PlaylistItem&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.sort, _this.sort) || other.sort == _this.sort)&&(identical(other.track, _this.track) || other.track == _this.track)&&(identical(other.isPlayable, _this.isPlayable) || other.isPlayable == _this.isPlayable)&&(identical(other.message, _this.message) || other.message == _this.message)&&(identical(other.pendingOpUuid, _this.pendingOpUuid) || other.pendingOpUuid == _this.pendingOpUuid));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
   final _this = this as PlaylistItem;
-  return Object.hash(runtimeType,_this.id,_this.sort,_this.track,_this.isPlayable,_this.message);
+  return Object.hash(runtimeType,_this.id,_this.sort,_this.track,_this.isPlayable,_this.message,_this.pendingOpUuid);
 }
 
 @override
 String toString() {
   final _this = this as PlaylistItem;
-  return 'PlaylistItem(id: ${_this.id}, sort: ${_this.sort}, track: ${_this.track}, isPlayable: ${_this.isPlayable}, message: ${_this.message})';
+  return 'PlaylistItem(id: ${_this.id}, sort: ${_this.sort}, track: ${_this.track}, isPlayable: ${_this.isPlayable}, message: ${_this.message}, pendingOpUuid: ${_this.pendingOpUuid})';
 }
 
 
@@ -364,7 +366,7 @@ abstract mixin class $PlaylistItemCopyWith<$Res>  {
   factory $PlaylistItemCopyWith(PlaylistItem value, $Res Function(PlaylistItem) _then) = _$PlaylistItemCopyWithImpl;
 @useResult
 $Res call({
- String id, int sort, Track track, bool isPlayable, String? message
+ String id, int sort, Track track, bool isPlayable, String? message, String? pendingOpUuid
 });
 
 
@@ -381,13 +383,14 @@ class _$PlaylistItemCopyWithImpl<$Res>
 
 /// Create a copy of PlaylistItem
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? sort = null,Object? track = null,Object? isPlayable = null,Object? message = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? sort = null,Object? track = null,Object? isPlayable = null,Object? message = freezed,Object? pendingOpUuid = freezed,}) {
   return _then(PlaylistItem(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,sort: null == sort ? _self.sort : sort // ignore: cast_nullable_to_non_nullable
 as int,track: null == track ? _self.track : track // ignore: cast_nullable_to_non_nullable
 as Track,isPlayable: null == isPlayable ? _self.isPlayable : isPlayable // ignore: cast_nullable_to_non_nullable
 as bool,message: freezed == message ? _self.message : message // ignore: cast_nullable_to_non_nullable
+as String?,pendingOpUuid: freezed == pendingOpUuid ? _self.pendingOpUuid : pendingOpUuid // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }
@@ -482,10 +485,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  int sort,  Track track,  bool isPlayable,  String? message)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  int sort,  Track track,  bool isPlayable,  String? message,  String? pendingOpUuid)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _PlaylistItem() when $default != null:
-return $default(_that.id,_that.sort,_that.track,_that.isPlayable,_that.message);case _:
+return $default(_that.id,_that.sort,_that.track,_that.isPlayable,_that.message,_that.pendingOpUuid);case _:
   return orElse();
 
 }
@@ -503,10 +506,10 @@ return $default(_that.id,_that.sort,_that.track,_that.isPlayable,_that.message);
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  int sort,  Track track,  bool isPlayable,  String? message)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  int sort,  Track track,  bool isPlayable,  String? message,  String? pendingOpUuid)  $default,) {final _that = this;
 switch (_that) {
 case _PlaylistItem():
-return $default(_that.id,_that.sort,_that.track,_that.isPlayable,_that.message);case _:
+return $default(_that.id,_that.sort,_that.track,_that.isPlayable,_that.message,_that.pendingOpUuid);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -523,10 +526,10 @@ return $default(_that.id,_that.sort,_that.track,_that.isPlayable,_that.message);
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  int sort,  Track track,  bool isPlayable,  String? message)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  int sort,  Track track,  bool isPlayable,  String? message,  String? pendingOpUuid)?  $default,) {final _that = this;
 switch (_that) {
 case _PlaylistItem() when $default != null:
-return $default(_that.id,_that.sort,_that.track,_that.isPlayable,_that.message);case _:
+return $default(_that.id,_that.sort,_that.track,_that.isPlayable,_that.message,_that.pendingOpUuid);case _:
   return null;
 
 }
@@ -538,7 +541,7 @@ return $default(_that.id,_that.sort,_that.track,_that.isPlayable,_that.message);
 @JsonSerializable()
 
 class _PlaylistItem implements PlaylistItem {
-  const _PlaylistItem({required this.id, required this.sort, required this.track, required this.isPlayable, this.message});
+  const _PlaylistItem({required this.id, required this.sort, required this.track, required this.isPlayable, this.message, this.pendingOpUuid});
   factory _PlaylistItem.fromJson(Map<String, dynamic> json) => _$PlaylistItemFromJson(json);
 
 /// The server's item id.
@@ -552,6 +555,9 @@ class _PlaylistItem implements PlaylistItem {
 @override final  bool isPlayable;
 /// The server's explanation when the item cannot be played.
 @override final  String? message;
+/// The `opUuid` of the pending add that shows this item before the
+/// server has it; null for an item the server sent.
+@override final  String? pendingOpUuid;
 
 /// Create a copy of PlaylistItem
 /// with the given fields replaced by the non-null parameter values.
@@ -566,18 +572,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _PlaylistItem&&(identical(other.id, id) || other.id == id)&&(identical(other.sort, sort) || other.sort == sort)&&(identical(other.track, track) || other.track == track)&&(identical(other.isPlayable, isPlayable) || other.isPlayable == isPlayable)&&(identical(other.message, message) || other.message == message));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _PlaylistItem&&(identical(other.id, id) || other.id == id)&&(identical(other.sort, sort) || other.sort == sort)&&(identical(other.track, track) || other.track == track)&&(identical(other.isPlayable, isPlayable) || other.isPlayable == isPlayable)&&(identical(other.message, message) || other.message == message)&&(identical(other.pendingOpUuid, pendingOpUuid) || other.pendingOpUuid == pendingOpUuid));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
-    return Object.hash(runtimeType,id,sort,track,isPlayable,message);
+    return Object.hash(runtimeType,id,sort,track,isPlayable,message,pendingOpUuid);
 }
 
 @override
 String toString() {
-    return 'PlaylistItem(id: $id, sort: $sort, track: $track, isPlayable: $isPlayable, message: $message)';
+    return 'PlaylistItem(id: $id, sort: $sort, track: $track, isPlayable: $isPlayable, message: $message, pendingOpUuid: $pendingOpUuid)';
 }
 
 
@@ -588,7 +594,7 @@ abstract mixin class _$PlaylistItemCopyWith<$Res> implements $PlaylistItemCopyWi
   factory _$PlaylistItemCopyWith(_PlaylistItem value, $Res Function(_PlaylistItem) _then) = __$PlaylistItemCopyWithImpl;
 @override @useResult
 $Res call({
- String id, int sort, Track track, bool isPlayable, String? message
+ String id, int sort, Track track, bool isPlayable, String? message, String? pendingOpUuid
 });
 
 
@@ -605,13 +611,14 @@ class __$PlaylistItemCopyWithImpl<$Res>
 
 /// Create a copy of PlaylistItem
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? sort = null,Object? track = null,Object? isPlayable = null,Object? message = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? sort = null,Object? track = null,Object? isPlayable = null,Object? message = freezed,Object? pendingOpUuid = freezed,}) {
   return _then(_PlaylistItem(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,sort: null == sort ? _self.sort : sort // ignore: cast_nullable_to_non_nullable
 as int,track: null == track ? _self.track : track // ignore: cast_nullable_to_non_nullable
 as Track,isPlayable: null == isPlayable ? _self.isPlayable : isPlayable // ignore: cast_nullable_to_non_nullable
 as bool,message: freezed == message ? _self.message : message // ignore: cast_nullable_to_non_nullable
+as String?,pendingOpUuid: freezed == pendingOpUuid ? _self.pendingOpUuid : pendingOpUuid // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }

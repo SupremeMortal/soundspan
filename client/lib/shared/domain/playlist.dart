@@ -59,6 +59,10 @@ abstract class PlaylistItem with _$PlaylistItem {
 
     /// The server's explanation when the item cannot be played.
     String? message,
+
+    /// The `opUuid` of the pending add that shows this item before the
+    /// server has it; null for an item the server sent.
+    String? pendingOpUuid,
   }) = _PlaylistItem;
 
   /// Decodes an item written by [PlaylistItem.toJson].

@@ -291,6 +291,44 @@ class FakePlaylistRepository with _FakeReads implements PlaylistRepository {
     sources.add(source);
     return source;
   }
+
+  /// Every edit, in order, as `op id [argument]` strings.
+  final List<String> edits = [];
+
+  /// The id [create] answers next.
+  String createdId = 'tmp_new';
+
+  /// When set, [create] waits for it before answering.
+  Completer<void>? createGate;
+
+  @override
+  Future<String> create(String name) async {
+    edits.add('create $name');
+    await createGate?.future;
+    return createdId;
+  }
+
+  @override
+  Future<void> rename(String id, String name) async =>
+      edits.add('rename $id $name');
+
+  @override
+  Future<void> delete(String id) async => edits.add('delete $id');
+
+  @override
+  Future<int> addTracks(String id, List<Track> tracks) async {
+    final playable = [for (final track in tracks) ?track.playbackId?.value];
+    edits.add('add $id ${playable.join(',')}');
+    return playable.length;
+  }
+
+  @override
+  Future<void> removeItem(String id, PlaylistItem item) async =>
+      edits.add('remove $id ${item.id}');
+
+  @override
+  Future<void> reorder(String id, List<PlaybackId> order) async =>
+      edits.add('reorder $id ${[for (final p in order) p.value].join(',')}');
 }
 
 /// An in-memory [HomeRepository]; every shelf is empty until seeded.

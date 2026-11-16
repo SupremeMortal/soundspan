@@ -65,7 +65,10 @@ void main() {
           library: () => throw StateError('no library in this test'),
         ),
       ),
-      ...playlistOutboxHandlers(PlaylistRemoteSource(playlists)),
+      ...playlistOutboxHandlers(
+        PlaylistRemoteSource(playlists),
+        () => throw StateError('no cache in this test'),
+      ),
     ]);
   });
 

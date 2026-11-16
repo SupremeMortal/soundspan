@@ -300,6 +300,130 @@ class CacheStore {
         .write(ListsCompanion(fetchedAt: Value(DateTime.utc(1970))));
   }
 
+  /// Rewrites the cached detail `playlist:<id>` with [change] and marks it
+  /// fetched at the epoch, so the next read fetches it (doc 05, Read
+  /// Policy: a local edit invalidates the detail). The playlist's row takes
+  /// the changed summary. Nothing happens when no detail is cached.
+  Future<void> editPlaylistDetail(
+    String id,
+    PlaylistDetail Function(PlaylistDetail detail) change,
+  ) => _db.transaction(() async {
+    final key = 'playlist:$id';
+    final cached = await readBlob(
+      key,
+      (json) => PlaylistDetail.fromJson(json! as Map<String, Object?>),
+    );
+    if (cached == null) return;
+    final detail = change(cached.value);
+    await _db
+        .into(_db.blobs)
+        .insertOnConflictUpdate(
+          BlobsCompanion.insert(
+            key: key,
+            json: jsonEncode(detail),
+            fetchedAt: DateTime.utc(1970),
+          ),
+        );
+    await (_db.update(_db.playlists)..where((p) => p.id.equals(id))).write(
+      PlaylistsCompanion(
+        json: Value(jsonEncode(detail.summary)),
+        name: Value(detail.summary.name),
+      ),
+    );
+    await markListStale(key);
+  });
+
+  /// Puts [playlist] first in the list [listKey], moving the other entries
+  /// down by one, when the list is cached and does not hold it yet; the
+  /// playlist's row is stored either way.
+  Future<void> prependPlaylist(String listKey, PlaylistSummary playlist) =>
+      _db.transaction(() async {
+        await upsertPlaylists([playlist]);
+        final list = await (_db.select(
+          _db.lists,
+        )..where((l) => l.listKey.equals(listKey))).getSingleOrNull();
+        if (list == null) return;
+        final present =
+            await (_db.select(_db.listEntries)..where(
+                  (e) =>
+                      e.listKey.equals(listKey) &
+                      e.entityKind.equalsValue(CacheEntityKind.playlist) &
+                      e.entityKey.equals(playlist.id),
+                ))
+                .get();
+        if (present.isNotEmpty) return;
+        // Two steps, so no intermediate row collides with the key
+        // (listKey, position).
+        await _db.customUpdate(
+          'UPDATE list_entries SET position = -position - 1 '
+          'WHERE list_key = ?',
+          variables: [Variable(listKey)],
+          updates: {_db.listEntries},
+        );
+        await _db.customUpdate(
+          'UPDATE list_entries SET position = -position '
+          'WHERE list_key = ? AND position < 0',
+          variables: [Variable(listKey)],
+          updates: {_db.listEntries},
+        );
+        await _db
+            .into(_db.listEntries)
+            .insert(
+              ListEntriesCompanion.insert(
+                listKey: listKey,
+                position: 0,
+                entityKind: CacheEntityKind.playlist,
+                entityKey: playlist.id,
+              ),
+            );
+        if (list.total case final total?) {
+          await (_db.update(_db.lists)..where((l) => l.listKey.equals(listKey)))
+              .write(ListsCompanion(total: Value(total + 1)));
+        }
+      });
+
+  /// Removes the playlist [id] from the cache: its row, its detail and
+  /// track list, and its entries in other lists, which close up behind it.
+  Future<void> removePlaylist(String id) => _db.transaction(() async {
+    final key = 'playlist:$id';
+    final entries =
+        await (_db.select(_db.listEntries)..where(
+              (e) =>
+                  e.entityKind.equalsValue(CacheEntityKind.playlist) &
+                  e.entityKey.equals(id),
+            ))
+            .get();
+    for (final entry in entries) {
+      await (_db.delete(_db.listEntries)..where(
+            (e) =>
+                e.listKey.equals(entry.listKey) &
+                e.position.equals(entry.position),
+          ))
+          .go();
+      await _db.customUpdate(
+        'UPDATE list_entries SET position = -position '
+        'WHERE list_key = ? AND position > ?',
+        variables: [Variable(entry.listKey), Variable(entry.position)],
+        updates: {_db.listEntries},
+      );
+      await _db.customUpdate(
+        'UPDATE list_entries SET position = -position - 1 '
+        'WHERE list_key = ? AND position < 0',
+        variables: [Variable(entry.listKey)],
+        updates: {_db.listEntries},
+      );
+      await _db.customUpdate(
+        'UPDATE lists SET total = total - 1 '
+        'WHERE list_key = ? AND total IS NOT NULL AND total > 0',
+        variables: [Variable(entry.listKey)],
+        updates: {_db.lists},
+      );
+    }
+    await (_db.delete(_db.playlists)..where((p) => p.id.equals(id))).go();
+    await (_db.delete(_db.lists)..where((l) => l.listKey.equals(key))).go();
+    await (_db.delete(_db.blobs)..where((b) => b.key.equals(key))).go();
+  });
+
   /// The track stored under [key], or null.
   Stream<CacheEntry<Track>?> watchTrack(String key) =>
       (_db.select(_db.tracks)..where((t) => t.key.equals(key)))
