@@ -4,3 +4,4 @@
 # that matches no file, fails tool/coverage_floor.dart.
 lib/core/playback/engines/just_audio_engine.dart # just_audio adapter; needs a device player, proven by integration_test/engine_conformance_test.dart
 lib/core/playback/engines/media_kit_engine.dart # media_kit adapter; needs libmpv and an audio device, proven by integration_test/engine_conformance_test.dart
+lib/platform/audio_session/audio_session_gateway_io.dart # audio_session binding; needs the platform plugin, its event mapping is tested in test/platform/audio_session_mapping_test.dart

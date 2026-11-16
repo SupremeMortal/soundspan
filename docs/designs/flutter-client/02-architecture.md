@@ -266,6 +266,7 @@ Each seam is an abstract class in `lib/platform/<name>/<name>.dart` with `_io.da
 | Secrets | `SecretStore` | `flutter_secure_storage` | Memory + `sessionStorage` |
 | Database opener | `DatabaseOpener` | `drift_flutter` native | drift WASM worker |
 | Player engine factory | `createPlayerEngine()` (`lib/platform/player_engine/`) | `JustAudioEngine` or `MediaKitEngine` by OS | `JustAudioEngine` |
+| Audio session | `AudioSessionGateway` (`lib/platform/audio_session/audio_session_gateway.dart`) | `audio_session` (Android, iOS, macOS); no-op on Windows and Linux | No-op (focus always granted, no events) |
 | Media controls | `MediaControls` | `audio_service` (Android, iOS, macOS, Linux via MPRIS), SMTC adapter (Windows) | `audio_service` (Media Session API) |
 | Downloader | `Downloader` | `background_downloader` | `UnsupportedDownloader` (feature hidden) |
 | Disk space | `DiskSpace` (`freeBytes(path)`, null when unknown) | `disk_space_2` (Android, iOS, Windows, Linux); null on macOS, which it does not cover | `UnknownDiskSpace` (null) |

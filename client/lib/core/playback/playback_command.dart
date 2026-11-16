@@ -30,10 +30,23 @@ final class PlayCommand extends PlaybackCommand {
   const new();
 }
 
+/// Who paused playback.
+enum PauseOrigin {
+  /// The user, or anything acting for them: the UI, OS media controls.
+  user,
+
+  /// The audio-focus rules (doc 06, Audio Focus and Interruptions): an
+  /// interruption, or the output becoming noisy.
+  focus,
+}
+
 /// Pauses, keeping the position.
 final class PauseCommand extends PlaybackCommand {
-  /// Creates the command.
-  const new();
+  /// Creates the command; [origin] is who paused.
+  const new({this.origin = PauseOrigin.user});
+
+  /// Who paused.
+  final PauseOrigin origin;
 }
 
 /// Pauses when playing, else plays.

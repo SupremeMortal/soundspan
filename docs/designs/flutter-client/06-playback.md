@@ -290,6 +290,14 @@ The handler holds no state of its own; it renders the controller's snapshot. Thi
 | Becoming noisy (headphones unplugged, Bluetooth disconnected) | Pause; never auto-resume |
 | Output device change on desktop | No action |
 
+The rules are `AudioFocusController`, created and disposed with the profile's `PlaybackController`, over the `AudioSessionGateway` seam ([02](02-architecture.md#platform-seams)): `audio_session` on Android, iOS and macOS (`androidWillPauseWhenDucked: false`); a no-op that always grants focus on Windows, Linux and web.
+
+- **Profile.** The session is configured as `music` for a track and `speech` for an episode, again only when the current item's kind changes.
+- **Asking for focus.** When play intent goes from paused to playing (play, play items, jump), the controller awaits its `beforePlay` hook, which asks the OS for focus, before the engine starts. Denied focus leaves the controller paused (play items still replace the queue and load the item, not playing) and emits the `FocusDenied` notice.
+- **Resuming.** An interruption that begins while playing pauses with `PauseOrigin.focus`. Its end with `shouldResume` plays again only when the latest transport command (play, pause, stop, next, previous, jump, seek) is still that pause, so any user command during the interruption cancels the resume; becoming noisy cancels it too.
+- **Ducking.** Where the OS does not duck by itself, the controller's `duck` volume factor is 0.3 until the duck ends; it multiplies with the user volume and the `loudness` factor, clamped to 0.0–1.0.
+- **Giving focus up.** Focus is released when playback stops or the queue is cleared, not on pause.
+
 ## Play Reporting
 
 `PlayReporter` in `core/sync` listens to the controller. A play is reported with the total time the track was heard. A play heard for less than 5 seconds in total is not recorded.

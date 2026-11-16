@@ -188,3 +188,22 @@ final class PlaybackStopped extends PlaybackNotice {
   @override
   String toString() => 'PlaybackStopped(${kind.name})';
 }
+
+/// Playback did not start because the OS denied audio focus (doc 06, Audio
+/// Focus and Interruptions); the controller stays paused.
+final class FocusDenied extends PlaybackNotice {
+  /// Creates the notice.
+  const new();
+
+  @override
+  // The class has no fields.
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  bool operator ==(Object other) => other is FocusDenied;
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes, see ==.
+  int get hashCode => (FocusDenied).hashCode;
+
+  @override
+  String toString() => 'FocusDenied()';
+}

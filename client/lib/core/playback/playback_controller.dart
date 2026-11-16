@@ -134,6 +134,19 @@ class PlaybackController {
 
   RemoteDriver? _driver;
 
+  PauseOrigin? _pauseOrigin;
+
+  /// Asked before playback starts, while the controller is paused: when it
+  /// answers false, playback does not start and [FocusDenied] is emitted.
+  /// Set by the audio-focus rules, so audio never starts before the OS
+  /// granted focus (doc 06, Audio Focus and Interruptions).
+  Future<bool> Function()? beforePlay;
+
+  /// Who issued the latest transport command (play, pause, stop, next,
+  /// previous, jump, seek); [PauseOrigin.focus] only while the latest one
+  /// is a pause by the audio-focus rules. Null before the first one.
+  PauseOrigin? get pauseOrigin => _pauseOrigin;
+
   /// The snapshots; a new listener receives the latest one first. Changes
   /// of the position alone arrive at most four times a second.
   Stream<PlaybackSnapshot> get snapshots => _publisher.stream;
@@ -205,8 +218,10 @@ class PlaybackController {
   /// Plays the current item, loading it first when nothing is loaded.
   Future<void> play() => dispatch(const PlayCommand());
 
-  /// Pauses, keeping the position.
-  Future<void> pause() => dispatch(const PauseCommand());
+  /// Pauses, keeping the position; [origin] tells a pause of the
+  /// audio-focus rules from the user's.
+  Future<void> pause({PauseOrigin origin = PauseOrigin.user}) =>
+      dispatch(PauseCommand(origin: origin));
 
   /// Pauses when playing, else plays.
   Future<void> togglePlayPause() => dispatch(const TogglePlayPauseCommand());
@@ -298,9 +313,10 @@ class PlaybackController {
   }
 
   Future<void> _apply(PlaybackCommand command) async {
+    _noteOrigin(command);
     switch (command) {
       case PlayItemsCommand(:final items, :final startIndex, :final context):
-        _playIntent = true;
+        _playIntent = await _mayStart();
         _failures.resetCount();
         await _reduce(
           ReplaceAll(items, startIndex: startIndex, context: context),
@@ -326,7 +342,7 @@ class PlaybackController {
       case PreviousCommand():
         await _reduce(Previous(_engineState.position));
       case JumpToCommand(:final queueItemId):
-        _playIntent = true;
+        _playIntent = await _mayStart();
         _failures.resetCount();
         await _reduce(JumpTo(queueItemId));
       case PlayNextCommand(:final items):
@@ -353,7 +369,47 @@ class PlaybackController {
     }
   }
 
+  /// Records who issued [command] when it is a transport command.
+  void _noteOrigin(PlaybackCommand command) {
+    switch (command) {
+      case PauseCommand(:final origin):
+        _pauseOrigin = origin;
+      case PlayItemsCommand() ||
+          PlayCommand() ||
+          TogglePlayPauseCommand() ||
+          SeekCommand() ||
+          NextCommand() ||
+          PreviousCommand() ||
+          JumpToCommand() ||
+          StopCommand():
+        _pauseOrigin = PauseOrigin.user;
+      case PlayNextCommand() ||
+          AppendCommand() ||
+          RemoveAtCommand() ||
+          MoveCommand() ||
+          SetShuffleCommand() ||
+          SetRepeatCommand() ||
+          ClearCommand() ||
+          SetVolumeCommand():
+        break;
+    }
+  }
+
+  /// Whether playback may start: true when it plays already or
+  /// [beforePlay] allows it; otherwise emits [FocusDenied].
+  Future<bool> _mayStart() async {
+    final hook = beforePlay;
+    if (_playIntent || hook == null) return true;
+    if (await hook()) return true;
+    _notices.add(const FocusDenied());
+    return false;
+  }
+
   Future<void> _play() async {
+    if (!await _mayStart()) {
+      _publish();
+      return;
+    }
     _playIntent = true;
     _publish();
     if (_queue.current == null) return;

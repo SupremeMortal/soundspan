@@ -5,6 +5,7 @@ import 'dart:async';
 import 'package:flutter/widgets.dart' show AppLifecycleListener, WidgetsBinding;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:soundspan/core/connectivity/reachability.dart';
+import 'package:soundspan/core/playback/audio_focus.dart';
 import 'package:soundspan/core/playback/data/playback_info_repository.dart';
 import 'package:soundspan/core/playback/engines/player_engine_provider.dart';
 import 'package:soundspan/core/playback/loudness_binding.dart';
@@ -19,6 +20,7 @@ import 'package:soundspan/core/profile/profile_providers.dart';
 import 'package:soundspan/core/profile/settings/settings_providers.dart';
 import 'package:soundspan/core/profile/settings/user_settings.dart';
 import 'package:soundspan/core/storage/state/queue_dao.dart';
+import 'package:soundspan/platform/audio_session/audio_session_gateway.dart';
 import 'package:soundspan/platform/stream_auth/stream_auth.dart';
 import 'package:soundspan/shared/clock.dart';
 import 'package:soundspan_api/soundspan_api.dart' show StreamUrls;
@@ -88,6 +90,9 @@ final Provider<QueuePersistence> queuePersistenceProvider =
 /// It starts the scope's [LoudnessBinding]: the levelling mode of
 /// [loudnessModeProvider] and the target of [serverCapabilitiesProvider]
 /// (-18 LUFS while unknown) are read whenever an item becomes current.
+///
+/// Its [AudioFocusController] applies the audio-focus rules over the root
+/// [audioSessionGatewayProvider].
 final Provider<PlaybackController> playbackControllerProvider =
     Provider<PlaybackController>(
       (ref) {
@@ -121,6 +126,10 @@ final Provider<PlaybackController> playbackControllerProvider =
           mode: () => mode,
           targetLufs: () => targetLufs,
         );
+        final focus = AudioFocusController(
+          controller,
+          ref.watch(audioSessionGatewayProvider),
+        );
         unawaited(controller.restore());
         final lifecycle = AppLifecycleListener(
           binding: WidgetsBinding.instance,
@@ -130,6 +139,7 @@ final Provider<PlaybackController> playbackControllerProvider =
         ref.onDispose(() {
           lifecycle.dispose();
           unawaited(loudness.dispose());
+          focus.dispose();
           unawaited(controller.dispose());
         });
         return controller;
