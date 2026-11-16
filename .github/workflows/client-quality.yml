@@ -74,7 +74,7 @@ jobs:
             echo "client=$(has '^(client/|\.github/workflows/client-[^/]*\.yml$|\.github/actions/client-flutter/)')"
             echo "apple=$(has '^(client/ios/|client/macos/|client/pubspec\.lock$|client/lib/platform/|\.github/workflows/client-quality\.yml$|\.github/actions/client-flutter/)')"
             echo "api_surface=$(has '^(client/packages/soundspan_api/|client/tool/specs/|client/tool/spec_compat\.dart$|backend/src/routes/|backend/src/openapi/|\.github/workflows/client-quality\.yml$)')"
-            echo "contract=$(has '^(client/packages/soundspan_api/|client/tool/specs/|client/tool/spec_compat\.dart$|client/contract_test/|backend/src/routes/|backend/src/openapi/|\.github/workflows/client-quality\.yml$)')"
+            echo "contract=$(has '^(client/packages/soundspan_api/|client/tool/specs/|client/tool/spec_compat\.dart$|client/contract_test/|client/lib/core/realtime/|backend/src/routes/|backend/src/openapi/|\.github/workflows/client-quality\.yml$)')"
             echo "web_storage=$(has '^(client/lib/platform/|client/web/|client/integration_test/web/|client/pubspec\.lock$|\.github/workflows/client-quality\.yml$)')"
             echo "desktop=$(has '^(client/linux/|client/windows/|client/lib/platform/desktop_shell/|client/lib/app/shell/window_state_controller\.dart$|client/integration_test/desktop/|client/tool/ci/|\.github/workflows/client-quality\.yml$)')"
             echo "device=$(has '^(client/lib/core/playback/engines/|client/integration_test/|client/lib/platform/player_engine/|\.github/workflows/client-device-tests\.yml$)')"
@@ -159,6 +159,14 @@ jobs:
 
       - name: Set up Flutter
         uses: ./.github/actions/client-flutter
+
+      - name: Setup Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+
+      - name: Install the socket test server
+        run: npm ci --prefix client/test/support/socket_server
 
       - name: Test soundspan_api with coverage
         working-directory: client/packages/soundspan_api

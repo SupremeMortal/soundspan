@@ -1,0 +1,9 @@
+{
+    "name": "soundspan-client-socket-test-server",
+    "private": true,
+    "type": "module",
+    "description": "socket.io server the client's SocketClient tests run against.",
+    "dependencies": {
+        "socket.io": "4.8.4"
+    }
+}

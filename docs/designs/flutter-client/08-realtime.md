@@ -15,6 +15,7 @@ final socket = io(
       .setPath('${basePathPrefix}/socket.io/listen-together')   // Keeps a reverse-proxy sub-path
       .setTransports(['websocket'])                             // Server default allows websocket only
       .disableAutoConnect()
+      .enableForceNew()                                         // Own manager; never the package's per-origin cache
       .enableReconnection()
       .setReconnectionDelay(1000)
       .setReconnectionDelayMax(30000)
@@ -24,7 +25,9 @@ final socket = io(
 );
 ```
 
-- `_authPayload()` returns exactly one of `{ token: <access JWT> }` or `{ apiKey: <key> }`. Sending both is rejected by the server. For JWT sessions it calls `ensureFresh` first so a reconnect after a long sleep does not present an expired token.
+- `_authPayload()` returns exactly one of `{ token: <access JWT> }` or `{ apiKey: <key> }`. Sending both is rejected by the server. For JWT sessions it calls `ensureFresh(minRemaining: 1 min)` first so a reconnect after a long sleep does not present an expired token; the token is checked only at the handshake.
+- `socket_client.dart`, `socket_models.dart` and `socket_exceptions.dart` import nothing from Flutter (the app lifecycle, reachability, timers and logging are injected), so the contract suite imports them by path. The provider wiring lives in `realtime_providers.dart`.
+- socket_io_client leaves some futures unawaited (closing a WebSocket the server already closed); the client runs the socket in its own zone and logs those errors instead of letting them reach the app's error handler.
 - The namespace URL is built from the origin, and the path from the profile's prefix, because socket.io treats the URL path as the namespace.
 - Connection errors: `Invalid token` or `Token expired` → refresh once and reconnect; a second failure, or `User not found`, is handed to `SessionController.onUnauthenticated`. A server-initiated disconnect of an API-key socket (key revoked) is treated the same way after one confirming REST call (`GET /auth/me`).
 
@@ -37,7 +40,9 @@ final socket = io(
 | Mobile app backgrounded, in a group and playing | Stay connected (the audio background mode or foreground service keeps the process alive) |
 | Resume | Reconnect; rejoin the group; refetch presence over REST |
 | Reachability not `online` | Reconnection attempts pause; resume on `online` |
-| Profile switch or sign-out | Dispose |
+| Profile switch or sign-out | Dispose. Sign-out registers a `SignOutParticipant` that leaves the joined group (2 s budget, errors ignored) and then disposes |
+
+"Opened lazily" is a lease count: `acquire(reason)` returns a `SocketLease`; the socket connects while at least one is held and disconnects when the last is released. "In a group and playing" is a predicate Listen Together supplies; until then nothing keeps the socket alive in the background. On every reconnection after the first connection the client sends `join-group` again for the group it was in and publishes a `reconnected` event so callers refetch over REST.
 
 ### Typed Events
 
@@ -64,7 +69,7 @@ Future<int> ping();                                   // lt-ping → serverTime
 
 Queue additions always send `tracks: [{ playbackId, metadata }]`. The legacy `trackIds` form and the source-specific fields of `SyncQueueItem` (`streamSource`, `provider`, `tidalTrackId`, …) are not declared in the client's models.
 
-Error acknowledgements `{ error, code?, transient?, retryable?, retryAfterMs? }` map to `SocketCommandException`; a `retryable` conflict is retried once after `retryAfterMs`.
+Error acknowledgements `{ error, code?, transient?, retryable?, retryAfterMs? }` map to `SocketCommandException`; a `retryable` conflict is retried once after `retryAfterMs` (250 ms when absent). Emitting while disconnected fails at once with `SocketNotConnected`; no acknowledgement within 5 s fails with `SocketAckTimeout`. `group:availability` is not subscribed. Unknown `syncState` and `groupType` strings decode to `unknown`; a payload that does not decode is logged and dropped. A queue entry without `playbackId` is not playable.
 
 ## Listen Together
 
@@ -145,7 +150,7 @@ While attached, UI transport and queue commands are sent to the server and **not
 
 ## Testing
 
-- `SocketClient` against a local `socket_io` test server in `dart test`: handshake payloads for both credential kinds, reconnect with a refreshed token, ack timeout, error mapping.
+- `SocketClient` against a local socket.io server in `flutter test` (plain `test()`, real sockets): handshake payloads for both credential kinds, reconnect with a refreshed token, ack timeout, error mapping, leases, lifecycle and sign-out. No maintained Dart socket.io v4 server exists, so the server is a small Node script, `client/test/support/socket_server/server.mjs` (the backend's `socket.io` version, scriptable over `POST /__control`), started by `test/helpers/socket_test_server.dart`. The `client-test` job installs it with `npm ci`; a missing `node` fails the tests.
 - `ListenTogetherController` with `FakeEngine`, a fake clock, and a scripted event stream: each row of the "Applying State" table, drift thresholds, stale `stateVersion`, leave restores the queue.
 - Contract suite: two API clients (JWT and API key) join one group on the real server; a queue add by `playbackId` from one is observed by the other.
 - Manual: two physical devices in one room, playing the same group; audible offset below 100 ms on the same network.

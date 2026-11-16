@@ -19,6 +19,7 @@ dart run tool/spec_compat.dart
 (cd contract_test && dart analyze --fatal-infos)
 
 echo "== client-test"
+npm ci --prefix test/support/socket_server
 (cd packages/soundspan_api && dart test --coverage-path=coverage/lcov.info)
 flutter test --coverage --exclude-tags golden,contract,engine
 (cd contract_test && dart test --exclude-tags contract,contract-destructive)
