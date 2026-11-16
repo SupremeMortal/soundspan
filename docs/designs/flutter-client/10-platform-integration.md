@@ -154,11 +154,11 @@ Flathub builds must work offline from declared sources. The manifest takes the p
 |---|---|---|
 | Android | Manifest intent filter | `app_links` |
 | iOS, macOS | `CFBundleURLTypes` | `app_links` |
-| Windows | MSIX protocol / registry | Command line → single-instance forwarding → `app_links` |
-| Linux | `.desktop` MimeType | `GApplication` open → `app_links` |
+| Windows | MSIX protocol / registry | The launch's command line (Dart entry-point arguments); a later launch's command line through single-instance forwarding (`WM_COPYDATA` → the `io.soundspan.app/single_instance` channel) |
+| Linux | `.desktop` MimeType (`linux/packaging/io.soundspan.app.desktop`) | The launch's command line (Dart entry-point arguments); a later launch through `GApplication` open → the `io.soundspan.app/single_instance` channel |
 | Web | — | Query parameters on load: `?link=<code>&server=<url>` |
 
-All routes go through one `DeepLinkRouter` that validates the URI (scheme, known host segment, parameter shapes) before touching navigation. Unknown links are ignored and logged.
+All routes go through one `DeepLinkRouter` (`lib/app/router/deep_link_router.dart`) that validates the URI (scheme, known host segment, parameter shapes) before touching navigation. Unknown links are ignored and logged with their scheme and host only. On Windows and Linux the `DeepLinks` seam reads `soundspan:` arguments itself instead of going through `app_links`: the single-instance runners already forward a later launch's arguments to Dart, so no `app_links` native setup is needed there. Flutter's own deep-link route handling is off (`flutter_deeplinking_enabled` meta-data on `MainActivity`, `FlutterDeepLinkingEnabled` false in the iOS `Info.plist`), so a link reaches navigation only through `DeepLinkRouter`. `tool/check_platform_config.dart` (run in `client-analyze`) fails when the Android intent filter, either `CFBundleURLTypes`, or the `.desktop` scheme handler is missing.
 
 ## Icons and Splash
 

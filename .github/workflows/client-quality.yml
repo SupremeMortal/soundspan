@@ -127,6 +127,10 @@ jobs:
         working-directory: client
         run: dart run tool/check_l10n.dart
 
+      - name: Platform configuration
+        working-directory: client
+        run: dart run tool/check_platform_config.dart
+
       - name: Dependency and font licences
         working-directory: client
         run: dart run tool/license_audit.dart
@@ -568,6 +572,10 @@ jobs:
       - name: Desktop integration test
         working-directory: client
         run: flutter test integration_test/desktop/window_test.dart -d linux
+
+      - name: Deep link integration test
+        working-directory: client
+        run: flutter test integration_test/desktop/deep_link_test.dart -d linux
 
       - name: Build Linux release
         working-directory: client

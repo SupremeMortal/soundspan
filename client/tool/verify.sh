@@ -11,6 +11,7 @@ dart format --output=none --set-exit-if-changed .
 flutter analyze --fatal-infos
 dart run tool/check_imports.dart
 dart run tool/check_l10n.dart
+dart run tool/check_platform_config.dart
 dart run tool/license_audit.dart
 dart run tool/gen_icons.dart --check
 dart run tool/spec_compat.dart

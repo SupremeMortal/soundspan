@@ -4,4 +4,4 @@ import 'dart:async';
 
 import 'package:soundspan/bootstrap.dart';
 
-void main() => unawaited(bootstrap());
+void main(List<String> args) => unawaited(bootstrap(args: args));

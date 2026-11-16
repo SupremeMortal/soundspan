@@ -271,7 +271,7 @@ Each seam is an abstract class in `lib/platform/<name>/<name>.dart` with `_io.da
 | Stream credentials | `StreamAuth` | Header | `?token=` query |
 | Window and tray | `DesktopShell` | `window_manager`, `tray_manager` | No-op |
 | QR scanner | `QrScanner` | `mobile_scanner` (Android, iOS, macOS); unavailable on Windows and Linux | `mobile_scanner` |
-| Deep links | `DeepLinks` | `app_links` | URL on load |
+| Deep links | `DeepLinks` | `app_links` (Android, iOS, macOS); launch arguments and single-instance forwarding (Windows, Linux) | `?link=&server=` on load |
 | Notifications | `LocalNotifications` | `flutter_local_notifications` | No-op |
 | Connectivity | `ConnectivitySource` | `connectivity_plus` | `connectivity_plus` |
 | Capabilities | `PlatformCapabilities` | Constants per OS | Constants |

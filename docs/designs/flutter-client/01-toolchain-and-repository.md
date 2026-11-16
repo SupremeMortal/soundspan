@@ -165,6 +165,7 @@ dev_dependencies:
   patrol: ^4.11.0
   riverpod_generator: ^4.0.0
   very_good_analysis: ^11.0.0
+  xml: ^7.0.0                    # tool/check_platform_config.dart
   yaml: ^3.1.0                   # tool/license_audit.dart
 
 flutter:

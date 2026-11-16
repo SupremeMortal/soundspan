@@ -110,7 +110,7 @@ Exit: a phone links to an SSO-only server with a code or QR, plays for an hour w
 | Id | Task | Depends | Acceptance |
 |---|---|---|---|
 | M2-01 | Device-link sign-in: `CodeCells`, verify, device naming, expiry lookup | M0-12, S1-P9d | Widget tests for each error; contract group |
-| M2-02 | Deep links on all native targets; `DeepLinkRouter` | M0-21 | Unit tests for URI validation; manual per-OS rows |
+| M2-02 | Deep links on all native targets; `DeepLinkRouter` | M0-21 | `test/app/router/deep_link_router_test.dart` (table-driven `parse`; `handle` for probe with code, profile switch, entity links with and without a profile, duplicates within 2 s, invalid links logged without their query); `tool/check_platform_config.dart` in `client-analyze` with its fixture tests; `integration_test/desktop/deep_link_test.dart` in `client-desktop-linux` (a second launch with `soundspan://album/test-id` reaches the first instance's router); manual per-OS rows in the human checklist |
 | M2-03 | QR scanner (Android, iOS, macOS, web) | M2-01 | Widget test with a fake scanner; camera permission denied path |
 | M2-04 | Pasted API key sign-in | M2-01 | Widget tests |
 | M2-05 | `KeyExpiryMonitor`, banner, local notification, re-link with self-revoke | M2-01, S1-P6 | Clock-driven tests at 15, 14, 3, 1, 0 days |

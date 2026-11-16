@@ -26,6 +26,16 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <!-- Links reach the app through app_links and DeepLinkRouter only,
+                 not Flutter's own route handling. -->
+            <meta-data android:name="flutter_deeplinking_enabled" android:value="false" />
+            <!-- soundspan:// links (doc 10, Deep Links Summary). -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="soundspan"/>
+            </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->

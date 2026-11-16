@@ -11,6 +11,7 @@ import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:soundspan/app/app.dart';
 import 'package:soundspan/app/licenses/license_registration.dart';
+import 'package:soundspan/app/router/deep_link_router.dart';
 import 'package:soundspan/app/shell/window_state_controller.dart';
 import 'package:soundspan/core/auth/active_profile.dart';
 import 'package:soundspan/core/logging/app_logger.dart';
@@ -25,6 +26,7 @@ import 'package:soundspan/core/storage/providers.dart';
 import 'package:soundspan/core/sync/outbox/outbox.dart';
 import 'package:soundspan/platform/capabilities/capabilities.dart';
 import 'package:soundspan/platform/database_opener/database_opener.dart';
+import 'package:soundspan/platform/deep_links/deep_links.dart';
 import 'package:soundspan/platform/log_export/log_export.dart';
 import 'package:soundspan/platform/log_sink/log_sink.dart';
 import 'package:soundspan/platform/paths/paths.dart';
@@ -39,20 +41,23 @@ final AppLogger _log = AppLogger.scope('App');
 typedef PostFirstFrameTask = Future<void> Function(ProviderContainer root);
 
 /// The tasks [bootstrap] starts, in parallel, after the first frame:
-/// reachability, and the capability refresh, the cache pruning and the
-/// outbox worker of every profile that becomes active. Later features append theirs.
+/// reachability, the capability refresh, the cache pruning and the
+/// outbox worker of every profile that becomes active, and the deep-link
+/// listener. Later features append theirs.
 final List<PostFirstFrameTask> postFirstFrameTasks = [
   startReachability,
   startCapabilityRefresh,
   startCachePruning,
   startOutbox,
+  startDeepLinks,
 ];
 
 /// Starts the app (doc 02, Bootstrap Sequence): error hooks, the decoded-image
 /// memory cache limits, the bundled licences (read only when the licences screen asks), paths,
 /// logging, `app.db`, the root container and the active profile, the
-/// desktop window, then `runApp` and the [postFirstFrameTasks].
-Future<void> bootstrap() async {
+/// desktop window, then `runApp` and the [postFirstFrameTasks]. [args] are
+/// the launch arguments; on Windows and Linux they carry a deep link.
+Future<void> bootstrap({List<String> args = const []}) async {
   await runZonedGuarded<Future<void>>(
     () async {
       WidgetsFlutterBinding.ensureInitialized();
@@ -74,6 +79,7 @@ Future<void> bootstrap() async {
         paths: paths,
         overrides: [
           persistentLogSinkProvider.overrideWithValue(persistentSink),
+          launchArgumentsProvider.overrideWithValue(List.unmodifiable(args)),
         ],
       );
       await restoreWindow(root);
