@@ -124,6 +124,13 @@ class ServerProfileTile extends ConsumerWidget {
                 l10n.settingsServersVersionUnknown
               else
                 l10n.settingsServersVersion(version),
+              if (profile.authKind != AuthKind.password)
+                switch (profile.credentialExpiresAt) {
+                  null => l10n.settingsServersLinkExpiryUnknown,
+                  final expires => l10n.settingsServersLinkExpires(
+                    expires.toLocal(),
+                  ),
+                },
             ].join(' · '),
             style: secondary,
           ),

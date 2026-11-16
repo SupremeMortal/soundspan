@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:soundspan/core/auth/active_profile.dart';
 import 'package:soundspan/core/auth/api_key_sign_in.dart';
 import 'package:soundspan/core/auth/device_link_sign_in.dart';
+import 'package:soundspan/core/auth/relink.dart';
 import 'package:soundspan/core/auth/server_admission.dart';
 import 'package:soundspan/core/profile/capabilities.dart';
 import 'package:soundspan/core/profile/profile_providers.dart';
@@ -82,6 +83,15 @@ final Provider<ApiKeySignIn> apiKeySignInProvider = Provider<ApiKeySignIn>(
       ref.watch(clockProvider),
     ),
     clock: ref.watch(clockProvider),
+    userAgent: ref.watch(userAgentProvider),
+  ),
+);
+
+/// The app's [RelinkUseCase] ("Link again", doc 04, API-Key Expiry).
+final Provider<RelinkUseCase> relinkUseCaseProvider = Provider<RelinkUseCase>(
+  (ref) => RelinkUseCase(
+    profiles: ref.watch(profileRepositoryProvider),
+    signIn: ref.watch(deviceLinkSignInProvider),
     userAgent: ref.watch(userAgentProvider),
   ),
 );

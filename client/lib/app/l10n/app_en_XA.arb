@@ -194,6 +194,21 @@
   "@settingsServersVersionUnknown": {
     "description": "Shown instead of the server version before the app has checked it."
   },
+  "settingsServersLinkExpires": "[Ļîñķ éxþîŕéš {date} one two]",
+  "@settingsServersLinkExpires": {
+    "description": "When the API key of a device-linked server profile expires.",
+    "placeholders": {
+      "date": {
+        "type": "DateTime",
+        "format": "yMMMd",
+        "example": "2026-06-01"
+      }
+    }
+  },
+  "settingsServersLinkExpiryUnknown": "[Ļîñķ éxþîŕý ûñķñöŵñ one two]",
+  "@settingsServersLinkExpiryUnknown": {
+    "description": "Shown for a server profile signed in with an API key whose expiry date is not known."
+  },
   "settingsServersRenameTitle": "[Ŕéñåmé šéŕvéŕ one two]",
   "@settingsServersRenameTitle": {
     "description": "Title of the dialog that renames a server."
@@ -902,6 +917,38 @@
   "homeNoticeVersionUnknown": "[Ţĥîš šéŕvéŕ’š véŕšîöñ çöûļð ñöţ bé ŕéåð one two three four]",
   "@homeNoticeVersionUnknown": {
     "description": "Notice at the top of Home when the server did not say which version it runs."
+  },
+  "homeLinkExpiring": "[{days, plural, =1{Ţĥîš ðévîçé’š ļîñķ éxþîŕéš ţöðåý one two three} other{Ţĥîš ðévîçé’š ļîñķ éxþîŕéš îñ {days} ðåýš one two three}}]",
+  "@homeLinkExpiring": {
+    "description": "Banner at the top of Home when this device's link (its API key) expires within 14 days; 1 means today.",
+    "placeholders": {
+      "days": {
+        "type": "int",
+        "example": "5"
+      }
+    }
+  },
+  "homeLinkExpired": "[Ţĥîš ðévîçé’š ļîñķ ĥåš éxþîŕéð one two three]",
+  "@homeLinkExpired": {
+    "description": "Banner at the top of Home when this device's link (its API key) has expired."
+  },
+  "homeLinkAgain": "[Ļîñķ åĝåîñ one]",
+  "@homeLinkAgain": {
+    "description": "Action of the link-expiry banner: link this device again with a new code."
+  },
+  "keyExpiryNotificationTitle": "[Ţĥîš ðévîçé’š ļîñķ éxþîŕéš šööñ one two three]",
+  "@keyExpiryNotificationTitle": {
+    "description": "Title of the local notification warning that this device's link (its API key) expires soon."
+  },
+  "keyExpiryNotificationBody": "[{days, plural, =1{Îţ éxþîŕéš ţöðåý. Ţåþ ţö ļîñķ îţ åĝåîñ. one two three four} other{Îţ éxþîŕéš îñ {days} ðåýš. Ţåþ ţö ļîñķ îţ åĝåîñ. one two three four}}]",
+  "@keyExpiryNotificationBody": {
+    "description": "Body of the local notification warning that this device's link expires; 1 means today.",
+    "placeholders": {
+      "days": {
+        "type": "int",
+        "example": "3"
+      }
+    }
   },
   "homeEmptyLibrary": "[Ýöûŕ ļîbŕåŕý îš émþţý one two three]",
   "@homeEmptyLibrary": {

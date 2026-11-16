@@ -14,6 +14,7 @@ import 'package:soundspan/app/theme/extensions.dart';
 import 'package:soundspan/app/theme/typography.dart';
 import 'package:soundspan/core/profile/version_notice.dart';
 import 'package:soundspan/features/discover/discover.dart';
+import 'package:soundspan/features/home/ui/expiry_banner.dart';
 import 'package:soundspan/features/home/ui/home_view_model.dart';
 import 'package:soundspan/shared/clock.dart';
 import 'package:soundspan/shared/domain/domain.dart';
@@ -25,7 +26,7 @@ import 'package:soundspan/shared/widgets/media_card.dart';
 import 'package:soundspan/shared/widgets/offline_banner.dart';
 import 'package:soundspan/shared/widgets/shelf.dart';
 
-/// Home (doc 09, Home): the offline and server notices, a greeting and the user's
+/// Home (doc 09, Home): the offline, link-expiry and server notices, a greeting and the user's
 /// shelves, each read from cache first and built as it scrolls into view.
 ///
 /// A shelf that is empty, disabled, or failed with nothing cached is
@@ -87,6 +88,7 @@ class HomeScreen extends ConsumerWidget {
               child: Column(
                 children: [
                   const OfflineBanner(),
+                  const ExpiryBanner(),
                   const _VersionNoticeBanner(),
                   Expanded(
                     child: RefreshIndicator(

@@ -355,6 +355,18 @@ abstract class AppLocalizations {
   /// **'Server version not known yet'**
   String get settingsServersVersionUnknown;
 
+  /// When the API key of a device-linked server profile expires.
+  ///
+  /// In en, this message translates to:
+  /// **'Link expires {date}'**
+  String settingsServersLinkExpires(DateTime date);
+
+  /// Shown for a server profile signed in with an API key whose expiry date is not known.
+  ///
+  /// In en, this message translates to:
+  /// **'Link expiry unknown'**
+  String get settingsServersLinkExpiryUnknown;
+
   /// Title of the dialog that renames a server.
   ///
   /// In en, this message translates to:
@@ -1240,6 +1252,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This server’s version could not be read'**
   String get homeNoticeVersionUnknown;
+
+  /// Banner at the top of Home when this device's link (its API key) expires within 14 days; 1 means today.
+  ///
+  /// In en, this message translates to:
+  /// **'{days, plural, =1{This device’s link expires today} other{This device’s link expires in {days} days}}'**
+  String homeLinkExpiring(int days);
+
+  /// Banner at the top of Home when this device's link (its API key) has expired.
+  ///
+  /// In en, this message translates to:
+  /// **'This device’s link has expired'**
+  String get homeLinkExpired;
+
+  /// Action of the link-expiry banner: link this device again with a new code.
+  ///
+  /// In en, this message translates to:
+  /// **'Link again'**
+  String get homeLinkAgain;
+
+  /// Title of the local notification warning that this device's link (its API key) expires soon.
+  ///
+  /// In en, this message translates to:
+  /// **'This device’s link expires soon'**
+  String get keyExpiryNotificationTitle;
+
+  /// Body of the local notification warning that this device's link expires; 1 means today.
+  ///
+  /// In en, this message translates to:
+  /// **'{days, plural, =1{It expires today. Tap to link it again.} other{It expires in {days} days. Tap to link it again.}}'**
+  String keyExpiryNotificationBody(int days);
 
   /// Shown on Home in place of the rows when every row loaded and none has anything in it.
   ///

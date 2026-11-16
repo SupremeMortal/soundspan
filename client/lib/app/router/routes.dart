@@ -24,7 +24,8 @@ abstract final class RoutePaths {
   /// Probe progress and result.
   static const probe = '/connect/probe';
 
-  /// Sign-in; `?profile=<id>` names a signed-out profile.
+  /// Sign-in; `?profile=<id>` names a signed-out profile, and with
+  /// `&relink=1` the device-link panel opens to link that profile again.
   static const signIn = '/connect/sign-in';
 
   /// The home branch.
@@ -60,6 +61,13 @@ abstract final class RoutePaths {
   /// The open-source licences, opened from the About settings.
   static const settingsAboutLicenses = '/settings/about/licenses';
 }
+
+/// The re-link flow of profile [profileId] (doc 04, API-Key Expiry):
+/// `/connect/sign-in?profile=<id>&relink=1`.
+String relinkLocation(String profileId) => Uri(
+  path: RoutePaths.signIn,
+  queryParameters: {'profile': profileId, 'relink': '1'},
+).toString();
 
 /// The location of the page of podcast [podcastId] in the Podcasts branch:
 /// `/podcasts/<podcastId>`.
@@ -273,6 +281,7 @@ GoRouter createRouter(
                 _ => null,
               },
               profileId: state.uri.queryParameters['profile'],
+              relink: state.uri.queryParameters['relink'] == '1',
             ),
           ),
         ],

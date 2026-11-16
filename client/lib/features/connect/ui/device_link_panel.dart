@@ -12,6 +12,7 @@ import 'package:soundspan/core/auth/device_link_code.dart';
 import 'package:soundspan/core/auth/device_link_sign_in.dart';
 import 'package:soundspan/core/auth/device_namer.dart';
 import 'package:soundspan/core/auth/profile.dart';
+import 'package:soundspan/core/auth/relink.dart';
 import 'package:soundspan/core/auth/server_admission.dart';
 import 'package:soundspan/core/logging/app_logger.dart';
 import 'package:soundspan/core/profile/server_admission_gate.dart';
@@ -30,15 +31,21 @@ import 'package:soundspan_api/soundspan_api.dart';
 /// the six cells are filled. A valid [initialCode] (from a link or a QR
 /// code) is submitted once, after the panel is first shown. Failures are
 /// shown under the cells; a 429 disables Link and counts down on the
-/// [Clock]. The linked profile goes to [onLinked].
+/// [Clock]. The linked profile goes to [onLinked]. With [relinkProfile]
+/// the code links that profile again ([RelinkUseCase]): its key is
+/// replaced and the old one revoked.
 class DeviceLinkPanel extends ConsumerStatefulWidget {
   /// Creates the panel for the server at [baseUrl].
   const new({
     required this.baseUrl,
     required this.onLinked,
     this.initialCode,
+    this.relinkProfile,
     super.key,
   });
+
+  /// The device-linked profile to link again, or null for a new link.
+  final Profile? relinkProfile;
 
   /// The server to link to.
   final Uri baseUrl;
@@ -108,13 +115,17 @@ class _DeviceLinkPanelState extends ConsumerState<DeviceLinkPanel> {
       _failure = null;
     });
     try {
-      final profile = await ref
-          .read(deviceLinkSignInProvider)
-          .submit(
-            baseUrl: widget.baseUrl,
-            code: code,
-            deviceName: _namer.normalize(_name.text),
-          );
+      final deviceName = _namer.normalize(_name.text);
+      final relink = widget.relinkProfile;
+      final profile = relink == null
+          ? await ref
+                .read(deviceLinkSignInProvider)
+                .submit(
+                  baseUrl: widget.baseUrl,
+                  code: code,
+                  deviceName: deviceName,
+                )
+          : await ref.read(relinkUseCaseProvider).run(relink, code, deviceName);
       if (!mounted) return;
       await widget.onLinked(profile);
     } on DeviceLinkRateLimited catch (error) {

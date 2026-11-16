@@ -194,6 +194,21 @@
   "@settingsServersVersionUnknown": {
     "description": "Shown instead of the server version before the app has checked it."
   },
+  "settingsServersLinkExpires": "Link expires {date}",
+  "@settingsServersLinkExpires": {
+    "description": "When the API key of a device-linked server profile expires.",
+    "placeholders": {
+      "date": {
+        "type": "DateTime",
+        "format": "yMMMd",
+        "example": "2026-06-01"
+      }
+    }
+  },
+  "settingsServersLinkExpiryUnknown": "Link expiry unknown",
+  "@settingsServersLinkExpiryUnknown": {
+    "description": "Shown for a server profile signed in with an API key whose expiry date is not known."
+  },
   "settingsServersRenameTitle": "Rename server",
   "@settingsServersRenameTitle": {
     "description": "Title of the dialog that renames a server."
@@ -902,6 +917,38 @@
   "homeNoticeVersionUnknown": "This server’s version could not be read",
   "@homeNoticeVersionUnknown": {
     "description": "Notice at the top of Home when the server did not say which version it runs."
+  },
+  "homeLinkExpiring": "{days, plural, =1{This device’s link expires today} other{This device’s link expires in {days} days}}",
+  "@homeLinkExpiring": {
+    "description": "Banner at the top of Home when this device's link (its API key) expires within 14 days; 1 means today.",
+    "placeholders": {
+      "days": {
+        "type": "int",
+        "example": "5"
+      }
+    }
+  },
+  "homeLinkExpired": "This device’s link has expired",
+  "@homeLinkExpired": {
+    "description": "Banner at the top of Home when this device's link (its API key) has expired."
+  },
+  "homeLinkAgain": "Link again",
+  "@homeLinkAgain": {
+    "description": "Action of the link-expiry banner: link this device again with a new code."
+  },
+  "keyExpiryNotificationTitle": "This device’s link expires soon",
+  "@keyExpiryNotificationTitle": {
+    "description": "Title of the local notification warning that this device's link (its API key) expires soon."
+  },
+  "keyExpiryNotificationBody": "{days, plural, =1{It expires today. Tap to link it again.} other{It expires in {days} days. Tap to link it again.}}",
+  "@keyExpiryNotificationBody": {
+    "description": "Body of the local notification warning that this device's link expires; 1 means today.",
+    "placeholders": {
+      "days": {
+        "type": "int",
+        "example": "3"
+      }
+    }
   },
   "homeEmptyLibrary": "Your library is empty",
   "@homeEmptyLibrary": {

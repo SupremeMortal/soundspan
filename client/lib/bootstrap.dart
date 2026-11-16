@@ -10,13 +10,16 @@ import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:soundspan/app/app.dart';
+import 'package:soundspan/app/l10n/generated/app_localizations.dart';
 import 'package:soundspan/app/licenses/license_registration.dart';
 import 'package:soundspan/app/router/deep_link_router.dart';
+import 'package:soundspan/app/router/notification_taps.dart';
 import 'package:soundspan/app/shell/window_state_controller.dart';
 import 'package:soundspan/core/auth/active_profile.dart';
 import 'package:soundspan/core/logging/app_logger.dart';
 import 'package:soundspan/core/logging/console_log_sink.dart';
 import 'package:soundspan/core/profile/capability_refresher.dart';
+import 'package:soundspan/core/profile/key_expiry_binding.dart';
 import 'package:soundspan/core/profile/profile_providers.dart';
 import 'package:soundspan/core/profile/profile_runtime.dart';
 import 'package:soundspan/core/profile/reachability_binding.dart';
@@ -42,14 +45,17 @@ typedef PostFirstFrameTask = Future<void> Function(ProviderContainer root);
 
 /// The tasks [bootstrap] starts, in parallel, after the first frame:
 /// reachability, the capability refresh, the cache pruning and the
-/// outbox worker of every profile that becomes active, and the deep-link
-/// listener. Later features append theirs.
+/// outbox worker and the key-expiry monitor of every profile that becomes
+/// active, the deep-link listener and the notification-tap listener. Later
+/// features append theirs.
 final List<PostFirstFrameTask> postFirstFrameTasks = [
   startReachability,
   startCapabilityRefresh,
   startCachePruning,
   startOutbox,
   startDeepLinks,
+  startKeyExpiryMonitor,
+  startNotificationTaps,
 ];
 
 /// Starts the app (doc 02, Bootstrap Sequence): error hooks, the decoded-image
@@ -80,6 +86,13 @@ Future<void> bootstrap({List<String> args = const []}) async {
         overrides: [
           persistentLogSinkProvider.overrideWithValue(persistentSink),
           launchArgumentsProvider.overrideWithValue(List.unmodifiable(args)),
+          keyExpiryNotificationTextProvider.overrideWith(
+            (ref) => keyExpiryNotificationText(
+              lookupAppLocalizations(
+                ref.watch(localeSettingProvider).value ?? const Locale('en'),
+              ),
+            ),
+          ),
         ],
       );
       await restoreWindow(root);

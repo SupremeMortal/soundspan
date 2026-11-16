@@ -145,6 +145,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsServersVersionUnknown => 'Server version not known yet';
 
   @override
+  String settingsServersLinkExpires(DateTime date) {
+    final intl.DateFormat dateDateFormat = intl.DateFormat.yMMMd(localeName);
+    final String dateString = dateDateFormat.format(date);
+
+    return 'Link expires $dateString';
+  }
+
+  @override
+  String get settingsServersLinkExpiryUnknown => 'Link expiry unknown';
+
+  @override
   String get settingsServersRenameTitle => 'Rename server';
 
   @override
@@ -693,6 +704,37 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get homeNoticeVersionUnknown =>
       'This server’s version could not be read';
+
+  @override
+  String homeLinkExpiring(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'This device’s link expires in $days days',
+      one: 'This device’s link expires today',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get homeLinkExpired => 'This device’s link has expired';
+
+  @override
+  String get homeLinkAgain => 'Link again';
+
+  @override
+  String get keyExpiryNotificationTitle => 'This device’s link expires soon';
+
+  @override
+  String keyExpiryNotificationBody(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'It expires in $days days. Tap to link it again.',
+      one: 'It expires today. Tap to link it again.',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get homeEmptyLibrary => 'Your library is empty';
@@ -1278,6 +1320,18 @@ class AppLocalizationsEnXa extends AppLocalizationsEn {
       '[Šéŕvéŕ véŕšîöñ ñöţ ķñöŵñ ýéţ one two three]';
 
   @override
+  String settingsServersLinkExpires(DateTime date) {
+    final intl.DateFormat dateDateFormat = intl.DateFormat.yMMMd(localeName);
+    final String dateString = dateDateFormat.format(date);
+
+    return '[Ļîñķ éxþîŕéš $dateString one two]';
+  }
+
+  @override
+  String get settingsServersLinkExpiryUnknown =>
+      '[Ļîñķ éxþîŕý ûñķñöŵñ one two]';
+
+  @override
   String get settingsServersRenameTitle => '[Ŕéñåmé šéŕvéŕ one two]';
 
   @override
@@ -1841,6 +1895,40 @@ class AppLocalizationsEnXa extends AppLocalizationsEn {
   @override
   String get homeNoticeVersionUnknown =>
       '[Ţĥîš šéŕvéŕ’š véŕšîöñ çöûļð ñöţ bé ŕéåð one two three four]';
+
+  @override
+  String homeLinkExpiring(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'Ţĥîš ðévîçé’š ļîñķ éxþîŕéš îñ $days ðåýš one two three',
+      one: 'Ţĥîš ðévîçé’š ļîñķ éxþîŕéš ţöðåý one two three',
+    );
+    return '[$_temp0]';
+  }
+
+  @override
+  String get homeLinkExpired =>
+      '[Ţĥîš ðévîçé’š ļîñķ ĥåš éxþîŕéð one two three]';
+
+  @override
+  String get homeLinkAgain => '[Ļîñķ åĝåîñ one]';
+
+  @override
+  String get keyExpiryNotificationTitle =>
+      '[Ţĥîš ðévîçé’š ļîñķ éxþîŕéš šööñ one two three]';
+
+  @override
+  String keyExpiryNotificationBody(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other:
+          'Îţ éxþîŕéš îñ $days ðåýš. Ţåþ ţö ļîñķ îţ åĝåîñ. one two three four',
+      one: 'Îţ éxþîŕéš ţöðåý. Ţåþ ţö ļîñķ îţ åĝåîñ. one two three four',
+    );
+    return '[$_temp0]';
+  }
 
   @override
   String get homeEmptyLibrary => '[Ýöûŕ ļîbŕåŕý îš émþţý one two three]';

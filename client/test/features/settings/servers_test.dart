@@ -1,13 +1,23 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 
+import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:soundspan/app/router/routes.dart';
 import 'package:soundspan/core/auth/active_profile.dart';
+import 'package:soundspan/core/auth/profile.dart';
+import 'package:soundspan/core/auth/profile_repository.dart';
+import 'package:soundspan/core/storage/app/app_database.dart' hide Profile;
+import 'package:soundspan/core/storage/app/app_settings_store.dart';
 import 'package:soundspan/features/settings/settings.dart';
 import 'package:soundspan/platform/url_opener/url_opener.dart';
+import 'package:soundspan_api/soundspan_api.dart' show ApiKeyCredentials;
 
+import '../../core/profile/profile_harness.dart' show RecordingAppPaths;
+import '../../helpers/fake_clock.dart';
 import '../../helpers/guidelines.dart';
+import '../../helpers/in_memory_database_opener.dart';
+import '../../helpers/in_memory_secret_store.dart';
 import '../../helpers/pump_app.dart';
 import '../../helpers/test_root.dart';
 
@@ -53,6 +63,56 @@ void main() {
       findsNWidgets(3),
     );
     await expectMeetsGuidelines(tester);
+  });
+
+  testWidgets('API-key profiles show when their link expires', (tester) async {
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(() => tester.runAsync(database.close));
+    final secrets = InMemorySecretStore();
+    final clock = FakeClock();
+    await tester.runAsync(() async {
+      final repository = ProfileRepository(
+        database,
+        secrets,
+        RecordingAppPaths(),
+        InMemoryDatabaseOpener(),
+        clock,
+      );
+      Future<Profile> add(String name, AuthKind kind, [DateTime? expiresAt]) =>
+          repository.upsertSignedIn(
+            baseUrl: Uri.parse('https://$name.example.com'),
+            userId: 'user-$name',
+            username: name,
+            role: 'user',
+            authKind: kind,
+            credentials: ApiKeyCredentials(apiKey: '$name-key'),
+            credentialCreatedAt: DateTime.utc(2026, 3, 3, 12),
+            credentialExpiresAt: expiresAt,
+          );
+      final active = await add('music', AuthKind.password);
+      await add('linked', AuthKind.deviceLink, DateTime.utc(2026, 6, 1, 12));
+      await add('pasted', AuthKind.apiKey);
+      await AppSettingsStore(database)
+          .write(AppSettingKeys.activeProfileId, active.id);
+    });
+    final root = await tester.pumpSoundspanApp(
+      database: database,
+      secrets: secrets,
+      clock: clock,
+    );
+    await open(tester, root);
+
+    expect(
+      find.text(
+        'Active · Server version not known yet · Link expires Jun 1, 2026',
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.text('Active · Server version not known yet · Link expiry unknown'),
+      findsOneWidget,
+    );
+    expect(find.text('Active · Server version not known yet'), findsOneWidget);
   });
 
   testWidgets('switch calls switchTo with the profile id', (tester) async {

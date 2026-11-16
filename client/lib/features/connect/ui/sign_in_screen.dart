@@ -15,6 +15,7 @@ import 'package:soundspan/core/auth/password_sign_in.dart';
 import 'package:soundspan/core/auth/probe/server_probe.dart';
 import 'package:soundspan/core/auth/profile.dart';
 import 'package:soundspan/core/auth/server_address.dart';
+import 'package:soundspan/core/profile/profile_providers.dart';
 import 'package:soundspan/core/profile/profile_runtime.dart';
 import 'package:soundspan/features/connect/ui/address_screen.dart';
 import 'package:soundspan/features/connect/ui/api_key_form.dart';
@@ -45,16 +46,22 @@ import 'package:soundspan/shared/clock.dart';
 /// a link code opens the panel with that code. Without a result but with
 /// [profileId] (a signed-out profile sent here by the router guard), the
 /// screen probes that profile's server itself and prefills its user name; a
-/// failed probe goes to `/connect/probe`.
+/// failed probe goes to `/connect/probe`. With [relink] the device-link
+/// panel opens at once; for a [profileId] the panel links that profile
+/// again ("Link again", doc 04, API-Key Expiry), keeping its cache and
+/// downloads and revoking its old key.
 class SignInScreen extends ConsumerStatefulWidget {
   /// Creates the screen for [result], or for the signed-out [profileId].
-  const new({this.result, this.profileId, super.key});
+  const new({this.result, this.profileId, this.relink = false, super.key});
 
   /// What the probe found, when the user came from it.
   final ProbeResult? result;
 
   /// The signed-out profile to sign in again, from `?profile=`.
   final String? profileId;
+
+  /// Whether to open the device-link panel at once, from `?relink=1`.
+  final bool relink;
 
   @override
   ConsumerState<SignInScreen> createState() => _SignInScreenState();
@@ -64,6 +71,9 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   ProbeResult? _result;
   SignInController? _form;
   String? _prefill;
+
+  /// The profile of [SignInScreen.profileId], once read.
+  Profile? _profile;
   ProbeController? _probe;
 
   /// The base URL being probed for the signed-out profile.
@@ -106,6 +116,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     }
     final base = profile.baseUrl.toString();
     setState(() {
+      _profile = profile;
       _prefill = profile.username;
       _probing = base;
     });
@@ -131,7 +142,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   void _show(ProbeResult result) {
     _result = result;
     _linkCode = result.linkCode;
-    _linking = _linkCode != null;
+    _linking = _linkCode != null || widget.relink;
     if (!result.localLoginEnabled) return;
     _form = SignInController(
       signIn: ref.read(passwordSignInProvider),
@@ -181,8 +192,15 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
 
   /// Activates the [profile] a device link or an API key signed in and
   /// opens home, as after a password sign-in.
+  ///
+  /// A profile that was already active and signed in keeps its container,
+  /// so its session reads the new key.
   Future<void> _onLinked(Profile profile) async {
-    await ref.read(profileRuntimeProvider).switchTo(profile.id);
+    final runtime = ref.read(profileRuntimeProvider);
+    await runtime.switchTo(profile.id);
+    if (runtime.state.value == ProfileRuntimeActive(profile.id)) {
+      await runtime.container?.read(sessionControllerProvider).load();
+    }
     if (!mounted) return;
     GoRouter.of(context).go(RoutePaths.home);
   }
@@ -318,6 +336,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   Widget _panel(ProbeResult result) => DeviceLinkPanel(
     baseUrl: result.baseUrl,
     initialCode: _linkCode,
+    relinkProfile: _profile,
     onLinked: _onLinked,
   );
 
