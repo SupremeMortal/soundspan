@@ -114,7 +114,7 @@ Packaging: MSIX (for winget and optional Store) and an Inno Setup `.exe` (per-us
 | Item | Detail |
 |---|---|
 | Audio | `media_kit` → libmpv. See packaging below |
-| Media controls | MPRIS via `audio_service_mpris`, bus name `org.mpris.MediaPlayer2.soundspan`; desktop media keys and shell widgets use it |
+| Media controls | MPRIS via `audio_service_mpris`, bus name `org.mpris.MediaPlayer2.soundspan.instance<pid>` and identity `soundspan` (the package derives both from the channel id and name of the `audio_service` config, which are `soundspan` on Linux); desktop media keys and shell widgets use it |
 | Secrets | libsecret (Secret Service: GNOME Keyring, KWallet). When no provider answers, the app refuses to store credentials and the connect screen explains what to install; there is no unencrypted fallback |
 | URL scheme | `.desktop` file `MimeType=x-scheme-handler/soundspan;` and `Exec=soundspan %u` |
 | Single instance | `GApplication` with `G_APPLICATION_HANDLES_OPEN`; a second launch delivers its URI to the first |
@@ -127,7 +127,7 @@ Packaging: MSIX (for winget and optional Store) and an Inno Setup `.exe` (per-us
 
 | Format | libmpv |
 |---|---|
-| Flatpak | Built as a module in the manifest (mpv with its ffmpeg dependency from the runtime's codecs extension), or the `org.freedesktop.Platform.ffmpeg-full` extension plus an mpv module. Finish-args: `--share=network`, `--socket=wayland`, `--socket=fallback-x11`, `--socket=pulseaudio`, `--device=dri`, `--talk-name=org.freedesktop.secrets`, `--own-name=org.mpris.MediaPlayer2.soundspan`, `--talk-name=org.kde.StatusNotifierWatcher` |
+| Flatpak | Built as a module in the manifest (mpv with its ffmpeg dependency from the runtime's codecs extension), or the `org.freedesktop.Platform.ffmpeg-full` extension plus an mpv module. Finish-args: `--share=network`, `--socket=wayland`, `--socket=fallback-x11`, `--socket=pulseaudio`, `--device=dri`, `--talk-name=org.freedesktop.secrets`, `--own-name=org.mpris.MediaPlayer2.soundspan.*` (the MPRIS name carries an `.instance<pid>` suffix), `--talk-name=org.kde.StatusNotifierWatcher` |
 | AppImage | `libmpv.so.2` and its non-base dependencies copied into the AppDir by `linuxdeploy`; checked with `ldd` in CI on a clean container |
 | `.deb` | `Depends: libmpv2 | libmpv1, libgtk-3-0, libsecret-1-0` |
 

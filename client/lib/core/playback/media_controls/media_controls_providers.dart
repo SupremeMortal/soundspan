@@ -12,14 +12,27 @@ import 'package:soundspan/core/profile/profile_context.dart';
 import 'package:soundspan/core/profile/profile_providers.dart';
 import 'package:soundspan/core/profile/profile_runtime.dart';
 import 'package:soundspan/platform/artwork_store/artwork_store.dart';
+import 'package:soundspan/platform/media_controls/media_controls_factory.dart';
 import 'package:soundspan/shared/clock.dart';
 import 'package:soundspan/shared/providers/images.dart';
 import 'package:soundspan_api/soundspan_api.dart' show ImageUrls;
 
-/// The platform's [MediaControls]: [NoopMediaControls] until the platform
-/// adapters replace it.
+/// The localized name of the Android playback notification channel.
+/// Bootstrap overrides it; it throws until then.
+final Provider<String> mediaControlsChannelNameProvider = Provider<String>(
+  (ref) => throw UnimplementedError(
+    'mediaControlsChannelNameProvider is set by bootstrap',
+  ),
+);
+
+/// The platform's [MediaControls], built by the media controls seam
+/// (`audio_service` on Android, iOS, macOS, Linux and the web; none on
+/// Windows). The channel name is read when they are initialised.
 final Provider<MediaControls> mediaControlsProvider = Provider<MediaControls>(
-  (ref) => const NoopMediaControls(),
+  (ref) => createMediaControls(
+    channelName: () => ref.read(mediaControlsChannelNameProvider),
+    clock: ref.watch(clockProvider),
+  ),
 );
 
 /// The one [MediaCommandHandler] the [mediaControlsProvider] is initialised

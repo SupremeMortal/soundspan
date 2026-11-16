@@ -181,6 +181,12 @@ abstract class AppLocalizations {
   /// **'Playback'**
   String get screenSettingsPlayback;
 
+  /// Name of the Android notification channel of the playback notification, shown in the system's notification settings for the app.
+  ///
+  /// In en, this message translates to:
+  /// **'Playback'**
+  String get playbackNotificationChannelName;
+
   /// Screen name: the storage settings page.
   ///
   /// In en, this message translates to:

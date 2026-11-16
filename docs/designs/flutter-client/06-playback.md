@@ -279,10 +279,16 @@ Artwork must be a file because OS media surfaces cannot send auth headers: when 
 | iOS | `audio_service` | Now Playing info and remote command centre; `AVAudioSession` category playback. |
 | macOS | `audio_service` | Now Playing widget and media keys. |
 | Web | `audio_service` | Media Session API. |
-| Linux | `audio_service` with `audio_service_mpris` | MPRIS on the session bus as `org.mpris.MediaPlayer2.soundspan`. |
+| Linux | `audio_service` with `audio_service_mpris` | MPRIS on the session bus as `org.mpris.MediaPlayer2.soundspan.instance<pid>` (the package appends `.instance<pid>` to `org.mpris.MediaPlayer2.<channel id>`, so the Linux config's channel id and its name, which becomes the MPRIS identity, are both `soundspan`). |
 | Windows | `client/packages/soundspan_smtc` behind `SmtcControls` | System Media Transport Controls through an in-repo C++/WinRT plugin of about 300 lines: buttons, metadata, timeline, thumbnail. The calls it exposes are listed under Spike S4 finding. |
 
 The handler holds no state of its own; it renders the controller's snapshot. This keeps one source of truth on every platform, including Windows where `audio_service` is absent.
+
+`AudioServiceControls` (`audio_service_controls.dart`) is the `audio_service` adapter. `createMediaControls()` (`lib/platform/media_controls/`) builds it on Android, iOS, macOS, Linux and the web, and `NoopMediaControls` on Windows until the SMTC adapter exists. `init` starts the plugin through `AudioService.init` (kept alone in `audio_service_plugin.dart`) with a `SoundspanAudioHandler` whose `play`, `pause`, `stop`, `seek`, `skipToNext`, `skipToPrevious`, `fastForward` and `rewind` forward to the `MediaCommandHandler` (fast-forward and rewind to skip ±N); `click` keeps its default, which pauses or plays from the last published playing flag. The config is that of [10](10-platform-integration.md) (Playback service), with a fast-forward and rewind interval of 15 s and the channel name localized. `update` publishes the translation of `audioServiceStateOf`:
+
+- The media item: id the queue item id, title, artist, album (none for an episode), duration and the artwork URI. The empty state publishes no item.
+- Buttons: previous, play or pause, next, all three compact. A state with skip actions and no next (a single episode) shows rewind, play/pause and fast-forward instead; one with both shows previous, rewind, play/pause, fast-forward and next, with previous, play/pause and next compact.
+- System actions `seek` and `stop` when offered; processing state `buffering` while buffering, `ready` otherwise and `idle` for the empty state; the playing flag, position, speed, and the `Clock` time of the update as the position's time.
 
 ## Audio Focus and Interruptions
 

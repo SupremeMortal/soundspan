@@ -62,6 +62,10 @@
   "@screenSettingsPlayback": {
     "description": "Screen name: the playback settings page."
   },
+  "playbackNotificationChannelName": "Playback",
+  "@playbackNotificationChannelName": {
+    "description": "Name of the Android notification channel of the playback notification, shown in the system's notification settings for the app."
+  },
   "screenSettingsStorage": "Storage",
   "@screenSettingsStorage": {
     "description": "Screen name: the storage settings page."

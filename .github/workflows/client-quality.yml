@@ -77,7 +77,7 @@ jobs:
             echo "contract=$(has '^(client/packages/soundspan_api/|client/tool/specs/|client/tool/spec_compat\.dart$|client/contract_test/|client/lib/core/realtime/|backend/src/routes/|backend/src/openapi/|\.github/workflows/client-quality\.yml$)')"
             echo "web_storage=$(has '^(client/lib/platform/|client/web/|client/integration_test/web/|client/pubspec\.lock$|\.github/workflows/client-quality\.yml$)')"
             echo "desktop=$(has '^(client/linux/|client/windows/|client/lib/platform/desktop_shell/|client/lib/app/shell/window_state_controller\.dart$|client/integration_test/desktop/|client/tool/ci/|\.github/workflows/client-quality\.yml$)')"
-            echo "device=$(has '^(client/lib/core/playback/engines/|client/integration_test/|client/lib/platform/player_engine/|\.github/workflows/client-device-tests\.yml$)')"
+            echo "device=$(has '^(client/lib/core/playback/engines/|client/integration_test/|client/lib/platform/player_engine/|client/lib/core/playback/media_controls/|client/lib/platform/media_controls/|client/android/|\.github/workflows/client-device-tests\.yml$)')"
             echo "downloads=$(has '^(client/lib/platform/downloader/|client/lib/core/downloads/|client/integration_test/downloads/|client/integration_test/support/throttled_file_server\.dart$|\.github/workflows/client-quality\.yml$)')"
             echo "release_build=$(has '^(\.github/workflows/client-(build|release)\.yml$|client/tool/release/|client/pubspec\.(yaml|lock)$|client/config/|client/(android|ios|linux|macos|windows|web)/)')"
             echo "release_notes=$(has '^(\.github/workflows/client-(build|release)\.yml$|client/tool/release/|client/pubspec\.(yaml|lock)$|client/config/|client/(android|ios|linux|macos|windows|web)/|CHANGELOG\.md$)')"

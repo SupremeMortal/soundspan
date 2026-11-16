@@ -61,6 +61,7 @@ dev_dependencies:
   alchemist: ^0.14.0
   analyzer: ^14.7.0              # tool/check_imports.dart
   build_runner: any
+  dbus: any                      # integration_test/support/session_bus_names_io.dart
   dio: any                       # Fake HTTP adapters in tests
   drift_dev: ^2.35.0
   fake_async: ^1.3.3             # Timers in unit tests

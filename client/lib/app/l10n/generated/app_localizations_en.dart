@@ -54,6 +54,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get screenSettingsPlayback => 'Playback';
 
   @override
+  String get playbackNotificationChannelName => 'Playback';
+
+  @override
   String get screenSettingsStorage => 'Storage';
 
   @override
@@ -1312,6 +1315,9 @@ class AppLocalizationsEnXa extends AppLocalizationsEn {
 
   @override
   String get screenSettingsPlayback => '[Þļåýbåçķ one]';
+
+  @override
+  String get playbackNotificationChannelName => '[Þļåýbåçķ one]';
 
   @override
   String get screenSettingsStorage => '[Šţöŕåĝé one]';

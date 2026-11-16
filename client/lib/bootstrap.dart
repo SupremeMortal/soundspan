@@ -91,6 +91,11 @@ Future<void> bootstrap({List<String> args = const []}) async {
         overrides: [
           persistentLogSinkProvider.overrideWithValue(persistentSink),
           launchArgumentsProvider.overrideWithValue(List.unmodifiable(args)),
+          mediaControlsChannelNameProvider.overrideWith(
+            (ref) => lookupAppLocalizations(
+              ref.watch(localeSettingProvider).value ?? const Locale('en'),
+            ).playbackNotificationChannelName,
+          ),
           keyExpiryNotificationTextProvider.overrideWith(
             (ref) => keyExpiryNotificationText(
               lookupAppLocalizations(
