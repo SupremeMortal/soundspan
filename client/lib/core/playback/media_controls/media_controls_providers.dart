@@ -1,0 +1,99 @@
+// SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
+
+import 'dart:async';
+
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:soundspan/core/playback/media_controls/artwork_pinner.dart';
+import 'package:soundspan/core/playback/media_controls/media_controls.dart';
+import 'package:soundspan/core/playback/media_controls/media_controls_binder.dart';
+import 'package:soundspan/core/playback/playback_providers.dart';
+import 'package:soundspan/core/profile/profile_context.dart';
+import 'package:soundspan/core/profile/profile_providers.dart';
+import 'package:soundspan/core/profile/profile_runtime.dart';
+import 'package:soundspan/platform/artwork_store/artwork_store.dart';
+import 'package:soundspan/shared/clock.dart';
+import 'package:soundspan/shared/providers/images.dart';
+import 'package:soundspan_api/soundspan_api.dart' show ImageUrls;
+
+/// The platform's [MediaControls]: [NoopMediaControls] until the platform
+/// adapters replace it.
+final Provider<MediaControls> mediaControlsProvider = Provider<MediaControls>(
+  (ref) => const NoopMediaControls(),
+);
+
+/// The one [MediaCommandHandler] the [mediaControlsProvider] is initialised
+/// with; it forwards to the active profile's binder.
+final Provider<MediaControlsHost> mediaControlsHostProvider =
+    Provider<MediaControlsHost>(
+      (ref) => MediaControlsHost(ref.watch(mediaControlsProvider)),
+    );
+
+/// The [ArtworkPinner] of the profile scope: covers of the profile's server
+/// with the session's current credentials, fetched through its image cache
+/// and written under its `art/` directory.
+final Provider<ArtworkPinner> artworkPinnerProvider = Provider<ArtworkPinner>(
+  (ref) {
+    final manager = ref.watch(imageCacheManagerProvider);
+    final session = ref.watch(sessionControllerProvider);
+    return ArtworkPinner(
+      urls: ImageUrls(ref.watch(apiConfigProvider).baseUrl),
+      credentials: () => session.current,
+      fetch: (fetch) async {
+        final file = await manager.getSingleFile(
+          fetch.url.toString(),
+          key: fetch.cacheKey,
+          headers: fetch.headers,
+        );
+        return await file.readAsBytes();
+      },
+      store: ref.watch(artworkStoreProvider),
+      artDirectory: ref.watch(profileContextProvider).paths?.art,
+      isWeb: kIsWeb,
+    );
+  },
+  dependencies: [
+    imageCacheManagerProvider,
+    sessionControllerProvider,
+    apiConfigProvider,
+    profileContextProvider,
+  ],
+);
+
+/// After the first frame (doc 02, Bootstrap Sequence, step 8): initialises
+/// the OS media surface once, then renders the active profile's
+/// playback controller on it, rebinding whenever the active profile
+/// changes. With no active profile the surface shows
+/// [MediaSessionState.empty].
+Future<void> startMediaControls(ProviderContainer root) async {
+  final host = root.read(mediaControlsHostProvider);
+  await root.read(mediaControlsProvider).init(host);
+  final runtime = root.read(profileRuntimeProvider);
+  final clock = root.read(clockProvider);
+  ProviderContainer? bound;
+  var first = true;
+  void onState() {
+    final container = runtime.container;
+    final active = runtime.state.value is ProfileRuntimeActive
+        ? container
+        : null;
+    if (!first && identical(active, bound)) return;
+    first = false;
+    bound = active;
+    unawaited(
+      host.bind(
+        active == null
+            ? null
+            : MediaControlsBinder(
+                controller: active.read(playbackControllerProvider),
+                controls: root.read(mediaControlsProvider),
+                pin: active.read(artworkPinnerProvider).pin,
+                clock: clock,
+              ),
+      ),
+    );
+  }
+
+  runtime.state.addListener(onState);
+  onState();
+}

@@ -12,7 +12,8 @@ Status: design phase.
     ├── state.db                                # StateDatabase: durable user state
     ├── media/<sha1(itemKey)[0:2]>/<sha1(itemKey)>.<ext>
     ├── media/<…>.part                          # Transfer in progress
-    └── art/<sha1(ref)>.img                     # Artwork pinned for downloaded items and OS media controls
+    ├── art/<sha1(ref)>.img                     # Artwork pinned for downloaded items
+    └── art/now-playing.img                     # The current item's artwork for OS media controls
 
 <appCache>/                                     # getApplicationCacheDirectory(); the OS may purge it
 └── profiles/<profileId>/

@@ -16,7 +16,10 @@ core/playback/
 ├── source_resolver.dart            # QueueItem → EngineSource (local file or stream URL)
 ├── loudness.dart                   # Gain computation
 ├── media_controls/
-│   ├── media_controls.dart         # Interface
+│   ├── media_controls.dart         # Interface, MediaSessionState, NoopMediaControls
+│   ├── media_session_mapper.dart   # PlaybackSnapshot → MediaSessionState
+│   ├── media_controls_binder.dart  # Controller ↔ MediaControls; MediaControlsHost
+│   ├── artwork_pinner.dart         # Cover → URI the OS can load
 │   ├── audio_service_controls.dart # Android, iOS, macOS, web, Linux (MPRIS)
 │   └── smtc_controls.dart          # Windows
 ├── audio_focus.dart                # audio_session wiring
@@ -265,7 +268,9 @@ abstract interface class MediaControls {
 
 `MediaSessionState` carries title, artist, album, duration, artwork as a **local file URI**, position, playing flag, and the available actions (play, pause, next, previous, seek, stop, skip ±N for episodes, like).
 
-Artwork must be a file because OS media surfaces cannot send auth headers: when an item becomes current, `ArtworkPinner` fetches the 512-pixel cover through the authenticated image cache, writes it to `profiles/<id>/art/now-playing.img`, and passes its URI. Until it is ready the previous artwork is cleared.
+Artwork must be a file because OS media surfaces cannot send auth headers: when an item becomes current, `ArtworkPinner` fetches the 512-pixel cover through the authenticated image cache, writes it to `profiles/<id>/art/now-playing.img` (through the `artwork_store` seam, by a temporary file and a rename), and passes its `file://` URI. On web, which has no files, it passes the cover URL with the access token as `?token=` instead, which the Media Session API can load. Until it is ready the previous artwork is cleared; a missing cover or a failed fetch leaves none.
+
+`MediaControlsBinder` connects the active profile's controller to the `MediaControls`. It sends the mapped snapshot when anything but the position changes, or when the position departs by more than 1.5 s from where the last state sent would be by now (a seek or a stall); steady playback sends nothing, since the OS extrapolates. As the `MediaCommandHandler` it dispatches the buttons to the controller; skip ±N seeks by the interval, clamped to the item. `init` is called once after the first frame (bootstrap step 8) with the root `MediaControlsHost`, which forwards to the active profile's binder, rebinds when the active profile changes, and shows the empty state when there is none.
 
 | Target | Implementation | Notes |
 |---|---|---|
