@@ -189,11 +189,16 @@ jobs:
       # A hung app blocks its own test timeouts, so a watchdog prints every
       # thread's stack of the app and fails the step after 12 minutes, before the step timeout.
       # The harness sets mpv's ao to pulse on Linux, so mpv plays to the
-      # PulseAudio null sink above and never opens its PipeWire output, whose
-      # thread loop hangs in pw_thread_loop_stop() on the runner (doc 06).
+      # PulseAudio null sink above. mpv still probes every audio output to
+      # list devices (media_kit observes audio-device-list), and its PipeWire
+      # probe's thread loop hangs in pw_thread_loop_stop() on the runner.
+      # SPA_PLUGIN_DIR pointing nowhere makes libpipewire fail to create
+      # that loop, so the probe gives up before starting a thread (doc 06).
       - name: Engine conformance on Linux
         working-directory: client
         timeout-minutes: 15
+        env:
+          SPA_PLUGIN_DIR: /nonexistent
         run: |
           xvfb-run -a flutter test integration_test/engine_conformance_test.dart -d linux &
           run=$!
