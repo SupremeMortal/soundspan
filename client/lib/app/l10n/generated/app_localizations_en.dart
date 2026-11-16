@@ -1204,6 +1204,16 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get connectSignInNoBrowserMethod =>
       'This server offers no sign-in method this app can use in a browser.';
+
+  @override
+  String get downloadUnavailableDisabled =>
+      'Downloads are turned off on this server';
+
+  @override
+  String get downloadUnavailableGone => 'No longer available';
+
+  @override
+  String get downloadUnavailableAccount => 'Not available for your account';
 }
 
 /// The translations for English (`en_XA`).
@@ -2436,4 +2446,15 @@ class AppLocalizationsEnXa extends AppLocalizationsEn {
   @override
   String get connectSignInNoBrowserMethod =>
       '[Ţĥîš šéŕvéŕ öfféŕš ñö šîĝñ-îñ méţĥöð ţĥîš åþþ çåñ ûšé îñ å bŕöŵšéŕ. one two three four five six]';
+
+  @override
+  String get downloadUnavailableDisabled =>
+      '[Ðöŵñļöåðš åŕé ţûŕñéð öff öñ ţĥîš šéŕvéŕ one two three four]';
+
+  @override
+  String get downloadUnavailableGone => '[Ñö ļöñĝéŕ åvåîļåbļé one two]';
+
+  @override
+  String get downloadUnavailableAccount =>
+      '[Ñöţ åvåîļåbļé föŕ ýöûŕ åççöûñţ one two three]';
 }

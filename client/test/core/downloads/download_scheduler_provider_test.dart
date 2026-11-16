@@ -3,7 +3,9 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:soundspan/bootstrap.dart';
 import 'package:soundspan/core/connectivity/reachability.dart';
+import 'package:soundspan/core/downloads/download_controller.dart';
 import 'package:soundspan/core/downloads/download_scheduler.dart';
+import 'package:soundspan/core/downloads/offline_models.dart';
 import 'package:soundspan/core/profile/profile_runtime.dart';
 import 'package:soundspan/platform/capabilities/capabilities.dart';
 import 'package:soundspan/platform/disk_space/disk_space.dart';
@@ -59,5 +61,21 @@ void main() {
     await pumpEventQueue();
 
     expect(downloader.startCount, 0);
+  });
+
+  test('each activated profile has its own download controller, reachable '
+      'through the profile runtime', () async {
+    final (h, _) = await harness(PlatformCapabilities.android);
+    final runtime = h.root.read(profileRuntimeProvider);
+    addTearDown(runtime.dispose);
+
+    await runtime.switchTo(h.a);
+    await startDownloads(h.root);
+    final a = runtime.container!.read(downloadControllerProvider);
+    expect(runtime.container!.read(downloadControllerProvider), same(a));
+    expect(await a.watchCollection(CollectionKind.album, 'none').first, isNull);
+
+    await runtime.switchTo(h.b);
+    expect(runtime.container!.read(downloadControllerProvider), isNot(same(a)));
   });
 }

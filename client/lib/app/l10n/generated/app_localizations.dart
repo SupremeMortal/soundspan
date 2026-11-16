@@ -2044,6 +2044,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This server offers no sign-in method this app can use in a browser.'**
   String get connectSignInNoBrowserMethod;
+
+  /// Shown on a greyed-out track of a downloaded album or playlist when the server administrator turned offline downloads off.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloads are turned off on this server'**
+  String get downloadUnavailableDisabled;
+
+  /// Shown on a greyed-out track of a downloaded album or playlist that the server no longer has.
+  ///
+  /// In en, this message translates to:
+  /// **'No longer available'**
+  String get downloadUnavailableGone;
+
+  /// Shown on a greyed-out track of a downloaded album or playlist that this account cannot stream, so cannot download.
+  ///
+  /// In en, this message translates to:
+  /// **'Not available for your account'**
+  String get downloadUnavailableAccount;
 }
 
 class _AppLocalizationsDelegate

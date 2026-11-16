@@ -3,6 +3,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:soundspan/core/sync/data/sync_outbox_handlers.dart';
 import 'package:soundspan/core/sync/outbox/outbox_op.dart';
+import 'package:soundspan/shared/data/downloads/download_outbox.dart';
 import 'package:soundspan/shared/data/playlist/playlist_outbox_handlers.dart';
 
 /// Why the worker dropped an op without delivering it (doc 07, Worker).
@@ -102,9 +103,11 @@ final Provider<OutboxHandlerRegistry> outboxHandlerRegistryProvider =
       (ref) => OutboxHandlerRegistry([
         ...ref.watch(syncOutboxHandlersProvider),
         ...ref.watch(playlistOutboxHandlersProvider),
+        ...ref.watch(downloadOutboxHandlersProvider),
       ]),
       dependencies: [
         syncOutboxHandlersProvider,
         playlistOutboxHandlersProvider,
+        downloadOutboxHandlersProvider,
       ],
     );

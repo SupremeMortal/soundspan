@@ -12,7 +12,7 @@ Native targets only. On web `PlatformCapabilities.canDownload` is false and ever
 
 ## Requesting a Download
 
-`DownloadController.pin(kind, refId)`:
+`DownloadController.pin(kind, refId, {snapshot})` (`lib/core/downloads/download_controller.dart`, one per profile, created by `startDownloads`). `snapshot` (`CollectionSnapshot`: title, subtitle, artwork ref, tracks) is what the caller already shows; the server's answer carries no metadata. Calls run one at a time:
 
 1. Insert the collection row with status `resolving`. The UI shows it immediately.
 2. `POST /api/offline/items { kind, id, deviceId, quality? }`. `quality` is the `quality.download` device setting, omitted for "server default".
@@ -26,6 +26,14 @@ Native targets only. On web `PlatformCapabilities.canDownload` is false and ever
 7. Hand queued items to the scheduler.
 
 Offline at step 2: the collection stays `resolving(pendingNetwork)` and is retried when the server is reachable. Nothing is added to the outbox; the collection row is the pending work.
+
+- Pinning a pinned collection runs the steps again (the refresh path): rows are upserted, never duplicated, and the collection keeps its `requestedAt`, title and metadata when no snapshot is given.
+- An item's `metaJson` is the `TrackMeta` plus `albumId`, `artistId`, `loudness`, `discNumber` and `trackNumber` of the snapshot track with the same `playbackId`, else of the `cache.db` `tracks` row, else a meta with empty strings for the upkeep pass to fill.
+- An item already `completed` gains the membership only, whatever its quality: a file at another quality is kept (no re-download in v1). An item already `queued`, `running`, `verifying`, `paused` or `failedRetryable` also keeps its transfer and gains the membership only.
+- An unavailable item's `failureCode` is the server's `reason` (`UNKNOWN` for a reason the client does not know). `DownloadUnavailableReason` maps each code to the l10n id of its message (`downloadUnavailableDisabled`, `downloadUnavailableGone`, `downloadUnavailableAccount`).
+- Step 2 failures other than the two 409s: `Offline`, `ServerError`, `Upstream` and `RateLimited` (and a call while reachability is not `online`, which sends nothing) leave the collection `pendingNetwork`. `NotFound` removes the collection as `unpin` does and reaches the caller. Any other error also leaves it `pendingNetwork` and reaches the caller, so no collection stays `resolving`.
+- `retryPendingCollections()` runs step 2 onward for every `pendingNetwork` collection when reachability returns to `online`. The scheduler's `ReResolveCollection` effect runs `pin` again for each collection the failed item belongs to.
+- `watchCollection(kind, refId)` (`CollectionDownloadState`: status, block and its detail, item, completed and unavailable counts, received and total bytes) and `watchItem(key)` (`ItemDownloadState`) are what the UI reads.
 
 Podcast episodes do not use `/api/offline/items` (the unified offline API covers tracks only). An episode download uses the episode stream URL directly, with no server-side accounting; everything else below applies.
 
@@ -119,7 +127,7 @@ Two independent limits apply.
 
 ## Removing Downloads
 
-`unpin(kind, refId)`: delete the membership rows; for each item left with no membership, delete the file, delete the row, and add its `playbackId` to a batched `DELETE /api/offline/items { deviceId, playbackIds }` (≤ 500 per request; outbox operation when offline). Removing an item that is currently playing lets playback finish from the open file handle on POSIX systems; on Windows the delete is deferred until the engine releases the file.
+`unpin(kind, refId)`: delete the collection and its membership rows; for each item left with no membership, cancel its transfer (`DownloadScheduler.cancelItem`), delete its `.part` and final files through the `MediaFiles` seam, delete the row, and add its `playbackId` to a batched `DELETE /api/offline/items { deviceId, playbackIds }` (≤ 500 per request). The batches always go through the outbox as `offlineDelete` operations, which drain at once when online; the outbox handler, bound in `lib/shared/data/downloads/` because `downloads` and `sync` may not import each other, calls `OfflineRepository.delete`. Unavailable items are removed with their membership and not reported. Removing an item that is currently playing lets playback finish from the open file handle on POSIX systems; on Windows the delete fails while the engine holds the file, the error is ignored, and the start-up scan (Reconciliation, step 5) removes the orphaned file.
 
 ## Keeping Collections Current
 

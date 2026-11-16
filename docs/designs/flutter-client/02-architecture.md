@@ -269,6 +269,7 @@ Each seam is an abstract class in `lib/platform/<name>/<name>.dart` with `_io.da
 | Media controls | `MediaControls` | `audio_service` (Android, iOS, macOS, Linux via MPRIS), SMTC adapter (Windows) | `audio_service` (Media Session API) |
 | Downloader | `Downloader` | `background_downloader` | `UnsupportedDownloader` (feature hidden) |
 | Disk space | `DiskSpace` (`freeBytes(path)`, null when unknown) | `disk_space_2` (Android, iOS, Windows, Linux); null on macOS, which it does not cover | `UnknownDiskSpace` (null) |
+| Media files | `MediaFiles` (`delete(path)`; a missing file is not an error) | `dart:io` | No-op (no files) |
 | Stream credentials | `StreamAuth` | Header | `?token=` query |
 | Window and tray | `DesktopShell` | `window_manager`, `tray_manager` | No-op |
 | QR scanner | `QrScanner` | `mobile_scanner` (Android, iOS, macOS); unavailable on Windows and Linux | `mobile_scanner` |

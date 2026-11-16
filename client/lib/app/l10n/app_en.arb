@@ -1544,5 +1544,17 @@
   "connectSignInNoBrowserMethod": "This server offers no sign-in method this app can use in a browser.",
   "@connectSignInNoBrowserMethod": {
     "description": "Shown in the browser app when the server offers neither password sign-in nor single sign-on, leaving only API keys, which the browser app cannot use."
+  },
+  "downloadUnavailableDisabled": "Downloads are turned off on this server",
+  "@downloadUnavailableDisabled": {
+    "description": "Shown on a greyed-out track of a downloaded album or playlist when the server administrator turned offline downloads off."
+  },
+  "downloadUnavailableGone": "No longer available",
+  "@downloadUnavailableGone": {
+    "description": "Shown on a greyed-out track of a downloaded album or playlist that the server no longer has."
+  },
+  "downloadUnavailableAccount": "Not available for your account",
+  "@downloadUnavailableAccount": {
+    "description": "Shown on a greyed-out track of a downloaded album or playlist that this account cannot stream, so cannot download."
   }
 }

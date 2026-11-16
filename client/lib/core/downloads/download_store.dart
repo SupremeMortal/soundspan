@@ -68,6 +68,10 @@ class DownloadStore {
   final StateDatabase _db;
   final DownloadPaths? _paths;
 
+  /// Runs [body] in one transaction of the profile's `state.db`; store
+  /// calls made inside it join the transaction.
+  Future<T> transaction<T>(Future<T> Function() body) => _db.transaction(body);
+
   // Collections.
 
   /// Inserts or replaces the collection [kind]/[refId].
@@ -131,6 +135,55 @@ class DownloadStore {
     _db.downloadCollections,
   )..where((c) => _collection(c, kind, refId))).getSingleOrNull();
 
+  /// The collections in [status], in request order.
+  Future<List<DownloadCollection>> collectionsByStatus(
+    DownloadCollectionStatus status,
+  ) =>
+      (_db.select(_db.downloadCollections)
+            ..where((c) => c.status.equals(status.name))
+            ..orderBy([(c) => OrderingTerm.asc(c.requestedAt)]))
+          .get();
+
+  /// The collections item [key] belongs to, in request order.
+  Future<List<DownloadCollection>> collectionsOf(DownloadItemKey key) {
+    final m = _db.downloadMembership;
+    final c = _db.downloadCollections;
+    final query =
+        _db.select(c).join([
+            innerJoin(m, m.kind.equalsExp(c.kind) & m.refId.equalsExp(c.refId)),
+          ])
+          ..where(m.itemKey.equals(key.encode()))
+          ..orderBy([OrderingTerm.asc(c.requestedAt)]);
+    return query.map((row) => row.readTable(c)).get();
+  }
+
+  /// The collection [kind]/[refId] with its items in membership order,
+  /// again whenever either changes; null while there is no such
+  /// collection.
+  Stream<({DownloadCollection collection, List<DownloadItem> items})?>
+  watchCollectionWithItems(DownloadCollectionKind kind, String refId) {
+    final c = _db.downloadCollections;
+    final m = _db.downloadMembership;
+    final i = _db.downloadItems;
+    final query =
+        _db.select(c).join([
+            leftOuterJoin(
+              m,
+              m.kind.equalsExp(c.kind) & m.refId.equalsExp(c.refId),
+            ),
+            leftOuterJoin(i, i.itemKey.equalsExp(m.itemKey)),
+          ])
+          ..where(_collection(c, kind, refId))
+          ..orderBy([OrderingTerm.asc(m.position)]);
+    return query.watch().map((rows) {
+      if (rows.isEmpty) return null;
+      return (
+        collection: rows.first.readTable(c),
+        items: [for (final row in rows) ?row.readTableOrNull(i)],
+      );
+    });
+  }
+
   /// Deletes the collection and, by cascade, its memberships. Items are
   /// kept; use [removeMembershipsOf] first to learn which are orphaned.
   Future<void> deleteCollection(DownloadCollectionKind kind, String refId) =>
@@ -179,6 +232,11 @@ class DownloadStore {
     );
     return _db.into(_db.downloadItems).insertOnConflictUpdate(row);
   }
+
+  /// Deletes the row of item [key] and, by cascade, its memberships.
+  Future<void> deleteItem(DownloadItemKey key) => (_db.delete(
+    _db.downloadItems,
+  )..where((i) => i.itemKey.equals(key.encode()))).go();
 
   /// The item [key], or null.
   Future<DownloadItem?> item(DownloadItemKey key) =>
