@@ -171,7 +171,9 @@ jobs:
             libmpv2 mpv xvfb pulseaudio
 
       # The runner has no sound card; mpv plays to a PulseAudio null sink in
-      # real time, with the engine's production configuration.
+      # real time, with the engine's production configuration. The sink is
+      # kept from suspending: resuming a suspended null sink holds the start
+      # of playback for about two seconds.
       - name: Start PulseAudio with a null sink
         run: |
           pulseaudio -D --exit-idle-time=-1
@@ -179,12 +181,14 @@ jobs:
             pactl info > /dev/null 2>&1 && break
             sleep 1
           done
+          pactl unload-module module-suspend-on-idle || true
           pactl load-module module-null-sink sink_name=null
           pactl set-default-sink null
           pactl info
 
       - name: Engine conformance on Linux
         working-directory: client
+        timeout-minutes: 15
         run: >-
           xvfb-run -a
           flutter test integration_test/engine_conformance_test.dart -d linux
