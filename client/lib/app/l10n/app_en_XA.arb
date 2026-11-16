@@ -1556,5 +1556,91 @@
   "downloadUnavailableAccount": "[Ñöţ åvåîļåbļé föŕ ýöûŕ åççöûñţ one two three]",
   "@downloadUnavailableAccount": {
     "description": "Shown on a greyed-out track of a downloaded album or playlist that this account cannot stream, so cannot download."
+  },
+  "playerPlay": "[Þļåý one]",
+  "@playerPlay": {
+    "description": "Tooltip and screen-reader label of the player's play button."
+  },
+  "playerPause": "[Þåûšé one]",
+  "@playerPause": {
+    "description": "Tooltip and screen-reader label of the player's pause button."
+  },
+  "playerNext": "[Ñéxţ one]",
+  "@playerNext": {
+    "description": "Tooltip and screen-reader label of the player's button that skips to the next item."
+  },
+  "playerPrevious": "[Þŕévîöûš one]",
+  "@playerPrevious": {
+    "description": "Tooltip and screen-reader label of the player's button that goes back to the previous item or the start of this one."
+  },
+  "playerShuffle": "[Šĥûffļé one]",
+  "@playerShuffle": {
+    "description": "Tooltip and screen-reader label of the player's shuffle toggle."
+  },
+  "playerRepeatOff": "[Ŕéþéåţ one]",
+  "@playerRepeatOff": {
+    "description": "Tooltip and screen-reader label of the player's repeat button while repeat is off; a tap repeats the queue."
+  },
+  "playerRepeatAll": "[Ŕéþéåţ åļļ one]",
+  "@playerRepeatAll": {
+    "description": "Tooltip and screen-reader label of the player's repeat button while the whole queue repeats; a tap repeats the current item."
+  },
+  "playerRepeatOne": "[Ŕéþéåţ öñé one]",
+  "@playerRepeatOne": {
+    "description": "Tooltip and screen-reader label of the player's repeat button while the current item repeats; a tap turns repeat off."
+  },
+  "playerVolume": "[Vöļûmé one]",
+  "@playerVolume": {
+    "description": "Screen-reader label of the player's volume slider."
+  },
+  "playerSeek": "[Šééķ one]",
+  "@playerSeek": {
+    "description": "Screen-reader label of the seek bar that shows and changes the position in the playing item."
+  },
+  "playerSeekValue": "[{position} öf {duration} one]",
+  "@playerSeekValue": {
+    "description": "Screen-reader value of the seek bar: the position and the length of the playing item, each as m:ss or h:mm:ss, e.g. 1:05 of 3:41.",
+    "placeholders": {
+      "position": {
+        "type": "String",
+        "example": "1:05"
+      },
+      "duration": {
+        "type": "String",
+        "example": "3:41"
+      }
+    }
+  },
+  "qualityBadgeSampleRate": "[{codec} · {bitDepth}/{sampleRate} ķĤž one]",
+  "@qualityBadgeSampleRate": {
+    "description": "Quality badge of the playing stream with a bit depth: codec, bit depth and sample rate in kilohertz, e.g. FLAC · 24/96 kHz.",
+    "placeholders": {
+      "codec": {
+        "type": "String",
+        "example": "FLAC"
+      },
+      "bitDepth": {
+        "type": "String",
+        "example": "24"
+      },
+      "sampleRate": {
+        "type": "String",
+        "example": "44.1"
+      }
+    }
+  },
+  "qualityBadgeBitrate": "[{codec} · {bitrate} ķbþš one]",
+  "@qualityBadgeBitrate": {
+    "description": "Quality badge of the playing stream without a bit depth: codec and bit rate in kilobits per second, e.g. AAC · 256 kbps.",
+    "placeholders": {
+      "codec": {
+        "type": "String",
+        "example": "AAC"
+      },
+      "bitrate": {
+        "type": "String",
+        "example": "256"
+      }
+    }
   }
 }

@@ -11,6 +11,7 @@ import 'package:soundspan/core/playback/engines/player_engine_provider.dart';
 import 'package:soundspan/core/playback/loudness_binding.dart';
 import 'package:soundspan/core/playback/persistence.dart';
 import 'package:soundspan/core/playback/playback_controller.dart';
+import 'package:soundspan/core/playback/playback_snapshot.dart';
 import 'package:soundspan/core/playback/source_resolver.dart';
 import 'package:soundspan/core/playback/stream_quality_policy.dart';
 import 'package:soundspan/core/profile/api_provider.dart';
@@ -154,4 +155,27 @@ final Provider<PlaybackController> playbackControllerProvider =
         profileDisposerProvider,
         queuePersistenceProvider,
       ],
+    );
+
+/// Every [PlaybackSnapshot] of the profile's [PlaybackController], position
+/// changes included (at most four a second). Only widgets that show the
+/// position watch it, such as the seek bar; it is not retried on error.
+final StreamProvider<PlaybackSnapshot> playbackSnapshotProvider =
+    StreamProvider<PlaybackSnapshot>(
+      (ref) => ref.watch(playbackControllerProvider).snapshots,
+      dependencies: [playbackControllerProvider],
+      retry: (_, _) => null,
+    );
+
+/// The [PlaybackSnapshot]s of the profile's [PlaybackController] that
+/// change more than the position and the buffered range, for widgets that
+/// must not rebuild as the position moves; it is not retried on error.
+final StreamProvider<PlaybackSnapshot> playbackStateProvider =
+    StreamProvider<PlaybackSnapshot>(
+      (ref) => ref
+          .watch(playbackControllerProvider)
+          .snapshots
+          .distinct((previous, next) => next.differsOnlyInPosition(previous)),
+      dependencies: [playbackControllerProvider],
+      retry: (_, _) => null,
     );

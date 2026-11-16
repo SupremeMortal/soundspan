@@ -12,6 +12,9 @@ import 'package:soundspan/app/router/routes.dart';
 import 'package:soundspan/bootstrap.dart';
 import 'package:soundspan/core/auth/profile.dart';
 import 'package:soundspan/core/auth/profile_repository.dart';
+import 'package:soundspan/core/playback/engines/fake_engine.dart';
+import 'package:soundspan/core/playback/engines/player_engine_provider.dart';
+import 'package:soundspan/core/playback/playback_providers.dart';
 import 'package:soundspan/core/profile/profile_runtime.dart';
 import 'package:soundspan/core/storage/app/app_database.dart' hide Profile;
 import 'package:soundspan/core/storage/app/app_settings_store.dart';
@@ -49,7 +52,8 @@ class TestRoot {
   bool _disposed = false;
 
   /// Builds the root container with [stored] as the active profile. Call it
-  /// outside fake async (in `tester.runAsync` within widget tests).
+  /// outside fake async (in `tester.runAsync` within widget tests). The
+  /// playback engine is a `FakeEngine`.
   ///
   /// [database] reuses an `app.db` (its profile and settings stay as they
   /// are; [stored] must then be [StoredProfile.none]); [opener] replaces
@@ -126,7 +130,11 @@ class TestRoot {
       appDatabase: database,
       secretStore: secrets,
       userAgent: 'soundspan-client/test (test)',
-      overrides: [clockProvider.overrideWithValue(clock), ...overrides],
+      overrides: [
+        clockProvider.overrideWithValue(clock),
+        playerEngineBuilderProvider.overrideWithValue(FakeEngine.new),
+        ...overrides,
+      ],
     );
     return TestRoot._(
       container,
@@ -201,6 +209,24 @@ extension PumpSoundspanApp on WidgetTester {
       // zero-duration timer, and closing `cache.db` waits for that timer.
       // Fake time only moves when pumped with a duration, so let it fire.
       await pump(Duration.zero);
+      // Disposing the playback controller saves the queue through drift
+      // work begun in fake time, which never finishes in real time, so it
+      // is disposed here, where fake time moves; ending the profile
+      // disposes it again, which does nothing.
+      final profile = root._disposed
+          ? null
+          : root.container.read(profileRuntimeProvider).container;
+      if (profile != null && profile.read(playbackControllerProvider.exists)) {
+        var closed = false;
+        final closing = profile
+            .read(playbackControllerProvider)
+            .dispose()
+            .whenComplete(() => closed = true);
+        for (var i = 0; i < 20 && !closed; i++) {
+          await pump(Duration.zero);
+        }
+        if (!closed) await runAsync(() => closing);
+      }
       await runAsync(root.dispose);
     });
     await pumpWidget(

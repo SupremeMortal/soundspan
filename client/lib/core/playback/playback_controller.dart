@@ -2,6 +2,7 @@
 
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show ValueListenable, ValueNotifier;
 import 'package:soundspan/core/auth/session_controller.dart';
 import 'package:soundspan/core/logging/app_logger.dart';
 import 'package:soundspan/core/playback/data/playback_info_repository.dart';
@@ -109,7 +110,9 @@ class PlaybackController {
   /// Where the current item starts when it is loaded lazily by [play].
   Duration _pendingStartAt = Duration.zero;
 
-  double _userVolume = 1;
+  final ValueNotifier<double> _volume = ValueNotifier<double>(1);
+  double get _userVolume => _volume.value;
+  set _userVolume(double value) => _volume.value = value;
   final Map<String, double> _volumeFactors = {};
 
   final FailurePolicy _failures = FailurePolicy();
@@ -159,6 +162,10 @@ class PlaybackController {
 
   /// The user volume, 0.0–1.0.
   double get volume => _userVolume;
+
+  /// The user volume, 0.0–1.0, notifying when it is set or read back from
+  /// the device settings.
+  ValueListenable<double> get volumeListenable => _volume;
 
   /// Whether a [RemoteDriver] takes the queue and transport commands.
   bool get hasRemoteDriver => _driver != null;
@@ -295,6 +302,7 @@ class PlaybackController {
     await _eventSubscription.cancel();
     await _publisher.close();
     await _notices.close();
+    _volume.dispose();
     try {
       await _engine.stop();
     } finally {

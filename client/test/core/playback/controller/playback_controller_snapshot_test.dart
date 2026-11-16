@@ -5,8 +5,10 @@ import 'dart:async';
 import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:soundspan/core/playback/engines/fake_engine.dart';
+import 'package:soundspan/core/playback/playback_controller.dart';
 import 'package:soundspan/shared/clock.dart';
 
+import '../../../helpers/memory_device_settings.dart';
 import '../queue/queue_test_items.dart';
 import 'controller_harness.dart';
 
@@ -80,5 +82,21 @@ void main() {
     await h.controller.setVolume(-2);
     expect(h.controller.volume, 0.0);
     expect(h.fake.volume, 0.0);
+  });
+
+  test('volumeListenable follows the set and the stored volume', () async {
+    final stored = MemoryDeviceSettings()..values[playbackVolumeKey] = '0.25';
+    final h = ControllerHarness(deviceSettings: stored);
+    final heard = <double>[];
+    h.controller.volumeListenable.addListener(
+      () => heard.add(h.controller.volumeListenable.value),
+    );
+
+    await h.settle();
+    expect(h.controller.volumeListenable.value, 0.25);
+
+    await h.controller.setVolume(0.75);
+    expect(heard, [0.25, 0.75]);
+    expect(stored.values[playbackVolumeKey], '0.75');
   });
 }

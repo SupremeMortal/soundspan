@@ -2062,6 +2062,88 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Not available for your account'**
   String get downloadUnavailableAccount;
+
+  /// Tooltip and screen-reader label of the player's play button.
+  ///
+  /// In en, this message translates to:
+  /// **'Play'**
+  String get playerPlay;
+
+  /// Tooltip and screen-reader label of the player's pause button.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause'**
+  String get playerPause;
+
+  /// Tooltip and screen-reader label of the player's button that skips to the next item.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get playerNext;
+
+  /// Tooltip and screen-reader label of the player's button that goes back to the previous item or the start of this one.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous'**
+  String get playerPrevious;
+
+  /// Tooltip and screen-reader label of the player's shuffle toggle.
+  ///
+  /// In en, this message translates to:
+  /// **'Shuffle'**
+  String get playerShuffle;
+
+  /// Tooltip and screen-reader label of the player's repeat button while repeat is off; a tap repeats the queue.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeat'**
+  String get playerRepeatOff;
+
+  /// Tooltip and screen-reader label of the player's repeat button while the whole queue repeats; a tap repeats the current item.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeat all'**
+  String get playerRepeatAll;
+
+  /// Tooltip and screen-reader label of the player's repeat button while the current item repeats; a tap turns repeat off.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeat one'**
+  String get playerRepeatOne;
+
+  /// Screen-reader label of the player's volume slider.
+  ///
+  /// In en, this message translates to:
+  /// **'Volume'**
+  String get playerVolume;
+
+  /// Screen-reader label of the seek bar that shows and changes the position in the playing item.
+  ///
+  /// In en, this message translates to:
+  /// **'Seek'**
+  String get playerSeek;
+
+  /// Screen-reader value of the seek bar: the position and the length of the playing item, each as m:ss or h:mm:ss, e.g. 1:05 of 3:41.
+  ///
+  /// In en, this message translates to:
+  /// **'{position} of {duration}'**
+  String playerSeekValue(String position, String duration);
+
+  /// Quality badge of the playing stream with a bit depth: codec, bit depth and sample rate in kilohertz, e.g. FLAC · 24/96 kHz.
+  ///
+  /// In en, this message translates to:
+  /// **'{codec} · {bitDepth}/{sampleRate} kHz'**
+  String qualityBadgeSampleRate(
+    String codec,
+    String bitDepth,
+    String sampleRate,
+  );
+
+  /// Quality badge of the playing stream without a bit depth: codec and bit rate in kilobits per second, e.g. AAC · 256 kbps.
+  ///
+  /// In en, this message translates to:
+  /// **'{codec} · {bitrate} kbps'**
+  String qualityBadgeBitrate(String codec, String bitrate);
 }
 
 class _AppLocalizationsDelegate

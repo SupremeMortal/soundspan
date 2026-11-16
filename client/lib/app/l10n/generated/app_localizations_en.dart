@@ -1214,6 +1214,55 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get downloadUnavailableAccount => 'Not available for your account';
+
+  @override
+  String get playerPlay => 'Play';
+
+  @override
+  String get playerPause => 'Pause';
+
+  @override
+  String get playerNext => 'Next';
+
+  @override
+  String get playerPrevious => 'Previous';
+
+  @override
+  String get playerShuffle => 'Shuffle';
+
+  @override
+  String get playerRepeatOff => 'Repeat';
+
+  @override
+  String get playerRepeatAll => 'Repeat all';
+
+  @override
+  String get playerRepeatOne => 'Repeat one';
+
+  @override
+  String get playerVolume => 'Volume';
+
+  @override
+  String get playerSeek => 'Seek';
+
+  @override
+  String playerSeekValue(String position, String duration) {
+    return '$position of $duration';
+  }
+
+  @override
+  String qualityBadgeSampleRate(
+    String codec,
+    String bitDepth,
+    String sampleRate,
+  ) {
+    return '$codec · $bitDepth/$sampleRate kHz';
+  }
+
+  @override
+  String qualityBadgeBitrate(String codec, String bitrate) {
+    return '$codec · $bitrate kbps';
+  }
 }
 
 /// The translations for English (`en_XA`).
@@ -2457,4 +2506,53 @@ class AppLocalizationsEnXa extends AppLocalizationsEn {
   @override
   String get downloadUnavailableAccount =>
       '[Ñöţ åvåîļåbļé föŕ ýöûŕ åççöûñţ one two three]';
+
+  @override
+  String get playerPlay => '[Þļåý one]';
+
+  @override
+  String get playerPause => '[Þåûšé one]';
+
+  @override
+  String get playerNext => '[Ñéxţ one]';
+
+  @override
+  String get playerPrevious => '[Þŕévîöûš one]';
+
+  @override
+  String get playerShuffle => '[Šĥûffļé one]';
+
+  @override
+  String get playerRepeatOff => '[Ŕéþéåţ one]';
+
+  @override
+  String get playerRepeatAll => '[Ŕéþéåţ åļļ one]';
+
+  @override
+  String get playerRepeatOne => '[Ŕéþéåţ öñé one]';
+
+  @override
+  String get playerVolume => '[Vöļûmé one]';
+
+  @override
+  String get playerSeek => '[Šééķ one]';
+
+  @override
+  String playerSeekValue(String position, String duration) {
+    return '[$position öf $duration one]';
+  }
+
+  @override
+  String qualityBadgeSampleRate(
+    String codec,
+    String bitDepth,
+    String sampleRate,
+  ) {
+    return '[$codec · $bitDepth/$sampleRate ķĤž one]';
+  }
+
+  @override
+  String qualityBadgeBitrate(String codec, String bitrate) {
+    return '[$codec · $bitrate ķbþš one]';
+  }
 }

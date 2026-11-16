@@ -226,6 +226,7 @@ class PlaybackSnapshot {
 ```
 
 - `position` in the snapshot is throttled to 4 Hz for general listeners. The seek bar interpolates locally between updates with a `Ticker`.
+- Widgets read snapshots through two providers: `playbackSnapshotProvider` (every snapshot, for the seek bar and the mini player's progress line) and `playbackStateProvider` (only snapshots that change more than the position and buffered range, for everything else), so the player bar does not rebuild as the position moves. The user volume is a `ValueListenable<double>` on the controller (`volumeListenable`), because it is not part of the snapshot. The shell's player slots show the players once the profile's controller exists and never create it themselves; the controller is created by the first command that reads it.
 - **Failure policy:** on `Failed` for the current item, retry once after 1 s (network and HTTP 5xx kinds only). If it fails again, mark the item failed in the snapshot, show a snackbar, and advance. Three consecutive failed items stop playback with "Can't reach the server" instead of skipping through the whole queue.
 - **`SourceUnavailable` / `notFound`:** no retry; skip with a per-item message.
 - **Connection type change** (Wi-Fi → mobile data) does not interrupt the current item; the quality setting applies from the next resolved source.
