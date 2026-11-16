@@ -2,7 +2,8 @@
 
 import 'dart:async';
 
-import 'package:flutter/widgets.dart' show AppLifecycleListener, WidgetsBinding;
+import 'package:flutter/widgets.dart'
+    show AppLifecycleListener, AppLifecycleState, WidgetsBinding;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:soundspan/core/connectivity/reachability.dart';
 import 'package:soundspan/core/playback/audio_focus.dart';
@@ -10,6 +11,7 @@ import 'package:soundspan/core/playback/data/playback_info_repository.dart';
 import 'package:soundspan/core/playback/engines/player_engine_provider.dart';
 import 'package:soundspan/core/playback/loudness_binding.dart';
 import 'package:soundspan/core/playback/persistence.dart';
+import 'package:soundspan/core/playback/play_reporter_input.dart';
 import 'package:soundspan/core/playback/playback_controller.dart';
 import 'package:soundspan/core/playback/playback_snapshot.dart';
 import 'package:soundspan/core/playback/source_resolver.dart';
@@ -21,6 +23,9 @@ import 'package:soundspan/core/profile/profile_providers.dart';
 import 'package:soundspan/core/profile/settings/settings_providers.dart';
 import 'package:soundspan/core/profile/settings/user_settings.dart';
 import 'package:soundspan/core/storage/state/queue_dao.dart';
+import 'package:soundspan/core/sync/outbox/outbox.dart';
+import 'package:soundspan/core/sync/play_reporter.dart';
+import 'package:soundspan/core/sync/play_session_store.dart';
 import 'package:soundspan/platform/audio_session/audio_session_gateway.dart';
 import 'package:soundspan/platform/stream_auth/stream_auth.dart';
 import 'package:soundspan/shared/clock.dart';
@@ -94,6 +99,10 @@ final Provider<QueuePersistence> queuePersistenceProvider =
 ///
 /// Its [AudioFocusController] applies the audio-focus rules over the root
 /// [audioSessionGatewayProvider].
+///
+/// Its [PlayReporter] reports every play to the scope's outbox, closing the
+/// plays an earlier process left in `play_sessions` first. Ending the scope
+/// writes the open play before playback stops.
 final Provider<PlaybackController> playbackControllerProvider =
     Provider<PlaybackController>(
       (ref) {
@@ -132,13 +141,31 @@ final Provider<PlaybackController> playbackControllerProvider =
           ref.watch(audioSessionGatewayProvider),
         );
         unawaited(controller.restore());
+        final lifecycleStates = StreamController<AppLifecycleState>.broadcast(
+          sync: true,
+        );
+        final reporter = PlayReporter(
+          ControllerListeningSource(controller),
+          PlaySessionStore(ref.watch(stateDatabaseProvider)),
+          ref.watch(outboxProvider),
+          ref.watch(clockProvider),
+          lifecycleStates.stream,
+        );
         final lifecycle = AppLifecycleListener(
           binding: WidgetsBinding.instance,
-          onStateChange: persistence.handleLifecycle,
+          onStateChange: (state) {
+            persistence.handleLifecycle(state);
+            lifecycleStates.add(state);
+          },
         );
-        ref.watch(profileDisposerProvider).register(controller.dispose);
+        // Closers run in reverse: the open play is written first.
+        ref.watch(profileDisposerProvider)
+          ..register(controller.dispose)
+          ..register(reporter.dispose);
         ref.onDispose(() {
           lifecycle.dispose();
+          unawaited(lifecycleStates.close());
+          unawaited(reporter.dispose());
           unawaited(loudness.dispose());
           focus.dispose();
           unawaited(controller.dispose());
@@ -154,6 +181,8 @@ final Provider<PlaybackController> playbackControllerProvider =
         serverCapabilitiesProvider,
         profileDisposerProvider,
         queuePersistenceProvider,
+        stateDatabaseProvider,
+        outboxProvider,
       ],
     );
 

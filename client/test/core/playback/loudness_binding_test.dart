@@ -23,11 +23,13 @@ import 'package:soundspan/core/profile/settings/settings_repository.dart';
 import 'package:soundspan/core/profile/settings/user_settings.dart';
 import 'package:soundspan/core/storage/state/device_settings_dao.dart';
 import 'package:soundspan/core/storage/state/state_database.dart';
+import 'package:soundspan/core/sync/outbox/outbox.dart';
 import 'package:soundspan/shared/clock.dart';
 import 'package:soundspan/shared/domain/domain.dart';
 import 'package:soundspan_api/soundspan_api.dart' as api;
 
 import '../../helpers/fake_clock.dart';
+import '../../helpers/idle_outbox.dart';
 import 'controller/controller_harness.dart';
 
 /// How far into the next item playback runs.
@@ -322,6 +324,7 @@ void main() {
             ),
           ),
           stateDatabaseProvider.overrideWithValue(db),
+          outboxProvider.overrideWithValue(idleOutbox(db)),
           settingsRepositoryProvider.overrideWithValue(
             SettingsRepository(client),
           ),

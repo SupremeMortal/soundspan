@@ -89,6 +89,8 @@ class PlaybackController {
   final QueuePersistence? _persistence;
   final StreamController<PlaybackNotice> _notices =
       StreamController<PlaybackNotice>.broadcast();
+  final StreamController<EntryEnded> _ended =
+      StreamController<EntryEnded>.broadcast();
   late final StreamSubscription<EngineState> _stateSubscription;
   late final StreamSubscription<EngineEvent> _eventSubscription;
 
@@ -159,6 +161,25 @@ class PlaybackController {
 
   /// One-shot messages for the UI.
   Stream<PlaybackNotice> get notices => _notices.stream;
+
+  /// Every time the current entry stops being the one playing: next,
+  /// previous that moves the cursor, jump, replace, remove, clear, stop, a
+  /// failure that skips or stops, its natural end, and a repeat-one replay
+  /// (doc 06, Play Reporting). Each event is emitted before the snapshots
+  /// that follow it and reaches a listener after the snapshots published
+  /// before it.
+  Stream<EntryEnded> get entryEnded => Stream<EntryEnded>.multi((listener) {
+    if (_ended.isClosed) {
+      unawaited(listener.close());
+      return;
+    }
+    // The same two hops as [snapshots], so both arrive in emission order.
+    final subscription = _ended.stream.listen(
+      listener.add,
+      onDone: listener.close,
+    );
+    listener.onCancel = subscription.cancel;
+  });
 
   /// The user volume, 0.0–1.0.
   double get volume => _userVolume;
@@ -302,6 +323,7 @@ class PlaybackController {
     await _eventSubscription.cancel();
     await _publisher.close();
     await _notices.close();
+    await _ended.close();
     _volume.dispose();
     try {
       await _engine.stop();
@@ -368,6 +390,7 @@ class PlaybackController {
       case ClearCommand():
         await _reduce(const Clear());
       case StopCommand():
+        _endCurrent();
         await _stopEngine();
         _publish();
       case SetVolumeCommand(:final volume):
@@ -430,8 +453,17 @@ class PlaybackController {
   }
 
   Future<void> _reduce(QueueCommand command) async {
+    final previous = _queue.current?.queueItemId;
     final transition = _reducer.reduce(_queue, command);
     _queue = transition.state;
+    final effect = transition.effect;
+    if (previous != null &&
+        (_queue.current?.queueItemId != previous ||
+            effect == QueueEffect.stop ||
+            effect == QueueEffect.loadCurrent ||
+            (effect == QueueEffect.restartCurrent && command is! Previous))) {
+      _ended.add(EntryEnded(previous, natural: command is ItemFinished));
+    }
     if (transition.dropped > 0) _notices.add(ItemsDropped(transition.dropped));
     await _applyEffect(transition.effect);
     _publish();
@@ -579,6 +611,7 @@ class PlaybackController {
         _publish();
         await _skipFailed();
       case StopPlayback(:final kind):
+        _endCurrent();
         await _stopEngine();
         _error = PlaybackError(kind, queueItemId: id);
         _notices.add(PlaybackStopped(kind));
@@ -597,6 +630,7 @@ class PlaybackController {
   /// Advances past a failed item as `Next` would; at the end of the queue
   /// with nothing to wrap to, stops and keeps the item's error.
   Future<void> _skipFailed() async {
+    _endCurrent();
     final transition = _reducer.reduce(_queue, const Next());
     if (transition.effect != QueueEffect.loadCurrent) {
       final error = _error;
@@ -627,6 +661,7 @@ class PlaybackController {
     final preloaded = _nextSource;
     _clearNextSlot();
     if (finished != null) {
+      _ended.add(EntryEnded(finished, natural: true));
       final transition = _reducer.reduce(_queue, ItemFinished(finished));
       _queue = transition.state;
       if (_queue.current?.queueItemId == queueItemId) {
@@ -660,6 +695,14 @@ class PlaybackController {
     } else if (_nextId == queueItemId) {
       _nextSource = null;
       _nextSync = _engine.setNext(null);
+    }
+  }
+
+  /// Emits [EntryEnded] for the current entry, if there is one.
+  void _endCurrent() {
+    final current = _queue.current;
+    if (current != null) {
+      _ended.add(EntryEnded(current.queueItemId, natural: false));
     }
   }
 

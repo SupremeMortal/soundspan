@@ -12,9 +12,11 @@ import 'package:soundspan/core/playback/playback_providers.dart';
 import 'package:soundspan/core/profile/profile_disposer.dart';
 import 'package:soundspan/core/profile/profile_providers.dart';
 import 'package:soundspan/core/storage/state/state_database.dart';
+import 'package:soundspan/core/sync/outbox/outbox.dart';
 import 'package:soundspan/shared/clock.dart';
 
 import '../../../helpers/fake_clock.dart';
+import '../../../helpers/idle_outbox.dart';
 import '../queue/queue_test_items.dart';
 import 'controller_harness.dart';
 
@@ -41,6 +43,7 @@ ProviderContainer _scope(
     profileDisposerProvider.overrideWithValue(disposer),
     clockProvider.overrideWithValue(FakeClock()),
     stateDatabaseProvider.overrideWithValue(database),
+    outboxProvider.overrideWithValue(idleOutbox(database)),
   ],
 );
 

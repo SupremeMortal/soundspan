@@ -207,3 +207,33 @@ final class FocusDenied extends PlaybackNotice {
   @override
   String toString() => 'FocusDenied()';
 }
+
+/// The queue entry [queueItemId] stopped being the one playing, on
+/// `PlaybackController.entryEnded`: it finished ([natural]), or it was
+/// skipped, replaced, removed, cleared or stopped. A repeat-one replay
+/// ends the entry before it plays again.
+final class EntryEnded {
+  /// Creates the event for [queueItemId].
+  const new(this.queueItemId, {required this.natural});
+
+  /// The entry that ended.
+  final String queueItemId;
+
+  /// Whether it played to its end.
+  final bool natural;
+
+  @override
+  // Every field is final and the class is immutable.
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  bool operator ==(Object other) =>
+      other is EntryEnded &&
+      other.queueItemId == queueItemId &&
+      other.natural == natural;
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes, see ==.
+  int get hashCode => Object.hash(queueItemId, natural);
+
+  @override
+  String toString() => 'EntryEnded($queueItemId, natural: $natural)';
+}

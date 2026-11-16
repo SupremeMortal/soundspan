@@ -98,6 +98,10 @@ class OutboxStore {
     }
   });
 
+  /// Runs [body] in one transaction of the store's database, so ops it
+  /// [enqueue]s are stored together with the other rows it writes there.
+  Future<T> transaction<T>(Future<T> Function() body) => _db.transaction(body);
+
   /// The pending ops in `seq` order.
   Future<List<OutboxEntry>> pending() async =>
       await _decode(await _query().get());

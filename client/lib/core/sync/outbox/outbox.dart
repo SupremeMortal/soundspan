@@ -42,6 +42,17 @@ class Outbox {
     return seq;
   }
 
+  /// Runs [body] in one `state.db` transaction, then triggers a pass.
+  ///
+  /// [body] stores ops through the [OutboxStore] it is given, which joins
+  /// the transaction, so they are stored together with the rows [body]
+  /// writes to other tables of `state.db`, or not at all.
+  Future<T> transaction<T>(Future<T> Function(OutboxStore store) body) async {
+    final result = await _store.transaction(() => body(_store));
+    _worker.trigger();
+    return result;
+  }
+
   /// The pending ops in `seq` order, limited to [opTypes] when given, again
   /// on every change.
   Stream<List<OutboxEntry>> watchPending({Set<String>? opTypes}) =>

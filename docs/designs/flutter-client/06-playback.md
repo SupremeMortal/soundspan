@@ -326,6 +326,8 @@ The rules are `AudioFocusController`, created and disposed with the profile's `P
 
 **Surviving a kill.** The open play (`sessionId`, `playbackId`, metadata, `playedAt`, `listenedMs`) is written to `play_sessions` every 10 s while playing, on pause, and when the app is backgrounded. At start-up any row left by a previous process is closed with its stored total and, if that reaches 5 seconds, enqueued, so a kill loses at most the last 10 seconds of listening and never the play.
 
+**Inputs.** `core/sync` may not import `core/playback`, so the reporter follows a narrow `ListeningSource` (current entry, whether it is audible, the play intent, and the ids of entries that ended) that `ControllerListeningSource` in `core/playback` adapts from the controller. A repeat-one replay keeps the same `queueItemId` and the snapshots alone cannot tell it from continued playback, so `PlaybackController.entryEnded` emits `EntryEnded(queueItemId, natural)` whenever the current entry stops being the one playing: next, previous that moves the cursor, jump, replace, remove, clear, stop, a failure that skips or stops, its natural end and a repeat-one replay. It is never inferred from the position. A play is closed and enqueued in one `state.db` transaction (`Outbox.transaction`), which is what makes it exactly once; the reporter is created with the controller and its writes run in order, recovery first.
+
 **Consequences.**
 
 - The server learns of a play when it ends, not when it starts, so "recently played" on other devices gains a track after it finishes or is skipped.
