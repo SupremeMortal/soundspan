@@ -16,11 +16,16 @@ import 'package:soundspan/core/playback/queue/queue_state.dart';
 import 'package:soundspan/core/playback/snapshot_publisher.dart';
 import 'package:soundspan/core/playback/source_resolver.dart';
 import 'package:soundspan/core/playback/stream_quality_info.dart';
+import 'package:soundspan/core/storage/state/device_settings_dao.dart';
 import 'package:soundspan/shared/clock.dart';
 import 'package:soundspan/shared/domain/playback_id.dart';
 import 'package:soundspan/shared/domain/queue_item.dart';
 
 final AppLogger _log = AppLogger.scope('Playback');
+
+/// The `device_settings` key of the user volume, a decimal string
+/// 0.0–1.0 (doc 05).
+const String playbackVolumeKey = 'playback.volume';
 
 /// Creates the timer of a failure retry; [Timer.new] outside tests.
 typedef PlaybackTimerFactory = Timer Function(
@@ -49,6 +54,9 @@ abstract interface class RemoteDriver {
 ///
 /// With a [QueuePersistence], [restore] reads the queue this device stored
 /// and the persistence follows the snapshots from then on.
+///
+/// The user volume is kept in the device settings under
+/// [playbackVolumeKey] and read back before the first command is applied.
 class PlaybackController {
   /// Creates the controller of one profile; it owns [_engine] from now on.
   new({
@@ -57,6 +65,7 @@ class PlaybackController {
     required this._info,
     required this._session,
     required Clock clock,
+    this._deviceSettings,
     this._reducer = const QueueReducer(),
     this._createTimer = Timer.new,
     this._persistence,
@@ -65,12 +74,14 @@ class PlaybackController {
     _eventSubscription = _engine.events.listen(
       (event) => unawaited(_enqueue(() => _onEngineEvent(event))),
     );
+    if (_deviceSettings != null) unawaited(_enqueue(_restoreVolume));
   }
 
   final PlayerEngine _engine;
   final SourceResolver _resolver;
   final PlaybackInfoRepository _info;
   final SessionController _session;
+  final DeviceSettingsDao? _deviceSettings;
   final PlaybackTimerFactory _createTimer;
   final QueueReducer _reducer;
   final SnapshotPublisher _publisher;
@@ -240,14 +251,18 @@ class PlaybackController {
   /// Stops playback; the queue is kept.
   Future<void> stop() => dispatch(const StopCommand());
 
-  /// Sets the user volume, clamped to 0.0–1.0.
+  /// Sets the user volume, clamped to 0.0–1.0, and stores it on the
+  /// device.
   Future<void> setVolume(double volume) => dispatch(SetVolumeCommand(volume));
 
   /// Sets the volume factor named [key] (`loudness`, `duck`); the engine
   /// volume is the user volume times every factor, clamped to 0.0–1.0.
+  /// An unset factor counts as 1.0; setting a factor to the value it has
+  /// makes no engine call.
   void setVolumeFactor(String key, double factor) {
+    final unchanged = (_volumeFactors[key] ?? 1.0) == factor;
     _volumeFactors[key] = factor;
-    unawaited(_applyVolume());
+    if (!unchanged) unawaited(_applyVolume());
   }
 
   /// Writes the queue a last time, stops playback, disposes the engine and
@@ -334,6 +349,7 @@ class PlaybackController {
       case SetVolumeCommand(:final volume):
         _userVolume = volume.clamp(0.0, 1.0);
         await _applyVolume();
+        await _storeVolume();
     }
   }
 
@@ -616,6 +632,34 @@ class PlaybackController {
     if (request != _nextRequest || _disposed) return;
     _nextSource = source;
     await _engine.setNext(source);
+  }
+
+  /// Reads the stored user volume; 1.0 when none is stored or it does not
+  /// parse.
+  Future<void> _restoreVolume() async {
+    final Object? stored;
+    try {
+      stored = await _deviceSettings?.read(playbackVolumeKey);
+    } on Object catch (error, stackTrace) {
+      _log.warning('Reading the volume failed', const {}, error, stackTrace);
+      return;
+    }
+    final volume = switch (stored) {
+      final String text => double.tryParse(text),
+      final num value => value.toDouble(),
+      _ => null,
+    };
+    if (volume == null || volume.isNaN) return;
+    _userVolume = volume.clamp(0.0, 1.0);
+    await _applyVolume();
+  }
+
+  Future<void> _storeVolume() async {
+    try {
+      await _deviceSettings?.write(playbackVolumeKey, '$_userVolume');
+    } on Object catch (error, stackTrace) {
+      _log.warning('Storing the volume failed', const {}, error, stackTrace);
+    }
   }
 
   Future<void> _applyVolume() async {

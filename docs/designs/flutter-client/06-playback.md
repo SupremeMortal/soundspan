@@ -250,6 +250,8 @@ engineVolume = clamp(userVolume × linear, 0, 1)
 - The engine volume range ends at 1.0 on ExoPlayer, AVPlayer, and HTML audio, so a positive gain is audible only when the user volume is below 1.0. This matches the web player, which also composites gain into element volume. mpv is held to the same range (`volume-max=100`) so every platform behaves alike.
 - Gain is applied when an item becomes current: on `AdvancedToNext` the controller sets the new volume immediately. A gapless transition between tracks with different gains therefore has a volume step at the boundary, the same as on the web.
 - Episodes get `gainDb = 0`.
+- `loudness_binding.dart` applies it: the `PlaybackController` provider starts a `LoudnessBinding` that follows the snapshots and, whenever the current entry changes, sets the `loudness` volume factor from the levelling mode and target of that moment, so the gain never changes in the middle of an item. The mode comes from the profile-scoped `loudnessModeProvider`, which fetches `GET /api/settings` once per profile session, is `off` until that has loaded and when it fails, and takes `setLoudnessMode` after the settings screen saved a new mode. The target is `ServerCapabilities.loudnessTargetLufs`.
+- The user volume is stored in `device_settings` `playback.volume` (a decimal string, 0.0–1.0) on every `setVolume` and read when the controller is created (1.0 when unset).
 
 ## OS Media Controls
 

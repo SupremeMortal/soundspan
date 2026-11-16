@@ -14,6 +14,7 @@ import 'package:soundspan/core/playback/playback_controller.dart';
 import 'package:soundspan/core/playback/playback_snapshot.dart';
 import 'package:soundspan/core/playback/queue/queue_reducer.dart';
 import 'package:soundspan/core/playback/source_resolver.dart';
+import 'package:soundspan/core/storage/state/device_settings_dao.dart';
 import 'package:soundspan/shared/clock.dart';
 import 'package:soundspan/shared/domain/queue_item.dart';
 import 'package:soundspan_api/soundspan_api.dart' as api;
@@ -168,11 +169,13 @@ class FakeResolver implements SourceResolver {
 class ControllerHarness {
   /// Creates the harness; [reducer] defaults to a plain one. The
   /// controller persists its queue through [persistence] when one is given.
+  /// It keeps its volume in [deviceSettings] when one is given.
   new({
     List<String> ids = const ['a', 'b', 'c', 'd'],
     QueueReducer reducer = const QueueReducer(),
     Clock? clock,
     QueuePersistence? persistence,
+    DeviceSettingsDao? deviceSettings,
   }) : clock = clock ?? FakeClock() {
     for (final id in ids) {
       fake.sources[uriOf(id)] = const FakeSource(duration: trackLength);
@@ -221,6 +224,7 @@ class ControllerHarness {
       info: PlaybackInfoRepository(playbackClient),
       session: session,
       clock: this.clock,
+      deviceSettings: deviceSettings,
       reducer: reducer,
       createTimer: timers.create,
       persistence: persistence,

@@ -7,17 +7,21 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:soundspan/core/connectivity/reachability.dart';
 import 'package:soundspan/core/playback/data/playback_info_repository.dart';
 import 'package:soundspan/core/playback/engines/player_engine_provider.dart';
+import 'package:soundspan/core/playback/loudness_binding.dart';
 import 'package:soundspan/core/playback/persistence.dart';
 import 'package:soundspan/core/playback/playback_controller.dart';
 import 'package:soundspan/core/playback/source_resolver.dart';
 import 'package:soundspan/core/playback/stream_quality_policy.dart';
 import 'package:soundspan/core/profile/api_provider.dart';
+import 'package:soundspan/core/profile/capabilities.dart';
 import 'package:soundspan/core/profile/profile_disposer.dart';
 import 'package:soundspan/core/profile/profile_providers.dart';
+import 'package:soundspan/core/profile/settings/settings_providers.dart';
+import 'package:soundspan/core/profile/settings/user_settings.dart';
 import 'package:soundspan/core/storage/state/queue_dao.dart';
 import 'package:soundspan/platform/stream_auth/stream_auth.dart';
 import 'package:soundspan/shared/clock.dart';
-import 'package:soundspan_api/soundspan_api.dart';
+import 'package:soundspan_api/soundspan_api.dart' show StreamUrls;
 
 /// The [PlaybackInfoRepository] of the profile scope; its cache lives as
 /// long as the scope.
@@ -74,11 +78,16 @@ final Provider<QueuePersistence> queuePersistenceProvider =
     );
 
 /// The [PlaybackController] of the profile scope, alive as long as the
-/// scope, with the scope's stream-info repository and session controller.
+/// scope, with the scope's stream-info repository, session controller and
+/// device settings.
 ///
 /// It restores the queue this device stored before taking any command, and
 /// writes it at once when the app goes to the background. Ending the scope
 /// writes the queue, stops playback and disposes the engine.
+///
+/// It starts the scope's [LoudnessBinding]: the levelling mode of
+/// [loudnessModeProvider] and the target of [serverCapabilitiesProvider]
+/// (-18 LUFS while unknown) are read whenever an item becomes current.
 final Provider<PlaybackController> playbackControllerProvider =
     Provider<PlaybackController>(
       (ref) {
@@ -89,7 +98,28 @@ final Provider<PlaybackController> playbackControllerProvider =
           info: ref.watch(playbackInfoRepositoryProvider),
           session: ref.watch(sessionControllerProvider),
           clock: ref.watch(clockProvider),
+          deviceSettings: ref.watch(deviceSettingsDaoProvider),
           persistence: persistence,
+        );
+        var mode = LoudnessMode.off;
+        ref.listen<LoudnessMode>(
+          loudnessModeProvider,
+          (_, next) => mode = next,
+          onError: (_, _) => mode = LoudnessMode.off,
+          fireImmediately: true,
+        );
+        var targetLufs = ServerCapabilities.defaultLoudnessTargetLufs;
+        ref.listen<ServerCapabilities>(
+          serverCapabilitiesProvider,
+          (_, next) => targetLufs = next.loudnessTargetLufs,
+          onError: (_, _) =>
+              targetLufs = ServerCapabilities.defaultLoudnessTargetLufs,
+          fireImmediately: true,
+        );
+        final loudness = LoudnessBinding(
+          controller: controller,
+          mode: () => mode,
+          targetLufs: () => targetLufs,
         );
         unawaited(controller.restore());
         final lifecycle = AppLifecycleListener(
@@ -99,6 +129,7 @@ final Provider<PlaybackController> playbackControllerProvider =
         ref.watch(profileDisposerProvider).register(controller.dispose);
         ref.onDispose(() {
           lifecycle.dispose();
+          unawaited(loudness.dispose());
           unawaited(controller.dispose());
         });
         return controller;
@@ -107,6 +138,9 @@ final Provider<PlaybackController> playbackControllerProvider =
         sourceResolverProvider,
         playbackInfoRepositoryProvider,
         sessionControllerProvider,
+        deviceSettingsDaoProvider,
+        loudnessModeProvider,
+        serverCapabilitiesProvider,
         profileDisposerProvider,
         queuePersistenceProvider,
       ],
