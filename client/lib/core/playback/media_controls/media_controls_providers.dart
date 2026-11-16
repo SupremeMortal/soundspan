@@ -87,7 +87,8 @@ Future<void> startMediaControls(ProviderContainer root) async {
             : MediaControlsBinder(
                 controller: active.read(playbackControllerProvider),
                 controls: root.read(mediaControlsProvider),
-                pin: active.read(artworkPinnerProvider).pin,
+                // Read at the first pin, so start-up opens no image cache.
+                pin: (ref) => active.read(artworkPinnerProvider).pin(ref),
                 clock: clock,
               ),
       ),

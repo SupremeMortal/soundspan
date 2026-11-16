@@ -21,8 +21,8 @@ typedef ArtworkPin = Future<Uri?> Function(String? artworkRef);
 /// seek or a stall). Steady playback sends nothing: the OS extrapolates.
 ///
 /// When the current item changes, the new state is sent at once without
-/// artwork, then again with the pinned artwork once it is ready, unless
-/// the current item has changed meanwhile.
+/// artwork, then, for an item with a cover, again with the pinned artwork
+/// once it is ready, unless the current item has changed meanwhile.
 ///
 /// As a [MediaCommandHandler] it dispatches the surface's buttons to the
 /// controller.
@@ -69,7 +69,9 @@ class MediaControlsBinder implements MediaCommandHandler {
       _artworkUri = null;
       _send(_map(snapshot));
       if (snapshot.current case final item?) {
-        unawaited(_pinArtwork(item.queueItemId, artworkRefOf(item)));
+        if (artworkRefOf(item) case final ref?) {
+          unawaited(_pinArtwork(item.queueItemId, ref));
+        }
       }
       return;
     }
@@ -101,7 +103,7 @@ class MediaControlsBinder implements MediaCommandHandler {
     _controls.update(state);
   }
 
-  Future<void> _pinArtwork(String queueItemId, String? ref) async {
+  Future<void> _pinArtwork(String queueItemId, String ref) async {
     Uri? uri;
     try {
       uri = await _pin(ref);

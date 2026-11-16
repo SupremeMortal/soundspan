@@ -228,6 +228,17 @@ void main() {
     expect(r.h.calls.last, 'seek(${Duration.zero})');
   });
 
+  test('an item without a cover is not pinned', () async {
+    final r = _Rig();
+    addTearDown(r.binder.dispose);
+    await r.h.controller.playItems(trackItems(['a']));
+    await r.h.settle();
+
+    expect(r.pins.pending, isEmpty);
+    expect(r.controls.last!.queueItemId, 'a');
+    expect(r.controls.last!.artworkUri, isNull);
+  });
+
   test('a disposed binder sends nothing more', () async {
     final r = _Rig();
     await r.h.controller.playItems([_track('a')]);
