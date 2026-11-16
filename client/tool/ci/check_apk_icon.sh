@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
-# Fails unless the APK's launcher icon has an adaptive (anydpi-v26)
-# variant. Reads the compiled resource table with aapt2, because a release
-# build shortens resource file paths inside the APK.
+# Fails unless the APK's launcher icon has an adaptive variant: an XML
+# file under anydpi-v26, or under anydpi when minSdk is 26 or more and
+# aapt2 drops the implied -v26 qualifier. Reads the compiled resource table
+# with aapt2, because a release build shortens resource file paths inside
+# the APK.
 #
 # Usage, from client/:
 #   tool/ci/check_apk_icon.sh <apk>
@@ -20,10 +22,10 @@ block="$("$aapt2" dump resources "$apk" | awk '
   / resource 0x/ { inside = 0 }
   inside { print }
 ')"
-if grep -q '(anydpi-v26)' <<< "$block"; then
-  echo "check_apk_icon: mipmap/ic_launcher has an anydpi-v26 variant"
+if grep -Eq '\(anydpi(-v26)?\) \(file\) .* type=XML' <<< "$block"; then
+  echo "check_apk_icon: mipmap/ic_launcher has an adaptive (anydpi) variant"
   exit 0
 fi
-echo "check_apk_icon: mipmap/ic_launcher has no anydpi-v26 variant in $apk" >&2
+echo "check_apk_icon: mipmap/ic_launcher has no adaptive (anydpi) variant in $apk" >&2
 printf '%s\n' "${block:-(no mipmap/ic_launcher resource)}" >&2
 exit 1
