@@ -1425,5 +1425,45 @@
   "homeExploreCard": "[Fîñð ñéŵ åŕţîšţš åñð mûšîç one two three]",
   "@homeExploreCard": {
     "description": "Second line of the Explore card at the end of Home on phones and tablets."
+  },
+  "connectSignInUseApiKey": "[Ûšé åñ ÅÞÎ ķéý one two]",
+  "@connectSignInUseApiKey": {
+    "description": "Secondary action on the sign-in screen that shows the form for signing in with an API key copied from the web UI."
+  },
+  "connectApiKeyHeading": "[Šîĝñ îñ ŵîţĥ åñ ÅÞÎ ķéý one two three]",
+  "@connectApiKeyHeading": {
+    "description": "Heading of the form that signs in with an API key pasted from the web UI."
+  },
+  "connectApiKeyField": "[ÅÞÎ ķéý one]",
+  "@connectApiKeyField": {
+    "description": "Label of the field the API key is pasted into."
+  },
+  "connectApiKeyShow": "[Šĥöŵ ÅÞÎ ķéý one two]",
+  "@connectApiKeyShow": {
+    "description": "Tooltip of the button that reveals the pasted API key."
+  },
+  "connectApiKeyHide": "[Ĥîðé ÅÞÎ ķéý one two]",
+  "@connectApiKeyHide": {
+    "description": "Tooltip of the button that hides the pasted API key again."
+  },
+  "connectApiKeyPaste": "[Þåšţé one]",
+  "@connectApiKeyPaste": {
+    "description": "Button that fills the API key field from the clipboard."
+  },
+  "connectApiKeyExpiryUnknown": "[Ţĥîš ķéý’š éxþîŕý ðåţé îš ñöţ ķñöŵñ ţö ţĥé åþþ. Ýöû ŵîļļ bé åšķéð ţö šîĝñ îñ åĝåîñ ŵĥéñ ţĥé šéŕvéŕ šţöþš åççéþţîñĝ îţ. one two three four five six seven eight nine ten]",
+  "@connectApiKeyExpiryUnknown": {
+    "description": "Note under the API key form: the app cannot tell when a pasted key expires."
+  },
+  "connectApiKeyMalformed": "[Ţĥîš îš ñöţ åñ ÅÞÎ ķéý. Çöþý ţĥé ŵĥöļé ķéý fŕöm ţĥé ŵéb ÛÎ åñð þåšţé îţ ĥéŕé. one two three four five six seven]",
+  "@connectApiKeyMalformed": {
+    "description": "Inline error: the pasted text is empty, too long or has characters an API key cannot have."
+  },
+  "connectApiKeyRejected": "[Ţĥé šéŕvéŕ ðîð ñöţ åççéþţ ţĥîš ķéý. Îţ måý ĥåvé éxþîŕéð öŕ bééñ ŕévöķéð. one two three four five six seven]",
+  "@connectApiKeyRejected": {
+    "description": "Inline error: the server answered the API key with 401 or 403."
+  },
+  "connectSignInNoBrowserMethod": "[Ţĥîš šéŕvéŕ öfféŕš ñö šîĝñ-îñ méţĥöð ţĥîš åþþ çåñ ûšé îñ å bŕöŵšéŕ. one two three four five six]",
+  "@connectSignInNoBrowserMethod": {
+    "description": "Shown in the browser app when the server offers neither password sign-in nor single sign-on, leaving only API keys, which the browser app cannot use."
   }
 }

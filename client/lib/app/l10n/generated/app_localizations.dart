@@ -1894,6 +1894,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Find new artists and music'**
   String get homeExploreCard;
+
+  /// Secondary action on the sign-in screen that shows the form for signing in with an API key copied from the web UI.
+  ///
+  /// In en, this message translates to:
+  /// **'Use an API key'**
+  String get connectSignInUseApiKey;
+
+  /// Heading of the form that signs in with an API key pasted from the web UI.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with an API key'**
+  String get connectApiKeyHeading;
+
+  /// Label of the field the API key is pasted into.
+  ///
+  /// In en, this message translates to:
+  /// **'API key'**
+  String get connectApiKeyField;
+
+  /// Tooltip of the button that reveals the pasted API key.
+  ///
+  /// In en, this message translates to:
+  /// **'Show API key'**
+  String get connectApiKeyShow;
+
+  /// Tooltip of the button that hides the pasted API key again.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide API key'**
+  String get connectApiKeyHide;
+
+  /// Button that fills the API key field from the clipboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste'**
+  String get connectApiKeyPaste;
+
+  /// Note under the API key form: the app cannot tell when a pasted key expires.
+  ///
+  /// In en, this message translates to:
+  /// **'This key’s expiry date is not known to the app. You will be asked to sign in again when the server stops accepting it.'**
+  String get connectApiKeyExpiryUnknown;
+
+  /// Inline error: the pasted text is empty, too long or has characters an API key cannot have.
+  ///
+  /// In en, this message translates to:
+  /// **'This is not an API key. Copy the whole key from the web UI and paste it here.'**
+  String get connectApiKeyMalformed;
+
+  /// Inline error: the server answered the API key with 401 or 403.
+  ///
+  /// In en, this message translates to:
+  /// **'The server did not accept this key. It may have expired or been revoked.'**
+  String get connectApiKeyRejected;
+
+  /// Shown in the browser app when the server offers neither password sign-in nor single sign-on, leaving only API keys, which the browser app cannot use.
+  ///
+  /// In en, this message translates to:
+  /// **'This server offers no sign-in method this app can use in a browser.'**
+  String get connectSignInNoBrowserMethod;
 }
 
 class _AppLocalizationsDelegate

@@ -1101,6 +1101,40 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get homeExploreCard => 'Find new artists and music';
+
+  @override
+  String get connectSignInUseApiKey => 'Use an API key';
+
+  @override
+  String get connectApiKeyHeading => 'Sign in with an API key';
+
+  @override
+  String get connectApiKeyField => 'API key';
+
+  @override
+  String get connectApiKeyShow => 'Show API key';
+
+  @override
+  String get connectApiKeyHide => 'Hide API key';
+
+  @override
+  String get connectApiKeyPaste => 'Paste';
+
+  @override
+  String get connectApiKeyExpiryUnknown =>
+      'This key’s expiry date is not known to the app. You will be asked to sign in again when the server stops accepting it.';
+
+  @override
+  String get connectApiKeyMalformed =>
+      'This is not an API key. Copy the whole key from the web UI and paste it here.';
+
+  @override
+  String get connectApiKeyRejected =>
+      'The server did not accept this key. It may have expired or been revoked.';
+
+  @override
+  String get connectSignInNoBrowserMethod =>
+      'This server offers no sign-in method this app can use in a browser.';
 }
 
 /// The translations for English (`en_XA`).
@@ -2225,4 +2259,38 @@ class AppLocalizationsEnXa extends AppLocalizationsEn {
 
   @override
   String get homeExploreCard => '[Fîñð ñéŵ åŕţîšţš åñð mûšîç one two three]';
+
+  @override
+  String get connectSignInUseApiKey => '[Ûšé åñ ÅÞÎ ķéý one two]';
+
+  @override
+  String get connectApiKeyHeading => '[Šîĝñ îñ ŵîţĥ åñ ÅÞÎ ķéý one two three]';
+
+  @override
+  String get connectApiKeyField => '[ÅÞÎ ķéý one]';
+
+  @override
+  String get connectApiKeyShow => '[Šĥöŵ ÅÞÎ ķéý one two]';
+
+  @override
+  String get connectApiKeyHide => '[Ĥîðé ÅÞÎ ķéý one two]';
+
+  @override
+  String get connectApiKeyPaste => '[Þåšţé one]';
+
+  @override
+  String get connectApiKeyExpiryUnknown =>
+      '[Ţĥîš ķéý’š éxþîŕý ðåţé îš ñöţ ķñöŵñ ţö ţĥé åþþ. Ýöû ŵîļļ bé åšķéð ţö šîĝñ îñ åĝåîñ ŵĥéñ ţĥé šéŕvéŕ šţöþš åççéþţîñĝ îţ. one two three four five six seven eight nine ten]';
+
+  @override
+  String get connectApiKeyMalformed =>
+      '[Ţĥîš îš ñöţ åñ ÅÞÎ ķéý. Çöþý ţĥé ŵĥöļé ķéý fŕöm ţĥé ŵéb ÛÎ åñð þåšţé îţ ĥéŕé. one two three four five six seven]';
+
+  @override
+  String get connectApiKeyRejected =>
+      '[Ţĥé šéŕvéŕ ðîð ñöţ åççéþţ ţĥîš ķéý. Îţ måý ĥåvé éxþîŕéð öŕ bééñ ŕévöķéð. one two three four five six seven]';
+
+  @override
+  String get connectSignInNoBrowserMethod =>
+      '[Ţĥîš šéŕvéŕ öfféŕš ñö šîĝñ-îñ méţĥöð ţĥîš åþþ çåñ ûšé îñ å bŕöŵšéŕ. one two three four five six]';
 }

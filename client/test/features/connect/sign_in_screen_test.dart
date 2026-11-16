@@ -342,9 +342,13 @@ void main() {
     expect(await accepts('abcdef12'), isFalse);
   });
 
-  testWidgets('local login disabled shows the no-password message and no '
-      'form', (tester) async {
-    final signIn = await _pumpSignIn(tester, localLoginEnabled: false);
+  testWidgets('local login disabled on web shows the no-password message and '
+      'no form', (tester) async {
+    final signIn = await _pumpSignIn(
+      tester,
+      result: _result(localLoginEnabled: false, oidcEnabled: true),
+      capabilities: PlatformCapabilities.web,
+    );
     expect(find.text('This server does not offer password sign-in.'), findsOne);
     expect(find.byType(TextField), findsNothing);
     await tester.tap(find.text('Use a different server'));

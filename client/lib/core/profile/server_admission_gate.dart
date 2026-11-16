@@ -2,6 +2,7 @@
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:soundspan/core/auth/active_profile.dart';
+import 'package:soundspan/core/auth/api_key_sign_in.dart';
 import 'package:soundspan/core/auth/device_link_sign_in.dart';
 import 'package:soundspan/core/auth/server_admission.dart';
 import 'package:soundspan/core/profile/capabilities.dart';
@@ -71,3 +72,16 @@ final Provider<DeviceLinkSignIn> deviceLinkSignInProvider =
         userAgent: ref.watch(userAgentProvider),
       ),
     );
+
+/// The app's [ApiKeySignIn].
+final Provider<ApiKeySignIn> apiKeySignInProvider = Provider<ApiKeySignIn>(
+  (ref) => ApiKeySignIn(
+    profiles: ref.watch(profileRepositoryProvider),
+    admission: VersionGateAdmission(
+      ref.watch(versionGateProvider),
+      ref.watch(clockProvider),
+    ),
+    clock: ref.watch(clockProvider),
+    userAgent: ref.watch(userAgentProvider),
+  ),
+);

@@ -17,24 +17,31 @@ import 'package:soundspan/core/auth/profile.dart';
 import 'package:soundspan/core/auth/server_address.dart';
 import 'package:soundspan/core/profile/profile_runtime.dart';
 import 'package:soundspan/features/connect/ui/address_screen.dart';
+import 'package:soundspan/features/connect/ui/api_key_form.dart';
 import 'package:soundspan/features/connect/ui/connect_layout.dart';
 import 'package:soundspan/features/connect/ui/device_link_panel.dart';
 import 'package:soundspan/features/connect/ui/probe_controller.dart';
 import 'package:soundspan/features/connect/ui/sign_in_controller.dart';
 import 'package:soundspan/platform/capabilities/capabilities.dart';
+import 'package:soundspan/platform/url_opener/url_opener.dart';
 import 'package:soundspan/shared/clock.dart';
 
-/// `/connect/sign-in`: password sign-in with the two-factor step, and
-/// linking with a code (doc 04, Sign-In, Password and Device Link).
+/// `/connect/sign-in`: password sign-in with the two-factor step, linking
+/// with a code, and a pasted API key (doc 04, Sign-In, Password, Device
+/// Link and Pasted API Key).
 ///
-/// The screen follows the [ProbeResult] and rows 1 to 3 of doc 04's
-/// Sign-In table: with local login, the password form with "Link with a
-/// code" as a secondary action that swaps in the [DeviceLinkPanel] (and,
-/// when single sign-on is on too, a note that its users link with a code);
-/// with single sign-on only, the panel titled after the provider. Where
-/// API keys cannot stream (`supportsApiKeyStreaming == false`, the web)
-/// the device-link action and panel are not built, and a server without
-/// local login is said to offer no password sign-in. A result that carries
+/// The screen follows the [ProbeResult] and doc 04's Sign-In table: with
+/// local login, the password form with "Link with a code" and "Use an API
+/// key" as secondary actions that swap in the [DeviceLinkPanel] or the
+/// [ApiKeyForm] (and, when single sign-on is on too, a note that its users
+/// link with a code); with single sign-on only, the panel titled after the
+/// provider, with "Use an API key" as its secondary action; with neither,
+/// the [ApiKeyForm] alone. Where API keys cannot stream
+/// (`supportsApiKeyStreaming == false`, the web) the device-link and API
+/// key actions, panel and form are not built: a server with single sign-on
+/// only is said to offer no password sign-in, and a server with neither
+/// is said to offer no method a browser can use, with a button that opens
+/// it in the browser. A result that carries
 /// a link code opens the panel with that code. Without a result but with
 /// [profileId] (a signed-out profile sent here by the router guard), the
 /// screen probes that profile's server itself and prefills its user name; a
@@ -65,6 +72,9 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
 
   /// Whether the device-link panel replaces the password form.
   bool _linking = false;
+
+  /// Whether the API key form replaces the password form or the panel.
+  bool _usingKey = false;
 
   /// The link code the panel starts with, until the user leaves it.
   String? _linkCode;
@@ -160,11 +170,17 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
 
   void _setLinking(bool linking) => setState(() {
     _linking = linking;
+    _usingKey = false;
     _linkCode = null;
   });
 
-  /// Activates the linked [profile] and opens home, as after a password
-  /// sign-in.
+  void _setUsingKey(bool usingKey) => setState(() {
+    _usingKey = usingKey;
+    _linkCode = null;
+  });
+
+  /// Activates the [profile] a device link or an API key signed in and
+  /// opens home, as after a password sign-in.
   Future<void> _onLinked(Profile profile) async {
     await ref.read(profileRuntimeProvider).switchTo(profile.id);
     if (!mounted) return;
@@ -201,6 +217,16 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
           if (_probing case final String base)
             _Message(l10n.connectProbeResolving(base)),
         ],
+        (final ProbeResult result, null)
+            when linkable && result.oidcEnabled && _usingKey =>
+          [
+            _keyForm(result),
+            const SizedBox(height: Spacing.x8),
+            _FormBody._secondary(
+              l10n.connectSignInLinkWithCode,
+              () => _setUsingKey(false),
+            ),
+          ],
         (final ProbeResult result, null) when linkable && result.oidcEnabled =>
           [
             _Message(switch (result.oidcProviderName?.trim()) {
@@ -209,7 +235,30 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
             }),
             const SizedBox(height: Spacing.x24),
             _panel(result),
+            const SizedBox(height: Spacing.x8),
+            _FormBody._secondary(
+              l10n.connectSignInUseApiKey,
+              () => _setUsingKey(true),
+            ),
           ],
+        (final ProbeResult result, null) when linkable => [_keyForm(result)],
+        (final ProbeResult result, null) when !result.oidcEnabled => [
+          _Message(l10n.connectSignInNoBrowserMethod),
+          const SizedBox(height: Spacing.x24),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              minimumSize: const Size.fromHeight(Sizes.touchTarget),
+            ),
+            onPressed: () =>
+                unawaited(ref.read(urlOpenerProvider).open(result.baseUrl)),
+            child: Text(l10n.connectProbeOpenInBrowser),
+          ),
+          const SizedBox(height: Spacing.x8),
+          _FormBody._secondary(
+            l10n.connectSignInBack,
+            () => GoRouter.of(context).go(RoutePaths.connect),
+          ),
+        ],
         (final ProbeResult _, null) => [
           _Message(l10n.connectSignInNoPassword),
           const SizedBox(height: Spacing.x24),
@@ -222,6 +271,16 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
           ),
         ],
         (final ProbeResult result, final SignInController _)
+            when linkable && _usingKey =>
+          [
+            _keyForm(result),
+            const SizedBox(height: Spacing.x8),
+            _FormBody._secondary(
+              l10n.connectSignInUsePassword,
+              () => _setUsingKey(false),
+            ),
+          ],
+        (final ProbeResult result, final SignInController _)
             when linkable && _linking =>
           [
             _Message(l10n.connectLinkThisDevice),
@@ -231,6 +290,10 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
             _FormBody._secondary(
               l10n.connectSignInUsePassword,
               () => _setLinking(false),
+            ),
+            _FormBody._secondary(
+              l10n.connectSignInUseApiKey,
+              () => _setUsingKey(true),
             ),
           ],
         (final ProbeResult result, final SignInController form) => [
@@ -244,6 +307,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
               onSubmit: () => unawaited(_submit()),
               ssoNote: linkable && result.oidcEnabled,
               onLinkWithCode: linkable ? () => _setLinking(true) : null,
+              onUseApiKey: linkable ? () => _setUsingKey(true) : null,
             ),
           ),
         ],
@@ -256,6 +320,9 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     initialCode: _linkCode,
     onLinked: _onLinked,
   );
+
+  Widget _keyForm(ProbeResult result) =>
+      ApiKeyForm(baseUrl: result.baseUrl, onSignedIn: _onLinked);
 }
 
 /// The form of the current step.
@@ -268,6 +335,7 @@ class _FormBody extends StatelessWidget {
     required this.onSubmit,
     this.ssoNote = false,
     this.onLinkWithCode,
+    this.onUseApiKey,
   });
 
   final SignInController form;
@@ -281,6 +349,9 @@ class _FormBody extends StatelessWidget {
 
   /// Swaps in the device-link panel; null hides the action.
   final VoidCallback? onLinkWithCode;
+
+  /// Swaps in the API key form; null hides the action.
+  final VoidCallback? onUseApiKey;
 
   @override
   Widget build(BuildContext context) {
@@ -406,6 +477,8 @@ class _FormBody extends StatelessWidget {
           const SizedBox(height: Spacing.x8),
           _secondary(l10n.connectSignInLinkWithCode, onLinkWithCode),
         ],
+        if (!code && onUseApiKey != null)
+          _secondary(l10n.connectSignInUseApiKey, onUseApiKey),
         if (!code && ssoNote) ...[
           const SizedBox(height: Spacing.x8),
           Text(

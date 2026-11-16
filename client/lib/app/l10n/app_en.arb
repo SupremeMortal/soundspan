@@ -1425,5 +1425,45 @@
   "homeExploreCard": "Find new artists and music",
   "@homeExploreCard": {
     "description": "Second line of the Explore card at the end of Home on phones and tablets."
+  },
+  "connectSignInUseApiKey": "Use an API key",
+  "@connectSignInUseApiKey": {
+    "description": "Secondary action on the sign-in screen that shows the form for signing in with an API key copied from the web UI."
+  },
+  "connectApiKeyHeading": "Sign in with an API key",
+  "@connectApiKeyHeading": {
+    "description": "Heading of the form that signs in with an API key pasted from the web UI."
+  },
+  "connectApiKeyField": "API key",
+  "@connectApiKeyField": {
+    "description": "Label of the field the API key is pasted into."
+  },
+  "connectApiKeyShow": "Show API key",
+  "@connectApiKeyShow": {
+    "description": "Tooltip of the button that reveals the pasted API key."
+  },
+  "connectApiKeyHide": "Hide API key",
+  "@connectApiKeyHide": {
+    "description": "Tooltip of the button that hides the pasted API key again."
+  },
+  "connectApiKeyPaste": "Paste",
+  "@connectApiKeyPaste": {
+    "description": "Button that fills the API key field from the clipboard."
+  },
+  "connectApiKeyExpiryUnknown": "This key’s expiry date is not known to the app. You will be asked to sign in again when the server stops accepting it.",
+  "@connectApiKeyExpiryUnknown": {
+    "description": "Note under the API key form: the app cannot tell when a pasted key expires."
+  },
+  "connectApiKeyMalformed": "This is not an API key. Copy the whole key from the web UI and paste it here.",
+  "@connectApiKeyMalformed": {
+    "description": "Inline error: the pasted text is empty, too long or has characters an API key cannot have."
+  },
+  "connectApiKeyRejected": "The server did not accept this key. It may have expired or been revoked.",
+  "@connectApiKeyRejected": {
+    "description": "Inline error: the server answered the API key with 401 or 403."
+  },
+  "connectSignInNoBrowserMethod": "This server offers no sign-in method this app can use in a browser.",
+  "@connectSignInNoBrowserMethod": {
+    "description": "Shown in the browser app when the server offers neither password sign-in nor single sign-on, leaving only API keys, which the browser app cannot use."
   }
 }

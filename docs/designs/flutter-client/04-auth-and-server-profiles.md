@@ -29,7 +29,7 @@ Stored in `AppDatabase.profiles` ([05](05-local-data.md)). Secrets are never in 
 | `authKind` | `password` \| `deviceLink` \| `apiKey` | |
 | `deviceId` | UUID v4 | Generated on creation. Sent as offline `deviceId` and `X-Playback-Device-Id`. Not a secret. |
 | `credentialCreatedAt` | UTC timestamp | For API keys: when the key was issued, to compute expiry |
-| `credentialExpiresAt` | UTC timestamp, nullable | From `GET /api-keys` when the key can be identified; else `credentialCreatedAt + 90 days` |
+| `credentialExpiresAt` | UTC timestamp, nullable | Device link: from `GET /api-keys` when the key can be identified, else `credentialCreatedAt + 90 days`. Pasted API key: null (unknown) |
 | `serverVersion` | text | Last seen `info.version` |
 | `features` | JSON | Last `GET /system/features` body, subset used by the client |
 | `featuresFetchedAt` | UTC timestamp | |
@@ -159,7 +159,14 @@ After success the client calls `GET /api/auth/me` (role, display name) and `GET 
 
 ### Pasted API Key
 
-A single field; the key is validated with `GET /api/auth/me`. Expiry is looked up as above when the key's name can be matched (it usually cannot; the user is told the key's expiry is unknown and that the app will prompt when the server rejects it).
+`ApiKeySignIn` (`lib/core/auth/api_key_sign_in.dart`) and `ApiKeyForm` (`lib/features/connect/ui/api_key_form.dart`).
+
+- The form has one obscured field with a show/hide toggle, a Paste button that reads the clipboard, and Sign in. Autocorrect, suggestions and autofill are off; the field is cleared on success and when the form leaves the screen.
+- Input is normalized by removing all whitespace and line breaks. An empty result, one longer than 256 characters, or one with a character outside printable ASCII is refused locally (`ApiKeyFailure.malformed`) without a request; the server decides everything else about the key.
+- The key is validated with `GET /api/auth/me` sent as `X-API-Key`: 401 or 403 → `rejected` (inline error), 429 → `rateLimited` (countdown from `Retry-After`), any other error propagates. The capability refresh and version gate run before anything is stored, so a server below `minServer` leaves no profile and no secret.
+- The key is stored at `p/<profileId>/apikey` and the profile written with `authKind = apiKey` from the `/auth/me` body, or the credential of the existing `(baseUrl, userId)` profile replaced. `credentialCreatedAt` is the sign-in time and `credentialExpiresAt` is null: a pasted key carries no name to find it by in `GET /api-keys`, so its expiry is unknown. The form says so ("You will be asked to sign in again when the server stops accepting it"), and no expiry warning is shown for such a profile.
+- The key is never logged, never put in an exception message, and never passed as a route parameter or extra.
+- On web the form and its entry points are not built. A server that offers neither local login nor single sign-on shows "This server offers no sign-in method this app can use in a browser" with "Open in browser" (the server address).
 
 ## Session Lifecycle
 
