@@ -70,7 +70,7 @@ jobs:
 
       - name: The APK has the adaptive launcher icon
         working-directory: client
-        run: unzip -l build/app/outputs/flutter-apk/app-release.apk | grep -q ' res/mipmap-anydpi-v26/ic_launcher.xml$'
+        run: tool/ci/check_apk_icon.sh build/app/outputs/flutter-apk/app-release.apk
 
       - name: Name the artifact
         run: |

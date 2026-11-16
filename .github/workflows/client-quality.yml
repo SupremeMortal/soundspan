@@ -197,11 +197,14 @@ jobs:
         working-directory: client/packages/soundspan_api
         run: dart test --coverage-path=coverage/lcov.info
 
+      # Whole files per shard, so each shard compiles only its own files.
       - name: Test client with coverage
         working-directory: client
-        run: >-
-          flutter test --coverage --exclude-tags golden,contract,engine
-          --total-shards "$SHARDS" --shard-index "$SHARD"
+        run: |
+          set -euo pipefail
+          mapfile -t files < <(tool/ci/test_shard.sh "$SHARDS" "$SHARD")
+          echo "Shard $SHARD of $SHARDS: ${#files[@]} test files"
+          flutter test --coverage --exclude-tags golden,contract,engine "${files[@]}"
 
       - name: Test contract_test without a server
         if: matrix.shard == 0
@@ -520,7 +523,7 @@ jobs:
 
       - name: The APK has the adaptive launcher icon
         working-directory: client
-        run: unzip -l build/app/outputs/flutter-apk/app-debug.apk | grep -q ' res/mipmap-anydpi-v26/ic_launcher.xml$'
+        run: tool/ci/check_apk_icon.sh build/app/outputs/flutter-apk/app-debug.apk
 
   client-build-linux:
     name: client-build-linux
