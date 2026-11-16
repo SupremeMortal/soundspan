@@ -123,6 +123,7 @@ class _AddressScreenState extends ConsumerState<AddressScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final hasProfile = ref.watch(connectHasProfileProvider);
+    final canScanQr = ref.watch(platformCapabilitiesProvider).canScanQr;
     return ConnectLayout(
       screen: l10n.screenConnect,
       leading: hasProfile
@@ -159,9 +160,31 @@ class _AddressScreenState extends ConsumerState<AddressScreen> {
           onPressed: () => unawaited(_submit()),
           child: Text(l10n.connectAddressSubmit),
         ),
+        if (canScanQr) ...[
+          const SizedBox(height: Spacing.x12),
+          const ScanQrButton(),
+        ],
       ],
     );
   }
+}
+
+/// "Scan QR code": opens `/connect/scan`. Built only where
+/// `PlatformCapabilities.canScanQr` is true.
+class ScanQrButton extends StatelessWidget {
+  /// Creates the button.
+  const new({super.key});
+
+  @override
+  Widget build(BuildContext context) => OutlinedButton.icon(
+    style: OutlinedButton.styleFrom(
+      minimumSize: const Size.fromHeight(Sizes.touchTarget),
+    ),
+    icon: const Icon(Icons.qr_code_scanner_rounded),
+    label: Text(AppLocalizations.of(context).connectScanQrCode),
+    onPressed: () =>
+        unawaited(GoRouter.of(context).push<void>(RoutePaths.scan)),
+  );
 }
 
 /// Warns before plain `http` to a public host; offers "Connect anyway" only

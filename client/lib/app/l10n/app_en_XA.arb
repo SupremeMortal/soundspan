@@ -38,6 +38,10 @@
   "@screenConnect": {
     "description": "Screen name: entering the address of a server to add."
   },
+  "screenConnectScan": "[Šçåñ QŔ çöðé one two]",
+  "@screenConnectScan": {
+    "description": "Screen name: scanning the QR code from the web UI's device page with the camera."
+  },
   "screenConnectProbe": "[Çĥéçķîñĝ šéŕvéŕ one two]",
   "@screenConnectProbe": {
     "description": "Screen name: the app is contacting the server the user entered."
@@ -1285,6 +1289,34 @@
   "connectDeviceLinkSubmit": "[Ļîñķ one]",
   "@connectDeviceLinkSubmit": {
     "description": "Button that links this device with the entered code."
+  },
+  "connectScanQrCode": "[Šçåñ QŔ çöðé one two]",
+  "@connectScanQrCode": {
+    "description": "Button on the address screen and the device-link panel that opens the camera to scan the QR code from the web UI's device page."
+  },
+  "connectScanHint": "[Þöîñţ ţĥé çåméŕå åţ ţĥé QŔ çöðé öñ ţĥé Ļîñķ Ðévîçé þåĝé öf ţĥé ŵéb ÛÎ. one two three four five six]",
+  "@connectScanHint": {
+    "description": "Instruction under the camera preview of the QR scanner."
+  },
+  "connectScanRejected": "[Ţĥåţ îš ñöţ å šöûñðšþåñ çöðé one two three]",
+  "@connectScanRejected": {
+    "description": "Shown for three seconds under the camera preview when the scanned QR code is neither a soundspan link nor a server address."
+  },
+  "connectScanPermissionDenied": "[šöûñðšþåñ çåññöţ ûšé ţĥé çåméŕå ţö šçåñ ţĥé çöðé. one two three four five]",
+  "@connectScanPermissionDenied": {
+    "description": "Shown instead of the camera preview when the user denied the camera permission."
+  },
+  "connectScanAllowCamera": "[Ţö šçåñ, åļļöŵ çåméŕå åççéšš föŕ šöûñðšþåñ îñ ýöûŕ šýšţém šéţţîñĝš. one two three four five six]",
+  "@connectScanAllowCamera": {
+    "description": "Tells the user how to allow the camera after denying it; there is no link to the settings."
+  },
+  "connectScanNoCamera": "[Ñö çåméŕå åvåîļåbļé one two]",
+  "@connectScanNoCamera": {
+    "description": "Shown instead of the camera preview when the device has no usable camera."
+  },
+  "connectScanEnterCode": "[Éñţéŕ ţĥé çöðé îñšţéåð one two three]",
+  "@connectScanEnterCode": {
+    "description": "Button on the QR scanner's fallback screen that returns to typing the device-link code."
   },
   "connectDeviceLinkInvalidCode": "[Ţĥåţ çöðé ðöéš ñöţ éxîšţ. Ĝéñéŕåţé å ñéŵ çöðé îñ ţĥé ŵéb ÛÎ. one two three four five]",
   "@connectDeviceLinkInvalidCode": {

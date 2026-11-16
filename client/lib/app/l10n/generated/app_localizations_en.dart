@@ -36,6 +36,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get screenConnect => 'Add server';
 
   @override
+  String get screenConnectScan => 'Scan QR code';
+
+  @override
   String get screenConnectProbe => 'Checking server';
 
   @override
@@ -990,6 +993,30 @@ class AppLocalizationsEn extends AppLocalizations {
   String get connectDeviceLinkSubmit => 'Link';
 
   @override
+  String get connectScanQrCode => 'Scan QR code';
+
+  @override
+  String get connectScanHint =>
+      'Point the camera at the QR code on the Link Device page of the web UI.';
+
+  @override
+  String get connectScanRejected => 'That is not a soundspan code';
+
+  @override
+  String get connectScanPermissionDenied =>
+      'soundspan cannot use the camera to scan the code.';
+
+  @override
+  String get connectScanAllowCamera =>
+      'To scan, allow camera access for soundspan in your system settings.';
+
+  @override
+  String get connectScanNoCamera => 'No camera available';
+
+  @override
+  String get connectScanEnterCode => 'Enter the code instead';
+
+  @override
   String get connectDeviceLinkInvalidCode =>
       'That code does not exist. Generate a new code in the web UI.';
 
@@ -1208,6 +1235,9 @@ class AppLocalizationsEnXa extends AppLocalizationsEn {
 
   @override
   String get screenConnect => '[Åðð šéŕvéŕ one]';
+
+  @override
+  String get screenConnectScan => '[Šçåñ QŔ çöðé one two]';
 
   @override
   String get screenConnectProbe => '[Çĥéçķîñĝ šéŕvéŕ one two]';
@@ -2187,6 +2217,31 @@ class AppLocalizationsEnXa extends AppLocalizationsEn {
 
   @override
   String get connectDeviceLinkSubmit => '[Ļîñķ one]';
+
+  @override
+  String get connectScanQrCode => '[Šçåñ QŔ çöðé one two]';
+
+  @override
+  String get connectScanHint =>
+      '[Þöîñţ ţĥé çåméŕå åţ ţĥé QŔ çöðé öñ ţĥé Ļîñķ Ðévîçé þåĝé öf ţĥé ŵéb ÛÎ. one two three four five six]';
+
+  @override
+  String get connectScanRejected =>
+      '[Ţĥåţ îš ñöţ å šöûñðšþåñ çöðé one two three]';
+
+  @override
+  String get connectScanPermissionDenied =>
+      '[šöûñðšþåñ çåññöţ ûšé ţĥé çåméŕå ţö šçåñ ţĥé çöðé. one two three four five]';
+
+  @override
+  String get connectScanAllowCamera =>
+      '[Ţö šçåñ, åļļöŵ çåméŕå åççéšš föŕ šöûñðšþåñ îñ ýöûŕ šýšţém šéţţîñĝš. one two three four five six]';
+
+  @override
+  String get connectScanNoCamera => '[Ñö çåméŕå åvåîļåbļé one two]';
+
+  @override
+  String get connectScanEnterCode => '[Éñţéŕ ţĥé çöðé îñšţéåð one two three]';
 
   @override
   String get connectDeviceLinkInvalidCode =>

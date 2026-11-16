@@ -16,6 +16,8 @@ import 'package:soundspan/core/auth/relink.dart';
 import 'package:soundspan/core/auth/server_admission.dart';
 import 'package:soundspan/core/logging/app_logger.dart';
 import 'package:soundspan/core/profile/server_admission_gate.dart';
+import 'package:soundspan/features/connect/ui/address_screen.dart';
+import 'package:soundspan/platform/capabilities/capabilities.dart';
 import 'package:soundspan/platform/device_info/device_info.dart';
 import 'package:soundspan/platform/secrets/secrets.dart';
 import 'package:soundspan/shared/clock.dart';
@@ -226,6 +228,10 @@ class _DeviceLinkPanelState extends ConsumerState<DeviceLinkPanel> {
           onPressed: _canSubmit ? () => unawaited(_submit()) : null,
           child: Text(l10n.connectDeviceLinkSubmit),
         ),
+        if (ref.watch(platformCapabilitiesProvider).canScanQr) ...[
+          const SizedBox(height: Spacing.x12),
+          const ScanQrButton(),
+        ],
       ],
     );
   }

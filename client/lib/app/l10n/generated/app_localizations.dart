@@ -145,6 +145,12 @@ abstract class AppLocalizations {
   /// **'Add server'**
   String get screenConnect;
 
+  /// Screen name: scanning the QR code from the web UI's device page with the camera.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan QR code'**
+  String get screenConnectScan;
+
   /// Screen name: the app is contacting the server the user entered.
   ///
   /// In en, this message translates to:
@@ -1696,6 +1702,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Link'**
   String get connectDeviceLinkSubmit;
+
+  /// Button on the address screen and the device-link panel that opens the camera to scan the QR code from the web UI's device page.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan QR code'**
+  String get connectScanQrCode;
+
+  /// Instruction under the camera preview of the QR scanner.
+  ///
+  /// In en, this message translates to:
+  /// **'Point the camera at the QR code on the Link Device page of the web UI.'**
+  String get connectScanHint;
+
+  /// Shown for three seconds under the camera preview when the scanned QR code is neither a soundspan link nor a server address.
+  ///
+  /// In en, this message translates to:
+  /// **'That is not a soundspan code'**
+  String get connectScanRejected;
+
+  /// Shown instead of the camera preview when the user denied the camera permission.
+  ///
+  /// In en, this message translates to:
+  /// **'soundspan cannot use the camera to scan the code.'**
+  String get connectScanPermissionDenied;
+
+  /// Tells the user how to allow the camera after denying it; there is no link to the settings.
+  ///
+  /// In en, this message translates to:
+  /// **'To scan, allow camera access for soundspan in your system settings.'**
+  String get connectScanAllowCamera;
+
+  /// Shown instead of the camera preview when the device has no usable camera.
+  ///
+  /// In en, this message translates to:
+  /// **'No camera available'**
+  String get connectScanNoCamera;
+
+  /// Button on the QR scanner's fallback screen that returns to typing the device-link code.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the code instead'**
+  String get connectScanEnterCode;
 
   /// Inline error when the server knows no such device-link code.
   ///

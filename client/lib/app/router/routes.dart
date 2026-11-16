@@ -24,6 +24,9 @@ abstract final class RoutePaths {
   /// Probe progress and result.
   static const probe = '/connect/probe';
 
+  /// The QR scanner; redirects to [connect] where the platform cannot scan.
+  static const scan = '/connect/scan';
+
   /// Sign-in; `?profile=<id>` names a signed-out profile, and with
   /// `&relink=1` the device-link panel opens to link that profile again.
   static const signIn = '/connect/sign-in';
@@ -272,6 +275,11 @@ GoRouter createRouter(
                 profileId: state.uri.queryParameters['profile']!,
               ),
             },
+          ),
+          GoRoute(
+            path: 'scan',
+            redirect: ScanScreen.redirect,
+            builder: (_, _) => const ScanScreen(),
           ),
           GoRoute(
             path: 'sign-in',

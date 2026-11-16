@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 
 // Checks the platform configuration files for the entries the app needs
-// (doc 10, Deep Links Summary) and exits non-zero listing every missing one.
+// (doc 10: Deep Links Summary, and the camera entries of the QR scanner) and
+// exits non-zero listing every missing one.
 //
 //   dart run tool/check_platform_config.dart [--android-manifest=<path>]
 //       [--ios-plist=<path>] [--macos-plist=<path>] [--linux-desktop=<path>]
+//       [--macos-entitlements=<path>[,<path>…]]
 //
 // Paths default to the source files under client/. Run from client/.
 
@@ -15,12 +17,22 @@ import 'package:xml/xml.dart';
 /// The URL scheme every native target registers.
 const String urlScheme = 'soundspan';
 
+/// The `NSCameraUsageDescription` of the iOS and macOS apps (doc 10).
+const String cameraUsageDescription = 'Scan a soundspan link code.';
+
+/// The macOS entitlement that lets the QR scanner use the camera.
+const String cameraEntitlement = 'com.apple.security.device.camera';
+
 /// The source file each flag defaults to, relative to `client/`.
+/// `macos-entitlements` is a comma-separated list.
 const Map<String, String> defaultPaths = {
   'android-manifest': 'android/app/src/main/AndroidManifest.xml',
   'ios-plist': 'ios/Runner/Info.plist',
   'macos-plist': 'macos/Runner/Info.plist',
   'linux-desktop': 'linux/packaging/io.soundspan.app.desktop',
+  'macos-entitlements':
+      'macos/Runner/DebugProfile.entitlements,'
+      'macos/Runner/Release.entitlements',
 };
 
 /// One entry a configuration file lacks.
@@ -38,8 +50,8 @@ class ConfigViolation {
   String toString() => '$path: missing $entry';
 }
 
-/// Checks the four files named in [paths] (keys of [defaultPaths]; absent
-/// keys take the default) and returns every missing entry.
+/// Checks the files named in [paths] (keys of [defaultPaths]; absent keys
+/// take the default) and returns every missing entry.
 List<ConfigViolation> checkPlatformConfig([
   Map<String, String> paths = const {},
 ]) {
@@ -49,6 +61,9 @@ List<ConfigViolation> checkPlatformConfig([
     ...checkPlist(path('ios-plist')),
     ...checkPlist(path('macos-plist')),
     ...checkLinuxDesktop(path('linux-desktop')),
+    for (final entitlements in path('macos-entitlements').split(','))
+      if (entitlements.trim().isNotEmpty)
+        ...checkMacosEntitlements(entitlements.trim()),
   ];
 }
 
@@ -66,8 +81,10 @@ XmlDocument? _readXml(String path, List<ConfigViolation> out) {
   }
 }
 
-/// The URL-scheme intent filter on `MainActivity`: action `VIEW`, categories
-/// `DEFAULT` and `BROWSABLE`, and `<data android:scheme="soundspan"/>`.
+/// The camera permission and optional camera feature of the QR scanner,
+/// and the URL-scheme intent filter on `MainActivity`: action `VIEW`,
+/// categories `DEFAULT` and `BROWSABLE`, and
+/// `<data android:scheme="soundspan"/>`.
 List<ConfigViolation> checkAndroidManifest(String path) {
   final out = <ConfigViolation>[];
   final document = _readXml(path, out);
@@ -76,6 +93,26 @@ List<ConfigViolation> checkAndroidManifest(String path) {
   String? attr(XmlElement e, String name) =>
       e.getAttribute(name, namespaceUri: android) ??
       e.getAttribute('android:$name');
+
+  const camera = 'android.permission.CAMERA';
+  if (!document.rootElement
+      .findElements('uses-permission')
+      .any((e) => attr(e, 'name') == camera)) {
+    out.add(ConfigViolation(path, '<uses-permission android:name="$camera"/>'));
+  }
+  const feature = 'android.hardware.camera';
+  if (!document.rootElement
+      .findElements('uses-feature')
+      .any(
+        (e) => attr(e, 'name') == feature && attr(e, 'required') == 'false',
+      )) {
+    out.add(
+      ConfigViolation(
+        path,
+        '<uses-feature android:name="$feature" android:required="false"/>',
+      ),
+    );
+  }
 
   final activity = document.findAllElements('activity').where((e) {
     final name = attr(e, 'name');
@@ -122,8 +159,8 @@ List<ConfigViolation> checkAndroidManifest(String path) {
   return out;
 }
 
-/// `CFBundleURLTypes` with a `CFBundleURLSchemes` entry `soundspan` (iOS and
-/// macOS `Info.plist`).
+/// `CFBundleURLTypes` with a `CFBundleURLSchemes` entry `soundspan`, and the
+/// [cameraUsageDescription] (iOS and macOS `Info.plist`).
 List<ConfigViolation> checkPlist(String path) {
   final out = <ConfigViolation>[];
   final document = _readXml(path, out);
@@ -147,6 +184,33 @@ List<ConfigViolation> checkPlist(String path) {
         'CFBundleURLTypes with CFBundleURLSchemes $urlScheme',
       ),
     );
+  }
+  final camera = top == null
+      ? null
+      : _plistValue(top, 'NSCameraUsageDescription');
+  if (camera == null ||
+      camera.name.local != 'string' ||
+      camera.innerText.trim() != cameraUsageDescription) {
+    out.add(
+      ConfigViolation(
+        path,
+        'NSCameraUsageDescription "$cameraUsageDescription"',
+      ),
+    );
+  }
+  return out;
+}
+
+/// `<key>com.apple.security.device.camera</key><true/>` in a macOS
+/// `.entitlements` file.
+List<ConfigViolation> checkMacosEntitlements(String path) {
+  final out = <ConfigViolation>[];
+  final document = _readXml(path, out);
+  if (document == null) return out;
+  final top = document.rootElement.findElements('dict').firstOrNull;
+  final value = top == null ? null : _plistValue(top, cameraEntitlement);
+  if (value == null || value.name.local != 'true') {
+    out.add(ConfigViolation(path, '<key>$cameraEntitlement</key><true/>'));
   }
   return out;
 }

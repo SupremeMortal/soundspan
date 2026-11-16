@@ -9,6 +9,8 @@ import '../../tool/check_platform_config.dart';
 
 const _manifest = '''
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <uses-permission android:name="android.permission.CAMERA"/>
+  <uses-feature android:name="android.hardware.camera" android:required="false"/>
   <application>
     <activity android:name=".MainActivity" android:exported="true">
       <intent-filter>
@@ -43,6 +45,20 @@ const _plist = '''
   </array>
   <key>CFBundleExecutable</key>
   <string>soundspan</string>
+  <key>NSCameraUsageDescription</key>
+  <string>Scan a soundspan link code.</string>
+</dict>
+</plist>
+''';
+
+const _entitlements = '''
+<?xml version="1.0" encoding="UTF-8"?>
+<plist version="1.0">
+<dict>
+  <key>com.apple.security.app-sandbox</key>
+  <true/>
+  <key>com.apple.security.device.camera</key>
+  <true/>
 </dict>
 </plist>
 ''';
@@ -56,6 +72,16 @@ Icon=io.soundspan.app
 StartupWMClass=io.soundspan.app
 MimeType=x-scheme-handler/soundspan;
 ''';
+
+const _cameraPermission =
+    '<uses-permission android:name="android.permission.CAMERA"/>';
+
+const _requiredFeature =
+    '<uses-feature android:name="android.hardware.camera" '
+    'android:required="true"/>';
+
+const _cameraDescription =
+    'NSCameraUsageDescription "Scan a soundspan link code."';
 
 late Directory _dir;
 
@@ -95,6 +121,38 @@ void main() {
       );
       expect(checkAndroidManifest(path).single.entry, contains('BROWSABLE'));
     });
+
+    test('fails naming the CAMERA permission when it is missing', () {
+      final path = _write(
+        'm.xml',
+        _manifest.replaceFirst(
+          '<uses-permission android:name="android.permission.CAMERA"/>',
+          '',
+        ),
+      );
+      expect(checkAndroidManifest(path).map((v) => v.toString()), [
+        '$path: missing $_cameraPermission',
+      ]);
+    });
+
+    test('fails when the camera feature is missing or required', () {
+      const feature =
+          '<uses-feature android:name="android.hardware.camera" '
+          'android:required="false"/>';
+      for (final replacement in [
+        '',
+        '<uses-feature android:name="android.hardware.camera"/>',
+        _requiredFeature,
+      ]) {
+        final path = _write(
+          'm.xml',
+          _manifest.replaceFirst(feature, replacement),
+        );
+        expect(checkAndroidManifest(path).map((v) => v.toString()), [
+          '$path: missing $feature',
+        ], reason: replacement);
+      }
+    });
   });
 
   for (final target in ['iOS', 'macOS']) {
@@ -112,8 +170,54 @@ void main() {
           '$path: missing CFBundleURLTypes with CFBundleURLSchemes soundspan',
         ]);
       });
+
+      test('fails without the camera usage description', () {
+        for (final replacement in [
+          '',
+          '<key>NSCameraUsageDescription</key>\n  <string></string>',
+        ]) {
+          final path = _write(
+            'Info.plist',
+            _plist.replaceFirst(
+              '<key>NSCameraUsageDescription</key>\n'
+              '  <string>Scan a soundspan link code.</string>',
+              replacement,
+            ),
+          );
+          expect(checkPlist(path).map((v) => v.toString()), [
+            '$path: missing $_cameraDescription',
+          ], reason: replacement);
+        }
+      });
     });
   }
+
+  group('macOS entitlements', () {
+    test('pass with the camera entitlement', () {
+      expect(
+        checkMacosEntitlements(_write('a.entitlements', _entitlements)),
+        isEmpty,
+      );
+    });
+
+    test('fail without the camera entitlement or with it false', () {
+      for (final replacement in [
+        '',
+        '<key>com.apple.security.device.camera</key>\n  <false/>',
+      ]) {
+        final path = _write(
+          'a.entitlements',
+          _entitlements.replaceFirst(
+            '<key>com.apple.security.device.camera</key>\n  <true/>',
+            replacement,
+          ),
+        );
+        expect(checkMacosEntitlements(path).map((v) => v.toString()), [
+          '$path: missing <key>com.apple.security.device.camera</key><true/>',
+        ], reason: replacement);
+      }
+    });
+  });
 
   group('Linux .desktop', () {
     test('passes with the scheme handler', () {
@@ -144,8 +248,9 @@ void main() {
     expect(checkPlist(path).single.toString(), '$path: missing the file');
   });
 
-  test('checkPlatformConfig checks all four files from flags', () {
+  test('checkPlatformConfig checks every file from flags', () {
     final paths = parseFlags([
+      '--macos-entitlements=${[_write('d.entitlements', _entitlements), _write('r.entitlements', _entitlements)].join(',')}',
       '--android-manifest=${_write('m.xml', _manifest)}',
       '--ios-plist',
       _write('ios.plist', _plist),
@@ -159,6 +264,18 @@ void main() {
 
   test('the source files pass', () {
     expect(checkPlatformConfig(), isEmpty);
+  });
+
+  test('--macos-entitlements checks each comma-separated file', () {
+    final good = _write('d.entitlements', _entitlements);
+    final bad = _write(
+      'r.entitlements',
+      _entitlements.replaceFirst('com.apple.security.device.camera', 'x'),
+    );
+    final violations = checkPlatformConfig(
+      parseFlags(['--macos-entitlements', '$good,$bad']),
+    ).where((v) => v.path.endsWith('.entitlements'));
+    expect(violations.map((v) => v.path), [bad]);
   });
 
   test('an unknown flag is rejected', () {

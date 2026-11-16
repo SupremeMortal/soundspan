@@ -38,6 +38,10 @@
   "@screenConnect": {
     "description": "Screen name: entering the address of a server to add."
   },
+  "screenConnectScan": "Scan QR code",
+  "@screenConnectScan": {
+    "description": "Screen name: scanning the QR code from the web UI's device page with the camera."
+  },
   "screenConnectProbe": "Checking server",
   "@screenConnectProbe": {
     "description": "Screen name: the app is contacting the server the user entered."
@@ -1285,6 +1289,34 @@
   "connectDeviceLinkSubmit": "Link",
   "@connectDeviceLinkSubmit": {
     "description": "Button that links this device with the entered code."
+  },
+  "connectScanQrCode": "Scan QR code",
+  "@connectScanQrCode": {
+    "description": "Button on the address screen and the device-link panel that opens the camera to scan the QR code from the web UI's device page."
+  },
+  "connectScanHint": "Point the camera at the QR code on the Link Device page of the web UI.",
+  "@connectScanHint": {
+    "description": "Instruction under the camera preview of the QR scanner."
+  },
+  "connectScanRejected": "That is not a soundspan code",
+  "@connectScanRejected": {
+    "description": "Shown for three seconds under the camera preview when the scanned QR code is neither a soundspan link nor a server address."
+  },
+  "connectScanPermissionDenied": "soundspan cannot use the camera to scan the code.",
+  "@connectScanPermissionDenied": {
+    "description": "Shown instead of the camera preview when the user denied the camera permission."
+  },
+  "connectScanAllowCamera": "To scan, allow camera access for soundspan in your system settings.",
+  "@connectScanAllowCamera": {
+    "description": "Tells the user how to allow the camera after denying it; there is no link to the settings."
+  },
+  "connectScanNoCamera": "No camera available",
+  "@connectScanNoCamera": {
+    "description": "Shown instead of the camera preview when the device has no usable camera."
+  },
+  "connectScanEnterCode": "Enter the code instead",
+  "@connectScanEnterCode": {
+    "description": "Button on the QR scanner's fallback screen that returns to typing the device-link code."
   },
   "connectDeviceLinkInvalidCode": "That code does not exist. Generate a new code in the web UI.",
   "@connectDeviceLinkInvalidCode": {

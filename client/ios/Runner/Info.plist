@@ -84,5 +84,7 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>Scan a soundspan link code.</string>
 </dict>
 </plist>
