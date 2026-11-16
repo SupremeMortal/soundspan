@@ -2,6 +2,7 @@
 
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:soundspan/core/playback/engines/media_kit_mapping.dart';
 import 'package:soundspan/core/playback/engines/player_engine.dart';
@@ -23,14 +24,29 @@ final class MediaKitEngine implements PlayerEngine {
   /// the device-test harness passes `'null'` on Windows, whose hosted runner
   /// has no audio endpoint, and `'pulse'` on Linux, where mpv's PipeWire
   /// output hangs on the runner (doc 06).
-  new({required this._statusOf, this.audioOutputOverride}) {
+  ///
+  /// [player] replaces the libmpv player in unit tests.
+  new({
+    required this._statusOf,
+    this.audioOutputOverride,
+    @visibleForTesting Player? player,
+  }) : _player =
+           player ??
+           Player(
+             // ffmpeg logs `HTTP error <status>` at level warn, so the
+             // player listens from that level up.
+             configuration: const PlayerConfiguration(
+               title: 'soundspan',
+               logLevel: MPVLogLevel.warn,
+             ),
+           ) {
     _subscriptions.addAll([
       _player.stream.playlist.listen(_onPlaylist),
       _player.stream.completed.listen(_onCompleted),
       _player.stream.position.listen(_onPosition),
       _player.stream.duration.listen((_) => _onLoadProgress()),
-      _player.stream.buffer.listen((_) => _report()),
-      _player.stream.buffering.listen((_) => _report()),
+      _player.stream.buffer.listen((_) => _reportAtPlayerPosition()),
+      _player.stream.buffering.listen((_) => _reportAtPlayerPosition()),
       _player.stream.log.listen(_onLog),
       _player.stream.error.listen(_onError),
     ]);
@@ -78,14 +94,7 @@ final class MediaKitEngine implements PlayerEngine {
   /// mpv's `ao` when set; null keeps mpv's default audio output.
   final String? audioOutputOverride;
 
-  // ffmpeg logs `HTTP error <status>` at level warn, so the player listens
-  // from that level up.
-  final Player _player = Player(
-    configuration: const PlayerConfiguration(
-      title: 'soundspan',
-      logLevel: MPVLogLevel.warn,
-    ),
-  );
+  final Player _player;
 
   final StreamController<EngineState> _states =
       StreamController<EngineState>.broadcast();
@@ -384,7 +393,40 @@ final class MediaKitEngine implements PlayerEngine {
 
   void _onLoadProgress() {
     if (_loading && _duration != null) _settle();
-    _report();
+    _reportAtPlayerPosition();
+  }
+
+  /// Reports a change that carries no position (buffering, buffered
+  /// position, duration) at the position mpv's `time-pos` reads now.
+  ///
+  /// While the clock runs, the last reported position is already behind:
+  /// emitting it with the change would stamp an old position with a later
+  /// time. When mpv has no position (between two files: it already started
+  /// the next one while the ending item's last audio plays from the output
+  /// buffer) or reads one behind the last reported position (it belongs to
+  /// the next file or to a seek still on its way), nothing is emitted and
+  /// the change goes out with the next position update (doc 06).
+  void _reportAtPlayerPosition() {
+    final native = _player.platform;
+    if (!_live || !_playIntent || _ended || native is! NativePlayer) {
+      _report();
+      return;
+    }
+    final generation = _generation;
+    unawaited(
+      native
+          .getProperty('time-pos')
+          .then(mpvSeconds, onError: (Object _) => null)
+          .then((raw) {
+            if (generation != _generation || !_live || _ended) return;
+            if (!_playIntent) {
+              _report();
+              return;
+            }
+            if (raw == null || raw < _position) return;
+            _onPosition(raw);
+          }),
+    );
   }
 
   /// Whether player updates are about a source the engine still plays.
