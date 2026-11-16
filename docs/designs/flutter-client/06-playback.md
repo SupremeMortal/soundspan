@@ -325,7 +325,9 @@ The handler holds no state of its own; it renders the controller's snapshot. Thi
 
 ## Local Queue Persistence
 
-`persistence.dart` writes `queue_snapshot` and `queue_meta` to `state.db`: the full queue on structural change (debounced 500 ms, in one transaction) and the position every 5 s while playing and on pause. On start the controller rebuilds `QueueState`, resolves the current item, and calls `engine.load(current, autoPlay: false)` lazily on the first play press, so start-up costs no network.
+`persistence.dart` (`QueuePersistence`, over the `QueueDao` of `state.db`) writes `queue_snapshot` and `queue_meta`: the full queue on structural change (a new `QueueState.revision`, debounced 500 ms, in one transaction) and the position every 5 s while playing and at once on pause, on stop and when the current item changes (the meta row only; a pending structural write goes with it). Going to the background (`AppLifecycleState.paused` or `detached`) and ending the profile scope flush without waiting for the debounce. An empty queue deletes the rows and the meta row. Nothing is written while a `RemoteDriver` is attached.
+
+On start `PlaybackController.restore()` runs before any command: it rebuilds `QueueState` (items, shuffle order, cursor from the current `queueItemId`, repeat, context, `revision` 0) and publishes it paused (`idle`, `playing` false) at the stored position. It makes no engine call and no network request, so start-up costs no network; the first play press resolves the current item and loads it at the stored position. A stored queue with a row that does not decode, a current id missing from its items or a shuffle order that is not a permutation is deleted with a warning, and the queue starts empty.
 
 ## Podcasts
 

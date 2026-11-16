@@ -7,6 +7,7 @@ import 'package:soundspan/core/logging/app_logger.dart';
 import 'package:soundspan/core/playback/data/playback_info_repository.dart';
 import 'package:soundspan/core/playback/engines/player_engine.dart';
 import 'package:soundspan/core/playback/failure_policy.dart';
+import 'package:soundspan/core/playback/persistence.dart';
 import 'package:soundspan/core/playback/playback_command.dart';
 import 'package:soundspan/core/playback/playback_snapshot.dart';
 import 'package:soundspan/core/playback/queue/queue_command.dart';
@@ -45,6 +46,9 @@ abstract interface class RemoteDriver {
 ///
 /// A failed current item is retried, skipped or stops playback by the
 /// [FailurePolicy]; a 401 renews the credential through [_session] once.
+///
+/// With a [QueuePersistence], [restore] reads the queue this device stored
+/// and the persistence follows the snapshots from then on.
 class PlaybackController {
   /// Creates the controller of one profile; it owns [_engine] from now on.
   new({
@@ -55,6 +59,7 @@ class PlaybackController {
     required Clock clock,
     this._reducer = const QueueReducer(),
     this._createTimer = Timer.new,
+    this._persistence,
   }) : _publisher = SnapshotPublisher(clock) {
     _stateSubscription = _engine.state.listen(_onEngineState);
     _eventSubscription = _engine.events.listen(
@@ -69,6 +74,7 @@ class PlaybackController {
   final PlaybackTimerFactory _createTimer;
   final QueueReducer _reducer;
   final SnapshotPublisher _publisher;
+  final QueuePersistence? _persistence;
   final StreamController<PlaybackNotice> _notices =
       StreamController<PlaybackNotice>.broadcast();
   late final StreamSubscription<EngineState> _stateSubscription;
@@ -145,6 +151,23 @@ class PlaybackController {
 
   /// Applies commands locally again.
   void detachRemoteDriver() => _driver = null;
+
+  /// Rebuilds the queue this device stored, paused at the stored position,
+  /// and starts persisting changes. Called once, before any command; it
+  /// makes no engine call and no network request: the first [play] loads
+  /// the current item at that position. Does nothing without a
+  /// [QueuePersistence].
+  Future<void> restore() => _enqueue(() async {
+    final persistence = _persistence;
+    if (persistence == null) return;
+    final restored = await persistence.load();
+    if (restored != null) {
+      _queue = restored.queue;
+      _pendingStartAt = restored.position;
+      _publish();
+    }
+    persistence.follow(snapshots, isRemote: () => hasRemoteDriver);
+  });
 
   /// Applies [command] after every command that arrived before it, or
   /// hands it to the attached [RemoteDriver].
@@ -227,12 +250,17 @@ class PlaybackController {
     unawaited(_applyVolume());
   }
 
-  /// Stops playback, disposes the engine and closes both streams. Safe to
-  /// call more than once.
+  /// Writes the queue a last time, stops playback, disposes the engine and
+  /// closes both streams. Safe to call more than once.
   Future<void> dispose() async {
     if (_disposed) return;
     _disposed = true;
     _retryTimer?.cancel();
+    try {
+      await _persistence?.dispose();
+    } on Object catch (error, stackTrace) {
+      _log.warning('Saving the queue failed', const {}, error, stackTrace);
+    }
     await _stateSubscription.cancel();
     await _eventSubscription.cancel();
     await _publisher.close();
@@ -628,7 +656,10 @@ class PlaybackController {
         current: current,
         status: state.status,
         playing: _playIntent,
-        position: state.position,
+        // A restored item waits, unloaded, at its stored position.
+        position: _currentSource == null && _pendingStartAt > Duration.zero
+            ? _pendingStartAt
+            : state.position,
         buffered: state.bufferedPosition,
         duration: state.duration,
         quality: _quality,
