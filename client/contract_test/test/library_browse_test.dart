@@ -441,7 +441,8 @@ void main() {
       expect(await likedPlaybackIds(), isNot(contains(playbackId)));
     });
 
-    test('an album preference answers the state it set', () async {
+    test('an album preference answers the state it set and the album '
+        'answers it on the next fetch', () async {
       final album = await fixtureAlbum(_multiDiscAlbum);
       Future<AlbumPreferenceResponse> setAlbum(PreferenceSignal signal) =>
           admin.send(
@@ -452,12 +453,18 @@ void main() {
           );
       addTearDown(() => setAlbum(PreferenceSignal.clear));
 
+      Future<PreferenceState?> albumPreference() async => (await admin.send(
+        (rest) => rest.library2.getAlbum(id: album.id, includeTracks: false),
+      )).preference;
+
       final liked = await setAlbum(PreferenceSignal.thumbsUp);
       expect(liked.albumId, album.id);
       expect(liked.state, PreferenceState.liked);
+      expect(await albumPreference(), PreferenceState.liked);
 
       final cleared = await setAlbum(PreferenceSignal.clear);
       expect(cleared.state, PreferenceState.neutral);
+      expect(await albumPreference(), PreferenceState.neutral);
     });
 
     test('a playlist is created, renamed, filled, reordered and emptied by '

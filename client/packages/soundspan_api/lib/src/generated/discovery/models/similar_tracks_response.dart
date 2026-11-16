@@ -9,7 +9,7 @@ import 'similar_track.dart';
 part 'similar_tracks_response.freezed.dart';
 part 'similar_tracks_response.g.dart';
 
-abstract final class _Scalar986 {
+abstract final class _Scalar990 {
   static mapped1.NullableVibeAudioFeatures read(Object? value) {
     if (!_matches41(value) || value == null) {
       throw ArgumentError("Invalid NullableVibeAudioFeatures wire value.");
@@ -66,13 +66,13 @@ class const SimilarTracksResponse({
     Object? value,
   ) => switch (value) {
     null => null,
-    final item => _Scalar986.read(item),
+    final item => _Scalar990.read(item),
   };
   static Object? _write_sourceFeatures(
     mapped1.NullableVibeAudioFeatures? value,
   ) => switch (value) {
     null => null,
-    final item => _Scalar986.write(item),
+    final item => _Scalar990.write(item),
   };
   static Object? _extras(Map map, String _) => {
     for (final entry in map.entries)

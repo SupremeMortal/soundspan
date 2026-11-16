@@ -165,6 +165,7 @@ Album albumFromSummary(api.AlbumSummary wire) => Album(
   artistId: wire.artistId,
   year: wire.year,
   artworkRef: wire.coverArt,
+  preference: preferenceFromWire(wire.preference),
 );
 
 /// An album of an artist's discography; the artist is [artist].
@@ -191,6 +192,7 @@ AlbumDetail albumDetailFromWire(api.AlbumDetail wire) {
     year: wire.year,
     artworkRef: wire.coverArt,
     trackCount: tracks?.length,
+    preference: preferenceFromWire(wire.preference),
   );
   return AlbumDetail(
     album: album,

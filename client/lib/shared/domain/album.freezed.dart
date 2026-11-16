@@ -24,8 +24,10 @@ mixin _$Album {
  int? get year;/// The value to pass to the cover-art endpoint, if any.
  String? get artworkRef;/// The number of tracks, when the server sent the tracks.
  int? get trackCount;/// The release type (album, EP, single), when the server sent one.
- String? get releaseType;/// The user's preference; the album payloads carry none, so it is
-/// [Preference.neutral] until a like through this client is confirmed.
+ String? get releaseType;/// The user's preference, from the album list and album detail
+/// payloads; [Preference.neutral] when the payload carries none, as an
+/// artist's discography does, until a like through this client is
+/// confirmed.
  Preference get preference;
 /// Create a copy of Album
 /// with the given fields replaced by the non-null parameter values.
@@ -252,8 +254,10 @@ class _Album implements Album {
 @override final  int? trackCount;
 /// The release type (album, EP, single), when the server sent one.
 @override final  String? releaseType;
-/// The user's preference; the album payloads carry none, so it is
-/// [Preference.neutral] until a like through this client is confirmed.
+/// The user's preference, from the album list and album detail
+/// payloads; [Preference.neutral] when the payload carries none, as an
+/// artist's discography does, until a like through this client is
+/// confirmed.
 @override@JsonKey() final  Preference preference;
 
 /// Create a copy of Album

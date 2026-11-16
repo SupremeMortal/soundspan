@@ -320,8 +320,8 @@ The complete set of server operations the client calls. This list is the **clien
 |---|---|---|---|
 | `GET /library/artists` | `limit`, `offset`, `cursor`, `filter`, `sortBy`, `origin`, `query` | `artists`, `total`, `offset`, `limit`, `nextCursor` | M0 |
 | `GET /library/artists/:id` | `includeDiscography`, `includeTopTracks`, `includeSimilarArtists` | artist + `albums`, `topTracks`, `similarArtists`, `bio`, `genres` | M0 |
-| `GET /library/albums` | `artistId`, `limit`, `offset`, `filter`, `sortBy`, `origin` | `albums`, `total`, `offset`, `limit` | M0 |
-| `GET /library/albums/:id` | `includeTracks` | album + `artist`, `tracks`, `coverArt`, `owned` | M0 |
+| `GET /library/albums` | `artistId`, `limit`, `offset`, `filter`, `sortBy`, `origin` | `albums` (each with `preference?`), `total`, `offset`, `limit` | M0 |
+| `GET /library/albums/:id` | `includeTracks` | album + `artist`, `tracks`, `coverArt`, `owned`, `preference?` | M0 |
 | `GET /library/tracks` | `albumId`, `limit`, `offset`, `sortBy`, `origin` | `tracks`, `total`, `offset`, `limit` | M0 |
 | `GET /library/tracks/shuffle` | `limit` | `tracks`, `total` | M1 |
 | `GET /library/liked` | `limit`, `cursorLikedAt`, `cursorTrackId` | `playlist`, `tracks`, `total`, `pagination{hasMore,nextCursor}` | M0 |

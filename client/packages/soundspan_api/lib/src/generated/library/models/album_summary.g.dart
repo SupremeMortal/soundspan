@@ -23,6 +23,7 @@ AlbumSummary _$AlbumSummaryFromJson(Map<String, dynamic> json) {
       'artist',
       'artistId',
       'id',
+      'preference',
       'remoteSources',
       'source',
       'title',
@@ -36,6 +37,7 @@ AlbumSummary _$AlbumSummaryFromJson(Map<String, dynamic> json) {
     peer: json['peer'] == null
         ? null
         : PeerRef.fromJson(json['peer'] as Map<String, dynamic>),
+    preference: AlbumSummary._read_preference(json['preference']),
     remoteSources: AlbumSummary._read_remoteSources(json['remoteSources']),
     rgMbid: json['rgMbid'] as String?,
     source: AlbumSummary._read_source(json['source']),
@@ -58,6 +60,7 @@ Map<String, dynamic> _$AlbumSummaryToJson(
   'coverArt': instance.coverArt,
   'id': instance.id,
   'peer': ?instance.peer?.toJson(),
+  'preference': ?AlbumSummary._write_preference(instance.preference),
   'remoteSources': ?AlbumSummary._write_remoteSources(instance.remoteSources),
   'rgMbid': instance.rgMbid,
   'source': ?AlbumSummary._write_source(instance.source),

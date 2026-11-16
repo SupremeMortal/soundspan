@@ -232,6 +232,44 @@ void main() {
       expect(detail.tracks.last.playbackId, isNull);
     });
 
+    Map<String, Object?> albumSummaryJson(Map<String, Object?> extra) => {
+      'id': 'al-1',
+      'title': 'Record',
+      'artistId': 'ar-1',
+      'artist': {'id': 'ar-1', 'name': 'Band'},
+      'coverArt': null,
+      'rgMbid': null,
+      'source': 'local',
+      'year': 1999,
+      ...extra,
+    };
+
+    test('the wire preference of an album reaches Album.preference', () {
+      Preference summary(Object? preference) => albumFromSummary(
+        api.AlbumSummary.fromJson(
+          albumSummaryJson({'preference': ?preference}),
+        ),
+      ).preference;
+      Preference detail(Object? preference) => albumDetailFromWire(
+        api.AlbumDetail.fromJson(
+          albumSummaryJson({
+            'owned': true,
+            'matchedRgMbid': null,
+            'matchedInLibrary': false,
+            'preference': ?preference,
+          }),
+        ),
+      ).album.preference;
+
+      for (final read in [summary, detail]) {
+        expect(read('liked'), Preference.liked);
+        expect(read('disliked'), Preference.disliked);
+        expect(read('neutral'), Preference.neutral);
+        expect(read(null), Preference.neutral);
+        expect(read('loved'), Preference.neutral);
+      }
+    });
+
     Album artistAlbum(Map<String, Object?> extra) => albumFromArtistAlbum(
       api.ArtistAlbum.fromJson({
         'id': 'al-1',

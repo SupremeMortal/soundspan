@@ -53,6 +53,14 @@
               }
             ]
           },
+          "preference": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PreferenceState"
+              }
+            ],
+            "description": "The requesting user's preference: liked or disliked when every library track of the album is, otherwise neutral"
+          },
           "remoteSources": {
             "items": {
               "$ref": "#/components/schemas/RemoteProvider"
@@ -220,6 +228,14 @@
                 "$ref": "#/components/schemas/PeerRef"
               }
             ]
+          },
+          "preference": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PreferenceState"
+              }
+            ],
+            "description": "The requesting user's preference: liked or disliked when every library track of the album is, otherwise neutral"
           },
           "remoteSources": {
             "items": {

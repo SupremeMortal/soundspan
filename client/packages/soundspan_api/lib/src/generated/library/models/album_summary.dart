@@ -5,6 +5,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 import 'album_summary_source.dart';
 import 'artist_ref.dart';
 import 'peer_ref.dart';
+import 'preference_state.dart';
 import 'remote_provider.dart';
 
 part 'album_summary.freezed.dart';
@@ -28,6 +29,15 @@ class const AlbumSummary({
   @JsonKey(required: true, disallowNullValue: true) required final String id,
 
   @JsonKey(includeIfNull: false) final PeerRef? peer,
+
+  /// The requesting user's preference: liked or disliked when every library track of the album is, otherwise neutral
+  @JsonKey(
+    disallowNullValue: true,
+    includeIfNull: false,
+    fromJson: AlbumSummary._read_preference,
+    toJson: AlbumSummary._write_preference,
+  )
+  final PreferenceState? preference,
 
   @JsonKey(
     disallowNullValue: true,
@@ -69,6 +79,7 @@ class const AlbumSummary({
     "coverArt",
     "id",
     "peer",
+    "preference",
     "remoteSources",
     "rgMbid",
     "source",
@@ -79,6 +90,9 @@ class const AlbumSummary({
   factory AlbumSummary.fromJson(Map<String, Object?> json) =>
       _$AlbumSummaryFromJson(json);
 
+  static PreferenceState? _read_preference(Object? value) =>
+      value == null ? null : PreferenceState.fromJson(value);
+  static Object? _write_preference(PreferenceState? value) => value?.toJson();
   static List<RemoteProvider>? _read_remoteSources(Object? value) =>
       value == null
       ? null

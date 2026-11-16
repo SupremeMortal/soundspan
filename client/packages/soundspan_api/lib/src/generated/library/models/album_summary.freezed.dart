@@ -27,20 +27,20 @@ $AlbumSummaryCopyWith<AlbumSummary> get copyWith => _$AlbumSummaryCopyWithImpl<A
 @override
 bool operator ==(Object other) {
   final _this = this as AlbumSummary;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is AlbumSummary&&(identical(other.artist, _this.artist) || other.artist == _this.artist)&&(identical(other.artistId, _this.artistId) || other.artistId == _this.artistId)&&(identical(other.coverArt, _this.coverArt) || other.coverArt == _this.coverArt)&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.peer, _this.peer) || other.peer == _this.peer)&&const DeepCollectionEquality().equals(other.remoteSources, _this.remoteSources)&&(identical(other.rgMbid, _this.rgMbid) || other.rgMbid == _this.rgMbid)&&(identical(other.source, _this.source) || other.source == _this.source)&&(identical(other.title, _this.title) || other.title == _this.title)&&(identical(other.year, _this.year) || other.year == _this.year)&&const DeepCollectionEquality().equals(other.additionalProperties, _this.additionalProperties));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AlbumSummary&&(identical(other.artist, _this.artist) || other.artist == _this.artist)&&(identical(other.artistId, _this.artistId) || other.artistId == _this.artistId)&&(identical(other.coverArt, _this.coverArt) || other.coverArt == _this.coverArt)&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.peer, _this.peer) || other.peer == _this.peer)&&(identical(other.preference, _this.preference) || other.preference == _this.preference)&&const DeepCollectionEquality().equals(other.remoteSources, _this.remoteSources)&&(identical(other.rgMbid, _this.rgMbid) || other.rgMbid == _this.rgMbid)&&(identical(other.source, _this.source) || other.source == _this.source)&&(identical(other.title, _this.title) || other.title == _this.title)&&(identical(other.year, _this.year) || other.year == _this.year)&&const DeepCollectionEquality().equals(other.additionalProperties, _this.additionalProperties));
 }
 
 
 @override
 int get hashCode {
   final _this = this as AlbumSummary;
-  return Object.hash(runtimeType,_this.artist,_this.artistId,_this.coverArt,_this.id,_this.peer,const DeepCollectionEquality().hash(_this.remoteSources),_this.rgMbid,_this.source,_this.title,_this.year,const DeepCollectionEquality().hash(_this.additionalProperties));
+  return Object.hash(runtimeType,_this.artist,_this.artistId,_this.coverArt,_this.id,_this.peer,_this.preference,const DeepCollectionEquality().hash(_this.remoteSources),_this.rgMbid,_this.source,_this.title,_this.year,const DeepCollectionEquality().hash(_this.additionalProperties));
 }
 
 @override
 String toString() {
   final _this = this as AlbumSummary;
-  return 'AlbumSummary(artist: ${_this.artist}, artistId: ${_this.artistId}, coverArt: ${_this.coverArt}, id: ${_this.id}, peer: ${_this.peer}, remoteSources: ${_this.remoteSources}, rgMbid: ${_this.rgMbid}, source: ${_this.source}, title: ${_this.title}, year: ${_this.year}, additionalProperties: ${_this.additionalProperties})';
+  return 'AlbumSummary(artist: ${_this.artist}, artistId: ${_this.artistId}, coverArt: ${_this.coverArt}, id: ${_this.id}, peer: ${_this.peer}, preference: ${_this.preference}, remoteSources: ${_this.remoteSources}, rgMbid: ${_this.rgMbid}, source: ${_this.source}, title: ${_this.title}, year: ${_this.year}, additionalProperties: ${_this.additionalProperties})';
 }
 
 
@@ -51,7 +51,7 @@ abstract mixin class $AlbumSummaryCopyWith<$Res>  {
   factory $AlbumSummaryCopyWith(AlbumSummary value, $Res Function(AlbumSummary) _then) = _$AlbumSummaryCopyWithImpl;
 @useResult
 $Res call({
-@JsonKey(required: true, disallowNullValue: true) ArtistRef artist,@JsonKey(required: true, disallowNullValue: true) String artistId,@JsonKey(required: true) String? coverArt,@JsonKey(required: true, disallowNullValue: true) String id,@JsonKey(includeIfNull: false) PeerRef? peer,@JsonKey(disallowNullValue: true, includeIfNull: false, fromJson: AlbumSummary._read_remoteSources, toJson: AlbumSummary._write_remoteSources) List<RemoteProvider>? remoteSources,@JsonKey(required: true) String? rgMbid,@JsonKey(required: true, disallowNullValue: true, fromJson: AlbumSummary._read_source, toJson: AlbumSummary._write_source) AlbumSummarySource source,@JsonKey(required: true, disallowNullValue: true) String title,@JsonKey(required: true, fromJson: AlbumSummary._read_year, toJson: AlbumSummary._write_year) int? year,@JsonKey(readValue: AlbumSummary._extras, fromJson: AlbumSummary._readExtras, includeToJson: false) Map<String, Object?> additionalProperties
+@JsonKey(required: true, disallowNullValue: true) ArtistRef artist,@JsonKey(required: true, disallowNullValue: true) String artistId,@JsonKey(required: true) String? coverArt,@JsonKey(required: true, disallowNullValue: true) String id,@JsonKey(includeIfNull: false) PeerRef? peer,@JsonKey(disallowNullValue: true, includeIfNull: false, fromJson: AlbumSummary._read_preference, toJson: AlbumSummary._write_preference) PreferenceState? preference,@JsonKey(disallowNullValue: true, includeIfNull: false, fromJson: AlbumSummary._read_remoteSources, toJson: AlbumSummary._write_remoteSources) List<RemoteProvider>? remoteSources,@JsonKey(required: true) String? rgMbid,@JsonKey(required: true, disallowNullValue: true, fromJson: AlbumSummary._read_source, toJson: AlbumSummary._write_source) AlbumSummarySource source,@JsonKey(required: true, disallowNullValue: true) String title,@JsonKey(required: true, fromJson: AlbumSummary._read_year, toJson: AlbumSummary._write_year) int? year,@JsonKey(readValue: AlbumSummary._extras, fromJson: AlbumSummary._readExtras, includeToJson: false) Map<String, Object?> additionalProperties
 });
 
 
@@ -68,14 +68,15 @@ class _$AlbumSummaryCopyWithImpl<$Res>
 
 /// Create a copy of AlbumSummary
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? artist = null,Object? artistId = null,Object? coverArt = freezed,Object? id = null,Object? peer = freezed,Object? remoteSources = freezed,Object? rgMbid = freezed,Object? source = null,Object? title = null,Object? year = freezed,Object? additionalProperties = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? artist = null,Object? artistId = null,Object? coverArt = freezed,Object? id = null,Object? peer = freezed,Object? preference = freezed,Object? remoteSources = freezed,Object? rgMbid = freezed,Object? source = null,Object? title = null,Object? year = freezed,Object? additionalProperties = null,}) {
   return _then(AlbumSummary(
 artist: null == artist ? _self.artist : artist // ignore: cast_nullable_to_non_nullable
 as ArtistRef,artistId: null == artistId ? _self.artistId : artistId // ignore: cast_nullable_to_non_nullable
 as String,coverArt: freezed == coverArt ? _self.coverArt : coverArt // ignore: cast_nullable_to_non_nullable
 as String?,id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,peer: freezed == peer ? _self.peer : peer // ignore: cast_nullable_to_non_nullable
-as PeerRef?,remoteSources: freezed == remoteSources ? _self.remoteSources : remoteSources // ignore: cast_nullable_to_non_nullable
+as PeerRef?,preference: freezed == preference ? _self.preference : preference // ignore: cast_nullable_to_non_nullable
+as PreferenceState?,remoteSources: freezed == remoteSources ? _self.remoteSources : remoteSources // ignore: cast_nullable_to_non_nullable
 as List<RemoteProvider>?,rgMbid: freezed == rgMbid ? _self.rgMbid : rgMbid // ignore: cast_nullable_to_non_nullable
 as String?,source: null == source ? _self.source : source // ignore: cast_nullable_to_non_nullable
 as AlbumSummarySource,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable

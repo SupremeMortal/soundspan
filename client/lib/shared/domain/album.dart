@@ -37,8 +37,10 @@ abstract class Album with _$Album {
     /// The release type (album, EP, single), when the server sent one.
     String? releaseType,
 
-    /// The user's preference; the album payloads carry none, so it is
-    /// [Preference.neutral] until a like through this client is confirmed.
+    /// The user's preference, from the album list and album detail
+    /// payloads; [Preference.neutral] when the payload carries none, as an
+    /// artist's discography does, until a like through this client is
+    /// confirmed.
     @Default(Preference.neutral) Preference preference,
   }) = _Album;
 

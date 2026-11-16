@@ -24,6 +24,7 @@ import {
     formatAlbumPreferenceResponse,
     formatTrackPreferenceResponse,
     hasConnectedProviderToken,
+    loadAlbumPreferenceStatesForUser,
     toLikedResponseTrack,
 } from "../../services/libraryTrackPreferences";
 import {
@@ -191,31 +192,44 @@ export async function handleGetAlbums(req: Request, res: Response) {
             prisma.album.count({ where }),
         ]);
 
+        const surfaceAlbums = albumsData.filter((album) =>
+            isLibrarySurfaceAlbumLocation(album.location),
+        );
+        const userId = req.user?.id;
+        const preferences = userId
+            ? await loadAlbumPreferenceStatesForUser(
+                  userId,
+                  surfaceAlbums.map((album) => album.id),
+              )
+            : null;
+
         // Normalize coverArt field for frontend
-        const albums = albumsData
-            .filter((album) => isLibrarySurfaceAlbumLocation(album.location))
-            .map(({ federationPeer, ...album }) => {
-                const remoteSources = remoteLibrary?.byAlbumId.get(album.id);
-                return {
-                    ...album,
-                    source:
-                        album.location === "FEDERATED"
-                            ? "federated"
-                            : album.location === "REMOTE" && remoteSources
-                              ? "remote"
-                              : "local",
-                    ...(remoteSources ? { remoteSources } : {}),
-                    peer: federationPeer
-                        ? {
-                              id: federationPeer.id,
-                              name: federationPeer.name,
-                              online:
-                                  federationPeer.outboundStatus === "ACTIVE",
-                          }
-                        : undefined,
-                    coverArt: album.coverUrl,
-                };
-            });
+        const albums = surfaceAlbums.map(({ federationPeer, ...album }) => {
+            const remoteSources = remoteLibrary?.byAlbumId.get(album.id);
+            return {
+                ...album,
+                ...(preferences
+                    ? {
+                          preference: preferences.get(album.id) ?? "neutral",
+                      }
+                    : {}),
+                source:
+                    album.location === "FEDERATED"
+                        ? "federated"
+                        : album.location === "REMOTE" && remoteSources
+                          ? "remote"
+                          : "local",
+                ...(remoteSources ? { remoteSources } : {}),
+                peer: federationPeer
+                    ? {
+                          id: federationPeer.id,
+                          name: federationPeer.name,
+                          online: federationPeer.outboundStatus === "ACTIVE",
+                      }
+                    : undefined,
+                coverArt: album.coverUrl,
+            };
+        });
 
         res.json({
             albums,
@@ -337,6 +351,12 @@ export async function handleGetAlbum(req: AlbumDetailRequest, res: Response) {
         return sendRouteError(res, 404, "Album not found");
     }
     const { owned, matchedInLibrary } = await loadAlbumLibraryState(album);
+    const userId = req.user?.id;
+    const preference = userId
+        ? ((await loadAlbumPreferenceStatesForUser(userId, [album.id])).get(
+              album.id,
+          ) ?? "neutral")
+        : undefined;
     const publicFields = publicAlbumFields(albumWithTracks, albumWithoutTracks);
     if (!publicFields) {
         return sendRouteError(res, 404, "Album not found");
@@ -357,6 +377,7 @@ export async function handleGetAlbum(req: AlbumDetailRequest, res: Response) {
         owned,
         matchedInLibrary,
         coverArt: album.coverUrl,
+        ...(preference ? { preference } : {}),
     });
 }
 

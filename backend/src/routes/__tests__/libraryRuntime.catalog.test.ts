@@ -2338,6 +2338,143 @@ describe("library catalog list runtime coverage", () => {
         );
     });
 
+    describe("album preference of the requesting user", () => {
+        function preferenceTrackRows(where: any) {
+            const albumIds: string[] = where?.albumId?.in ?? [];
+            return [
+                { id: "liked-1", albumId: "album-liked" },
+                { id: "liked-2", albumId: "album-liked" },
+                { id: "mixed-1", albumId: "album-mixed" },
+                { id: "mixed-2", albumId: "album-mixed" },
+                { id: "plain-1", albumId: "album-plain" },
+            ].filter((row) => albumIds.includes(row.albumId));
+        }
+
+        beforeEach(() => {
+            mockTrackFindMany.mockImplementation(async ({ where }: any) =>
+                preferenceTrackRows(where),
+            );
+            mockLikedTrackFindMany.mockImplementation(async ({ where }: any) =>
+                ["liked-1", "liked-2", "mixed-1"]
+                    .filter((trackId) => where?.trackId?.in?.includes(trackId))
+                    .map((trackId) => ({
+                        trackId,
+                        likedAt: new Date("2026-11-01T00:00:00.000Z"),
+                    })),
+            );
+        });
+
+        function listRow(id: string) {
+            return {
+                year: null,
+                id,
+                title: `Album ${id}`,
+                artistId: "artist-1",
+                rgMbid: id,
+                location: "LIBRARY",
+                coverUrl: null,
+                artist: { id: "artist-1", mbid: null, name: "Artist" },
+                federationPeer: null,
+            };
+        }
+
+        it("answers liked for an album whose tracks the user liked and neutral otherwise in the album list", async () => {
+            mockAlbumFindMany.mockResolvedValueOnce([
+                listRow("album-liked"),
+                listRow("album-mixed"),
+                listRow("album-plain"),
+            ]);
+            mockAlbumCount.mockResolvedValueOnce(3);
+            const res = createRes();
+
+            await albumsHandler(
+                { query: { filter: "all" }, user: { id: "user-1" } } as any,
+                res,
+            );
+
+            expect(res.statusCode).toBe(200);
+            expect(
+                res.body.albums.map((album: any) => [
+                    album.id,
+                    album.preference,
+                ]),
+            ).toEqual([
+                ["album-liked", "liked"],
+                ["album-mixed", "neutral"],
+                ["album-plain", "neutral"],
+            ]);
+            expect(mockLikedTrackFindMany).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    where: expect.objectContaining({ userId: "user-1" }),
+                }),
+            );
+        });
+
+        it("answers disliked when the user disliked every track of an album", async () => {
+            mockDislikedEntityFindMany.mockResolvedValue([
+                {
+                    entityId: "plain-1",
+                    dislikedAt: new Date("2026-11-01T00:00:00.000Z"),
+                },
+            ]);
+            mockAlbumFindMany.mockResolvedValueOnce([listRow("album-plain")]);
+            mockAlbumCount.mockResolvedValueOnce(1);
+            const res = createRes();
+
+            await albumsHandler(
+                { query: { filter: "all" }, user: { id: "user-1" } } as any,
+                res,
+            );
+
+            expect(res.body.albums[0].preference).toBe("disliked");
+        });
+
+        it("answers the album detail's preference for the requesting user", async () => {
+            mockAlbumFindFirst
+                .mockResolvedValueOnce(
+                    albumDetailRow("album-liked", "LIBRARY", null),
+                )
+                .mockResolvedValueOnce(
+                    albumDetailRow("album-plain", "LIBRARY", null),
+                );
+
+            const likedRes = createRes();
+            await albumByIdHandler(
+                {
+                    params: { id: "album-liked" },
+                    query: { includeTracks: "false" },
+                    user: { id: "user-1" },
+                } as any,
+                likedRes,
+            );
+            const plainRes = createRes();
+            await albumByIdHandler(
+                {
+                    params: { id: "album-plain" },
+                    query: { includeTracks: "false" },
+                    user: { id: "user-1" },
+                } as any,
+                plainRes,
+            );
+
+            expect(likedRes.statusCode).toBe(200);
+            expect(likedRes.body.preference).toBe("liked");
+            expect(plainRes.statusCode).toBe(200);
+            expect(plainRes.body.preference).toBe("neutral");
+        });
+
+        it("leaves preference out when no user is signed in", async () => {
+            mockAlbumFindMany.mockResolvedValueOnce([listRow("album-liked")]);
+            mockAlbumCount.mockResolvedValueOnce(1);
+            const res = createRes();
+
+            await albumsHandler({ query: { filter: "all" } } as any, res);
+
+            expect(res.body.albums[0]).not.toHaveProperty("preference");
+            expect(mockLikedTrackFindMany).not.toHaveBeenCalled();
+        });
+    });
+
     it("reports whether a matched REMOTE album is held", async () => {
         mockAlbumFindFirst
             .mockResolvedValueOnce(

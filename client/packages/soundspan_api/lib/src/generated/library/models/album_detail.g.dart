@@ -28,6 +28,7 @@ AlbumDetail _$AlbumDetailFromJson(Map<String, dynamic> json) {
       'id',
       'matchedInLibrary',
       'owned',
+      'preference',
       'remoteSources',
       'source',
       'title',
@@ -45,6 +46,7 @@ AlbumDetail _$AlbumDetailFromJson(Map<String, dynamic> json) {
     peer: json['peer'] == null
         ? null
         : PeerRef.fromJson(json['peer'] as Map<String, dynamic>),
+    preference: AlbumDetail._read_preference(json['preference']),
     remoteSources: AlbumDetail._read_remoteSources(json['remoteSources']),
     rgMbid: json['rgMbid'] as String?,
     source: AlbumDetail._read_source(json['source']),
@@ -73,6 +75,7 @@ Map<String, dynamic> _$AlbumDetailToJson(
   'matchedRgMbid': instance.matchedRgMbid,
   'owned': instance.owned,
   'peer': ?instance.peer?.toJson(),
+  'preference': ?AlbumDetail._write_preference(instance.preference),
   'remoteSources': ?AlbumDetail._write_remoteSources(instance.remoteSources),
   'rgMbid': instance.rgMbid,
   'source': ?AlbumDetail._write_source(instance.source),

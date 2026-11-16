@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { LibraryOriginQuery, PeerRef, RemoteProvider } from "./common";
+import { PreferenceState } from "./preference";
 import { ArtistRef, TrackSummary } from "./track";
 
 /** Fields every album row carries, in lists and in artist detail. */
@@ -20,6 +21,9 @@ export const AlbumSummary = z
         ...albumFields,
         source: z.enum(["local", "federated", "remote"]),
         artist: ArtistRef,
+        preference: PreferenceState.optional().describe(
+            "The requesting user's preference: liked or disliked when every library track of the album is, otherwise neutral",
+        ),
     })
     .meta({ id: "AlbumSummary" });
 
