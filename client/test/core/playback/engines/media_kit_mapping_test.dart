@@ -197,6 +197,47 @@ void main() {
     });
   });
 
+  group('clockMoved', () {
+    const from = Duration(seconds: 1);
+    const duration = Duration(seconds: 3);
+
+    test('is false for jitter around the start position', () {
+      for (final ms in const [1000, 1000.066, 1010, 990, 1049]) {
+        expect(
+          clockMoved(
+            from: from,
+            position: Duration(microseconds: (ms * 1000).round()),
+            duration: duration,
+          ),
+          isFalse,
+          reason: '$ms ms',
+        );
+      }
+    });
+
+    test('is true once the position moved 50 ms on', () {
+      expect(
+        clockMoved(
+          from: from,
+          position: const Duration(milliseconds: 1050),
+          duration: duration,
+        ),
+        isTrue,
+      );
+    });
+
+    test('is true at the end of an item that started within 50 ms of it', () {
+      expect(
+        clockMoved(
+          from: const Duration(milliseconds: 2980),
+          position: duration,
+          duration: duration,
+        ),
+        isTrue,
+      );
+    });
+  });
+
   group('mpvSeconds', () {
     test('reads a property value in seconds', () {
       expect(mpvSeconds('0.516630'), const Duration(microseconds: 516630));

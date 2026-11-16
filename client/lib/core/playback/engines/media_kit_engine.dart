@@ -67,6 +67,9 @@ final class MediaKitEngine implements PlayerEngine {
   /// player's own dispose.
   static const Duration _disposeWait = Duration(seconds: 5);
 
+  /// How often [dispose] checks whether mpv is idle.
+  static const Duration _idlePoll = Duration(milliseconds: 20);
+
   /// How soon a held state is checked again after a transition.
   static const Duration _recheckDelay = Duration(milliseconds: 10);
 
@@ -309,7 +312,30 @@ final class MediaKitEngine implements PlayerEngine {
     await _events.close();
     // A player call that never returns must not keep the engine alive.
     await _serial.timeout(_disposeWait, onTimeout: () {});
+    await _stopUntilIdle();
     await _player.dispose().timeout(_disposeWait, onTimeout: () {});
+  }
+
+  /// Stops mpv and waits, at most [_disposeWait], until it reports itself
+  /// idle.
+  ///
+  /// media_kit's dispose calls `mpv_terminate_destroy` synchronously on this
+  /// isolate a few seconds later. If mpv were still unloading a file then,
+  /// it would wait for media_kit's `on_unload` hook, which only this
+  /// (blocked) isolate can answer, and the app would hang.
+  Future<void> _stopUntilIdle() async {
+    final native = _player.platform;
+    if (native is! NativePlayer) return;
+    try {
+      await _player.stop().timeout(_disposeWait);
+      final deadline = Stopwatch()..start();
+      while (deadline.elapsed < _disposeWait) {
+        if (await native.getProperty('idle-active') == 'yes') return;
+        await Future<void>.delayed(_idlePoll);
+      }
+    } on Object {
+      // Disposing goes ahead; the wait only makes it safer.
+    }
   }
 
   void _checkNotDisposed() {
@@ -423,7 +449,11 @@ final class MediaKitEngine implements PlayerEngine {
       return;
     }
     _sinceAdvance = null;
-    if (_clockFrom != null && reported != _clockFrom) _clockFrom = null;
+    final from = _clockFrom;
+    if (from != null &&
+        clockMoved(from: from, position: reported, duration: _duration)) {
+      _clockFrom = null;
+    }
     _position = reported;
     _report();
   }

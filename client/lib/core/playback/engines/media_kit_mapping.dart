@@ -97,6 +97,25 @@ double mpvVolume(double linear) {
   return linear.clamp(0.0, 1.0) * 100;
 }
 
+/// How far mpv's position must move on before playback counts as running.
+const Duration _clockStep = Duration(milliseconds: 50);
+
+/// Whether [position] shows mpv's clock running after playback started,
+/// resumed or seeked at [from]: at least 50 ms further on, or at the end
+/// of the item ([duration]). While an audio output has not started
+/// consuming, mpv reports positions that jitter by microseconds around
+/// [from]; those are not movement.
+bool clockMoved({
+  required Duration from,
+  required Duration position,
+  required Duration? duration,
+}) {
+  if (duration != null && position >= duration && position > from) {
+    return true;
+  }
+  return position >= from + _clockStep;
+}
+
 /// The duration of an mpv property value [text] in seconds, as
 /// `getProperty` returns it, or null when the property is unavailable.
 Duration? mpvSeconds(String text) {

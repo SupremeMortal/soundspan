@@ -168,7 +168,7 @@ jobs:
       - name: Install the libmpv runtime, Xvfb and PulseAudio
         run: |
           sudo apt-get install -y --no-install-recommends \
-            libmpv2 mpv xvfb pulseaudio
+            libmpv2 mpv xvfb pulseaudio gdb
 
       # The runner has no sound card; mpv plays to a PulseAudio null sink in
       # real time, with the engine's production configuration. The sink is
@@ -186,12 +186,27 @@ jobs:
           pactl set-default-sink null
           pactl info
 
+      # A hung app blocks its own test timeouts, so a watchdog prints every
+      # thread's stack of the app and fails the step after 12 minutes, before the step timeout.
       - name: Engine conformance on Linux
         working-directory: client
         timeout-minutes: 15
-        run: >-
-          xvfb-run -a
-          flutter test integration_test/engine_conformance_test.dart -d linux
+        run: |
+          xvfb-run -a flutter test integration_test/engine_conformance_test.dart -d linux &
+          run=$!
+          for _ in $(seq 1 720); do
+            if ! kill -0 "$run" 2> /dev/null; then
+              wait "$run"
+              exit $?
+            fi
+            sleep 1
+          done
+          echo "::error::the engine conformance run hung"
+          for app in $(pgrep -f 'bundle/soundspan'); do
+            sudo gdb -p "$app" -batch -ex 'thread apply all bt' || true
+          done
+          kill "$run" || true
+          exit 1
 
   engine-conformance-windows:
     name: engine-conformance-windows
