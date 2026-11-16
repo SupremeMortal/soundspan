@@ -20,9 +20,9 @@ final class MediaKitEngine implements PlayerEngine {
   /// when mpv's log did not carry it (a 401 is never logged).
   ///
   /// [audioOutputOverride] sets mpv's `ao`. Production code never sets it;
-  /// the Windows device-test harness passes `'null'`, mpv's timing-accurate
-  /// null output, because a hosted Windows runner has no audio endpoint
-  /// (doc 06).
+  /// the device-test harness passes `'null'` on Windows, whose hosted runner
+  /// has no audio endpoint, and `'pulse'` on Linux, where mpv's PipeWire
+  /// output hangs on the runner (doc 06).
   new({required this._statusOf, this.audioOutputOverride}) {
     _subscriptions.addAll([
       _player.stream.playlist.listen(_onPlaylist),
