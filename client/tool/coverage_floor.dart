@@ -134,26 +134,29 @@ class _Lines {
       _Lines(found + other.found, hit + other.hit);
 }
 
+/// Parses [lcov] into line counts per file.
+///
+/// Several records of one file, as in the joined reports of test shards,
+/// merge by line: a line counts once and is hit when any record hit it.
 Map<String, _Lines> _parseLcov(String lcov) {
-  final result = <String, _Lines>{};
-  String? file;
-  final hits = <int, bool>{};
+  final byFile = <String, Map<int, bool>>{};
+  Map<int, bool>? hits;
   for (final line in const LineSplitter().convert(lcov)) {
     if (line.startsWith('SF:')) {
-      file = line.substring(3).replaceAll(r'\', '/');
-      hits.clear();
-    } else if (line.startsWith('DA:') && file != null) {
+      final file = line.substring(3).replaceAll(r'\', '/');
+      hits = byFile.putIfAbsent(file, () => <int, bool>{});
+    } else if (line.startsWith('DA:') && hits != null) {
       final parts = line.substring(3).split(',');
       final number = int.parse(parts[0]);
       hits[number] = (hits[number] ?? false) || int.parse(parts[1]) > 0;
-    } else if (line == 'end_of_record' && file != null) {
-      final previous = result[file] ?? const _Lines(0, 0);
-      result[file] =
-          previous + _Lines(hits.length, hits.values.where((h) => h).length);
-      file = null;
+    } else if (line == 'end_of_record') {
+      hits = null;
     }
   }
-  return result;
+  return {
+    for (final MapEntry(key: file, value: lines) in byFile.entries)
+      file: _Lines(lines.length, lines.values.where((h) => h).length),
+  };
 }
 
 String _appPath(String path) {

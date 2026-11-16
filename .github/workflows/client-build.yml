@@ -50,6 +50,11 @@ jobs:
         with:
           distribution: temurin
           java-version: "17"
+          cache: gradle
+          cache-dependency-path: |
+            client/android/*.gradle*
+            client/android/app/*.gradle*
+            client/android/gradle/wrapper/gradle-wrapper.properties
 
       - name: Set up Flutter
         uses: ./.github/actions/client-flutter
@@ -62,6 +67,10 @@ jobs:
           flutter build apk --release
           --build-name "$VERSION" --build-number "$BUILD_NUMBER"
           --dart-define-from-file=config/release.json
+
+      - name: The APK has the adaptive launcher icon
+        working-directory: client
+        run: unzip -l build/app/outputs/flutter-apk/app-release.apk | grep -q ' res/mipmap-anydpi-v26/ic_launcher.xml$'
 
       - name: Name the artifact
         run: |
@@ -154,6 +163,11 @@ jobs:
           --build-name "$VERSION" --build-number "$BUILD_NUMBER"
           --dart-define-from-file=config/release.json
 
+      - name: Single instance
+        working-directory: client
+        shell: pwsh
+        run: tool/ci/single_instance_windows.ps1
+
       # Doc 10: the MSVC runtime DLLs ship app-local, taken from the newest
       # x64 CRT redistributable of the installed Visual Studio.
       - name: Add the app-local MSVC runtime
@@ -240,6 +254,23 @@ jobs:
           flutter build web --release --base-href /app/
           --build-name "$VERSION" --build-number "$BUILD_NUMBER"
           --dart-define-from-file=config/release.json
+
+      - name: The bundle ships the drift WASM files
+        working-directory: client
+        run: |
+          test -s build/web/sqlite3.wasm
+          test -s build/web/drift_worker.js
+
+      - name: The bundle ships the committed icons
+        working-directory: client
+        run: |
+          for icon in favicon.png icons/Icon-192.png icons/Icon-512.png icons/Icon-maskable-192.png icons/Icon-maskable-512.png; do
+            cmp "web/$icon" "build/web/$icon"
+          done
+
+      - name: Bundle-size report
+        working-directory: client
+        run: tool/web_bundle_report.sh build/web >> "$GITHUB_STEP_SUMMARY"
 
       - name: Name the artifact
         run: |

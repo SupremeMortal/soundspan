@@ -122,12 +122,14 @@ Every client job sets Flutter up with the composite action `.github/actions/clie
 
 | Job | Runner | Blocking | Steps |
 |---|---|---|---|
-| `client-analyze` | ubuntu | Yes | `tool/gen.sh` + `git diff --exit-code`; `dart format --output=none --set-exit-if-changed .`; `flutter analyze --fatal-infos`; `dart analyze --fatal-infos` in the API package and in `contract_test`; `dart run tool/check_imports.dart`; `dart run tool/check_l10n.dart`; `dart run tool/check_platform_config.dart`; `dart run tool/license_audit.dart`; `dart run tool/gen_icons.dart --check` (every committed icon equals a fresh run and no committed icon is left over) |
-| `client-test` | ubuntu | Yes | `dart test --coverage-path=coverage/lcov.info` in the API package; `flutter test --coverage --exclude-tags golden,contract,engine`; `dart test --exclude-tags contract,contract-destructive` in `contract_test`; `dart run tool/coverage_floor.dart` |
+| `client-generated` | ubuntu | Yes | `tool/gen.sh` + `git diff --exit-code` (the slowest check, so it runs beside `client-analyze`) |
+| `client-analyze` | ubuntu | Yes | `dart format --output=none --set-exit-if-changed .`; `flutter analyze --fatal-infos`; `dart analyze --fatal-infos` in the API package and in `contract_test`; `dart run tool/check_imports.dart`; `dart run tool/check_l10n.dart`; `dart run tool/check_platform_config.dart`; `dart run tool/license_audit.dart`; `dart run tool/gen_icons.dart --check` (every committed icon equals a fresh run and no committed icon is left over) |
+| `client-test-shard (0…2)` | ubuntu | Yes, through `client-test` | Three shards of `flutter test --coverage --exclude-tags golden,contract,engine --total-shards 3 --shard-index <n>`; shard 0 also runs `dart test --coverage-path=coverage/lcov.info` in the API package and `dart test --exclude-tags contract,contract-destructive` in `contract_test`; each uploads its lcov reports as `client-test-coverage-<n>` (kept 1 day) |
+| `client-test` | ubuntu | Yes | Runs after the shards whatever their result and fails unless every shard passed; joins the shards' app reports into `coverage/lcov.info` and runs `dart run tool/coverage_floor.dart`, which merges the records of one file by line |
 | `client-golden` | ubuntu, directly on the runner with the pinned Flutter (no container) | Yes | `flutter test --tags golden`; on failure uploads `client/test/**/failures/**` as `client-golden-failures`, then reruns with `--update-goldens` and uploads every golden image as `client-golden-rendered`, with paths relative to `client/`, ready to commit |
 | `client-spec` | ubuntu | Yes when the API package, backend routes, or `backend/src/openapi/**` changed | `npm --prefix backend run openapi:emit-client` + `git diff --exit-code`; `dart run tool/spec_compat.dart` against the snapshot `tool/specs/min-server.json`: `operation-removed`, `response-field-required` and `response-type-changed` fail |
 | `client-contract` | ubuntu | Yes when the API package, `client/contract_test/**`, backend routes, or `backend/src/openapi/**` changed | Installs `ffmpeg`; `fixtures/generate.sh`; `docker compose -f compose.yaml up -d --build --wait` (the backend built from the pull request with response validation on); `node seed.ts`; `dart test --tags contract`; `dart test --tags contract-destructive` (an empty selection passes); on failure uploads `docker compose logs` as `client-contract-logs`; always `docker compose down -v` |
-| `client-build-android` | ubuntu | Yes | Temurin 17 (`actions/setup-java`); `flutter build apk --debug`; checks that the APK contains `res/mipmap-anydpi-v26/ic_launcher.xml` |
+| `client-build-android` | ubuntu | Yes | Temurin 17 (`actions/setup-java`, Gradle cache); `flutter build apk --debug`; checks that the APK contains `res/mipmap-anydpi-v26/ic_launcher.xml` |
 | `client-build-linux` | ubuntu | Yes | `flutter build linux --release`; `tool/check_ldd.sh` runs `ldd` on the executable and every `.so` in `build/linux/x64/release/bundle/lib/` and fails on any `not found` line |
 | `client-build-web` | ubuntu | Yes | `flutter build web --release`; checks that `build/web` contains `sqlite3.wasm` and `drift_worker.js` and that `favicon.png` and the four manifest icons are byte-identical to the committed ones in `web/`; `tool/web_bundle_report.sh` writes the gzip-compressed total of `build/web` and its five largest files to the job summary, with no threshold |
 | `client-web-integration` | ubuntu | Yes whenever it runs | Starts the runner's `chromedriver`; `flutter drive --driver=test_driver/integration_test.dart --target=integration_test/web/storage_web_test.dart -d web-server --browser-name=chrome --headless`: the three drift WASM databases of one profile open, persist across a reopen and are deleted in headless Chrome, the opener falls back to memory and reports `isVolatile` when storage fails, and web secrets survive a new store through `sessionStorage` with nothing in `localStorage` |
@@ -141,11 +143,13 @@ Every client job sets Flutter up with the composite action `.github/actions/clie
 
 Every build job except the dry run passes `--dart-define-from-file=config/dev.json`.
 
+`client-build-android`, `client-build-linux`, `client-build-web` and `client-build-windows` run only when `release_build` is false. When it is true, `client-build-dry-run` builds the same targets in release configuration with the same checks, so each target is built once per run.
+
 macOS minutes are the expensive ones, so on pull requests the Apple job runs only when the diff against the base branch touches `client/ios/**`, `client/macos/**`, `client/pubspec.lock`, `client/lib/platform/**`, `client-quality.yml`, or the composite action, and always on a push to `main`. Whenever it runs it is blocking, so a pull request cannot leave the Apple builds broken.
 
 **macOS switch.** Hosted macOS runners can queue for a long time, so every job on a macOS runner in `client-quality.yml` runs only when the repository variable `CLIENT_MACOS_CI` is `true` (`gh variable set CLIENT_MACOS_CI --body true`): `client-build-macos-ios`, `engine-conformance-ios` and `engine-conformance-macos`, and `build-macos` in the dry run (`client-quality.yml` passes `macos: ${{ vars.CLIENT_MACOS_CI == 'true' }}` to `client-build.yml`). With the variable unset these jobs are skipped, and a skipped job does not fail the pull request. The tag-triggered release always builds macOS.
 
-Actions are pinned by commit SHA, as in the existing workflows. Flutter and pub caches are keyed on `.fvmrc` and `pubspec.lock`.
+Actions are pinned by commit SHA, as in the existing workflows. Flutter and pub caches are keyed on `.fvmrc` and `pubspec.lock`. Every Android job caches Gradle through `actions/setup-java` (`cache: gradle`, keyed on the Gradle files under `client/android/`).
 
 ### `client-build.yml`
 
@@ -155,11 +159,11 @@ Inputs: `version` (required, for example `0.1.0`), `build-number` (required), `r
 
 | Job | Runner | Build | Artifact |
 |---|---|---|---|
-| `build-android` | ubuntu, Temurin 17 | `flutter build apk`: universal, signed with the template's debug key | `soundspan-<version>-android-unsigned.apk` |
+| `build-android` | ubuntu, Temurin 17, Gradle cache | `flutter build apk`: universal, signed with the template's debug key; checks that the APK contains `res/mipmap-anydpi-v26/ic_launcher.xml` | `soundspan-<version>-android-unsigned.apk` |
 | `build-linux` | ubuntu, inside an `ubuntu:22.04` container pinned by digest with the build packages of [01](01-toolchain-and-repository.md) plus `build-essential` and `libstdc++-12-dev` (the runner image has them, the bare container does not), so the glibc floor is the Linux baseline of [10](10-platform-integration.md) | `flutter build linux`; `tool/check_ldd.sh` on the bundle | `soundspan-<version>-linux-x64-unsigned.tar.gz` (the `bundle/` directory) |
-| `build-windows` | windows | `flutter build windows`; the x64 CRT DLLs of the newest MSVC redistributable copied next to the executable | `soundspan-<version>-windows-x64-unsigned.zip` (the `Release/` directory) |
+| `build-windows` | windows | `flutter build windows`; `tool/ci/single_instance_windows.ps1`; the x64 CRT DLLs of the newest MSVC redistributable copied next to the executable | `soundspan-<version>-windows-x64-unsigned.zip` (the `Release/` directory) |
 | `build-macos` | macos | `flutter build macos`: universal, ad-hoc signed by the toolchain | `soundspan-<version>-macos-universal-unsigned.zip` (`ditto -c -k --keepParent` of the `.app`) |
-| `build-web` | ubuntu | `flutter build web --base-href /app/` | `soundspan-<version>-web.tar.gz` (the `web/` directory) |
+| `build-web` | ubuntu | `flutter build web --base-href /app/`; the `sqlite3.wasm`, `drift_worker.js` and committed-icon checks and the bundle-size report of `client-build-web` | `soundspan-<version>-web.tar.gz` (the `web/` directory) |
 | `checksums` | ubuntu, after all five (a skipped `build-macos` does not block it) | Downloads every artifact; `dart run tool/release/check_artifacts.dart --dir <dir> --version <version> --write-sums`; `sha256sum --check` | `client-release-files`: the five files and `SHA256SUMS` |
 
 There is no iOS artifact and no AAB (it needs the upload key); both wait for signing.
@@ -174,7 +178,7 @@ Reusable (`workflow_call` only), `permissions: contents: read`, actions pinned b
 
 | Job | Runner | Device and audio |
 |---|---|---|
-| `engine-conformance-android` | ubuntu | KVM enabled; `reactivecircus/android-emulator-runner` (API 34, x86_64, `google_apis`), `flutter test … -d emulator-5554`. The emulator's default `-noaudio` null output drives ExoPlayer's clock |
+| `engine-conformance-android` | ubuntu | Gradle cache; KVM enabled; `reactivecircus/android-emulator-runner` (API 34, x86_64, `google_apis`). A booted snapshot of the AVD is cached with `actions/cache` (created by a first emulator run on a cache miss), and the test run boots from it with `-no-snapshot-save`; `flutter test … -d emulator-5554`. The emulator's `-noaudio` null output drives ExoPlayer's clock |
 | `engine-conformance-ios` | macos | The last available iPhone simulator, booted with `xcrun simctl`; `flutter test … -d <udid>` |
 | `engine-conformance-macos` | macos | Installs BlackHole (`brew install --cask blackhole-2ch`) when `system_profiler` lists no output device; `flutter test … -d macos` |
 | `engine-conformance-web` | ubuntu | `dart tool/tone_server.dart --port 8765` as a process that allows every origin; the runner's `chromedriver`; `flutter drive --driver=test_driver/integration_test.dart --target=integration_test/engine_conformance_test.dart -d web-server --browser-name=chrome --headless --web-browser-flag=--autoplay-policy=no-user-gesture-required --dart-define=TONE_SERVER=http://127.0.0.1:8765`. Credentials travel as the `token` query value, and the "headers reach the server" case checks that value; the local-file and gap cases are skipped (web is best-effort, [06](06-playback.md)) |

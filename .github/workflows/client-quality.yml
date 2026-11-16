@@ -105,12 +105,6 @@ jobs:
       - name: Set up Flutter
         uses: ./.github/actions/client-flutter
 
-      - name: Generated code is current
-        working-directory: client
-        run: |
-          tool/gen.sh
-          git diff --exit-code -- .
-
       - name: Format
         working-directory: client
         run: dart format --output=none --set-exit-if-changed .
@@ -147,12 +141,42 @@ jobs:
         working-directory: client/contract_test
         run: dart analyze --fatal-infos
 
-  client-test:
-    name: client-test
+  # Code generation is the slowest check, so it runs beside client-analyze
+  # instead of inside it.
+  client-generated:
+    name: client-generated
     needs: changes
     if: needs.changes.outputs.client == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Flutter
+        uses: ./.github/actions/client-flutter
+
+      - name: Generated code is current
+        working-directory: client
+        run: |
+          tool/gen.sh
+          git diff --exit-code -- .
+
+  # The client's unit and widget tests in shards; client-test merges their
+  # coverage and applies the floor.
+  client-test-shard:
+    name: client-test-shard (${{ matrix.shard }})
+    needs: changes
+    if: needs.changes.outputs.client == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2]
+    env:
+      SHARDS: 3
+      SHARD: ${{ matrix.shard }}
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -169,16 +193,72 @@ jobs:
         run: npm ci --prefix client/test/support/socket_server
 
       - name: Test soundspan_api with coverage
+        if: matrix.shard == 0
         working-directory: client/packages/soundspan_api
         run: dart test --coverage-path=coverage/lcov.info
 
       - name: Test client with coverage
         working-directory: client
-        run: flutter test --coverage --exclude-tags golden,contract,engine
+        run: >-
+          flutter test --coverage --exclude-tags golden,contract,engine
+          --total-shards "$SHARDS" --shard-index "$SHARD"
 
       - name: Test contract_test without a server
+        if: matrix.shard == 0
         working-directory: client/contract_test
         run: dart test --exclude-tags contract,contract-destructive
+
+      - name: Collect coverage
+        run: |
+          mkdir -p "$RUNNER_TEMP/coverage"
+          cp client/coverage/lcov.info "$RUNNER_TEMP/coverage/app-$SHARD.lcov"
+          if [ -f client/packages/soundspan_api/coverage/lcov.info ]; then
+            cp client/packages/soundspan_api/coverage/lcov.info "$RUNNER_TEMP/coverage/api.lcov"
+          fi
+
+      - name: Upload coverage
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: client-test-coverage-${{ matrix.shard }}
+          path: ${{ runner.temp }}/coverage/*
+          if-no-files-found: error
+          retention-days: 1
+
+  # Keeps the client-test check name. It runs after a failed shard too, so a
+  # failed shard fails this check instead of skipping it.
+  client-test:
+    name: client-test
+    needs: [changes, client-test-shard]
+    if: ${{ !cancelled() && needs.changes.outputs.client == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Every shard passed
+        env:
+          SHARDS_RESULT: ${{ needs.client-test-shard.result }}
+        run: |
+          echo "client-test-shard: $SHARDS_RESULT"
+          test "$SHARDS_RESULT" = success
+
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Flutter
+        uses: ./.github/actions/client-flutter
+
+      - name: Download coverage
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: client-test-coverage-*
+          path: ${{ runner.temp }}/coverage
+          merge-multiple: true
+
+      - name: Merge coverage
+        run: |
+          set -euo pipefail
+          mkdir -p client/coverage client/packages/soundspan_api/coverage
+          cat "$RUNNER_TEMP"/coverage/app-*.lcov > client/coverage/lcov.info
+          cp "$RUNNER_TEMP/coverage/api.lcov" client/packages/soundspan_api/coverage/lcov.info
 
       - name: Coverage floor
         working-directory: client
@@ -411,7 +491,9 @@ jobs:
   client-build-android:
     name: client-build-android
     needs: changes
-    if: needs.changes.outputs.client == 'true'
+    # client-build-dry-run builds this target with the same checks when
+    # release_build is true.
+    if: needs.changes.outputs.client == 'true' && needs.changes.outputs.release_build != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -423,6 +505,11 @@ jobs:
         with:
           distribution: temurin
           java-version: "17"
+          cache: gradle
+          cache-dependency-path: |
+            client/android/*.gradle*
+            client/android/app/*.gradle*
+            client/android/gradle/wrapper/gradle-wrapper.properties
 
       - name: Set up Flutter
         uses: ./.github/actions/client-flutter
@@ -438,7 +525,9 @@ jobs:
   client-build-linux:
     name: client-build-linux
     needs: changes
-    if: needs.changes.outputs.client == 'true'
+    # client-build-dry-run builds this target with the same checks when
+    # release_build is true.
+    if: needs.changes.outputs.client == 'true' && needs.changes.outputs.release_build != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -460,7 +549,9 @@ jobs:
   client-build-web:
     name: client-build-web
     needs: changes
-    if: needs.changes.outputs.client == 'true'
+    # client-build-dry-run builds this target with the same checks when
+    # release_build is true.
+    if: needs.changes.outputs.client == 'true' && needs.changes.outputs.release_build != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -526,7 +617,9 @@ jobs:
   client-build-windows:
     name: client-build-windows
     needs: changes
-    if: needs.changes.outputs.client == 'true'
+    # client-build-dry-run builds this target with the same checks when
+    # release_build is true.
+    if: needs.changes.outputs.client == 'true' && needs.changes.outputs.release_build != 'true'
     runs-on: windows-latest
     timeout-minutes: 45
     steps:

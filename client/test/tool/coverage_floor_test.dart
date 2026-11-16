@@ -49,6 +49,17 @@ void main() {
       expect(passing.ok, isTrue);
     });
 
+    test('records of one file from several test shards merge by line', () {
+      // Shard 1 hits lines 1-4, shard 2 lines 1-8, of the same 10 lines.
+      final report = _evaluate(
+        app:
+            record('lib/core/a.dart', hit: 4, total: 10) +
+            record('lib/core/a.dart', hit: 8, total: 10),
+      );
+      expect(report.ok, isTrue, reason: report.lines.join('\n'));
+      expect(report.lines.first, 'ok   core: 80.0 % of 10 lines (floor 80 %)');
+    });
+
     test('api below 80 % fails', () {
       final report = _evaluate(
         api: record('lib/src/transport.dart', hit: 7, total: 10),

@@ -28,6 +28,11 @@ jobs:
         with:
           distribution: temurin
           java-version: "17"
+          cache: gradle
+          cache-dependency-path: |
+            client/android/*.gradle*
+            client/android/app/*.gradle*
+            client/android/gradle/wrapper/gradle-wrapper.properties
 
       - name: Set up Flutter
         uses: ./.github/actions/client-flutter
@@ -38,13 +43,38 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
-      # The emulator's default -noaudio null output drives ExoPlayer's clock.
+      # A booted emulator snapshot, cached so later runs skip the cold boot.
+      - name: Emulator snapshot cache
+        id: avd-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-34-x86_64-google_apis-v1
+
+      - name: Create the emulator snapshot
+        if: steps.avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: false
+          script: echo "Created the emulator snapshot."
+
+      # The emulator's -noaudio null output drives ExoPlayer's clock. The run
+      # boots from the cached snapshot and does not save over it.
       - name: Engine conformance on an emulator
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
         with:
           api-level: 34
           arch: x86_64
           target: google_apis
+          force-avd-creation: false
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           working-directory: client
           script: flutter test integration_test/engine_conformance_test.dart -d emulator-5554
