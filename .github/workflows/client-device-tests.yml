@@ -188,10 +188,18 @@ jobs:
 
       # A hung app blocks its own test timeouts, so a watchdog prints every
       # thread's stack of the app and fails the step after 12 minutes, before the step timeout.
+      # mpv prefers PipeWire, and on the runner its PipeWire output stalls the
+      # start of playback and hangs in pw_thread_loop_stop() on teardown,
+      # blocking the app's main isolate. Pointing libpipewire at a socket that
+      # does not exist makes that output fail to open, so mpv falls back to the
+      # PulseAudio null sink above; the engine's configuration is unchanged.
       - name: Engine conformance on Linux
         working-directory: client
         timeout-minutes: 15
+        env:
+          PIPEWIRE_REMOTE: /nonexistent
         run: |
+          pgrep -a pipewire || echo "no pipewire process"
           xvfb-run -a flutter test integration_test/engine_conformance_test.dart -d linux &
           run=$!
           for _ in $(seq 1 720); do
