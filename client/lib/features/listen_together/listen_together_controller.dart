@@ -11,7 +11,6 @@ import 'package:soundspan/core/playback/playback_providers.dart';
 import 'package:soundspan/core/playback/playback_snapshot.dart';
 import 'package:soundspan/core/playback/queue/queue_state.dart';
 import 'package:soundspan/core/playback/remote_playback.dart';
-import 'package:soundspan/core/profile/api_provider.dart';
 import 'package:soundspan/core/profile/profile_context.dart';
 import 'package:soundspan/core/profile/profile_disposer.dart';
 import 'package:soundspan/core/realtime/clock_sync.dart';
@@ -24,6 +23,7 @@ import 'package:soundspan/features/listen_together/data/listen_together_reposito
 import 'package:soundspan/features/listen_together/domain/group.dart';
 import 'package:soundspan/features/listen_together/domain/listen_together_state.dart';
 import 'package:soundspan/features/listen_together/group_sync.dart';
+import 'package:soundspan/features/listen_together/listen_together_providers.dart';
 import 'package:soundspan/shared/domain/domain.dart';
 
 final AppLogger _log = AppLogger.scope('ListenTogether');
@@ -154,6 +154,10 @@ class ListenTogetherController implements RemoteDriver {
 
   /// The current state.
   ListenTogetherState get current => _current;
+
+  /// The id of the user this controller acts for; a group whose
+  /// `hostUserId` it is was created by this user.
+  String get userId => _userId;
 
   /// The states; a new listener receives the current one first.
   Stream<ListenTogetherState> get state =>
@@ -910,9 +914,7 @@ final Provider<ListenTogetherController> listenTogetherControllerProvider =
         final controller = ListenTogetherController(
           playback: ref.watch(playbackControllerProvider),
           socket: ref.watch(socketClientProvider),
-          repository: ListenTogetherRepository(
-            ref.watch(soundspanApiProvider).rest.listenTogether,
-          ),
+          repository: ref.watch(listenTogetherRepositoryProvider),
           userId: ref.watch(profileContextProvider).profile.userId,
         );
         ref.watch(profileDisposerProvider).register(controller.dispose);
@@ -922,7 +924,7 @@ final Provider<ListenTogetherController> listenTogetherControllerProvider =
       dependencies: [
         playbackControllerProvider,
         socketClientProvider,
-        soundspanApiProvider,
+        listenTogetherRepositoryProvider,
         profileContextProvider,
         profileDisposerProvider,
       ],

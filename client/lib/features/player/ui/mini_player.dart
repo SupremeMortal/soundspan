@@ -7,7 +7,10 @@ import 'package:soundspan/app/l10n/generated/app_localizations.dart';
 import 'package:soundspan/app/theme/dimens.dart';
 import 'package:soundspan/app/theme/extensions.dart';
 import 'package:soundspan/app/theme/typography.dart';
+import 'package:soundspan/core/playback/playback_command.dart';
 import 'package:soundspan/core/playback/playback_providers.dart';
+import 'package:soundspan/features/listen_together/listen_together.dart';
+import 'package:soundspan/features/player/ui/player_bar.dart';
 import 'package:soundspan/features/player/ui/player_item.dart';
 import 'package:soundspan/shared/domain/queue_item.dart';
 import 'package:soundspan/shared/widgets/artwork.dart';
@@ -64,6 +67,8 @@ class MiniPlayer extends ConsumerWidget {
     final typography = context.typography;
     final l10n = AppLocalizations.of(context);
     final controller = ref.read(playbackControllerProvider);
+    final locked = snapshot.remoteAttached && !snapshot.remoteCanControl;
+    final group = ref.watch(attachedListenTogetherProvider);
     return _SwipeUp(
       onOpen: onOpen,
       child: Material(
@@ -109,17 +114,16 @@ class MiniPlayer extends ConsumerWidget {
                         ],
                       ),
                     ),
-                    IconButton(
+                    TransportButton(
                       key: playPauseKey,
-                      tooltip: snapshot.playing
+                      label: snapshot.playing
                           ? l10n.playerPause
                           : l10n.playerPlay,
-                      color: colors.content,
-                      icon: Icon(
-                        snapshot.playing
-                            ? Icons.pause_rounded
-                            : Icons.play_arrow_rounded,
-                      ),
+                      icon: snapshot.playing
+                          ? Icons.pause_rounded
+                          : Icons.play_arrow_rounded,
+                      locked: locked,
+                      pending: isGroupCommandPending(group, isPlayPauseCommand),
                       onPressed: controller.togglePlayPause,
                     ),
                     if (current is EpisodeQueueItem)
@@ -133,11 +137,15 @@ class MiniPlayer extends ConsumerWidget {
                         onPressed: controller.skipForward,
                       )
                     else
-                      IconButton(
+                      TransportButton(
                         key: nextKey,
-                        tooltip: l10n.playerNext,
-                        color: colors.content,
-                        icon: const Icon(Icons.skip_next_rounded),
+                        label: l10n.playerNext,
+                        icon: Icons.skip_next_rounded,
+                        locked: locked,
+                        pending: isGroupCommandPending(
+                          group,
+                          (command) => command is NextCommand,
+                        ),
                         onPressed: controller.next,
                       ),
                   ],

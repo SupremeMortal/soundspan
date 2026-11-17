@@ -3362,6 +3362,270 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Resume'**
   String get downloadsResume;
+
+  /// Avatar menu entry, sidebar item and screen name of Listen Together, where users play music in sync with others.
+  ///
+  /// In en, this message translates to:
+  /// **'Listen Together'**
+  String get listenTogetherTitle;
+
+  /// Label of the Listen Together entry in the avatar menu and the sidebar while the user is in a group.
+  ///
+  /// In en, this message translates to:
+  /// **'In a group'**
+  String get listenTogetherInGroup;
+
+  /// Listen Together lobby heading above the group the user is a member of.
+  ///
+  /// In en, this message translates to:
+  /// **'Your groups'**
+  String get listenTogetherYourGroups;
+
+  /// Listen Together lobby heading above the public groups anyone can join.
+  ///
+  /// In en, this message translates to:
+  /// **'Public groups'**
+  String get listenTogetherPublicGroups;
+
+  /// Listen Together lobby when there is no group to show.
+  ///
+  /// In en, this message translates to:
+  /// **'Listen with others in sync'**
+  String get listenTogetherEmpty;
+
+  /// Listen Together action that opens the form to create a group.
+  ///
+  /// In en, this message translates to:
+  /// **'Create group'**
+  String get listenTogetherCreate;
+
+  /// Listen Together action that opens the field to join a group by its code.
+  ///
+  /// In en, this message translates to:
+  /// **'Join with a code'**
+  String get listenTogetherJoinWithCode;
+
+  /// Button on a Listen Together group row, or in the join form, that joins the group.
+  ///
+  /// In en, this message translates to:
+  /// **'Join'**
+  String get listenTogetherJoin;
+
+  /// Second line of a Listen Together group row: the host's name and how many members the group has.
+  ///
+  /// In en, this message translates to:
+  /// **'{host} · {count, plural, =1{1 member} other{{count} members}}'**
+  String listenTogetherGroupRowDetails(String host, int count);
+
+  /// Label of the group name field of the create group form.
+  ///
+  /// In en, this message translates to:
+  /// **'Name (optional)'**
+  String get listenTogetherNameLabel;
+
+  /// Error under the group name field when the name is longer than 80 characters.
+  ///
+  /// In en, this message translates to:
+  /// **'Use at most 80 characters'**
+  String get listenTogetherNameTooLong;
+
+  /// Visibility choice: the group is joined by its code only.
+  ///
+  /// In en, this message translates to:
+  /// **'Private'**
+  String get listenTogetherPrivate;
+
+  /// Visibility choice: the group is listed for everyone on the server.
+  ///
+  /// In en, this message translates to:
+  /// **'Public'**
+  String get listenTogetherPublic;
+
+  /// Switch of the create group form: the group starts with the music queued on this device.
+  ///
+  /// In en, this message translates to:
+  /// **'Start with my current queue'**
+  String get listenTogetherStartWithQueue;
+
+  /// Button of the create group form that creates the group.
+  ///
+  /// In en, this message translates to:
+  /// **'Create'**
+  String get listenTogetherCreateSubmit;
+
+  /// Cancel button of the Listen Together forms and dialogs.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get listenTogetherCancel;
+
+  /// Label of the field that takes the code of the group to join.
+  ///
+  /// In en, this message translates to:
+  /// **'Group code'**
+  String get listenTogetherCodeLabel;
+
+  /// Error of the join form when no group has the code entered.
+  ///
+  /// In en, this message translates to:
+  /// **'No group with that code'**
+  String get listenTogetherNoGroupWithCode;
+
+  /// Visibility line in the header of a Listen Together group.
+  ///
+  /// In en, this message translates to:
+  /// **'Public group'**
+  String get listenTogetherPublicGroup;
+
+  /// Visibility line in the header of a Listen Together group.
+  ///
+  /// In en, this message translates to:
+  /// **'Private group'**
+  String get listenTogetherPrivateGroup;
+
+  /// Line in the header of a Listen Together group naming its host.
+  ///
+  /// In en, this message translates to:
+  /// **'Hosted by {name}'**
+  String listenTogetherHostedBy(String name);
+
+  /// Shown in the header of a Listen Together group while the connection to the server is being restored.
+  ///
+  /// In en, this message translates to:
+  /// **'Reconnecting…'**
+  String get listenTogetherReconnecting;
+
+  /// Button that copies the group's join code.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy code'**
+  String get listenTogetherCopyCode;
+
+  /// Announced after the group's join code was copied.
+  ///
+  /// In en, this message translates to:
+  /// **'Copied'**
+  String get listenTogetherCopied;
+
+  /// Heading of the member list of a Listen Together group.
+  ///
+  /// In en, this message translates to:
+  /// **'Members'**
+  String get listenTogetherMembers;
+
+  /// Label next to the member who hosts the group.
+  ///
+  /// In en, this message translates to:
+  /// **'Host'**
+  String get listenTogetherHost;
+
+  /// Heading above the group's current track.
+  ///
+  /// In en, this message translates to:
+  /// **'Now playing'**
+  String get listenTogetherNowPlaying;
+
+  /// Action of a Listen Together group that shows the group's queue.
+  ///
+  /// In en, this message translates to:
+  /// **'Open queue'**
+  String get listenTogetherOpenQueue;
+
+  /// Action that leaves the Listen Together group.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave group'**
+  String get listenTogetherLeave;
+
+  /// Action, for the host only, that ends the Listen Together group for every member.
+  ///
+  /// In en, this message translates to:
+  /// **'End group for everyone'**
+  String get listenTogetherEnd;
+
+  /// Title of the dialog confirming the host ends the group.
+  ///
+  /// In en, this message translates to:
+  /// **'End the group?'**
+  String get listenTogetherEndTitle;
+
+  /// Body of the dialog confirming the host ends the group.
+  ///
+  /// In en, this message translates to:
+  /// **'Everyone leaves the group and playback stops for them.'**
+  String get listenTogetherEndBody;
+
+  /// Confirm button of the dialog that ends the group.
+  ///
+  /// In en, this message translates to:
+  /// **'End group'**
+  String get listenTogetherEndConfirm;
+
+  /// Shown on Listen Together after the host ended the group.
+  ///
+  /// In en, this message translates to:
+  /// **'The host ended the group'**
+  String get listenTogetherEndedByHost;
+
+  /// Shown on Listen Together after this user was removed from the group.
+  ///
+  /// In en, this message translates to:
+  /// **'You were removed from the group'**
+  String get listenTogetherRemoved;
+
+  /// Header of the queue while in a Listen Together group: the group's name and how many members it has.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} · {count} listening'**
+  String listenTogetherQueueHeader(String name, int count);
+
+  /// Tooltip and hint of playback controls that are disabled because only the group's host controls playback.
+  ///
+  /// In en, this message translates to:
+  /// **'The host controls playback'**
+  String get listenTogetherHostControls;
+
+  /// Shown when a playback command sent to the group got no answer in time.
+  ///
+  /// In en, this message translates to:
+  /// **'The server didn’t respond'**
+  String get listenTogetherNoResponse;
+
+  /// Shown when the server refused a playback command sent to the group without saying why.
+  ///
+  /// In en, this message translates to:
+  /// **'The group didn’t accept that'**
+  String get listenTogetherCommandRejected;
+
+  /// Shown when a playback control the group does not have was used.
+  ///
+  /// In en, this message translates to:
+  /// **'Not available while in a group'**
+  String get listenTogetherNotInGroup;
+
+  /// Shown when episodes or tracks that cannot be shared were left out of what was added to the group's queue.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 item can’t be shared with the group} other{{count} items can’t be shared with the group}}'**
+  String listenTogetherNotShareable(int count);
+
+  /// Title of the dialog confirming Play replaces the queue of the Listen Together group.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace the group’s queue?'**
+  String get listenTogetherReplaceTitle;
+
+  /// Body of the dialog confirming Play replaces the queue of the Listen Together group.
+  ///
+  /// In en, this message translates to:
+  /// **'Everyone in the group hears this next.'**
+  String get listenTogetherReplaceBody;
+
+  /// Confirm button of the dialog that replaces the group's queue.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace'**
+  String get listenTogetherReplaceConfirm;
 }
 
 class _AppLocalizationsDelegate

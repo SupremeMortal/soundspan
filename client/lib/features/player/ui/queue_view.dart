@@ -13,11 +13,13 @@ import 'package:soundspan/app/theme/typography.dart';
 import 'package:soundspan/core/playback/playback_controller.dart';
 import 'package:soundspan/core/playback/playback_providers.dart';
 import 'package:soundspan/core/playback/queue/queue_state.dart';
+import 'package:soundspan/features/listen_together/listen_together.dart';
 import 'package:soundspan/features/player/ui/player_item.dart';
 import 'package:soundspan/shared/actions/app_menu_commands.dart';
 import 'package:soundspan/shared/actions/track_actions.dart';
 import 'package:soundspan/shared/domain/domain.dart';
 import 'package:soundspan/shared/widgets/empty_state.dart';
+import 'package:soundspan/shared/widgets/group_controls.dart';
 import 'package:soundspan/shared/widgets/track_row.dart';
 
 /// The play queue (doc 09, Now Playing, Queue, Lyrics): a "Now playing"
@@ -62,12 +64,14 @@ class QueueView extends ConsumerWidget {
       );
     }
     final controller = ref.read(playbackControllerProvider);
+    final locked = hostControlsPlayback(ref);
     final order = queue.playOrder;
     final upNextCount = order.length - cursor - 1;
     final extent = TrackRow.extentFor(context, withThumbnail: true);
     return CustomScrollView(
       controller: scrollController,
       slivers: [
+        const SliverToBoxAdapter(child: ListenTogetherQueueHeader()),
         SliverToBoxAdapter(
           child: _SectionHeader(
             title: l10n.queueNowPlaying,
@@ -107,6 +111,7 @@ class QueueView extends ConsumerWidget {
               count: upNextCount,
               extent: extent,
               controller: controller,
+              locked: locked,
             ),
           ),
         ],
@@ -124,6 +129,7 @@ class _NextUpList extends ConsumerWidget {
     required this.count,
     required this.extent,
     required this.controller,
+    required this.locked,
   });
 
   final QueueState queue;
@@ -132,6 +138,9 @@ class _NextUpList extends ConsumerWidget {
   final int count;
   final double extent;
   final PlaybackController controller;
+
+  /// Whether only the group's host may reorder: no drag, no move actions.
+  final bool locked;
 
   QueueItem _itemAt(int index) => queue.items[order[cursor + 1 + index]];
 
@@ -194,10 +203,10 @@ class _NextUpList extends ConsumerWidget {
               : null,
           semanticActions: {
             CustomSemanticsAction(label: l10n.queueRemove): remove,
-            if (index > 0)
+            if (!locked && index > 0)
               CustomSemanticsAction(label: l10n.queueMoveUp): () =>
                   _move(index, index - 1),
-            if (index < count - 1)
+            if (!locked && index < count - 1)
               CustomSemanticsAction(label: l10n.queueMoveDown): () =>
                   _move(index, index + 1),
           },
@@ -211,7 +220,7 @@ class _NextUpList extends ConsumerWidget {
               icon: const Icon(Icons.close_rounded),
               onPressed: remove,
             ),
-            if (touch)
+            if (touch && !locked)
               ReorderableDragStartListener(
                 index: index,
                 child: SizedBox.square(
@@ -229,7 +238,7 @@ class _NextUpList extends ConsumerWidget {
         );
         return KeyedSubtree(
           key: QueueView.rowKey(id),
-          child: touch
+          child: touch || locked
               ? line
               : ReorderableDragStartListener(index: index, child: line),
         );

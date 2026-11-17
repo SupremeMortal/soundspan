@@ -16,7 +16,12 @@ export 'ui/mini_player.dart' show MiniPlayer;
 export 'ui/now_playing_overlay.dart' show NowPlayingOverlay, QueuePanel;
 export 'ui/now_playing_screen.dart' show NowPlayingScreen, NowPlayingTitle;
 export 'ui/player_bar.dart'
-    show PlayPauseButton, PlayerBar, PlayerTransport, nextRepeatMode;
+    show
+        PlayPauseButton,
+        PlayerBar,
+        PlayerTransport,
+        TransportButton,
+        nextRepeatMode;
 export 'ui/queue_sheet.dart' show QueueSheet, showQueueSheet;
 export 'ui/queue_view.dart' show QueueView;
 export 'ui/right_panel.dart'

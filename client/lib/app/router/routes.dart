@@ -55,6 +55,12 @@ abstract final class RoutePaths {
   /// The last segment of Explore inside a branch.
   static const exploreSegment = 'explore';
 
+  /// Listen Together; redirected into the selected branch like a detail.
+  static const listenTogether = '/listen-together';
+
+  /// The last segment of Listen Together inside a branch.
+  static const listenTogetherSegment = 'listen-together';
+
   /// Settings, on the root navigator.
   static const settings = '/settings';
 
@@ -159,6 +165,10 @@ class ShellLocation {
   /// The location of Explore inside the selected branch.
   String explore() => _inBranch(const [RoutePaths.exploreSegment]);
 
+  /// The location of Listen Together inside the selected branch.
+  String listenTogether() =>
+      _inBranch(const [RoutePaths.listenTogetherSegment]);
+
   String _inBranch(List<String> segments) => _base
       .replace(
         pathSegments: [..._base.pathSegments, ...segments],
@@ -230,6 +240,10 @@ abstract final class DetailNavigation {
   /// Opens Explore.
   static void openExplore(BuildContext context) =>
       openLocation(GoRouter.of(context), RoutePaths.explore);
+
+  /// Opens Listen Together.
+  static void openListenTogether(BuildContext context) =>
+      openLocation(GoRouter.of(context), RoutePaths.listenTogether);
 
   /// Opens the top-level detail [location] (`/album/42`, the form deep links
   /// use) in [router]'s selected branch, pushing it when that branch already
@@ -329,6 +343,10 @@ GoRouter createRouter(
               location.detail(kind, state.pathParameters[kind.parameter]!),
         ),
       GoRoute(path: RoutePaths.explore, redirect: (_, _) => location.explore()),
+      GoRoute(
+        path: RoutePaths.listenTogether,
+        redirect: (_, _) => location.listenTogether(),
+      ),
       GoRoute(
         path: RoutePaths.nowPlaying,
         // Expanded windows show now playing in the shell: the player bar,

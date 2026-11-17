@@ -68,6 +68,8 @@ class AdaptiveShell extends StatefulWidget {
     this.playerBar,
     this.sidebarPlaylists,
     this.onExplore,
+    this.onListenTogether,
+    this.inListenTogetherGroup = false,
     this.rightPanel,
     this.contentOverlay,
     this.focusGroups,
@@ -128,6 +130,17 @@ class AdaptiveShell extends StatefulWidget {
   /// Opens Explore from an "Explore" item below the sidebar destinations
   /// (expanded); null leaves the item out.
   final VoidCallback? onExplore;
+
+  /// Opens Listen Together from a "Listen Together" item below the sidebar
+  /// destinations (expanded); null leaves the item out.
+  final VoidCallback? onListenTogether;
+
+  /// Whether this device is in a Listen Together group: the sidebar item
+  /// then reads "In a group" with a `brand` dot.
+  final bool inListenTogetherGroup;
+
+  /// The key of the Listen Together sidebar item.
+  static const Key listenTogetherKey = Key('shell.listenTogether');
 
   /// The right panel (expanded); null leaves it out.
   final Widget? rightPanel;
@@ -337,6 +350,19 @@ class _AdaptiveShellState extends State<AdaptiveShell> {
                                           collapsed: collapsed,
                                           onTap: onExplore,
                                         ),
+                                      if (widget.onListenTogether
+                                          case final onListenTogether?)
+                                        _SidebarDestination(
+                                          key: AdaptiveShell.listenTogetherKey,
+                                          label: widget.inListenTogetherGroup
+                                              ? l10n.listenTogetherInGroup
+                                              : l10n.listenTogetherTitle,
+                                          icon: Icons.groups_rounded,
+                                          selected: false,
+                                          collapsed: collapsed,
+                                          dot: widget.inListenTogetherGroup,
+                                          onTap: onListenTogether,
+                                        ),
                                     ],
                                   ),
                                 ),
@@ -406,6 +432,10 @@ class _AdaptiveShellState extends State<AdaptiveShell> {
   }
 }
 
+/// The key of the `brand` dot that marks an entry while in a Listen
+/// Together group, in the sidebar and the avatar menu.
+const Key shellActiveDotKey = Key('shell.activeDot');
+
 class _SidebarDestination extends StatelessWidget {
   const new({
     required this.label,
@@ -413,6 +443,8 @@ class _SidebarDestination extends StatelessWidget {
     required this.selected,
     required this.collapsed,
     required this.onTap,
+    this.dot = false,
+    super.key,
   });
 
   final String label;
@@ -421,9 +453,20 @@ class _SidebarDestination extends StatelessWidget {
   final bool collapsed;
   final VoidCallback onTap;
 
+  /// Whether a `brand` dot marks the icon.
+  final bool dot;
+
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
+    Widget marked(Widget icon) => dot
+        ? Badge(
+            key: shellActiveDotKey,
+            smallSize: 8,
+            backgroundColor: colors.brand,
+            child: icon,
+          )
+        : icon;
     if (collapsed) {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: Spacing.x4),
@@ -432,11 +475,11 @@ class _SidebarDestination extends StatelessWidget {
           isSelected: selected,
           onPressed: onTap,
           color: colors.contentSecondary,
-          selectedIcon: Icon(icon, color: colors.content),
+          selectedIcon: marked(Icon(icon, color: colors.content)),
           style: IconButton.styleFrom(
             backgroundColor: selected ? colors.surfaceActive : null,
           ),
-          icon: Icon(icon),
+          icon: marked(Icon(icon)),
         ),
       );
     }
@@ -445,7 +488,7 @@ class _SidebarDestination extends StatelessWidget {
       excludeFromSemantics: true,
       child: ListTile(
         selected: selected,
-        leading: Icon(icon),
+        leading: marked(Icon(icon)),
         title: Text(label),
         onTap: onTap,
         minTileHeight: Sizes.touchTarget,

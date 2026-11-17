@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:soundspan/app/l10n/generated/app_localizations.dart';
 import 'package:soundspan/app/router/routes.dart';
+import 'package:soundspan/app/shell/adaptive_shell.dart' show shellActiveDotKey;
 import 'package:soundspan/app/shell/window_class.dart';
 import 'package:soundspan/app/theme/dimens.dart';
 import 'package:soundspan/app/theme/extensions.dart';
@@ -15,6 +16,7 @@ import 'package:soundspan/app/theme/typography.dart';
 import 'package:soundspan/core/auth/active_profile.dart';
 import 'package:soundspan/core/auth/profile.dart';
 import 'package:soundspan/core/profile/profile_runtime.dart';
+import 'package:soundspan/features/listen_together/listen_together.dart';
 import 'package:soundspan/features/social/social.dart';
 
 /// The upper-case first letter of the name [profile]'s user goes by, or an
@@ -31,9 +33,11 @@ String avatarInitial(Profile? profile) {
 /// The avatar button of the shell (doc 09, Shell by Window Class).
 ///
 /// It shows the active user's initial and opens the account menu: the
-/// server switcher, "Add server", "Activity" (compact and medium windows;
-/// expanded ones have the top-bar toggle) and "Settings". On compact windows the menu
-/// is a bottom sheet; otherwise it is a popup under the button.
+/// server switcher, "Add server", "Listen Together" ("In a group" with a
+/// `brand` dot while in one), "Activity" and "Settings". Listen Together and
+/// Activity are on compact and medium windows only; expanded ones have the
+/// sidebar item and the top-bar toggle. On compact windows the menu is a bottom sheet; otherwise it
+/// is a popup under the button.
 class AvatarButton extends ConsumerWidget {
   /// Creates the button.
   const new({super.key});
@@ -95,7 +99,7 @@ class AvatarButton extends ConsumerWidget {
             )
           else
             MenuItemButton(
-              leadingIcon: Icon(entry.icon),
+              leadingIcon: _marked(context, entry, Icon(entry.icon)),
               trailingIcon: entry.current
                   ? Icon(
                       Icons.check_rounded,
@@ -131,6 +135,7 @@ class AvatarButton extends ConsumerWidget {
     final navigator = Navigator.maybeOf(context);
     final container = ProviderScope.containerOf(context);
     final expanded = WindowClass.of(context) == WindowClass.expanded;
+    final inGroup = ref.watch(inListenTogetherGroupProvider);
     return [
       AvatarMenuEntry.header(l10n.shellMenuServers),
       for (final profile in profiles)
@@ -145,6 +150,19 @@ class AvatarButton extends ConsumerWidget {
         icon: Icons.add_rounded,
         onSelected: () => unawaited(router?.push<void>(RoutePaths.connect)),
       ),
+      if (!expanded)
+        AvatarMenuEntry(
+          label: inGroup
+              ? l10n.listenTogetherInGroup
+              : l10n.listenTogetherTitle,
+          icon: Icons.groups_rounded,
+          dot: inGroup,
+          onSelected: () {
+            if (router != null) {
+              DetailNavigation.openLocation(router, RoutePaths.listenTogether);
+            }
+          },
+        ),
       if (!expanded && navigator != null)
         AvatarMenuEntry(
           label: l10n.shellMenuActivity,
@@ -172,6 +190,7 @@ class AvatarMenuEntry {
     required this.icon,
     required this.onSelected,
     this.current = false,
+    this.dot = false,
   }) : isHeader = false;
 
   /// A heading above a group of entries.
@@ -179,6 +198,7 @@ class AvatarMenuEntry {
     : icon = Icons.label_rounded,
       onSelected = null,
       current = false,
+      dot = false,
       isHeader = true;
 
   /// The localized label, or the server's display name.
@@ -195,7 +215,22 @@ class AvatarMenuEntry {
 
   /// Whether the entry is a heading.
   final bool isHeader;
+
+  /// Whether a `brand` dot marks the icon (Listen Together while in a
+  /// group).
+  final bool dot;
 }
+
+/// [icon], marked with a `brand` dot when [entry] asks for one.
+Widget _marked(BuildContext context, AvatarMenuEntry entry, Widget icon) =>
+    entry.dot
+    ? Badge(
+        key: shellActiveDotKey,
+        smallSize: 8,
+        backgroundColor: context.colors.brand,
+        child: icon,
+      )
+    : icon;
 
 /// The account menu as a bottom sheet, for compact windows.
 class AvatarMenuSheet extends StatelessWidget {
@@ -234,7 +269,7 @@ class AvatarMenuSheet extends StatelessWidget {
                 )
               else
                 ListTile(
-                  leading: Icon(entry.icon),
+                  leading: _marked(context, entry, Icon(entry.icon)),
                   title: Text(entry.label),
                   minTileHeight: Sizes.touchTarget,
                   trailing: entry.current

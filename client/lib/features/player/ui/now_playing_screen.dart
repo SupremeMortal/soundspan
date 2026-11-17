@@ -28,6 +28,7 @@ import 'package:soundspan/shared/domain/queue_item.dart';
 import 'package:soundspan/shared/widgets/artwork.dart';
 import 'package:soundspan/shared/widgets/backdrop.dart';
 import 'package:soundspan/shared/widgets/empty_state.dart';
+import 'package:soundspan/shared/widgets/group_controls.dart';
 import 'package:soundspan/shared/widgets/quality_badge.dart';
 
 /// The full-screen now playing of compact and medium windows, the
@@ -602,16 +603,20 @@ class _Progress extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final snapshot = ref.watch(playbackSnapshotProvider).value;
     if (snapshot == null) return const SizedBox(height: SeekBar.height);
-    return SeekBar(
-      position: snapshot.position,
-      buffered: snapshot.buffered,
-      duration: snapshot.duration,
-      status: snapshot.status,
-      playing: snapshot.playing,
-      onSeek: ref.read(playbackControllerProvider).seek,
-      showTimes: true,
-      showRemaining: true,
-      speed: snapshot.speed,
+    final locked = snapshot.remoteAttached && !snapshot.remoteCanControl;
+    return HostControlled(
+      locked: locked,
+      child: SeekBar(
+        position: snapshot.position,
+        buffered: snapshot.buffered,
+        duration: snapshot.duration,
+        status: snapshot.status,
+        playing: snapshot.playing,
+        onSeek: locked ? null : ref.read(playbackControllerProvider).seek,
+        showTimes: true,
+        showRemaining: true,
+        speed: snapshot.speed,
+      ),
     );
   }
 }

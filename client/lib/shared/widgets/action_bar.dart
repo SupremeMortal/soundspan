@@ -1,11 +1,15 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 
+import 'dart:async';
+
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:soundspan/app/l10n/generated/app_localizations.dart';
 import 'package:soundspan/app/shell/window_class.dart';
 import 'package:soundspan/app/theme/dimens.dart';
 import 'package:soundspan/app/theme/extensions.dart';
 import 'package:soundspan/app/theme/typography.dart';
+import 'package:soundspan/shared/widgets/group_controls.dart';
 import 'package:soundspan/shared/widgets/like_button.dart';
 
 /// The actions of an album, artist or playlist page (doc 09, Components:
@@ -15,7 +19,11 @@ import 'package:soundspan/shared/widgets/like_button.dart';
 /// overflow ("More options") are icon buttons with tooltips. A button whose
 /// callback is null is left out. The buttons wrap onto a second line rather
 /// than overflow, and are centred on compact windows like the header text.
-class ActionBar extends StatelessWidget {
+///
+/// In a Listen Together group Play and Shuffle replace the group's queue:
+/// they ask first, and are disabled with "The host controls playback"
+/// where only the host may.
+class ActionBar extends ConsumerWidget {
   /// Creates the bar.
   const new({
     this.onPlay,
@@ -66,12 +74,22 @@ class ActionBar extends StatelessWidget {
   static const Key menuKey = ValueKey('ActionBar.menu');
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final colors = context.colors;
     final compact = WindowClass.of(context) == WindowClass.compact;
-    final onPlay = this.onPlay;
-    final onShuffle = this.onShuffle;
+    final locked = hostControlsPlayback(ref);
+    final attached = remotePlaybackAttached(ref);
+    VoidCallback? replacing(VoidCallback? play) => switch (play) {
+      null => null,
+      _ when locked => () {},
+      _ when attached => () => unawaited(() async {
+        if (await confirmReplaceGroupQueue(context, ref)) play();
+      }()),
+      _ => play,
+    };
+    final onPlay = replacing(this.onPlay);
+    final onShuffle = replacing(this.onShuffle);
     final download = this.download;
     final onToggleLike = this.onToggleLike;
     final onAddToPlaylist = this.onAddToPlaylist;
@@ -80,7 +98,7 @@ class ActionBar extends StatelessWidget {
       required Key key,
       required IconData glyph,
       required String tooltip,
-      required VoidCallback onPressed,
+      required VoidCallback? onPressed,
     }) => MergeSemantics(
       child: Semantics(
         label: tooltip,
@@ -100,26 +118,32 @@ class ActionBar extends StatelessWidget {
       runSpacing: Spacing.x8,
       children: [
         if (onPlay != null)
-          FilledButton.icon(
-            key: playKey,
-            style: FilledButton.styleFrom(
-              backgroundColor: colors.accent,
-              foregroundColor: colors.onAccent,
-              shape: Radii.pill,
-              minimumSize: const Size(0, Sizes.touchTarget),
-              padding: const EdgeInsets.symmetric(horizontal: Spacing.x24),
-              textStyle: context.typography.subtitle,
+          HostControlled(
+            locked: locked,
+            child: FilledButton.icon(
+              key: playKey,
+              style: FilledButton.styleFrom(
+                backgroundColor: colors.accent,
+                foregroundColor: colors.onAccent,
+                shape: Radii.pill,
+                minimumSize: const Size(0, Sizes.touchTarget),
+                padding: const EdgeInsets.symmetric(horizontal: Spacing.x24),
+                textStyle: context.typography.subtitle,
+              ),
+              onPressed: locked ? null : onPlay,
+              icon: const Icon(Icons.play_arrow_rounded),
+              label: Text(l10n.actionPlay),
             ),
-            onPressed: onPlay,
-            icon: const Icon(Icons.play_arrow_rounded),
-            label: Text(l10n.actionPlay),
           ),
         if (onShuffle != null)
-          icon(
-            key: shuffleKey,
-            glyph: Icons.shuffle_rounded,
-            tooltip: l10n.actionShuffle,
-            onPressed: onShuffle,
+          HostControlled(
+            locked: locked,
+            child: icon(
+              key: shuffleKey,
+              glyph: Icons.shuffle_rounded,
+              tooltip: l10n.actionShuffle,
+              onPressed: locked ? null : onShuffle,
+            ),
           ),
         ?download,
         if (onToggleLike != null)

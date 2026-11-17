@@ -2010,6 +2010,160 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get downloadsResume => 'Resume';
+
+  @override
+  String get listenTogetherTitle => 'Listen Together';
+
+  @override
+  String get listenTogetherInGroup => 'In a group';
+
+  @override
+  String get listenTogetherYourGroups => 'Your groups';
+
+  @override
+  String get listenTogetherPublicGroups => 'Public groups';
+
+  @override
+  String get listenTogetherEmpty => 'Listen with others in sync';
+
+  @override
+  String get listenTogetherCreate => 'Create group';
+
+  @override
+  String get listenTogetherJoinWithCode => 'Join with a code';
+
+  @override
+  String get listenTogetherJoin => 'Join';
+
+  @override
+  String listenTogetherGroupRowDetails(String host, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count members',
+      one: '1 member',
+    );
+    return '$host · $_temp0';
+  }
+
+  @override
+  String get listenTogetherNameLabel => 'Name (optional)';
+
+  @override
+  String get listenTogetherNameTooLong => 'Use at most 80 characters';
+
+  @override
+  String get listenTogetherPrivate => 'Private';
+
+  @override
+  String get listenTogetherPublic => 'Public';
+
+  @override
+  String get listenTogetherStartWithQueue => 'Start with my current queue';
+
+  @override
+  String get listenTogetherCreateSubmit => 'Create';
+
+  @override
+  String get listenTogetherCancel => 'Cancel';
+
+  @override
+  String get listenTogetherCodeLabel => 'Group code';
+
+  @override
+  String get listenTogetherNoGroupWithCode => 'No group with that code';
+
+  @override
+  String get listenTogetherPublicGroup => 'Public group';
+
+  @override
+  String get listenTogetherPrivateGroup => 'Private group';
+
+  @override
+  String listenTogetherHostedBy(String name) {
+    return 'Hosted by $name';
+  }
+
+  @override
+  String get listenTogetherReconnecting => 'Reconnecting…';
+
+  @override
+  String get listenTogetherCopyCode => 'Copy code';
+
+  @override
+  String get listenTogetherCopied => 'Copied';
+
+  @override
+  String get listenTogetherMembers => 'Members';
+
+  @override
+  String get listenTogetherHost => 'Host';
+
+  @override
+  String get listenTogetherNowPlaying => 'Now playing';
+
+  @override
+  String get listenTogetherOpenQueue => 'Open queue';
+
+  @override
+  String get listenTogetherLeave => 'Leave group';
+
+  @override
+  String get listenTogetherEnd => 'End group for everyone';
+
+  @override
+  String get listenTogetherEndTitle => 'End the group?';
+
+  @override
+  String get listenTogetherEndBody =>
+      'Everyone leaves the group and playback stops for them.';
+
+  @override
+  String get listenTogetherEndConfirm => 'End group';
+
+  @override
+  String get listenTogetherEndedByHost => 'The host ended the group';
+
+  @override
+  String get listenTogetherRemoved => 'You were removed from the group';
+
+  @override
+  String listenTogetherQueueHeader(String name, int count) {
+    return '$name · $count listening';
+  }
+
+  @override
+  String get listenTogetherHostControls => 'The host controls playback';
+
+  @override
+  String get listenTogetherNoResponse => 'The server didn’t respond';
+
+  @override
+  String get listenTogetherCommandRejected => 'The group didn’t accept that';
+
+  @override
+  String get listenTogetherNotInGroup => 'Not available while in a group';
+
+  @override
+  String listenTogetherNotShareable(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count items can’t be shared with the group',
+      one: '1 item can’t be shared with the group',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get listenTogetherReplaceTitle => 'Replace the group’s queue?';
+
+  @override
+  String get listenTogetherReplaceBody =>
+      'Everyone in the group hears this next.';
+
+  @override
+  String get listenTogetherReplaceConfirm => 'Replace';
 }
 
 /// The translations for English (`en_XA`).
@@ -4062,4 +4216,169 @@ class AppLocalizationsEnXa extends AppLocalizationsEn {
 
   @override
   String get downloadsResume => '[Ŕéšûmé one]';
+
+  @override
+  String get listenTogetherTitle => '[Ļîšţéñ Ţöĝéţĥéŕ one two]';
+
+  @override
+  String get listenTogetherInGroup => '[Îñ å ĝŕöûþ one]';
+
+  @override
+  String get listenTogetherYourGroups => '[Ýöûŕ ĝŕöûþš one two]';
+
+  @override
+  String get listenTogetherPublicGroups => '[Þûbļîç ĝŕöûþš one two]';
+
+  @override
+  String get listenTogetherEmpty =>
+      '[Ļîšţéñ ŵîţĥ öţĥéŕš îñ šýñç one two three]';
+
+  @override
+  String get listenTogetherCreate => '[Çŕéåţé ĝŕöûþ one two]';
+
+  @override
+  String get listenTogetherJoinWithCode => '[Ĵöîñ ŵîţĥ å çöðé one two]';
+
+  @override
+  String get listenTogetherJoin => '[Ĵöîñ one]';
+
+  @override
+  String listenTogetherGroupRowDetails(String host, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count mémbéŕš one',
+      one: '1 mémbéŕ one',
+    );
+    return '[$host · $_temp0 one]';
+  }
+
+  @override
+  String get listenTogetherNameLabel => '[Ñåmé (öþţîöñåļ) one two]';
+
+  @override
+  String get listenTogetherNameTooLong =>
+      '[Ûšé åţ möšţ 80 çĥåŕåçţéŕš one two three]';
+
+  @override
+  String get listenTogetherPrivate => '[Þŕîvåţé one]';
+
+  @override
+  String get listenTogetherPublic => '[Þûbļîç one]';
+
+  @override
+  String get listenTogetherStartWithQueue =>
+      '[Šţåŕţ ŵîţĥ mý çûŕŕéñţ qûéûé one two three]';
+
+  @override
+  String get listenTogetherCreateSubmit => '[Çŕéåţé one]';
+
+  @override
+  String get listenTogetherCancel => '[Çåñçéļ one]';
+
+  @override
+  String get listenTogetherCodeLabel => '[Ĝŕöûþ çöðé one]';
+
+  @override
+  String get listenTogetherNoGroupWithCode =>
+      '[Ñö ĝŕöûþ ŵîţĥ ţĥåţ çöðé one two three]';
+
+  @override
+  String get listenTogetherPublicGroup => '[Þûbļîç ĝŕöûþ one two]';
+
+  @override
+  String get listenTogetherPrivateGroup => '[Þŕîvåţé ĝŕöûþ one two]';
+
+  @override
+  String listenTogetherHostedBy(String name) {
+    return '[Ĥöšţéð bý $name one]';
+  }
+
+  @override
+  String get listenTogetherReconnecting => '[Ŕéçöññéçţîñĝ… one two]';
+
+  @override
+  String get listenTogetherCopyCode => '[Çöþý çöðé one]';
+
+  @override
+  String get listenTogetherCopied => '[Çöþîéð one]';
+
+  @override
+  String get listenTogetherMembers => '[Mémbéŕš one]';
+
+  @override
+  String get listenTogetherHost => '[Ĥöšţ one]';
+
+  @override
+  String get listenTogetherNowPlaying => '[Ñöŵ þļåýîñĝ one two]';
+
+  @override
+  String get listenTogetherOpenQueue => '[Öþéñ qûéûé one]';
+
+  @override
+  String get listenTogetherLeave => '[Ļéåvé ĝŕöûþ one two]';
+
+  @override
+  String get listenTogetherEnd => '[Éñð ĝŕöûþ föŕ évéŕýöñé one two three]';
+
+  @override
+  String get listenTogetherEndTitle => '[Éñð ţĥé ĝŕöûþ? one two]';
+
+  @override
+  String get listenTogetherEndBody =>
+      '[Évéŕýöñé ļéåvéš ţĥé ĝŕöûþ åñð þļåýbåçķ šţöþš föŕ ţĥém. one two three four five]';
+
+  @override
+  String get listenTogetherEndConfirm => '[Éñð ĝŕöûþ one]';
+
+  @override
+  String get listenTogetherEndedByHost =>
+      '[Ţĥé ĥöšţ éñðéð ţĥé ĝŕöûþ one two three]';
+
+  @override
+  String get listenTogetherRemoved =>
+      '[Ýöû ŵéŕé ŕémövéð fŕöm ţĥé ĝŕöûþ one two three]';
+
+  @override
+  String listenTogetherQueueHeader(String name, int count) {
+    return '[$name · $count ļîšţéñîñĝ one two]';
+  }
+
+  @override
+  String get listenTogetherHostControls =>
+      '[Ţĥé ĥöšţ çöñţŕöļš þļåýbåçķ one two three]';
+
+  @override
+  String get listenTogetherNoResponse =>
+      '[Ţĥé šéŕvéŕ ðîðñ’ţ ŕéšþöñð one two three]';
+
+  @override
+  String get listenTogetherCommandRejected =>
+      '[Ţĥé ĝŕöûþ ðîðñ’ţ åççéþţ ţĥåţ one two three]';
+
+  @override
+  String get listenTogetherNotInGroup =>
+      '[Ñöţ åvåîļåbļé ŵĥîļé îñ å ĝŕöûþ one two three]';
+
+  @override
+  String listenTogetherNotShareable(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count îţémš çåñ’ţ bé šĥåŕéð ŵîţĥ ţĥé ĝŕöûþ one two three four',
+      one: '1 îţém çåñ’ţ bé šĥåŕéð ŵîţĥ ţĥé ĝŕöûþ one two three four',
+    );
+    return '[$_temp0]';
+  }
+
+  @override
+  String get listenTogetherReplaceTitle =>
+      '[Ŕéþļåçé ţĥé ĝŕöûþ’š qûéûé? one two three]';
+
+  @override
+  String get listenTogetherReplaceBody =>
+      '[Évéŕýöñé îñ ţĥé ĝŕöûþ ĥéåŕš ţĥîš ñéxţ. one two three four]';
+
+  @override
+  String get listenTogetherReplaceConfirm => '[Ŕéþļåçé one]';
 }

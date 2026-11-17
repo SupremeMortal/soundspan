@@ -25,7 +25,8 @@ import 'package:soundspan/shared/util/duration_format.dart';
 /// Dragging shows the dragged position and calls [onSeek] once, on
 /// release; a tap seeks to the tapped point. With focus, the Left and
 /// Right arrows seek 5 s back and forward, within `[0, duration]`. With an
-/// unknown [duration] the bar is disabled and has no thumb.
+/// unknown [duration], or without [onSeek], the bar is disabled and has no
+/// thumb; without [onSeek] the position still moves.
 ///
 /// With [showTimes], the elapsed time is shown before the bar and the
 /// length after it, or with [showRemaining] the time left as `-m:ss`.
@@ -115,6 +116,9 @@ class _SeekBarState extends State<SeekBar> with SingleTickerProviderStateMixin {
 
   bool get _enabled => _duration != null;
 
+  /// Whether the bar takes input: a known duration and an [SeekBar.onSeek].
+  bool get _interactive => _enabled && widget.onSeek != null;
+
   bool get _advancing =>
       widget.status == EngineStatus.ready &&
       widget.playing &&
@@ -194,7 +198,7 @@ class _SeekBarState extends State<SeekBar> with SingleTickerProviderStateMixin {
   }
 
   void _step(Duration delta) {
-    if (!_enabled) return;
+    if (!_interactive) return;
     _seek(_shown.value + delta);
   }
 
@@ -218,7 +222,7 @@ class _SeekBarState extends State<SeekBar> with SingleTickerProviderStateMixin {
   }
 
   KeyEventResult _onKey(FocusNode node, KeyEvent event) {
-    if (!_enabled || event is! KeyDownEvent && event is! KeyRepeatEvent) {
+    if (!_interactive || event is! KeyDownEvent && event is! KeyRepeatEvent) {
       return KeyEventResult.ignored;
     }
     if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
@@ -274,7 +278,7 @@ class _SeekBarState extends State<SeekBar> with SingleTickerProviderStateMixin {
   Widget _bar(BuildContext context) {
     final colors = context.colors;
     final l10n = AppLocalizations.of(context);
-    final enabled = _enabled;
+    final enabled = _interactive;
     final duration = _duration;
     final showThumb = enabled && (_hovering || _focused || _drag != null);
     final painter = _SeekBarPainter(
@@ -299,7 +303,7 @@ class _SeekBarState extends State<SeekBar> with SingleTickerProviderStateMixin {
           slider: true,
           enabled: enabled,
           label: l10n.playerSeek,
-          value: enabled ? l10n.playerSeekValue(position, length) : null,
+          value: _enabled ? l10n.playerSeekValue(position, length) : null,
           increasedValue: enabled ? valueAt(shown + SeekBar.keyStep) : null,
           decreasedValue: enabled ? valueAt(shown - SeekBar.keyStep) : null,
           onIncrease: enabled ? () => _step(SeekBar.keyStep) : null,

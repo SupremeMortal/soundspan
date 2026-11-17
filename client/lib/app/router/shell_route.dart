@@ -17,6 +17,9 @@ import 'package:soundspan/features/artist/artist.dart';
 import 'package:soundspan/features/discover/discover.dart';
 import 'package:soundspan/features/home/home.dart';
 import 'package:soundspan/features/library/library.dart';
+import 'package:soundspan/features/listen_together/listen_together.dart';
+import 'package:soundspan/features/listen_together/ui/listen_together_screen.dart'
+    deferred as listen_together_screen;
 import 'package:soundspan/features/playlist/playlist.dart';
 import 'package:soundspan/features/podcasts/podcasts.dart';
 import 'package:soundspan/features/search/search.dart';
@@ -32,6 +35,10 @@ List<RouteBase> detailRoutes({
   GoRoute(
     path: RoutePaths.exploreSegment,
     builder: (_, _) => const ExploreScreen(),
+  ),
+  GoRoute(
+    path: RoutePaths.listenTogetherSegment,
+    builder: (_, _) => const DeferredListenTogetherScreen(),
   ),
   for (final kind in DetailKind.values)
     if (paneEligible == null)
@@ -50,6 +57,32 @@ List<RouteBase> detailRoutes({
         ),
       ),
 ];
+
+/// The Listen Together screen, loaded through a deferred import so the web
+/// build keeps it out of the initial bundle (doc 09, Listen Together);
+/// nothing shows until it is loaded.
+class DeferredListenTogetherScreen extends StatefulWidget {
+  /// Creates the screen.
+  const new({super.key});
+
+  @override
+  State<DeferredListenTogetherScreen> createState() =>
+      _DeferredListenTogetherScreenState();
+}
+
+class _DeferredListenTogetherScreenState
+    extends State<DeferredListenTogetherScreen> {
+  late final Future<void> _loaded = listen_together_screen.loadLibrary();
+
+  @override
+  Widget build(BuildContext context) => FutureBuilder<void>(
+    future: _loaded,
+    builder: (context, snapshot) =>
+        snapshot.connectionState == ConnectionState.done
+        ? listen_together_screen.ListenTogetherScreen()
+        : const SizedBox.shrink(),
+  );
+}
 
 Widget _detailScreen(DetailKind kind, GoRouterState state) {
   final id = state.pathParameters[kind.parameter]!;
@@ -121,40 +154,46 @@ StatefulShellRoute buildShellRoute(
       child: ProfileScope(
         child: OutboxNoticeListener(
           child: PlayNoticeListener(
-            child: Consumer(
-              builder: (context, ref, shellChild) => AppShell(
-                selectedIndex: branch,
-                onDestinationSelected: (index) =>
-                    shell.goBranch(index, initialLocation: index == branch),
-                onSearch: (query) => router.go(searchLocation(query)),
-                onSearchChanged: branch == ShellDestination.search.index
-                    ? (query) => router.go(searchLocation(query))
-                    : null,
-                onBack: canBack
-                    ? () {
-                        history.back(branch);
-                        router.pop();
-                      }
-                    : null,
-                onForward: history.canForward(branch)
-                    ? () {
-                        final target = history.forward(branch);
-                        // Pushed onto a detail so the branch's stack survives.
-                        if (target != null) {
-                          DetailNavigation.openLocation(router, target);
+            child: ListenTogetherNoticeListener(
+              child: Consumer(
+                builder: (context, ref, shellChild) => AppShell(
+                  selectedIndex: branch,
+                  onDestinationSelected: (index) =>
+                      shell.goBranch(index, initialLocation: index == branch),
+                  onSearch: (query) => router.go(searchLocation(query)),
+                  onSearchChanged: branch == ShellDestination.search.index
+                      ? (query) => router.go(searchLocation(query))
+                      : null,
+                  onBack: canBack
+                      ? () {
+                          history.back(branch);
+                          router.pop();
                         }
-                      }
-                    : null,
-                openPlaylistId: openPlaylistIdOf(state.uri),
-                onExplore: ref.watch(discoveryEnabledProvider)
-                    ? () => DetailNavigation.openLocation(
-                        router,
-                        RoutePaths.explore,
-                      )
-                    : null,
-                child: shellChild!,
+                      : null,
+                  onForward: history.canForward(branch)
+                      ? () {
+                          final target = history.forward(branch);
+                          // Pushed onto a detail so the branch's stack survives.
+                          if (target != null) {
+                            DetailNavigation.openLocation(router, target);
+                          }
+                        }
+                      : null,
+                  openPlaylistId: openPlaylistIdOf(state.uri),
+                  onExplore: ref.watch(discoveryEnabledProvider)
+                      ? () => DetailNavigation.openLocation(
+                          router,
+                          RoutePaths.explore,
+                        )
+                      : null,
+                  onListenTogether: () => DetailNavigation.openLocation(
+                    router,
+                    RoutePaths.listenTogether,
+                  ),
+                  child: shellChild!,
+                ),
+                child: shell,
               ),
-              child: shell,
             ),
           ),
         ),

@@ -7,15 +7,18 @@ import 'package:soundspan/app/theme/dimens.dart';
 import 'package:soundspan/app/theme/extensions.dart';
 import 'package:soundspan/app/theme/typography.dart';
 import 'package:soundspan/core/playback/engines/player_engine.dart';
+import 'package:soundspan/core/playback/playback_command.dart';
 import 'package:soundspan/core/playback/playback_providers.dart';
 import 'package:soundspan/core/playback/playback_snapshot.dart';
 import 'package:soundspan/core/playback/podcast_settings.dart';
 import 'package:soundspan/core/playback/queue/queue_state.dart';
+import 'package:soundspan/features/listen_together/listen_together.dart';
 import 'package:soundspan/features/player/ui/player_item.dart';
 import 'package:soundspan/features/player/ui/right_panel.dart';
 import 'package:soundspan/features/player/ui/seek_bar.dart';
 import 'package:soundspan/shared/domain/queue_item.dart';
 import 'package:soundspan/shared/widgets/artwork.dart';
+import 'package:soundspan/shared/widgets/group_controls.dart';
 import 'package:soundspan/shared/widgets/quality_badge.dart';
 
 /// The player of expanded windows, at least [minHeight] high on
@@ -156,6 +159,15 @@ class PlayerTransport extends ConsumerWidget {
   /// The key of the episode speed menu button.
   static const Key speedKey = Key('player.speed');
 
+  /// The key of the previous button.
+  static const Key previousKey = Key('player.previous');
+
+  /// The key of the play/pause button.
+  static const Key playPauseKey = Key('player.playPause');
+
+  /// The key of the next button.
+  static const Key nextKey = Key('player.next');
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = context.colors;
@@ -207,43 +219,114 @@ class PlayerTransport extends ConsumerWidget {
       RepeatMode.all => l10n.playerRepeatAll,
       RepeatMode.one => l10n.playerRepeatOne,
     };
+    // In a Listen Together group the group has no shuffle or repeat, and a
+    // follower cannot use the transport (doc 08, Commands From This Device).
+    final attached = snapshot.remoteAttached;
+    final locked = attached && !snapshot.remoteCanControl;
+    final group = ref.watch(attachedListenTogetherProvider);
+    bool pending(bool Function(PlaybackCommand) test) =>
+        isGroupCommandPending(group, test);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _ToggleButton(
-          on: shuffled,
-          label: l10n.playerShuffle,
-          icon: Icons.shuffle_rounded,
-          onPressed: () => controller.setShuffle(!shuffled),
-        ),
-        IconButton(
-          tooltip: l10n.playerPrevious,
-          color: colors.content,
-          icon: const Icon(Icons.skip_previous_rounded),
+        if (!attached)
+          _ToggleButton(
+            on: shuffled,
+            label: l10n.playerShuffle,
+            icon: Icons.shuffle_rounded,
+            onPressed: () => controller.setShuffle(!shuffled),
+          ),
+        TransportButton(
+          key: previousKey,
+          label: l10n.playerPrevious,
+          icon: Icons.skip_previous_rounded,
+          locked: locked,
+          pending: pending((command) => command is PreviousCommand),
           onPressed: controller.previous,
         ),
         const SizedBox(width: Spacing.x4),
-        PlayPauseButton(
-          snapshot: snapshot,
-          size: playButtonSize,
-          onPressed: controller.togglePlayPause,
+        HostControlled(
+          locked: locked,
+          child: PlayPauseButton(
+            key: playPauseKey,
+            snapshot: snapshot,
+            size: playButtonSize,
+            pending: pending(isPlayPauseCommand),
+            onPressed: locked ? null : controller.togglePlayPause,
+          ),
         ),
         const SizedBox(width: Spacing.x4),
-        IconButton(
-          tooltip: l10n.playerNext,
-          color: colors.content,
-          icon: const Icon(Icons.skip_next_rounded),
+        TransportButton(
+          key: nextKey,
+          label: l10n.playerNext,
+          icon: Icons.skip_next_rounded,
+          locked: locked,
+          pending: pending((command) => command is NextCommand),
           onPressed: controller.next,
         ),
-        _ToggleButton(
-          on: repeat != RepeatMode.off,
-          label: repeatLabel,
-          icon: repeat == RepeatMode.one
-              ? Icons.repeat_one_rounded
-              : Icons.repeat_rounded,
-          onPressed: () => controller.setRepeat(nextRepeatMode(repeat)),
-        ),
+        if (!attached)
+          _ToggleButton(
+            on: repeat != RepeatMode.off,
+            label: repeatLabel,
+            icon: repeat == RepeatMode.one
+                ? Icons.repeat_one_rounded
+                : Icons.repeat_rounded,
+            onPressed: () => controller.setRepeat(nextRepeatMode(repeat)),
+          ),
       ],
+    );
+  }
+}
+
+/// A transport icon button labelled [label]: disabled with the host's
+/// tooltip while [locked], its icon replaced by a spinner while [pending]
+/// (the button stays focusable).
+class TransportButton extends StatelessWidget {
+  /// Creates the button.
+  const new({
+    required this.label,
+    required this.icon,
+    required this.onPressed,
+    this.locked = false,
+    this.pending = false,
+    this.color,
+    super.key,
+  });
+
+  /// The button's label and, unless locked, its tooltip.
+  final String label;
+
+  /// The icon.
+  final IconData icon;
+
+  /// What a press does.
+  final VoidCallback onPressed;
+
+  /// Whether only the group's host may use the control.
+  final bool locked;
+
+  /// Whether the control's command awaits the group's acknowledgement.
+  final bool pending;
+
+  /// The icon colour; `content` by default.
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = this.color ?? context.colors.content;
+    return HostControlled(
+      locked: locked,
+      child: IconButton(
+        tooltip: locked ? null : label,
+        color: color,
+        icon: pending
+            ? Semantics(
+                label: label,
+                child: GroupCommandSpinner(color: color),
+              )
+            : Icon(icon, semanticLabel: locked ? label : null),
+        onPressed: locked ? null : onPressed,
+      ),
     );
   }
 }
@@ -338,6 +421,7 @@ class PlayPauseButton extends StatelessWidget {
     required this.snapshot,
     required this.onPressed,
     this.size = PlayerBar.playButtonSize,
+    this.pending = false,
     super.key,
   });
 
@@ -348,8 +432,13 @@ class PlayPauseButton extends StatelessWidget {
   /// bar, larger on now playing.
   final double size;
 
-  /// Toggles play and pause.
-  final VoidCallback onPressed;
+  /// Toggles play and pause; null disables the button (a Listen Together
+  /// follower).
+  final VoidCallback? onPressed;
+
+  /// Whether a play or pause command awaits the group's acknowledgement:
+  /// the icon is replaced by a spinner.
+  final bool pending;
 
   /// The key of the progress ring.
   static const Key ringKey = Key('player.playPause.ring');
@@ -358,6 +447,7 @@ class PlayPauseButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.colors;
     final l10n = AppLocalizations.of(context);
+    final label = snapshot.playing ? l10n.playerPause : l10n.playerPlay;
     final waiting =
         snapshot.playing &&
         (snapshot.status == EngineStatus.loading ||
@@ -368,16 +458,26 @@ class PlayPauseButton extends StatelessWidget {
         alignment: Alignment.center,
         children: [
           IconButton(
-            tooltip: snapshot.playing ? l10n.playerPause : l10n.playerPlay,
+            tooltip: onPressed == null ? null : label,
             style: IconButton.styleFrom(
               backgroundColor: colors.transport,
               foregroundColor: colors.onTransport,
+              disabledBackgroundColor: colors.surfaceActive,
+              disabledForegroundColor: colors.contentDisabled,
               fixedSize: Size.square(size),
             ),
             iconSize: size / 2,
-            icon: Icon(
-              snapshot.playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
-            ),
+            icon: pending
+                ? Semantics(
+                    label: label,
+                    child: GroupCommandSpinner(color: colors.onTransport),
+                  )
+                : Icon(
+                    snapshot.playing
+                        ? Icons.pause_rounded
+                        : Icons.play_arrow_rounded,
+                    semanticLabel: onPressed == null ? label : null,
+                  ),
             onPressed: onPressed,
           ),
           if (waiting)
@@ -405,15 +505,19 @@ class _PlayerBarProgress extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final snapshot = ref.watch(playbackSnapshotProvider).value;
     if (snapshot == null) return const SizedBox(height: SeekBar.height);
-    return SeekBar(
-      position: snapshot.position,
-      buffered: snapshot.buffered,
-      duration: snapshot.duration,
-      status: snapshot.status,
-      playing: snapshot.playing,
-      onSeek: ref.read(playbackControllerProvider).seek,
-      showTimes: true,
-      speed: snapshot.speed,
+    final locked = snapshot.remoteAttached && !snapshot.remoteCanControl;
+    return HostControlled(
+      locked: locked,
+      child: SeekBar(
+        position: snapshot.position,
+        buffered: snapshot.buffered,
+        duration: snapshot.duration,
+        status: snapshot.status,
+        playing: snapshot.playing,
+        onSeek: locked ? null : ref.read(playbackControllerProvider).seek,
+        showTimes: true,
+        speed: snapshot.speed,
+      ),
     );
   }
 }

@@ -15,6 +15,7 @@ import 'package:soundspan/app/shell/shortcuts/shell_shortcuts.dart';
 import 'package:soundspan/app/shell/sidebar_playlists.dart';
 import 'package:soundspan/app/shell/top_bar.dart';
 import 'package:soundspan/app/shell/window_class.dart';
+import 'package:soundspan/features/listen_together/listen_together.dart';
 import 'package:soundspan/features/player/player.dart';
 import 'package:soundspan/features/social/social.dart';
 
@@ -42,6 +43,7 @@ class AppShell extends ConsumerStatefulWidget {
     this.onForward,
     this.openPlaylistId,
     this.onExplore,
+    this.onListenTogether,
     super.key,
   });
 
@@ -70,6 +72,9 @@ class AppShell extends ConsumerStatefulWidget {
 
   /// Opens Explore; null leaves the sidebar item out.
   final VoidCallback? onExplore;
+
+  /// Opens Listen Together; null leaves the sidebar item out.
+  final VoidCallback? onListenTogether;
 
   /// The selected destination's content.
   final Widget child;
@@ -131,6 +136,8 @@ class _AppShellState extends ConsumerState<AppShell> {
         selectedPlaylistId: widget.openPlaylistId,
       ),
       onExplore: widget.onExplore,
+      onListenTogether: widget.onListenTogether,
+      inListenTogetherGroup: ref.watch(inListenTogetherGroupProvider),
       rightPanel: switch (ref.watch(rightPanelProvider)) {
         RightPanel.queue => const QueuePanel(),
         RightPanel.lyrics => const LyricsPanel(),
