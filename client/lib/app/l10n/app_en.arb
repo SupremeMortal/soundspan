@@ -3018,5 +3018,53 @@
   "menuLyrics": "Lyrics",
   "@menuLyrics": {
     "description": "macOS View menu item that shows or hides the lyrics."
+  },
+  "navVibe": "Vibe",
+  "@navVibe": {
+    "description": "Sidebar item and title of the Vibe screen, which finds tracks by how they sound."
+  },
+  "homeVibeCard": "Tracks that sound like what you play",
+  "@homeVibeCard": {
+    "description": "Subtitle of the Vibe card at the end of Home."
+  },
+  "menuStartRadio": "Start radio",
+  "@menuStartRadio": {
+    "description": "Track menu entry that plays tracks that sound like the chosen one."
+  },
+  "vibeNoSimilar": "No similar tracks found",
+  "@vibeNoSimilar": {
+    "description": "Snackbar when Start radio found no tracks that sound like the chosen one."
+  },
+  "vibeSearchHint": "Describe a sound or a mood",
+  "@vibeSearchHint": {
+    "description": "Hint of the Vibe search field, which finds tracks by a description."
+  },
+  "vibeSearchLabel": "Search by description",
+  "@vibeSearchLabel": {
+    "description": "Screen reader label of the Vibe search field."
+  },
+  "vibeSearchClear": "Clear",
+  "@vibeSearchClear": {
+    "description": "Tooltip of the button that empties the Vibe search field."
+  },
+  "vibePlayAll": "Play all",
+  "@vibePlayAll": {
+    "description": "Button that plays every track listed on the Vibe screen."
+  },
+  "vibeSimilarTitle": "Similar to what’s playing",
+  "@vibeSimilarTitle": {
+    "description": "Title of the Vibe section listing tracks that sound like the current track."
+  },
+  "vibeNoMatches": "No matches",
+  "@vibeNoMatches": {
+    "description": "Shown when a Vibe search found no tracks."
+  },
+  "vibeExplain": "Play a track to see others that sound like it here.",
+  "@vibeExplain": {
+    "description": "Empty state of the Vibe screen while nothing with similar tracks is playing."
+  },
+  "vibeSearchUnavailable": "Vibe search is unavailable right now",
+  "@vibeSearchUnavailable": {
+    "description": "Shown when the server cannot search by description at the moment."
   }
 }

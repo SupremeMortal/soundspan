@@ -53,6 +53,9 @@ abstract final class MenuIds {
   /// Go to artist.
   static const String goToArtist = 'goToArtist';
 
+  /// Start radio.
+  static const String startRadio = 'startRadio';
+
   /// Share link.
   static const String share = 'share';
 
@@ -98,6 +101,9 @@ abstract interface class MenuCommands {
 
   /// Opens the artist [id].
   void openArtist(String id);
+
+  /// Plays tracks that sound like [track], [track] first.
+  Future<void> startRadio(Track track);
 
   /// Copies [link] to the clipboard and confirms it.
   Future<void> share(String link);
@@ -185,14 +191,16 @@ class TrackActionScope {
 /// Remove download (with a `playbackId`, where the platform downloads:
 /// [download] is the track's glyph, null where it does not), Remove from
 /// this playlist (in an owned playlist), Go to album and Go to artist (with
-/// the id, and not on that album's or artist's own page) and Share link
-/// (with an album id; the link scheme has no track route, so the album's
-/// link is copied).
+/// the id, and not on that album's or artist's own page), Start radio
+/// (when [startRadio] says the server offers it now and the track has a
+/// library id) and Share link (with an album id; the link scheme has no
+/// track route, so the album's link is copied).
 List<MenuEntry> trackActions(
   TrackActionScope scope, {
   required AppLocalizations l10n,
   required MenuCommands commands,
   DownloadGlyphState? download,
+  bool startRadio = false,
 }) {
   final track = scope.track;
   final context = scope.context;
@@ -264,6 +272,13 @@ List<MenuEntry> trackActions(
         label: l10n.menuGoToArtist,
         icon: Icons.person_rounded,
         onSelected: () => commands.openArtist(artistId),
+      ),
+    if (startRadio && track.libraryTrackId != null)
+      MenuEntry(
+        id: MenuIds.startRadio,
+        label: l10n.menuStartRadio,
+        icon: Icons.radio_rounded,
+        onSelected: () => unawaited(commands.startRadio(track)),
       ),
     if (albumId != null) _share(l10n, commands, albumLink(albumId)),
   ];

@@ -43,6 +43,7 @@ class AppShell extends ConsumerStatefulWidget {
     this.onForward,
     this.openPlaylistId,
     this.onExplore,
+    this.onVibe,
     this.onListenTogether,
     super.key,
   });
@@ -72,6 +73,9 @@ class AppShell extends ConsumerStatefulWidget {
 
   /// Opens Explore; null leaves the sidebar item out.
   final VoidCallback? onExplore;
+
+  /// Opens Vibe; null leaves the sidebar item out.
+  final VoidCallback? onVibe;
 
   /// Opens Listen Together; null leaves the sidebar item out.
   final VoidCallback? onListenTogether;
@@ -136,6 +140,7 @@ class _AppShellState extends ConsumerState<AppShell> {
         selectedPlaylistId: widget.openPlaylistId,
       ),
       onExplore: widget.onExplore,
+      onVibe: widget.onVibe,
       onListenTogether: widget.onListenTogether,
       inListenTogetherGroup: ref.watch(inListenTogetherGroupProvider),
       rightPanel: switch (ref.watch(rightPanelProvider)) {

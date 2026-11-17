@@ -24,6 +24,9 @@ import 'package:soundspan/features/mixes/mixes.dart';
 import 'package:soundspan/features/playlist/playlist.dart';
 import 'package:soundspan/features/podcasts/podcasts.dart';
 import 'package:soundspan/features/search/search.dart';
+import 'package:soundspan/features/vibe/ui/vibe_screen.dart'
+    deferred as vibe_screen;
+import 'package:soundspan/features/vibe/vibe.dart';
 
 /// The detail routes and Explore, attached as children of every branch
 /// root so a detail opens inside the branch it was opened from.
@@ -40,6 +43,10 @@ List<RouteBase> detailRoutes({
   GoRoute(
     path: RoutePaths.listenTogetherSegment,
     builder: (_, _) => const DeferredListenTogetherScreen(),
+  ),
+  GoRoute(
+    path: RoutePaths.vibeSegment,
+    builder: (_, _) => const DeferredVibeScreen(),
   ),
   for (final kind in DetailKind.values)
     if (paneEligible == null)
@@ -81,6 +88,29 @@ class _DeferredListenTogetherScreenState
     builder: (context, snapshot) =>
         snapshot.connectionState == ConnectionState.done
         ? listen_together_screen.ListenTogetherScreen()
+        : const SizedBox.shrink(),
+  );
+}
+
+/// The Vibe screen, loaded through a deferred import so the web build
+/// keeps it out of the initial bundle; nothing shows until it is loaded.
+class DeferredVibeScreen extends StatefulWidget {
+  /// Creates the screen.
+  const new({super.key});
+
+  @override
+  State<DeferredVibeScreen> createState() => _DeferredVibeScreenState();
+}
+
+class _DeferredVibeScreenState extends State<DeferredVibeScreen> {
+  late final Future<void> _loaded = vibe_screen.loadLibrary();
+
+  @override
+  Widget build(BuildContext context) => FutureBuilder<void>(
+    future: _loaded,
+    builder: (context, snapshot) =>
+        snapshot.connectionState == ConnectionState.done
+        ? vibe_screen.VibeScreen()
         : const SizedBox.shrink(),
   );
 }
@@ -184,6 +214,12 @@ StatefulShellRoute buildShellRoute(
                   openPlaylistId: openPlaylistIdOf(state.uri),
                   onExplore: () =>
                       DetailNavigation.openLocation(router, RoutePaths.explore),
+                  onVibe: ref.watch(vibeAvailableProvider)
+                      ? () => DetailNavigation.openLocation(
+                          router,
+                          RoutePaths.vibe,
+                        )
+                      : null,
                   onListenTogether: () => DetailNavigation.openLocation(
                     router,
                     RoutePaths.listenTogether,

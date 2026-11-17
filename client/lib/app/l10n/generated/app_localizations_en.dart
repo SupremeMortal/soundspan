@@ -2351,6 +2351,43 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get menuLyrics => 'Lyrics';
+
+  @override
+  String get navVibe => 'Vibe';
+
+  @override
+  String get homeVibeCard => 'Tracks that sound like what you play';
+
+  @override
+  String get menuStartRadio => 'Start radio';
+
+  @override
+  String get vibeNoSimilar => 'No similar tracks found';
+
+  @override
+  String get vibeSearchHint => 'Describe a sound or a mood';
+
+  @override
+  String get vibeSearchLabel => 'Search by description';
+
+  @override
+  String get vibeSearchClear => 'Clear';
+
+  @override
+  String get vibePlayAll => 'Play all';
+
+  @override
+  String get vibeSimilarTitle => 'Similar to what’s playing';
+
+  @override
+  String get vibeNoMatches => 'No matches';
+
+  @override
+  String get vibeExplain =>
+      'Play a track to see others that sound like it here.';
+
+  @override
+  String get vibeSearchUnavailable => 'Vibe search is unavailable right now';
 }
 
 /// The translations for English (`en_XA`).
@@ -4759,4 +4796,43 @@ class AppLocalizationsEnXa extends AppLocalizationsEn {
 
   @override
   String get menuLyrics => '[Ļýŕîçš one]';
+
+  @override
+  String get navVibe => '[Vîbé one]';
+
+  @override
+  String get homeVibeCard =>
+      '[Ţŕåçķš ţĥåţ šöûñð ļîķé ŵĥåţ ýöû þļåý one two three four]';
+
+  @override
+  String get menuStartRadio => '[Šţåŕţ ŕåðîö one two]';
+
+  @override
+  String get vibeNoSimilar => '[Ñö šîmîļåŕ ţŕåçķš föûñð one two three]';
+
+  @override
+  String get vibeSearchHint => '[Ðéšçŕîbé å šöûñð öŕ å mööð one two three]';
+
+  @override
+  String get vibeSearchLabel => '[Šéåŕçĥ bý ðéšçŕîþţîöñ one two three]';
+
+  @override
+  String get vibeSearchClear => '[Çļéåŕ one]';
+
+  @override
+  String get vibePlayAll => '[Þļåý åļļ one]';
+
+  @override
+  String get vibeSimilarTitle => '[Šîmîļåŕ ţö ŵĥåţ’š þļåýîñĝ one two three]';
+
+  @override
+  String get vibeNoMatches => '[Ñö måţçĥéš one]';
+
+  @override
+  String get vibeExplain =>
+      '[Þļåý å ţŕåçķ ţö šéé öţĥéŕš ţĥåţ šöûñð ļîķé îţ ĥéŕé. one two three four five]';
+
+  @override
+  String get vibeSearchUnavailable =>
+      '[Vîbé šéåŕçĥ îš ûñåvåîļåbļé ŕîĝĥţ ñöŵ one two three four]';
 }

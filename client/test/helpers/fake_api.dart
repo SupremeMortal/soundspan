@@ -1030,6 +1030,19 @@ final class FakeDiscoveryClient implements api.DiscoveryClient {
   /// The `(type, value, limit)` of every `GET /library/radio`, in order.
   final List<(String, String?, int?)> radioRequests = [];
 
+  /// The tracks of every `GET /vibe/similar/:trackId`.
+  List<api.SimilarTrack> similarTracks = [];
+
+  /// The `(trackId, limit)` of every `GET /vibe/similar/:trackId`, in
+  /// order.
+  final List<(String, int?)> similarRequests = [];
+
+  /// The tracks of every `POST /vibe/search`.
+  List<api.VibeSearchTrack> vibeTracks = [];
+
+  /// The `(query, limit)` of every `POST /vibe/search`, in order.
+  final List<(String, int?)> vibeSearches = [];
+
   /// Calls by operation name.
   final Map<String, int> calls = {};
 
@@ -1116,6 +1129,40 @@ final class FakeDiscoveryClient implements api.DiscoveryClient {
     _call('getRadio');
     radioRequests.add((type.toJson(), value, limit));
     return api.RadioResponse(tracks: List.of(radioTracks));
+  }
+
+  @override
+  Future<api.SimilarTracksResponse> getSimilarTracks({
+    required String trackId,
+    Map<String, Object?> extra = const {},
+    CancelToken? cancelToken,
+    Options? options,
+    int? limit,
+  }) async {
+    similarRequests.add((trackId, limit));
+    _call('getSimilarTracks');
+    return api.SimilarTracksResponse(
+      sourceFeatures: null,
+      sourceTrackId: trackId,
+      tracks: List.of(similarTracks),
+    );
+  }
+
+  @override
+  Future<api.VibeSearchResponse> searchVibe({
+    required api.VibeSearchRequest body,
+    Map<String, Object?> extra = const {},
+    CancelToken? cancelToken,
+    Options? options,
+  }) async {
+    vibeSearches.add((body.query, body.limit));
+    _call('searchVibe');
+    return api.VibeSearchResponse(
+      minSimilarity: body.minSimilarity ?? 0.6,
+      query: body.query,
+      totalAboveThreshold: vibeTracks.length,
+      tracks: List.of(vibeTracks),
+    );
   }
 
   @override

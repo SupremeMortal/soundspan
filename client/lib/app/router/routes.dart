@@ -55,6 +55,12 @@ abstract final class RoutePaths {
   /// The last segment of Explore inside a branch.
   static const exploreSegment = 'explore';
 
+  /// Vibe; redirected into the selected branch like a detail.
+  static const vibe = '/vibe';
+
+  /// The last segment of Vibe inside a branch.
+  static const vibeSegment = 'vibe';
+
   /// Listen Together; redirected into the selected branch like a detail.
   static const listenTogether = '/listen-together';
 
@@ -169,6 +175,9 @@ class ShellLocation {
   /// The location of Explore inside the selected branch.
   String explore() => _inBranch(const [RoutePaths.exploreSegment]);
 
+  /// The location of Vibe inside the selected branch.
+  String vibe() => _inBranch(const [RoutePaths.vibeSegment]);
+
   /// The location of Listen Together inside the selected branch.
   String listenTogether() =>
       _inBranch(const [RoutePaths.listenTogetherSegment]);
@@ -253,6 +262,10 @@ abstract final class DetailNavigation {
   /// Opens Explore.
   static void openExplore(BuildContext context) =>
       openLocation(GoRouter.of(context), RoutePaths.explore);
+
+  /// Opens Vibe.
+  static void openVibe(BuildContext context) =>
+      openLocation(GoRouter.of(context), RoutePaths.vibe);
 
   /// Opens Listen Together.
   static void openListenTogether(BuildContext context) =>
@@ -356,6 +369,7 @@ GoRouter createRouter(
               location.detail(kind, state.pathParameters[kind.parameter]!),
         ),
       GoRoute(path: RoutePaths.explore, redirect: (_, _) => location.explore()),
+      GoRoute(path: RoutePaths.vibe, redirect: (_, _) => location.vibe()),
       GoRoute(
         path: RoutePaths.listenTogether,
         redirect: (_, _) => location.listenTogether(),

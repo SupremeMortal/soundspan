@@ -11,6 +11,7 @@ import 'package:soundspan/core/downloads/download_controller.dart';
 import 'package:soundspan/core/downloads/download_keys.dart';
 import 'package:soundspan/features/downloads/downloads.dart';
 import 'package:soundspan/features/playlist/playlist.dart';
+import 'package:soundspan/features/vibe/vibe.dart' as vibe;
 import 'package:soundspan/shared/actions/track_actions.dart';
 import 'package:soundspan/shared/domain/domain.dart';
 import 'package:soundspan/shared/providers/likes.dart';
@@ -109,6 +110,11 @@ class AppMenuCommands implements MenuCommands {
   }
 
   @override
+  Future<void> startRadio(Track track) async {
+    if (_context.mounted) await vibe.startRadio(_context, _ref, track);
+  }
+
+  @override
   Future<void> share(String link) async {
     final messenger = ScaffoldMessenger.maybeOf(_context);
     final l10n = AppLocalizations.of(_context);
@@ -171,6 +177,7 @@ Future<void> openTrackMenu(
     l10n: AppLocalizations.of(context),
     commands: AppMenuCommands(context, ref),
     download: trackMenuGlyph(ref, scope.track.playbackId),
+    startRadio: vibe.startRadioOffered(ref),
   ),
   position: position,
 );

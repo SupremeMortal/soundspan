@@ -18,6 +18,7 @@ import 'package:soundspan/core/profile/version_notice.dart';
 import 'package:soundspan/features/discover/discover.dart';
 import 'package:soundspan/features/home/ui/expiry_banner.dart';
 import 'package:soundspan/features/home/ui/home_view_model.dart';
+import 'package:soundspan/features/vibe/vibe.dart';
 import 'package:soundspan/shared/actions/app_menu_commands.dart';
 import 'package:soundspan/shared/clock.dart';
 import 'package:soundspan/shared/domain/domain.dart';
@@ -38,7 +39,8 @@ import 'package:soundspan/shared/widgets/shelf.dart';
 /// hidden. When every shelf failed with nothing cached one [ErrorView]
 /// takes their place; when every shelf is empty an [EmptyState] does.
 /// Pull to refresh on touch and F5 on desktop fetch the shelves again.
-/// Compact and medium windows end with the [ExploreCard].
+/// Compact and medium windows end with the [ExploreCard] and, when the
+/// server has similar tracks, the [VibeCard].
 class HomeScreen extends ConsumerWidget {
   /// Creates the screen.
   const new({super.key});
@@ -103,6 +105,7 @@ class HomeScreen extends ConsumerWidget {
                           const SliverToBoxAdapter(child: _Greeting()),
                           body,
                           const SliverToBoxAdapter(child: ExploreCard()),
+                          const SliverToBoxAdapter(child: VibeCard()),
                         ],
                       ),
                     ),

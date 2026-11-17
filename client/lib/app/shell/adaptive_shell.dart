@@ -68,6 +68,7 @@ class AdaptiveShell extends StatefulWidget {
     this.playerBar,
     this.sidebarPlaylists,
     this.onExplore,
+    this.onVibe,
     this.onListenTogether,
     this.inListenTogetherGroup = false,
     this.rightPanel,
@@ -130,6 +131,13 @@ class AdaptiveShell extends StatefulWidget {
   /// Opens Explore from an "Explore" item below the sidebar destinations
   /// (expanded); null leaves the item out.
   final VoidCallback? onExplore;
+
+  /// Opens Vibe from a "Vibe" item below Explore in the sidebar
+  /// (expanded); null leaves the item out.
+  final VoidCallback? onVibe;
+
+  /// The key of the Vibe sidebar item.
+  static const Key vibeKey = Key('shell.vibe');
 
   /// Opens Listen Together from a "Listen Together" item below the sidebar
   /// destinations (expanded); null leaves the item out.
@@ -349,6 +357,15 @@ class _AdaptiveShellState extends State<AdaptiveShell> {
                                           selected: false,
                                           collapsed: collapsed,
                                           onTap: onExplore,
+                                        ),
+                                      if (widget.onVibe case final onVibe?)
+                                        _SidebarDestination(
+                                          key: AdaptiveShell.vibeKey,
+                                          label: l10n.navVibe,
+                                          icon: Icons.graphic_eq_rounded,
+                                          selected: false,
+                                          collapsed: collapsed,
+                                          onTap: onVibe,
                                         ),
                                       if (widget.onListenTogether
                                           case final onListenTogether?)

@@ -57,6 +57,10 @@ class _RecordingCommands implements MenuCommands {
   void openArtist(String id) => calls.add('openArtist $id');
 
   @override
+  Future<void> startRadio(Track track) async =>
+      calls.add('startRadio ${track.libraryTrackId}');
+
+  @override
   Future<void> share(String link) async => calls.add('share $link');
 
   @override
@@ -635,6 +639,52 @@ void main() {
           isNot(contains(MenuIds.removeFromPlaylist)),
         );
       }
+    });
+  });
+
+  group('Start radio', () {
+    final seeded = _track().copyWith(libraryTrackId: 'lib-1');
+
+    List<String> radioIds(Track track, {required bool offered}) => [
+      for (final entry in trackActions(
+        scope(track),
+        l10n: l10n,
+        commands: commands,
+        startRadio: offered,
+      ))
+        entry.id,
+    ];
+
+    test('sits between Go to artist and Share link when offered', () {
+      final entries = radioIds(seeded, offered: true);
+
+      expect(entries.sublist(entries.indexOf(MenuIds.goToArtist)), [
+        MenuIds.goToArtist,
+        MenuIds.startRadio,
+        MenuIds.share,
+      ]);
+    });
+
+    test('calls startRadio with the track', () {
+      trackActions(
+        scope(seeded),
+        l10n: l10n,
+        commands: commands,
+        startRadio: true,
+      ).singleWhere((entry) => entry.id == MenuIds.startRadio).onSelected();
+
+      expect(commands.calls, ['startRadio lib-1']);
+    });
+
+    test('is left out when not offered or without a library id', () {
+      expect(
+        radioIds(seeded, offered: false),
+        isNot(contains(MenuIds.startRadio)),
+      );
+      expect(
+        radioIds(_track(), offered: true),
+        isNot(contains(MenuIds.startRadio)),
+      );
     });
   });
 }

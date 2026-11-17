@@ -3944,6 +3944,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Lyrics'**
   String get menuLyrics;
+
+  /// Sidebar item and title of the Vibe screen, which finds tracks by how they sound.
+  ///
+  /// In en, this message translates to:
+  /// **'Vibe'**
+  String get navVibe;
+
+  /// Subtitle of the Vibe card at the end of Home.
+  ///
+  /// In en, this message translates to:
+  /// **'Tracks that sound like what you play'**
+  String get homeVibeCard;
+
+  /// Track menu entry that plays tracks that sound like the chosen one.
+  ///
+  /// In en, this message translates to:
+  /// **'Start radio'**
+  String get menuStartRadio;
+
+  /// Snackbar when Start radio found no tracks that sound like the chosen one.
+  ///
+  /// In en, this message translates to:
+  /// **'No similar tracks found'**
+  String get vibeNoSimilar;
+
+  /// Hint of the Vibe search field, which finds tracks by a description.
+  ///
+  /// In en, this message translates to:
+  /// **'Describe a sound or a mood'**
+  String get vibeSearchHint;
+
+  /// Screen reader label of the Vibe search field.
+  ///
+  /// In en, this message translates to:
+  /// **'Search by description'**
+  String get vibeSearchLabel;
+
+  /// Tooltip of the button that empties the Vibe search field.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get vibeSearchClear;
+
+  /// Button that plays every track listed on the Vibe screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Play all'**
+  String get vibePlayAll;
+
+  /// Title of the Vibe section listing tracks that sound like the current track.
+  ///
+  /// In en, this message translates to:
+  /// **'Similar to what’s playing'**
+  String get vibeSimilarTitle;
+
+  /// Shown when a Vibe search found no tracks.
+  ///
+  /// In en, this message translates to:
+  /// **'No matches'**
+  String get vibeNoMatches;
+
+  /// Empty state of the Vibe screen while nothing with similar tracks is playing.
+  ///
+  /// In en, this message translates to:
+  /// **'Play a track to see others that sound like it here.'**
+  String get vibeExplain;
+
+  /// Shown when the server cannot search by description at the moment.
+  ///
+  /// In en, this message translates to:
+  /// **'Vibe search is unavailable right now'**
+  String get vibeSearchUnavailable;
 }
 
 class _AppLocalizationsDelegate
