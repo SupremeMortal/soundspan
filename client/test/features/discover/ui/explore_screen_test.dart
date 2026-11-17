@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 
+import 'dart:async';
+
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
@@ -17,15 +19,18 @@ import 'package:soundspan/core/profile/version.dart';
 import 'package:soundspan/features/discover/discover.dart';
 import 'package:soundspan/shared/domain/domain.dart';
 import 'package:soundspan/shared/providers/capability_refresh.dart';
+import 'package:soundspan/shared/providers/play_actions.dart';
 import 'package:soundspan/shared/widgets/empty_state.dart';
 import 'package:soundspan/shared/widgets/media_card.dart';
 import 'package:soundspan/shared/widgets/track_row.dart';
 import 'package:soundspan_api/soundspan_api.dart'
     show FeatureDisabled, ServerError;
 
+import '../../../app/shell/shortcuts/selection_harness.dart';
 import '../../../helpers/fake_discovery_repository.dart';
 import '../../../helpers/fake_radio_repository.dart';
 import '../../../helpers/fake_reachability.dart';
+import '../../../helpers/fake_repositories.dart';
 import '../../../helpers/guidelines.dart';
 import '../../../helpers/pump_app.dart';
 
@@ -100,6 +105,7 @@ void main() {
     bool discoveryOn = true,
     Size size = const Size(1440, 2000),
     ThemeMode theme = ThemeMode.dark,
+    bool shellShortcuts = false,
   }) async {
     final router = GoRouter(
       initialLocation: '/explore',
@@ -113,7 +119,11 @@ void main() {
       ],
     );
     addTearDown(router.dispose);
+    final notices = StreamController<PlayNotice>.broadcast();
+    addTearDown(notices.close);
     final overrides = <Override>[
+      ...FakeRepositories().overrides,
+      playNoticesProvider.overrideWithValue(notices),
       discovery.providerOverride,
       FakeRadioRepository().providerOverride,
       serverCapabilitiesProvider.overrideWith(
@@ -136,7 +146,9 @@ void main() {
     await tester.pumpApp(
       WindowClassScope(
         windowClass: windowClassOf(size),
-        child: Router.withConfig(config: router),
+        child: shellShortcuts
+            ? underShellShortcuts(Router.withConfig(config: router))
+            : Router.withConfig(config: router),
       ),
       size: size,
       theme: theme,
@@ -393,5 +405,45 @@ void main() {
 
       expect(find.text('Explore'), findsNothing);
     });
+  });
+
+  testWidgets('discovery rows select on click, Ctrl+click adds a row, Enter '
+      'plays the selection and the menu is the selection menu', (tester) async {
+    await pump(tester, shellShortcuts: true);
+
+    await click(tester, 'Three');
+    expect(selectedTitles(tester), ['Three']);
+    expect(controller.plays, isEmpty);
+    await click(tester, 'One', modifier: LogicalKeyboardKey.controlLeft);
+    expect(selectedTitles(tester), ['One', 'Three']);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pumpAndSettle();
+
+    final (items, start, context) = controller.plays.single;
+    expect(
+      [for (final item in items) (item as TrackQueueItem).track.meta.title],
+      ['One', 'Three'],
+    );
+    expect(start, 0);
+    expect(context?.title, _thisWeek);
+    await expectSelectionMenu(tester, 'Three');
+  }, variant: TargetPlatformVariant.only(TargetPlatform.linux));
+
+  testWidgets('a discovery row plays the playable tracks from it', (
+    tester,
+  ) async {
+    await pump(tester);
+
+    await tester.tap(find.text('Three'));
+    await tester.pumpAndSettle();
+
+    final (items, start, context) = controller.plays.single;
+    expect(
+      [for (final item in items) (item as TrackQueueItem).track.meta.title],
+      ['One', 'Three'],
+    );
+    expect(start, 1);
+    expect(context?.title, _thisWeek);
   });
 }

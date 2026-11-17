@@ -15,7 +15,7 @@ import 'package:soundspan/features/mixes/mixes_providers.dart';
 import 'package:soundspan/features/mixes/ui/mix_view_model.dart';
 import 'package:soundspan/shared/actions/app_menu_commands.dart';
 import 'package:soundspan/shared/actions/track_actions.dart';
-import 'package:soundspan/shared/dnd/drag_payload.dart';
+import 'package:soundspan/shared/actions/track_row_selection.dart';
 import 'package:soundspan/shared/domain/domain.dart';
 import 'package:soundspan/shared/providers/likes.dart';
 import 'package:soundspan/shared/providers/play_actions.dart';
@@ -27,6 +27,7 @@ import 'package:soundspan/shared/widgets/empty_state.dart';
 import 'package:soundspan/shared/widgets/mosaic_artwork.dart';
 import 'package:soundspan/shared/widgets/offline_banner.dart';
 import 'package:soundspan/shared/widgets/track_row.dart';
+import 'package:soundspan/shared/widgets/track_selection.dart';
 import 'package:soundspan_api/soundspan_api.dart' show FeatureDisabled;
 
 /// The page of a generated mix of Made For You (`/mix/:mixId`; doc 09,
@@ -43,7 +44,9 @@ import 'package:soundspan_api/soundspan_api.dart' show FeatureDisabled;
 /// playlist ([saveMixAsPlaylist]; disabled while no track is playable) and
 /// opens a menu with Play next and Add to queue. A mix has no Download and
 /// no Like action. The rows have thumbnails and the album column on
-/// expanded windows, open the track menu, and play the mix from the row.
+/// expanded windows, open the track menu, and play the mix from the row;
+/// with a pointer they are a selectable list (doc 09, Desktop Interaction:
+/// Selection).
 /// The offline banner sits above the page.
 class MixDetailScreen extends ConsumerWidget {
   /// Creates the page of mix [mixId].
@@ -106,20 +109,28 @@ class _MixPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final detail = ref.watch(mixDetailProvider(mixId));
     if (detail.error is FeatureDisabled) return const _NotAvailable();
-    return DetailPage<MixDetail>(
-      value: detail.whenData((cached) => cached.value),
-      refreshError: detail.value?.refreshError,
-      thumbnails: true,
-      onRefresh: () async {
-        final repository = await ref.read(mixRepositoryProvider.future);
-        await repository.refreshMix(mixId);
-      },
-      onRetry: () => ref.invalidate(mixDetailProvider(mixId)),
-      builder: (context, mix) => _slivers(context, ref, mix),
+    return SelectableList<ListedTrack>(
+      builder: (context, selection) => DetailPage<MixDetail>(
+        value: detail.whenData((cached) => cached.value),
+        refreshError: detail.value?.refreshError,
+        thumbnails: true,
+        onRefresh: () async {
+          final repository = await ref.read(mixRepositoryProvider.future);
+          await repository.refreshMix(mixId);
+        },
+        onRetry: () => ref.invalidate(mixDetailProvider(mixId)),
+        builder: (context, mix) => _slivers(context, ref, mix, selection),
+      ),
     );
   }
 
-  List<Widget> _slivers(BuildContext context, WidgetRef ref, MixDetail mix) {
+  List<Widget> _slivers(
+    BuildContext context,
+    WidgetRef ref,
+    MixDetail mix,
+    SelectionController<ListedTrack> selection,
+  ) {
+    selection.items = listedTracks(mix.tracks);
     final l10n = AppLocalizations.of(context);
     final windowClass = WindowClass.of(context);
     final compact = windowClass == WindowClass.compact;
@@ -180,7 +191,7 @@ class _MixPage extends ConsumerWidget {
               sliver: SliverList.builder(
                 itemCount: mix.tracks.length,
                 itemBuilder: (context, index) =>
-                    _row(context, ref, mix, index, windowClass),
+                    _row(context, ref, mix, index, windowClass, selection),
               ),
             ),
         ],
@@ -235,43 +246,55 @@ class _MixPage extends ConsumerWidget {
     MixDetail mix,
     int index,
     WindowClass windowClass,
+    SelectionController<ListedTrack> selection,
   ) {
     final l10n = AppLocalizations.of(context);
     final track = mix.tracks[index];
     final playable = track.playbackId != null;
     final queued = playableMixTracks(mix);
-    final scope = TrackActionScope(
-      track: track,
+    TrackActionScope scopeOf(ListedTrack row) => TrackActionScope(
+      track: row.$2,
       tracks: queued,
-      index: queued.indexWhere((other) => identical(other, track)),
+      index: queued.indexWhere((other) => identical(other, row.$2)),
       context: mixQueueContext(mix),
-      playable: playable,
+      playable: row.$2.playbackId != null,
     );
-    return TrackRow(
-      title: track.meta.title,
-      artist: track.meta.artist,
-      album: track.meta.album,
-      showAlbumColumn: windowClass == WindowClass.expanded,
-      duration: Duration(seconds: track.meta.durationSec),
-      leading: TrackRowLeading.thumbnail(track.meta.artworkRef),
-      enabled: playable,
-      disabledReason: l10n.trackNotPlayable,
-      liked: track.isLiked,
-      onToggleLike: toggleLikeOf(ref, track),
-      playbackId: track.playbackId,
-      dragPayload: TracksPayload([track]),
-      onTap: () => unawaited(
-        ref
-            .read(playActionsProvider)
-            .playTracks(
-              mix.tracks,
-              startIndex: index,
-              context: mixQueueContext(mix),
-            ),
+    void play() => unawaited(
+      ref
+          .read(playActionsProvider)
+          .playTracks(
+            mix.tracks,
+            startIndex: index,
+            context: mixQueueContext(mix),
+          ),
+    );
+    return selectableTrackRow<ListedTrack>(
+      ref,
+      selection: selection,
+      index: index,
+      scopeOf: scopeOf,
+      play: play,
+      builder: (wiring) => TrackRow(
+        title: track.meta.title,
+        artist: track.meta.artist,
+        album: track.meta.album,
+        showAlbumColumn: windowClass == WindowClass.expanded,
+        duration: Duration(seconds: track.meta.durationSec),
+        leading: TrackRowLeading.thumbnail(track.meta.artworkRef),
+        enabled: playable,
+        disabledReason: l10n.trackNotPlayable,
+        liked: track.isLiked,
+        onToggleLike: toggleLikeOf(ref, track),
+        playbackId: track.playbackId,
+        onTap: play,
+        onAddToQueue: addToQueueOf(ref, track, playable: playable),
+        selected: wiring.selected,
+        onSelect: wiring.onSelect,
+        focusNode: wiring.focusNode,
+        rowActions: wiring.rowActions,
+        onMenu: wiring.onMenu,
+        dragPayload: wiring.dragPayload,
       ),
-      onAddToQueue: addToQueueOf(ref, track, playable: playable),
-      onMenu: (position) =>
-          unawaited(openTrackMenu(context, ref, scope, position: position)),
     );
   }
 }

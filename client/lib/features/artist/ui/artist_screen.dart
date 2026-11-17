@@ -17,6 +17,7 @@ import 'package:soundspan/core/downloads/downloaded_library.dart';
 import 'package:soundspan/features/downloads/downloads.dart';
 import 'package:soundspan/shared/actions/app_menu_commands.dart';
 import 'package:soundspan/shared/actions/track_actions.dart';
+import 'package:soundspan/shared/actions/track_row_selection.dart';
 import 'package:soundspan/shared/dnd/drag_payload.dart';
 import 'package:soundspan/shared/domain/domain.dart';
 import 'package:soundspan/shared/providers/likes.dart';
@@ -30,6 +31,7 @@ import 'package:soundspan/shared/widgets/detail_page.dart';
 import 'package:soundspan/shared/widgets/media_card.dart';
 import 'package:soundspan/shared/widgets/shelf.dart';
 import 'package:soundspan/shared/widgets/track_row.dart';
+import 'package:soundspan/shared/widgets/track_selection.dart';
 
 /// The artist with albums, top tracks, similar artists and biography, from
 /// [LibraryRepository.artist].
@@ -57,8 +59,10 @@ final StreamProviderFamily<Cached<ArtistDetail>, String> artistDetailProvider =
 /// genres, then Popular (five top tracks, expandable to ten), Albums,
 /// Singles and EPs, Similar Artists (only those the library holds) and
 /// About (the biography as plain text, collapsed to three lines). Each
-/// section is hidden when it has no content. Read-only: rows do nothing on
-/// tap, and a track without a playback id is disabled as not playable.
+/// section is hidden when it has no content. A Popular row plays the shown
+/// tracks from it, a track without a playback id is disabled as not
+/// playable, and with a pointer the Popular rows are a selectable list
+/// (doc 09, Desktop Interaction: Selection).
 class ArtistScreen extends ConsumerWidget {
   /// Creates the page of artist [artistId].
   const new({required this.artistId, super.key});
@@ -89,21 +93,29 @@ class ArtistScreen extends ConsumerWidget {
       screen: l10n.screenArtist,
       child: Scaffold(
         backgroundColor: context.colors.surface,
-        body: DetailPage<ArtistDetail>(
-          value: detail.whenData((cached) => cached.value),
-          refreshError: detail.value?.refreshError,
-          onRefresh: () async {
-            final repository = await ref.read(libraryRepositoryProvider.future);
-            await repository.refreshArtist(artistId);
-          },
-          onRetry: () => ref.invalidate(artistDetailProvider(artistId)),
-          builder: _slivers,
+        body: SelectableList<ListedTrack>(
+          builder: (context, selection) => DetailPage<ArtistDetail>(
+            value: detail.whenData((cached) => cached.value),
+            refreshError: detail.value?.refreshError,
+            onRefresh: () async {
+              final repository = await ref.read(
+                libraryRepositoryProvider.future,
+              );
+              await repository.refreshArtist(artistId);
+            },
+            onRetry: () => ref.invalidate(artistDetailProvider(artistId)),
+            builder: (context, detail) => _slivers(context, detail, selection),
+          ),
         ),
       ),
     );
   }
 
-  List<Widget> _slivers(BuildContext context, ArtistDetail detail) {
+  List<Widget> _slivers(
+    BuildContext context,
+    ArtistDetail detail,
+    SelectionController<ListedTrack> selection,
+  ) {
     final l10n = AppLocalizations.of(context);
     final artist = detail.artist;
     final albums = <Album>[];
@@ -189,7 +201,11 @@ class ArtistScreen extends ConsumerWidget {
         ),
         slivers: [
           if (detail.topTracks.isNotEmpty)
-            _PopularSection(tracks: detail.topTracks, artist: artist),
+            _PopularSection(
+              tracks: detail.topTracks,
+              artist: artist,
+              selection: selection,
+            ),
           if (albums.isNotEmpty) shelf(l10n.artistAlbums, albums),
           if (singles.isNotEmpty) shelf(l10n.artistSinglesAndEps, singles),
           if (similar.isNotEmpty)
@@ -293,10 +309,15 @@ class _SectionHeader extends StatelessWidget {
 /// The Popular section: the first five [tracks], or up to ten once
 /// expanded.
 class _PopularSection extends StatefulWidget {
-  const new({required this.tracks, required this.artist});
+  const new({
+    required this.tracks,
+    required this.artist,
+    required this.selection,
+  });
 
   final List<Track> tracks;
   final Artist artist;
+  final SelectionController<ListedTrack> selection;
 
   @override
   State<_PopularSection> createState() => _PopularSectionState();
@@ -314,6 +335,19 @@ class _PopularSectionState extends State<_PopularSection> {
     final shown = math.min(
       tracks.length,
       _expanded ? ArtistScreen.popularExpanded : ArtistScreen.popularCollapsed,
+    );
+    final shownTracks = tracks.sublist(0, shown);
+    final selection = widget.selection..items = listedTracks(shownTracks);
+    final queueContext = QueueContext(
+      kind: QueueContextKind.artist,
+      id: widget.artist.id,
+      title: widget.artist.name,
+    );
+    TrackActionScope scopeOf(ListedTrack row) => TrackActionScope(
+      track: row.$2,
+      tracks: shownTracks,
+      index: row.$1,
+      context: queueContext,
     );
     return SliverMainAxisGroup(
       slivers: [
@@ -333,47 +367,44 @@ class _PopularSectionState extends State<_PopularSection> {
             itemBuilder: (context, index) {
               final track = tracks[index];
               final artist = track.meta.artist;
-              final queueContext = QueueContext(
-                kind: QueueContextKind.artist,
-                id: widget.artist.id,
-                title: widget.artist.name,
-              );
               return Consumer(
-                builder: (context, ref, _) => TrackRow(
-                  title: track.meta.title,
-                  artist: artist == widget.artist.name ? '' : artist,
-                  duration: Duration(seconds: track.meta.durationSec),
-                  leading: TrackRowLeading.index(index + 1),
-                  enabled: track.playbackId != null,
-                  disabledReason: l10n.trackNotPlayable,
-                  liked: track.isLiked,
-                  onToggleLike: toggleLikeOf(ref, track),
-                  playbackId: track.playbackId,
-                  dragPayload: TracksPayload([track]),
-                  onTap: () => unawaited(
+                builder: (context, ref, _) {
+                  void play() => unawaited(
                     ref
                         .read(playActionsProvider)
                         .playTracks(
-                          tracks.sublist(0, shown),
+                          shownTracks,
                           startIndex: index,
                           context: queueContext,
                         ),
-                  ),
-                  onAddToQueue: addToQueueOf(ref, track),
-                  onMenu: (position) => unawaited(
-                    openTrackMenu(
-                      context,
-                      ref,
-                      TrackActionScope(
-                        track: track,
-                        tracks: tracks.sublist(0, shown),
-                        index: index,
-                        context: queueContext,
-                      ),
-                      position: position,
+                  );
+                  return selectableTrackRow<ListedTrack>(
+                    ref,
+                    selection: selection,
+                    index: index,
+                    scopeOf: scopeOf,
+                    play: play,
+                    builder: (wiring) => TrackRow(
+                      title: track.meta.title,
+                      artist: artist == widget.artist.name ? '' : artist,
+                      duration: Duration(seconds: track.meta.durationSec),
+                      leading: TrackRowLeading.index(index + 1),
+                      enabled: track.playbackId != null,
+                      disabledReason: l10n.trackNotPlayable,
+                      liked: track.isLiked,
+                      onToggleLike: toggleLikeOf(ref, track),
+                      playbackId: track.playbackId,
+                      onTap: play,
+                      onAddToQueue: addToQueueOf(ref, track),
+                      selected: wiring.selected,
+                      onSelect: wiring.onSelect,
+                      focusNode: wiring.focusNode,
+                      rowActions: wiring.rowActions,
+                      onMenu: wiring.onMenu,
+                      dragPayload: wiring.dragPayload,
                     ),
-                  ),
-                ),
+                  );
+                },
               );
             },
           ),

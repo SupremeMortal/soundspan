@@ -19,7 +19,10 @@ import 'package:soundspan/features/discover/domain/discovery_playlist.dart';
 import 'package:soundspan/features/discover/ui/discovery_artist_card.dart';
 import 'package:soundspan/features/discover/ui/discovery_view_model.dart';
 import 'package:soundspan/features/explore/explore.dart';
+import 'package:soundspan/shared/actions/track_actions.dart';
+import 'package:soundspan/shared/actions/track_row_selection.dart';
 import 'package:soundspan/shared/domain/domain.dart';
+import 'package:soundspan/shared/providers/play_actions.dart';
 import 'package:soundspan/shared/util/uuid.dart';
 import 'package:soundspan/shared/widgets/detail_header.dart';
 import 'package:soundspan/shared/widgets/empty_state.dart';
@@ -28,11 +31,14 @@ import 'package:soundspan/shared/widgets/media_grid_layout.dart';
 import 'package:soundspan/shared/widgets/offline_banner.dart';
 import 'package:soundspan/shared/widgets/refresh_target.dart';
 import 'package:soundspan/shared/widgets/track_row.dart';
+import 'package:soundspan/shared/widgets/track_selection.dart';
 
 /// Explore (`/explore`, pushed inside the current branch; doc 09, Shell by
 /// Window Class): this week's discovery playlist, then the recommended and
 /// the popular artists, then the radio stations by genre and by decade,
 /// each section hidden when it is empty or failed.
+/// A discovery row plays the playable shown tracks from it; with a pointer
+/// the rows are a selectable list (doc 09, Desktop Interaction: Selection).
 ///
 /// Each discovery section shows skeletons until it has a value; when every
 /// section is empty one [EmptyState] takes their place. While the server
@@ -125,53 +131,55 @@ class _ExploreBody extends ConsumerWidget {
     final settled = sections.every((value) => value.hasValue || value.hasError);
     final allEmpty = settled && !sections.any(shown);
 
-    return AppRefreshIndicator(
-      onRefresh: onRefresh,
-      child: CustomScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        slivers: [
-          SliverPadding(
-            padding: EdgeInsets.fromLTRB(
-              gutter,
-              Spacing.x24,
-              gutter,
-              Spacing.x8,
-            ),
-            sliver: SliverToBoxAdapter(
-              child: Semantics(
-                header: true,
-                child: Text(
-                  l10n.navExplore,
-                  style: context.typography.headline.copyWith(
-                    color: context.colors.content,
+    return SelectableList<ListedTrack>(
+      builder: (context, selection) => AppRefreshIndicator(
+        onRefresh: onRefresh,
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            SliverPadding(
+              padding: EdgeInsets.fromLTRB(
+                gutter,
+                Spacing.x24,
+                gutter,
+                Spacing.x8,
+              ),
+              sliver: SliverToBoxAdapter(
+                child: Semantics(
+                  header: true,
+                  child: Text(
+                    l10n.navExplore,
+                    style: context.typography.headline.copyWith(
+                      color: context.colors.content,
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-          if (allEmpty)
-            SliverFillRemaining(
-              hasScrollBody: false,
-              child: EmptyState(
-                icon: Icons.explore_outlined,
-                message: l10n.exploreEmpty,
+            if (allEmpty)
+              SliverFillRemaining(
+                hasScrollBody: false,
+                child: EmptyState(
+                  icon: Icons.explore_outlined,
+                  message: l10n.exploreEmpty,
+                ),
+              )
+            else ...[
+              if (_loading(playlist))
+                ..._trackSkeletons(context)
+              else if (playlist.value case final value?)
+                _DiscoverySection(playlist: value, selection: selection),
+              ..._artistSection(
+                context,
+                l10n.discoverRecommendedForYou,
+                recommended,
               ),
-            )
-          else ...[
-            if (_loading(playlist))
-              ..._trackSkeletons(context)
-            else if (playlist.value case final value?)
-              _DiscoverySection(playlist: value),
-            ..._artistSection(
-              context,
-              l10n.discoverRecommendedForYou,
-              recommended,
-            ),
-            ..._artistSection(context, l10n.discoverPopularArtists, popular),
-            const RadioSections(),
-            const SliverToBoxAdapter(child: SizedBox(height: Spacing.x32)),
+              ..._artistSection(context, l10n.discoverPopularArtists, popular),
+              const RadioSections(),
+              const SliverToBoxAdapter(child: SizedBox(height: Spacing.x32)),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
@@ -285,9 +293,10 @@ class _ArtistGrid extends StatelessWidget {
 /// "This week's discoveries": Play and Shuffle, then the first
 /// [ExploreScreen.collapsedTracks] tracks with "Show all" for the rest.
 class _DiscoverySection extends ConsumerStatefulWidget {
-  const new({required this.playlist});
+  const new({required this.playlist, required this.selection});
 
   final DiscoveryPlaylist playlist;
+  final SelectionController<ListedTrack> selection;
 
   @override
   ConsumerState<_DiscoverySection> createState() => _DiscoverySectionState();
@@ -309,6 +318,14 @@ class _DiscoverySectionState extends ConsumerState<_DiscoverySection> {
         ? tracks
         : tracks.sublist(0, ExploreScreen.collapsedTracks);
     final canPlay = playable.isNotEmpty;
+    final selection = widget.selection..items = listedTracks(visible);
+    final queueContext = _context;
+    TrackActionScope scopeOf(ListedTrack row) => TrackActionScope(
+      track: row.$2,
+      tracks: visible,
+      index: row.$1,
+      context: queueContext,
+    );
 
     return SliverMainAxisGroup(
       slivers: [
@@ -342,14 +359,38 @@ class _DiscoverySectionState extends ConsumerState<_DiscoverySection> {
             itemCount: visible.length,
             itemBuilder: (context, index) {
               final track = visible[index];
-              return TrackRow(
-                title: track.meta.title,
-                artist: track.meta.artist,
-                album: track.meta.album,
-                duration: Duration(seconds: track.meta.durationSec),
-                leading: TrackRowLeading.thumbnail(track.meta.artworkRef),
-                enabled: track.playbackId != null,
-                disabledReason: l10n.trackNotPlayable,
+              void play() => unawaited(
+                ref
+                    .read(playActionsProvider)
+                    .playTracks(
+                      visible,
+                      startIndex: index,
+                      context: queueContext,
+                    ),
+              );
+              return selectableTrackRow<ListedTrack>(
+                ref,
+                selection: selection,
+                index: index,
+                scopeOf: scopeOf,
+                play: play,
+                builder: (wiring) => TrackRow(
+                  title: track.meta.title,
+                  artist: track.meta.artist,
+                  album: track.meta.album,
+                  duration: Duration(seconds: track.meta.durationSec),
+                  leading: TrackRowLeading.thumbnail(track.meta.artworkRef),
+                  enabled: track.playbackId != null,
+                  disabledReason: l10n.trackNotPlayable,
+                  playbackId: track.playbackId,
+                  onTap: play,
+                  selected: wiring.selected,
+                  onSelect: wiring.onSelect,
+                  focusNode: wiring.focusNode,
+                  rowActions: wiring.rowActions,
+                  onMenu: wiring.onMenu,
+                  dragPayload: wiring.dragPayload,
+                ),
               );
             },
           ),
@@ -371,12 +412,15 @@ class _DiscoverySectionState extends ConsumerState<_DiscoverySection> {
     );
   }
 
+  /// The queue context of the discovery playlist.
+  QueueContext get _context => QueueContext(
+    kind: QueueContextKind.playlist,
+    title: AppLocalizations.of(context).exploreThisWeek,
+  );
+
   /// Replaces the queue with [tracks], in order or shuffled.
   Future<void> _play(List<Track> tracks, {required bool shuffle}) async {
-    final context = QueueContext(
-      kind: QueueContextKind.playlist,
-      title: AppLocalizations.of(this.context).exploreThisWeek,
-    );
+    final context = _context;
     final controller = ref.read(playbackControllerProvider);
     await controller.setShuffle(shuffle);
     await controller.playItems(

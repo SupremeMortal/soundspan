@@ -2,7 +2,7 @@
 
 import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 import 'package:flutter/gestures.dart'
-    show PointerDeviceKind, kDoubleTapTimeout;
+    show PointerDeviceKind, kDoubleTapTimeout, kSecondaryButton;
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
@@ -54,4 +54,27 @@ Future<void> pressWith(
   await tester.sendKeyEvent(key);
   await tester.sendKeyUpEvent(modifier);
   await tester.pump();
+}
+
+/// The entries of the menu of several tracks (`trackSelectionActions`).
+const List<String> selectionMenuEntries = [
+  'Play now',
+  'Play next',
+  'Add to queue',
+  'Add to playlist…',
+];
+
+/// Opens the menu of the row showing [title] with a right click and checks
+/// that it is the menu of several tracks: it lists [selectionMenuEntries]
+/// and leaves out Like and Share link.
+Future<void> expectSelectionMenu(WidgetTester tester, String title) async {
+  await tester.tap(rowOf(title), buttons: kSecondaryButton);
+  for (var i = 0; i < 6; i++) {
+    await tester.pump(const Duration(milliseconds: 100));
+  }
+  for (final entry in selectionMenuEntries) {
+    expect(find.text(entry), findsOneWidget, reason: entry);
+  }
+  expect(find.text('Like'), findsNothing);
+  expect(find.text('Share link'), findsNothing);
 }

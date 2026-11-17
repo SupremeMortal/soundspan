@@ -119,6 +119,8 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
   bool _reportScheduled = false;
   final SelectionController<PlaylistItem> _selection =
       SelectionController<PlaylistItem>();
+  final SelectionController<ListedTrack> _likedSelection =
+      SelectionController<ListedTrack>();
 
   String? _resolvedId;
   StreamSubscription<PlaylistIdResolved>? _resolvedSub;
@@ -165,6 +167,7 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
   void dispose() {
     unawaited(_resolvedSub?.cancel());
     _selection.dispose();
+    _likedSelection.dispose();
     super.dispose();
   }
 
@@ -443,16 +446,19 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
 
   Widget _likedPage() {
     final snapshot = ref.watch(likedTracksProvider);
-    return DetailPage<PagedSnapshot<Track>>(
-      value: snapshot,
-      refreshError: snapshot.value?.refreshError,
-      thumbnails: true,
-      onRefresh: () async {
-        final source = await ref.read(likedTracksSourceProvider.future);
-        await source.refresh();
-      },
-      onRetry: () => ref.invalidate(likedTracksSourceProvider),
-      builder: _likedSlivers,
+    return SelectionShortcuts<ListedTrack>(
+      controller: _likedSelection,
+      child: DetailPage<PagedSnapshot<Track>>(
+        value: snapshot,
+        refreshError: snapshot.value?.refreshError,
+        thumbnails: true,
+        onRefresh: () async {
+          final source = await ref.read(likedTracksSourceProvider.future);
+          await source.refresh();
+        },
+        onRetry: () => ref.invalidate(likedTracksSourceProvider),
+        builder: _likedSlivers,
+      ),
     );
   }
 
@@ -463,6 +469,8 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
     final l10n = AppLocalizations.of(context);
     final windowClass = WindowClass.of(context);
     final total = snapshot.total;
+    final rows = loadedTracks(snapshot);
+    _likedSelection.items = rows;
     return [
       DetailHeader(
         artworkRef: null,
@@ -505,14 +513,22 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
                 if (track == null) {
                   return const TrackRowSkeleton(withThumbnail: true);
                 }
-                return _row(
-                  track,
-                  windowClass,
-                  enabled: track.playbackId != null,
-                  reason: l10n.trackNotPlayable,
-                  onTap: () => _playLiked(snapshot, index),
-                  onAddToQueue: addToQueueOf(ref, track),
-                  scope: _likedScope(snapshot, index, track, l10n),
+                return selectableTrackRow<ListedTrack>(
+                  ref,
+                  selection: _likedSelection,
+                  index: rows.indexWhere((row) => row.$1 == index),
+                  scopeOf: (row) => _likedScope(snapshot, row.$1, row.$2, l10n),
+                  play: () => _playLiked(snapshot, index),
+                  builder: (wiring) => _row(
+                    track,
+                    windowClass,
+                    enabled: track.playbackId != null,
+                    reason: l10n.trackNotPlayable,
+                    onTap: () => _playLiked(snapshot, index),
+                    onAddToQueue: addToQueueOf(ref, track),
+                    scope: _likedScope(snapshot, index, track, l10n),
+                    wiring: wiring,
+                  ),
                 );
               },
             ),

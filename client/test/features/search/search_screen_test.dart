@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 
 import 'package:drift/native.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -20,6 +21,7 @@ import 'package:soundspan/shared/widgets/media_card.dart';
 import 'package:soundspan/shared/widgets/track_row.dart';
 import 'package:soundspan_api/soundspan_api.dart' show Offline, Upstream;
 
+import '../../app/shell/shortcuts/selection_harness.dart';
 import '../../helpers/fake_clock.dart';
 import '../../helpers/fake_repositories.dart';
 import '../../helpers/guidelines.dart';
@@ -150,6 +152,7 @@ void main() {
     ThemeMode theme = ThemeMode.dark,
     double textScale = 1.0,
     List<Override> extra = const [],
+    bool shellShortcuts = false,
   }) async {
     final router = GoRouter(
       initialLocation: initial,
@@ -206,7 +209,9 @@ void main() {
     await tester.pumpApp(
       WindowClassScope(
         windowClass: windowClassOf(size),
-        child: Router.withConfig(config: router),
+        child: shellShortcuts
+            ? underShellShortcuts(Router.withConfig(config: router))
+            : Router.withConfig(config: router),
       ),
       size: size,
       theme: theme,
@@ -605,4 +610,33 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
+
+  testWidgets('song rows select on click, Ctrl+click adds a row, Enter '
+      'plays the selection and the menu is the selection menu', (tester) async {
+    seedBlue();
+    final rig = PlayRig();
+    await pump(
+      tester,
+      initial: '/search?q=blue',
+      size: const Size(1440, 2400),
+      extra: rig.overrides,
+      shellShortcuts: true,
+    );
+
+    await click(tester, 'Blue Bossa');
+    await rig.settle(tester);
+    expect(selectedTitles(tester), ['Blue Bossa']);
+    expect(rig.queued, isEmpty);
+    await click(tester, 'Blue Train', modifier: LogicalKeyboardKey.controlLeft);
+    expect(selectedTitles(tester), ['Blue Train', 'Blue Bossa']);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await rig.settle(tester);
+
+    expect(rig.queued, ['pb2', 'pb4']);
+    expect(rig.current, 'pb2');
+    expect(rig.context, const QueueContext(kind: QueueContextKind.search));
+    await expectSelectionMenu(tester, 'Blue Bossa');
+    await rig.close(tester);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.linux));
 }

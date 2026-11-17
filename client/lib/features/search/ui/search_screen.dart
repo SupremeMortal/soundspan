@@ -19,6 +19,7 @@ import 'package:soundspan/features/search/domain/search_sections.dart';
 import 'package:soundspan/features/search/ui/search_view_model.dart';
 import 'package:soundspan/shared/actions/app_menu_commands.dart';
 import 'package:soundspan/shared/actions/track_actions.dart';
+import 'package:soundspan/shared/actions/track_row_selection.dart';
 import 'package:soundspan/shared/dnd/drag_payload.dart';
 import 'package:soundspan/shared/domain/domain.dart';
 import 'package:soundspan/shared/providers/likes.dart';
@@ -29,6 +30,7 @@ import 'package:soundspan/shared/widgets/error_view.dart';
 import 'package:soundspan/shared/widgets/media_card.dart';
 import 'package:soundspan/shared/widgets/shelf.dart';
 import 'package:soundspan/shared/widgets/track_row.dart';
+import 'package:soundspan/shared/widgets/track_selection.dart';
 
 /// Search (doc 09, Search): a field, filter chips, and the results of the
 /// library and catalogue searches merged into one set of sections, with
@@ -557,12 +559,17 @@ class _SectionItems extends StatelessWidget {
       ];
       return Padding(
         padding: EdgeInsets.symmetric(horizontal: gutter - Spacing.x8),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            for (var index = 0; index < tracks.length; index++)
-              _songRow(context, tracks, index),
-          ],
+        child: SelectableList<ListedTrack>(
+          builder: (context, selection) {
+            selection.items = listedTracks(tracks);
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (var index = 0; index < tracks.length; index++)
+                  _songRow(context, tracks, index, selection),
+              ],
+            );
+          },
         ),
       );
     }
@@ -583,41 +590,55 @@ class _SectionItems extends StatelessWidget {
   }
 }
 
-Widget _songRow(BuildContext context, List<Track> tracks, int index) {
+/// Song row [index] of [tracks]; with a pointer the rows are a selectable
+/// list (doc 09, Desktop Interaction: Selection).
+Widget _songRow(
+  BuildContext context,
+  List<Track> tracks,
+  int index,
+  SelectionController<ListedTrack> selection,
+) {
   final track = tracks[index];
   return Consumer(
-    builder: (context, ref, _) => TrackRow(
-      title: track.meta.title,
-      artist: track.meta.artist,
-      album: track.meta.album,
-      duration: Duration(seconds: track.meta.durationSec),
-      leading: TrackRowThumbnail(track.meta.artworkRef),
-      enabled: track.playbackId != null,
-      disabledReason: AppLocalizations.of(context).searchNotPlayable,
-      liked: track.isLiked,
-      onToggleLike: toggleLikeOf(ref, track),
-      playbackId: track.playbackId,
-      dragPayload: TracksPayload([track]),
-      onTap: () => unawaited(
+    builder: (context, ref, _) {
+      void play() => unawaited(
         ref
             .read(playActionsProvider)
             .playTracks(tracks, startIndex: index, context: _searchContext),
-      ),
-      onAddToQueue: addToQueueOf(ref, track),
-      onMenu: (position) => unawaited(
-        openTrackMenu(
-          context,
-          ref,
-          TrackActionScope(
-            track: track,
-            tracks: tracks,
-            index: index,
-            context: _searchContext,
-          ),
-          position: position,
+      );
+      return selectableTrackRow<ListedTrack>(
+        ref,
+        selection: selection,
+        index: index,
+        scopeOf: (row) => TrackActionScope(
+          track: row.$2,
+          tracks: tracks,
+          index: row.$1,
+          context: _searchContext,
         ),
-      ),
-    ),
+        play: play,
+        builder: (wiring) => TrackRow(
+          title: track.meta.title,
+          artist: track.meta.artist,
+          album: track.meta.album,
+          duration: Duration(seconds: track.meta.durationSec),
+          leading: TrackRowThumbnail(track.meta.artworkRef),
+          enabled: track.playbackId != null,
+          disabledReason: AppLocalizations.of(context).searchNotPlayable,
+          liked: track.isLiked,
+          onToggleLike: toggleLikeOf(ref, track),
+          playbackId: track.playbackId,
+          onTap: play,
+          onAddToQueue: addToQueueOf(ref, track),
+          selected: wiring.selected,
+          onSelect: wiring.onSelect,
+          focusNode: wiring.focusNode,
+          rowActions: wiring.rowActions,
+          onMenu: wiring.onMenu,
+          dragPayload: wiring.dragPayload,
+        ),
+      );
+    },
   );
 }
 

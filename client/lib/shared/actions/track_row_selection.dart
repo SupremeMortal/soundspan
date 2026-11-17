@@ -12,6 +12,22 @@ import 'package:soundspan/shared/domain/domain.dart';
 import 'package:soundspan/shared/widgets/track_row.dart';
 import 'package:soundspan/shared/widgets/track_selection.dart';
 
+/// A row of a selectable track list: its index in the list and its track,
+/// so the same track listed twice is two rows.
+typedef ListedTrack = (int index, Track track);
+
+/// The rows of [tracks], in list order.
+List<ListedTrack> listedTracks(List<Track> tracks) => [...tracks.indexed];
+
+/// The loaded rows of [snapshot], in list order; the index of each is its
+/// index in the paged list.
+List<ListedTrack> loadedTracks(PagedSnapshot<Track> snapshot) {
+  final rows = [
+    for (final MapEntry(:key, :value) in snapshot.loaded.entries) (key, value),
+  ]..sort((a, b) => a.$1.compareTo(b.$1));
+  return rows;
+}
+
 /// What a [TrackRow] of a selectable list takes from its
 /// [SelectionController] (doc 09, Desktop Interaction: Selection).
 class TrackRowSelection {

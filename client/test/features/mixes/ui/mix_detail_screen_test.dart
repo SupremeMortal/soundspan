@@ -2,6 +2,7 @@
 
 import 'dart:async';
 
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -27,6 +28,7 @@ import 'package:soundspan/shared/widgets/track_row.dart';
 import 'package:soundspan_api/soundspan_api.dart'
     show FeatureDisabled, Offline, ServerError;
 
+import '../../../app/shell/shortcuts/selection_harness.dart';
 import '../../../helpers/fake_mix_repository.dart';
 import '../../../helpers/fake_reachability.dart';
 import '../../../helpers/fake_repositories.dart';
@@ -109,6 +111,7 @@ void main() {
     Size size = TestSizes.compact,
     ThemeMode theme = ThemeMode.dark,
     double textScale = 1.0,
+    bool shellShortcuts = false,
   }) async {
     Widget scoped(Widget child) => Builder(
       builder: (context) => WindowClassScope(
@@ -155,8 +158,9 @@ void main() {
       initialActiveProfileIdProvider.overrideWithValue(null),
       reachabilityProvider.overrideWithValue(reachability),
     ];
+    final app = Router.withConfig(config: router);
     await tester.pumpApp(
-      Router.withConfig(config: router),
+      shellShortcuts ? underShellShortcuts(app) : app,
       size: size,
       theme: theme,
       textScale: textScale,
@@ -387,4 +391,27 @@ void main() {
     await expectMeetsGuidelines(tester);
     expect(find.byType(EmptyState), findsOneWidget);
   });
+
+  testWidgets('rows select on click, Ctrl+click adds a row, Enter plays the '
+      'selection and the menu is the selection menu', (tester) async {
+    mixes.mixes['m1'] = _mix(
+      tracks: [fixtureTrack(1), fixtureTrack(2), fixtureTrack(3)],
+    );
+    await pump(tester, size: TestSizes.expanded, shellShortcuts: true);
+
+    await click(tester, 'Song 1.3');
+    expect(selectedTitles(tester), ['Song 1.3']);
+    expect(controller.plays, isEmpty);
+    await click(tester, 'Song 1.1', modifier: LogicalKeyboardKey.controlLeft);
+    expect(selectedTitles(tester), ['Song 1.1', 'Song 1.3']);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pumpAndSettle();
+
+    final (items, start, context) = controller.plays.single;
+    expect(_titles(items), ['Song 1.1', 'Song 1.3']);
+    expect(start, 0);
+    expect(context, _mixContext);
+    await expectSelectionMenu(tester, 'Song 1.3');
+  }, variant: TargetPlatformVariant.only(TargetPlatform.linux));
 }

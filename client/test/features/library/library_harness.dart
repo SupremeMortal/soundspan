@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 
+import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
@@ -7,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:soundspan/app/router/routes.dart';
 import 'package:soundspan/app/router/shell_route.dart';
+import 'package:soundspan/app/shell/shortcuts/shortcut_bindings.dart';
 import 'package:soundspan/app/shell/window_class.dart';
 import 'package:soundspan/core/auth/active_profile.dart';
 import 'package:soundspan/core/auth/profile.dart';
@@ -131,7 +133,8 @@ extension PumpLibrary on WidgetTester {
   /// Pumps the library routes at [tab] in a window of [size], over
   /// [library] and [playlists] (new empty fakes by default) and a server
   /// with [federation], with [overrides] last. [settle] false pumps one
-  /// frame instead of settling.
+  /// frame instead of settling. [shellShortcuts] puts the shell's shortcut
+  /// table around the routes.
   Future<LibraryHarness> pumpLibrary({
     LibraryTab tab = LibraryTab.albums,
     FakeLibraryRepository? library,
@@ -143,6 +146,7 @@ extension PumpLibrary on WidgetTester {
     double textScale = 1.0,
     FakeReachability? reachability,
     List<Override> overrides = const [],
+    bool shellShortcuts = false,
   }) async {
     library ??= FakeLibraryRepository();
     playlists ??= FakePlaylistRepository();
@@ -151,7 +155,12 @@ extension PumpLibrary on WidgetTester {
     final container = await pumpApp(
       WindowClassScope(
         windowClass: windowClassOf(size),
-        child: Router.withConfig(config: router),
+        child: shellShortcuts
+            ? Shortcuts(
+                shortcuts: shortcutMap(defaultTargetPlatform),
+                child: Router.withConfig(config: router),
+              )
+            : Router.withConfig(config: router),
       ),
       size: size,
       theme: theme,
