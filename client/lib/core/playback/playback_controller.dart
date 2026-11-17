@@ -42,6 +42,13 @@ typedef PlaybackTimerFactory = Timer Function(
 abstract interface class RemoteDriver {
   /// Receives every queue and transport command issued while the driver is attached.
   Future<void> onCommand(PlaybackCommand command);
+
+  /// The current entry [queueItemId] cannot play on this device after the
+  /// controller's own retry. While a driver is attached the controller
+  /// neither skips nor stops by its failure policy: the entry stays
+  /// current with its error, the engine is stopped, and the driver decides
+  /// what comes next.
+  void onCurrentItemFailed(String queueItemId);
 }
 
 /// The one object UI, OS controls and Listen Together talk to (doc 06,
@@ -906,6 +913,22 @@ class PlaybackController {
     QueueItem item,
   ) async {
     final id = item.queueItemId;
+    final driver = _driver;
+    if (driver != null) {
+      final kind = switch (decision) {
+        RetryAfter() || RefreshAndRetry() => null,
+        SkipItem(:final kind) || StopPlayback(:final kind) => kind,
+        SkipUnavailableOffline() => PlaybackErrorKind.notAvailableOffline,
+      };
+      if (kind != null) {
+        _endCurrent();
+        await _stopEngine();
+        _error = PlaybackError(kind, queueItemId: id);
+        _publish();
+        driver.onCurrentItemFailed(id);
+        return;
+      }
+    }
     switch (decision) {
       case RetryAfter(:final delay):
         final generation = _generation;

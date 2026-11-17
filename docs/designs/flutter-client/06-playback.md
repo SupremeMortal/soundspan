@@ -395,6 +395,9 @@ On start `PlaybackController.restore()` runs before any command: it rebuilds `Qu
 abstract interface class RemoteDriver {
   /// Receives every queue and transport command issued while the driver is attached.
   Future<void> onCommand(PlaybackCommand command);
+
+  /// The current entry cannot play on this device after the controller's own retry.
+  void onCurrentItemFailed(String queueItemId);
 }
 ```
 
@@ -414,6 +417,7 @@ abstract interface class RemotePlayback {
 
 - `setRemoteCanControl(bool)` sets `PlaybackSnapshot.remoteCanControl` (false disables transport controls for a follower in a host-follower group; true whenever no driver is attached). `PlaybackSnapshot.remoteAttached` says whether a driver is attached.
 - Shuffle and repeat are turned off while a driver is attached and restored on detach.
+- While a driver is attached the failure policy still retries, but never skips or stops: an item that would be skipped, or that would stop playback (the three-failures rule included), stays current with its error, the engine is stopped, and `onCurrentItemFailed` hands the decision to the driver (Listen Together sends `track:playback-failed`).
 - Local queue persistence writes nothing while a driver is attached, so a restart never restores a group queue as the user's own.
 - `restoreQueue(queue, position:)` puts a saved queue back paused and unloaded, as `restore` does; Listen Together uses it after leaving.
 

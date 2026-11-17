@@ -93,6 +93,9 @@ class _Store {
 class _Driver implements RemoteDriver {
   @override
   Future<void> onCommand(PlaybackCommand command) async {}
+
+  @override
+  void onCurrentItemFailed(String queueItemId) {}
 }
 
 /// The ids every rig can play, each five minutes long.

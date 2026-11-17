@@ -19,6 +19,9 @@ class _RecordingDriver implements RemoteDriver {
   @override
   Future<void> onCommand(PlaybackCommand command) async =>
       commands.add(command);
+
+  @override
+  void onCurrentItemFailed(String queueItemId) {}
 }
 
 const _ids = ['a', 'b', 'c', 'x', 'y', 'z'];

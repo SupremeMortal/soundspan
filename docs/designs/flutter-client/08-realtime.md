@@ -116,7 +116,15 @@ expectedPositionMs(state) = state.isPlaying
 | `group:playback-delta` | Apply play/pause; correct position (below) |
 | `group:ended`, `membership-revoked` | Detach the driver; restore the saved local queue, paused; show why |
 
-Messages carry `stateVersion`; one older than the last applied is ignored.
+Messages carry `stateVersion`; one older than the last applied is ignored, and one equal to it is applied again (the handlers are idempotent). `group:waiting` carries no version and is always applied. The first `group:state` after a join or a reconnection is always applied and resets the watermark, so a server restart cannot wedge the client.
+
+Details of the table:
+
+- Queue entries become single-track queue items whose id is built from the entry's index and `playbackId`, so an entry that stays at the same index with the same `playbackId` keeps playing across a `group:queue-delta`; any other current entry is loaded at the expected position, playing when the group plays. An empty queue stops playback.
+- `group:state` with `syncState` `playing` plays after the load; `paused` and `idle` stay paused; `waiting` behaves as `group:waiting`. It also replaces the member list, the host and whether this device may control playback. Member events update the member list (and the host, when one leaves) and never touch playback.
+- `group:playback-delta` naming another `currentIndex` moves the cursor and loads that item at the expected position.
+- A scheduled `play-at` start is cancelled by a newer `play-at`, a pause, a `group:waiting` or a `group:state`.
+- If the current item fails to load or play (`onCurrentItemFailed`, doc 06), the client sends `track:playback-failed` with its queue index and waits for the server's next message.
 
 ### Drift Correction
 
@@ -129,13 +137,26 @@ drift = enginePosition − expectedPositionMs
 |drift| ≥ 1500 ms           → seek to expected immediately
 ```
 
+No correction is made while the engine is loading or buffering, while a `play-at` start is scheduled, or within 1 s after a seek or load the controller issued. Every time used here comes from the monotonic clock and the measured offset. The arithmetic is `lib/features/listen_together/group_sync.dart`, which imports nothing so the contract suite can use it.
+
 Rate nudging (playing slightly faster or slower) is not used: engine speed changes are audible on some backends.
 
 ### Commands From This Device
 
 While attached, UI transport and queue commands are sent to the server and **not** applied locally; the UI updates when the resulting delta arrives. Buttons show a pending state for up to 5 s (the ack timeout), then an error.
 
-- Host-follower groups: followers see transport controls disabled, with "The host controls playback". Volume, lyrics, and liking stay local.
+| Command | Socket call |
+|---|---|
+| Play, Pause, Next, Previous | `playback(play \| pause \| next \| previous)`; TogglePlayPause sends play or pause by the group's playing flag, Stop sends pause |
+| Seek | `playback(seek, positionMs, stateVersion: last applied)` |
+| JumpTo | `playback(set-track, index)` |
+| Append, PlayNext | `queue(add \| insert-next, tracks: [{ playbackId, metadata }])` |
+| RemoveAt, Move, Clear | `queue(remove \| reorder \| clear)` with indices in group-queue order |
+| PlayItems (replace all) | `queue(clear)`, `queue(add)`, then `playback(set-track)` when the start item is not the first shared one; only when this device may control playback |
+| SetShuffle, SetRepeat | Not sent: the group has neither |
+
+- `ListenTogetherActive.pending` holds the commands awaiting an acknowledgement. A command leaves it on the acknowledgement, on an error, or after 5 s. Failures are never thrown: they are published as `ListenTogetherActive.lastCommandError` (`GroupCommandRejected`, `GroupCommandTimedOut`, `GroupCommandOffline`, `HostControlsPlayback`, `RemoteCommandUnsupported`, or `ItemsNotShareable` when episodes and tracks without a `playbackId` were left out of an addition).
+- Host-follower groups: followers see transport controls disabled, with "The host controls playback"; a transport command or a replace-all from a follower is refused locally without being sent. Queue additions, removals, moves and clears are sent and the server decides. Volume, lyrics, and liking stay local.
 - If the current item fails to load on this device: `track:playback-failed { queueIndex }`.
 - Play reporting, loudness, and downloads behave as in solo playback. A downloaded file is used when present; sync works on position, not on bytes.
 
