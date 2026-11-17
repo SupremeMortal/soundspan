@@ -85,6 +85,24 @@ void main() {
     expect(state.skipInterval, const Duration(seconds: 30));
   });
 
+  test('an episode reports the snapshot speed and skip interval', () {
+    final queue = QueueState(items: [_episode('e')], cursor: 0);
+    final state = mapSnapshot(
+      PlaybackSnapshot(
+        queue: queue,
+        current: queue.current,
+        status: EngineStatus.ready,
+        playing: true,
+        speed: 1.5,
+        skipInterval: const Duration(seconds: 45),
+      ),
+    );
+    expect(state.speed, 1.5);
+    expect(state.skipInterval, const Duration(seconds: 45));
+    expect(state.actions, contains(MediaAction.skipForward));
+    expect(state.actions, isNot(contains(MediaAction.next)));
+  });
+
   test('the engine duration wins over the metadata once known', () {
     final state = mapSnapshot(
       _snapshot([trackItem('a')], duration: const Duration(seconds: 181)),

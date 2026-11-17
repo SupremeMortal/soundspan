@@ -197,6 +197,11 @@ class CacheStore {
         return true;
       });
 
+  /// Removes the cached episode [id]. A list that holds it no longer reads
+  /// whole, so its next read fetches it again.
+  Future<void> removeEpisode(String id) =>
+      (_db.delete(_db.episodes)..where((e) => e.id.equals(id))).go();
+
   /// Writes [preference] into every cached copy of the track [playbackId]:
   /// its row and each blob holding it (details, search results), keeping
   /// their fetch times. Lists read the rows, so they show it too.

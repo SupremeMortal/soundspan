@@ -8,11 +8,13 @@ import 'package:soundspan/app/theme/extensions.dart';
 import 'package:soundspan/app/theme/typography.dart';
 import 'package:soundspan/core/playback/playback_providers.dart';
 import 'package:soundspan/features/player/ui/player_item.dart';
+import 'package:soundspan/shared/domain/queue_item.dart';
 import 'package:soundspan/shared/widgets/artwork.dart';
 
 /// The player of compact and medium windows (doc 09, Components): a
 /// [progressHeight] `brand` progress line on top, then the current item's
-/// artwork, title and artist, play/pause and next, on `surfaceRaised`.
+/// artwork, title and artist, play/pause and next (skip forward for an
+/// episode), on `surfaceRaised`.
 ///
 /// A tap calls [onOpen] when it is set. It renders nothing while the queue
 /// is empty.
@@ -96,12 +98,22 @@ class MiniPlayer extends ConsumerWidget {
                     ),
                     onPressed: controller.togglePlayPause,
                   ),
-                  IconButton(
-                    tooltip: l10n.playerNext,
-                    color: colors.content,
-                    icon: const Icon(Icons.skip_next_rounded),
-                    onPressed: controller.next,
-                  ),
+                  if (current is EpisodeQueueItem)
+                    IconButton(
+                      tooltip: l10n.playerSkipForward(
+                        snapshot.skipInterval.inSeconds,
+                      ),
+                      color: colors.content,
+                      icon: const Icon(Icons.fast_forward_rounded),
+                      onPressed: controller.skipForward,
+                    )
+                  else
+                    IconButton(
+                      tooltip: l10n.playerNext,
+                      color: colors.content,
+                      icon: const Icon(Icons.skip_next_rounded),
+                      onPressed: controller.next,
+                    ),
                 ],
               ),
             ),

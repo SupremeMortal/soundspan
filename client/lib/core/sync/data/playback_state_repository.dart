@@ -97,26 +97,29 @@ RemotePlaybackState? remotePlaybackStateFromWire(api.PlaybackState state) {
     updatedAt: state.updatedAt,
     queue: [
       for (final item in state.queue ?? const <api.PlaybackQueueItem>[])
-        ?_entryFromWire(item),
+        _entryFromWire(item),
     ],
   );
 }
 
-PlaybackStateEntry? _entryFromWire(api.PlaybackQueueItem item) {
+PlaybackStateEntry _entryFromWire(api.PlaybackQueueItem item) {
   if (item.itemType case api.PlaybackQueueItemItemTypeKnown(
     value: api.PlaybackQueueItemItemTypeValue.episode,
   )) {
     final podcastId = item.podcastId;
     final episodeId = item.episodeId;
-    if (podcastId == null || episodeId == null) return null;
-    return PlaybackStateEntry.episode(
-      podcastId: podcastId,
-      episodeId: episodeId,
-      title: item.title,
-      podcastTitle: item.podcastTitle ?? '',
-      durationSec: item.duration.round(),
-      coverUrl: item.coverUrl,
-    );
+    // Without its ids an episode reads as an entry without a playbackId, so
+    // the indexes of the stored queue stay aligned and restore skips it.
+    if (podcastId != null && episodeId != null) {
+      return PlaybackStateEntry.episode(
+        podcastId: podcastId,
+        episodeId: episodeId,
+        title: item.title,
+        podcastTitle: item.podcastTitle ?? '',
+        durationSec: item.duration.round(),
+        coverUrl: item.coverUrl,
+      );
+    }
   }
   final playbackId = item.playbackId;
   return PlaybackStateEntry.track(

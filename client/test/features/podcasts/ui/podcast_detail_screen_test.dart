@@ -5,10 +5,12 @@ import 'package:material_ui/material_ui.dart';
 import 'package:soundspan/core/connectivity/reachability.dart';
 import 'package:soundspan/features/podcasts/podcasts.dart';
 import 'package:soundspan/features/podcasts/ui/episode_row.dart';
+import 'package:soundspan/shared/domain/domain.dart';
 import 'package:soundspan_api/soundspan_api.dart' show Offline, ServerError;
 
 import '../../../helpers/fake_podcast_repository.dart';
 import '../../../helpers/guidelines.dart';
+import '../../../helpers/play_rig.dart';
 import '../../../helpers/pump_app.dart';
 import 'podcast_fixtures.dart';
 
@@ -95,7 +97,51 @@ void main() {
       const Duration(minutes: 24),
       const Duration(minutes: 42),
     ]);
-    expect(rows.every((row) => row.onTap == null), isTrue);
+    expect(rows.every((row) => row.onTap != null), isTrue);
+  });
+
+  testWidgets('tapping an episode replaces the queue with it and plays from '
+      'its progress', (tester) async {
+    final rig = PlayRig();
+    await rig.controller.playItems([
+      const QueueItem.track(
+        queueItemId: 'old',
+        track: Track(
+          meta: TrackMeta(
+            title: 'Old',
+            artist: 'A',
+            album: 'B',
+            durationSec: 9,
+          ),
+          playbackId: PlaybackId('pb-old'),
+        ),
+        context: const QueueContext(kind: QueueContextKind.single),
+      ),
+    ]);
+    await pumpPodcasts(
+      tester,
+      _screen,
+      initialLocation: '/podcasts/pc-1',
+      podcasts: _repository(),
+      size: TestSizes.expanded,
+      overrides: rig.overrides,
+    );
+
+    await tester.tap(find.text('Episode 2'));
+    await rig.settle(tester);
+
+    expect(rig.queued, ['e2']);
+    final current = rig.controller.snapshot.current! as EpisodeQueueItem;
+    expect(current.podcast.id, 'pc-1');
+    expect(rig.controller.snapshot.playing, isTrue);
+    expect(
+      rig.harness.calls,
+      contains(
+        'load(${current.queueItemId}, autoPlay: true, '
+        'at: ${const Duration(minutes: 24)})',
+      ),
+    );
+    await rig.close(tester);
   });
 
   testWidgets('a 2,000-episode list builds only the visible rows', (

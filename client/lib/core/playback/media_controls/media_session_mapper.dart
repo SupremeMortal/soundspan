@@ -5,19 +5,18 @@ import 'package:soundspan/core/playback/media_controls/media_controls.dart';
 import 'package:soundspan/core/playback/playback_snapshot.dart';
 import 'package:soundspan/shared/domain/queue_item.dart';
 
-/// The skip interval of episodes until `playback.skipSeconds` is read.
-const Duration defaultSkipInterval = Duration(seconds: 15);
-
 /// What the OS media surface shows for [s] (doc 06, OS Media Controls).
 ///
 /// Nothing current gives [MediaSessionState.empty]. A track offers play or
 /// pause, seek, stop, next and previous. An episode shows the podcast as
 /// its artist and offers skip forward and back; next and previous only when
-/// the queue holds more than one item. [artworkUri] is shown as given.
+/// the queue holds more than one item. [artworkUri] is shown as given. The
+/// speed and the skip interval are the snapshot's unless [skipInterval]
+/// is given.
 MediaSessionState mapSnapshot(
   PlaybackSnapshot s, {
   Uri? artworkUri,
-  Duration skipInterval = defaultSkipInterval,
+  Duration? skipInterval,
 }) {
   final item = s.current;
   if (item == null) return MediaSessionState.empty;
@@ -63,8 +62,8 @@ MediaSessionState mapSnapshot(
     playing: s.playing,
     buffering:
         s.status == EngineStatus.buffering || s.status == EngineStatus.loading,
-    speed: 1,
-    skipInterval: skipInterval,
+    speed: s.speed,
+    skipInterval: skipInterval ?? s.skipInterval,
     actions: actions,
   );
 }

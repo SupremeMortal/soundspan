@@ -7,6 +7,7 @@ import 'package:soundspan/app/router/routes.dart';
 import 'package:soundspan/app/shell/player_slots.dart';
 import 'package:soundspan/core/playback/playback_providers.dart';
 import 'package:soundspan/features/player/player.dart';
+import 'package:soundspan/shared/domain/domain.dart';
 
 import '../../../helpers/guidelines.dart';
 import '../../../helpers/pump_app.dart';
@@ -17,13 +18,14 @@ void main() {
     WidgetTester tester, {
     bool start = true,
     bool play = true,
+    List<QueueItem>? items,
   }) async {
     final rig = PlayerRig();
     await tester.pumpApp(
       const Align(alignment: Alignment.bottomCenter, child: MiniPlayer()),
       overrides: rig.overrides,
     );
-    if (start) await rig.start(tester, play: play);
+    if (start) await rig.start(tester, play: play, items: items);
     return rig;
   }
 
@@ -71,6 +73,26 @@ void main() {
     await rig.settle(tester);
     expect(rig.controller.snapshot.current?.queueItemId, 'b');
     expect(find.text('Song b'), findsOneWidget);
+    await rig.close(tester);
+  });
+
+  testWidgets('an episode shows skip forward in place of next', (tester) async {
+    final rig = await pumpMini(tester, items: [playerEpisode('a')]);
+
+    expect(find.text('Episode a'), findsOneWidget);
+    expect(find.text('The Show'), findsOneWidget);
+    expect(find.byTooltip('Next'), findsNothing);
+    await tester.tap(find.byTooltip('Skip forward 15 seconds'));
+    await rig.settle(tester);
+    expect(rig.harness.calls.last, startsWith('seek('));
+    await rig.close(tester);
+  });
+
+  testWidgets('a track shows next and no skip', (tester) async {
+    final rig = await pumpMini(tester);
+
+    expect(find.byTooltip('Next'), findsOneWidget);
+    expect(find.byTooltip('Skip forward 15 seconds'), findsNothing);
     await rig.close(tester);
   });
 

@@ -34,7 +34,6 @@ class MediaControlsBinder implements MediaCommandHandler {
     required this._controls,
     required this._pin,
     required this._clock,
-    this.skipInterval = defaultSkipInterval,
   }) {
     _subscription = _controller.snapshots.listen(_onSnapshot);
   }
@@ -49,9 +48,6 @@ class MediaControlsBinder implements MediaCommandHandler {
   final MediaControls _controls;
   final ArtworkPin _pin;
   final Clock _clock;
-
-  /// How far skip forward and skip back move.
-  final Duration skipInterval;
 
   late final StreamSubscription<PlaybackSnapshot> _subscription;
   bool _started = false;
@@ -79,11 +75,8 @@ class MediaControlsBinder implements MediaCommandHandler {
     if (_differs(state)) _send(state);
   }
 
-  MediaSessionState _map(PlaybackSnapshot snapshot) => mapSnapshot(
-    snapshot,
-    artworkUri: _artworkUri,
-    skipInterval: skipInterval,
-  );
+  MediaSessionState _map(PlaybackSnapshot snapshot) =>
+      mapSnapshot(snapshot, artworkUri: _artworkUri);
 
   bool _differs(MediaSessionState state) {
     final sent = _sent;
@@ -140,22 +133,13 @@ class MediaControlsBinder implements MediaCommandHandler {
   Future<void> seek(Duration position) => _controller.seek(position);
 
   @override
-  Future<void> skipForward() => _skipBy(skipInterval);
+  Future<void> skipForward() => _controller.skipForward();
 
   @override
-  Future<void> skipBackward() => _skipBy(-skipInterval);
+  Future<void> skipBackward() => _controller.skipBackward();
 
   @override
   Future<void> setLiked(bool liked) async {}
-
-  Future<void> _skipBy(Duration delta) {
-    final snapshot = _controller.snapshot;
-    var target = snapshot.position + delta;
-    final duration = mapSnapshot(snapshot).duration;
-    if (duration != null && target > duration) target = duration;
-    if (target < Duration.zero) target = Duration.zero;
-    return _controller.seek(target);
-  }
 }
 
 /// The one [MediaCommandHandler] the OS media surface is initialised with,

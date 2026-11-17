@@ -18,8 +18,15 @@ final AppLogger _log = AppLogger.scope('PlayReporter');
 /// What [PlayReporter] reads of playback at one instant.
 final class ListeningState {
   /// Creates the state of [current], [audible] when the engine is `ready`
-  /// and playing it, [playing] while the play intent is on.
-  const new({required this.audible, required this.playing, this.current});
+  /// and playing it, [playing] while the play intent is on, at [position]
+  /// of an item [duration] long.
+  const new({
+    required this.audible,
+    required this.playing,
+    this.current,
+    this.position = Duration.zero,
+    this.duration,
+  });
 
   /// The queue's current entry, null when the queue is empty.
   final QueueItem? current;
@@ -30,6 +37,12 @@ final class ListeningState {
 
   /// The play intent; it turns off when the user pauses.
   final bool playing;
+
+  /// The position in [current].
+  final Duration position;
+
+  /// The length of [current] once the engine knows it.
+  final Duration? duration;
 }
 
 /// The narrow view of playback [PlayReporter] follows. `core/sync` may not

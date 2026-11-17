@@ -9,6 +9,7 @@ import 'package:soundspan/app/theme/typography.dart';
 import 'package:soundspan/core/playback/engines/player_engine.dart';
 import 'package:soundspan/core/playback/playback_providers.dart';
 import 'package:soundspan/core/playback/playback_snapshot.dart';
+import 'package:soundspan/core/playback/podcast_settings.dart';
 import 'package:soundspan/core/playback/queue/queue_state.dart';
 import 'package:soundspan/features/player/ui/player_item.dart';
 import 'package:soundspan/features/player/ui/right_panel.dart';
@@ -21,11 +22,12 @@ import 'package:soundspan/shared/widgets/quality_badge.dart';
 /// `surfaceRaised` (doc 09, Components).
 ///
 /// Left: the current item's artwork, title, artist and [QualityBadge].
-/// Centre: shuffle, previous, play/pause, next and repeat, with the
-/// [SeekBar] and the elapsed and total times beneath. Right: the lyrics
-/// button, which toggles the lyrics in the right panel (hidden for an
-/// episode), the queue button, which toggles the queue there, the expand
-/// button,
+/// Centre: the [PlayerTransport] (for a track shuffle, previous,
+/// play/pause, next and repeat; for an episode skip back and forward and
+/// the speed), with the [SeekBar] and the elapsed and total times beneath.
+/// Right: the lyrics button, which toggles the lyrics in the right panel
+/// (hidden for an episode), the queue button, which toggles the queue
+/// there, the expand button,
 /// which shows and hides the now-playing overlay, and the volume slider.
 /// It reads only the playback controller's snapshots and calls its
 /// commands; position changes rebuild the seek bar alone. It renders
@@ -134,7 +136,8 @@ class PlayerBar extends ConsumerWidget {
 }
 
 /// Shuffle, previous, play/pause, next and repeat, calling the playback
-/// controller.
+/// controller; for an episode, skip back, play/pause, skip forward and the
+/// speed menu instead (doc 06, Podcasts).
 class PlayerTransport extends ConsumerWidget {
   /// Creates the controls for [snapshot], with a play/pause circle
   /// [playButtonSize] across.
@@ -150,11 +153,52 @@ class PlayerTransport extends ConsumerWidget {
   /// The diameter of the play/pause circle.
   final double playButtonSize;
 
+  /// The key of the episode speed menu button.
+  static const Key speedKey = Key('player.speed');
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = context.colors;
     final l10n = AppLocalizations.of(context);
     final controller = ref.read(playbackControllerProvider);
+    if (snapshot.current is EpisodeQueueItem) {
+      final seconds = snapshot.skipInterval.inSeconds;
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Keeps play/pause centred against the speed button.
+          const SizedBox(width: _speedButtonWidth),
+          IconButton(
+            tooltip: l10n.playerSkipBack(seconds),
+            color: colors.content,
+            icon: const Icon(Icons.fast_rewind_rounded),
+            onPressed: controller.skipBackward,
+          ),
+          const SizedBox(width: Spacing.x4),
+          PlayPauseButton(
+            snapshot: snapshot,
+            size: playButtonSize,
+            onPressed: controller.togglePlayPause,
+          ),
+          const SizedBox(width: Spacing.x4),
+          IconButton(
+            tooltip: l10n.playerSkipForward(seconds),
+            color: colors.content,
+            icon: const Icon(Icons.fast_forward_rounded),
+            onPressed: controller.skipForward,
+          ),
+          SizedBox(
+            width: _speedButtonWidth,
+            child: _SpeedButton(
+              key: speedKey,
+              speed: snapshot.speed,
+              onSelected: (speed) =>
+                  controller.setEpisodeSpeed(speed, remember: true),
+            ),
+          ),
+        ],
+      );
+    }
     final queue = snapshot.queue;
     final shuffled = queue.isShuffled;
     final repeat = queue.repeat;
@@ -200,6 +244,46 @@ class PlayerTransport extends ConsumerWidget {
           onPressed: () => controller.setRepeat(nextRepeatMode(repeat)),
         ),
       ],
+    );
+  }
+}
+
+const double _speedButtonWidth = 56;
+
+/// The episode speed, as a button opening the menu of
+/// [episodeSpeedOptions].
+class _SpeedButton extends StatelessWidget {
+  const new({required this.speed, required this.onSelected, super.key});
+
+  final double speed;
+  final ValueChanged<double> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final typography = context.typography;
+    final l10n = AppLocalizations.of(context);
+    return PopupMenuButton<double>(
+      tooltip: l10n.playerSpeed,
+      initialValue: speed,
+      onSelected: onSelected,
+      itemBuilder: (context) => [
+        for (final option in episodeSpeedOptions)
+          CheckedPopupMenuItem<double>(
+            value: option,
+            checked: option == speed,
+            child: Text(l10n.playerSpeedValue(option)),
+          ),
+      ],
+      child: SizedBox(
+        height: Sizes.touchTarget,
+        child: Center(
+          child: Text(
+            l10n.playerSpeedValue(speed),
+            style: typography.bodySmall.tabular.copyWith(color: colors.content),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -329,6 +413,7 @@ class _PlayerBarProgress extends ConsumerWidget {
       playing: snapshot.playing,
       onSeek: ref.read(playbackControllerProvider).seek,
       showTimes: true,
+      speed: snapshot.speed,
     );
   }
 }

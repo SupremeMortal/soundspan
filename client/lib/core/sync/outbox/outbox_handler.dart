@@ -5,6 +5,7 @@ import 'package:soundspan/core/sync/data/sync_outbox_handlers.dart';
 import 'package:soundspan/core/sync/outbox/outbox_op.dart';
 import 'package:soundspan/shared/data/downloads/download_outbox.dart';
 import 'package:soundspan/shared/data/playlist/playlist_outbox_handlers.dart';
+import 'package:soundspan/shared/data/podcast/episode_progress_outbox.dart';
 
 /// Why the worker dropped an op without delivering it (doc 07, Worker).
 enum OutboxDropReason {
@@ -104,10 +105,12 @@ final Provider<OutboxHandlerRegistry> outboxHandlerRegistryProvider =
         ...ref.watch(syncOutboxHandlersProvider),
         ...ref.watch(playlistOutboxHandlersProvider),
         ...ref.watch(downloadOutboxHandlersProvider),
+        ...ref.watch(episodeProgressOutboxHandlersProvider),
       ]),
       dependencies: [
         syncOutboxHandlersProvider,
         playlistOutboxHandlersProvider,
         downloadOutboxHandlersProvider,
+        episodeProgressOutboxHandlersProvider,
       ],
     );

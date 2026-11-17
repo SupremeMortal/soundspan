@@ -8,6 +8,7 @@ import 'package:soundspan/core/logging/app_logger.dart';
 import 'package:soundspan/core/sync/data/playback_state_repository.dart';
 import 'package:soundspan/core/sync/playback_state.dart';
 import 'package:soundspan/shared/domain/playback_id.dart';
+import 'package:soundspan/shared/domain/podcast.dart';
 import 'package:soundspan/shared/domain/queue_item.dart';
 import 'package:soundspan/shared/domain/track.dart';
 import 'package:soundspan/shared/util/uuid.dart';
@@ -183,11 +184,12 @@ class PlaybackStateSync {
       ..add(_reachability.changes.listen(_onReachability));
   }
 
-  /// The queue the server stored for this device: its tracks in the order
-  /// stored, paused at the stored position. Null when there is none, it
-  /// is empty or the request fails. Episode entries are left out; when the
-  /// current entry was left out, the first remaining one is current, at
-  /// position zero.
+  /// The queue the server stored for this device: its tracks and episodes
+  /// in the order stored, paused at the stored position. Null when there is
+  /// none, it is empty or the request fails. An episode is rebuilt from its
+  /// podcast and episode ids and display fields; tracks without a
+  /// `playbackId` are left out; when the current entry was left out, the
+  /// first remaining one is current, at position zero.
   Future<RemoteQueue?> restore() async {
     final RemotePlaybackState? state;
     try {
@@ -205,10 +207,17 @@ class PlaybackStateSync {
     final items = <QueueItem>[];
     int? cursor;
     for (final (index, entry) in state.queue.indexed) {
-      if (entry case TrackStateEntry(:final playbackId?, :final meta)) {
-        if (index == state.currentIndex) cursor = items.length;
-        items.add(_trackItem(playbackId: playbackId, meta: meta));
-      }
+      final item = switch (entry) {
+        TrackStateEntry(:final playbackId?, :final meta) => _trackItem(
+          playbackId: playbackId,
+          meta: meta,
+        ),
+        TrackStateEntry() => null,
+        final EpisodeStateEntry episode => _episodeItem(episode),
+      };
+      if (item == null) continue;
+      if (index == state.currentIndex) cursor = items.length;
+      items.add(item);
     }
     if (items.isEmpty) return null;
     return (
@@ -389,6 +398,18 @@ QueueItem _trackItem({
   queueItemId: Uuid.v4(),
   track: Track(meta: meta, playbackId: playbackId),
   context: restoredQueueContext,
+);
+
+QueueItem _episodeItem(EpisodeStateEntry entry) => QueueItem.episode(
+  queueItemId: Uuid.v4(),
+  episode: Episode(
+    id: entry.episodeId,
+    podcastId: entry.podcastId,
+    title: entry.title,
+    durationSec: entry.durationSec > 0 ? entry.durationSec : null,
+    artworkRef: entry.coverUrl,
+  ),
+  podcast: Podcast(id: entry.podcastId, title: entry.podcastTitle),
 );
 
 bool _sameList(List<Object?> a, List<Object?> b) {

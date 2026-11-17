@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -17,6 +18,7 @@ import 'package:soundspan/features/podcasts/domain/podcast_detail.dart';
 import 'package:soundspan/features/podcasts/ui/episode_row.dart';
 import 'package:soundspan/features/podcasts/ui/podcasts_view_model.dart';
 import 'package:soundspan/shared/domain/domain.dart';
+import 'package:soundspan/shared/providers/play_actions.dart';
 import 'package:soundspan/shared/widgets/detail_header.dart';
 import 'package:soundspan/shared/widgets/detail_page.dart';
 
@@ -28,7 +30,8 @@ import 'package:soundspan/shared/widgets/detail_page.dart';
 /// order as [EpisodeRow]s of one fixed height. Unsubscribe asks first and
 /// then returns to `/podcasts`. Both buttons are disabled, with a tooltip,
 /// while the server is not reachable, and a failure shows a snackbar and
-/// changes nothing. Episode rows do nothing on tap.
+/// changes nothing. Tapping an episode row replaces the queue with that
+/// episode and plays it from its saved progress.
 class PodcastDetailScreen extends ConsumerWidget {
   /// Creates the page of podcast [podcastId].
   const new({required this.podcastId, super.key});
@@ -61,13 +64,17 @@ class PodcastDetailScreen extends ConsumerWidget {
           onRefresh: () =>
               ref.read(podcastDetailProvider(podcastId).notifier).refresh(),
           onRetry: () => ref.invalidate(podcastDetailProvider(podcastId)),
-          builder: _slivers,
+          builder: (context, detail) => _slivers(context, ref, detail),
         ),
       ),
     );
   }
 
-  List<Widget> _slivers(BuildContext context, PodcastDetail detail) {
+  List<Widget> _slivers(
+    BuildContext context,
+    WidgetRef ref,
+    PodcastDetail detail,
+  ) {
     final l10n = AppLocalizations.of(context);
     final podcast = detail.podcast;
     final episodes = detail.episodes;
@@ -115,6 +122,9 @@ class PodcastDetailScreen extends ConsumerWidget {
                               .round(),
                         ),
                   isFinished: progress?.isFinished ?? false,
+                  onTap: () => unawaited(
+                    ref.read(playActionsProvider).playEpisode(podcast, episode),
+                  ),
                 );
               },
             ),

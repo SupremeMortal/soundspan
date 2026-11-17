@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 
+import 'package:soundspan/core/sync/outbox/optimistic_overlay.dart';
 import 'package:soundspan/features/podcasts/data/podcast_mappers.dart';
 import 'package:soundspan/features/podcasts/domain/podcast_detail.dart';
 import 'package:soundspan/features/podcasts/domain/podcast_ref.dart';
 import 'package:soundspan/features/podcasts/domain/podcast_repository.dart';
 import 'package:soundspan/shared/data/cache_store.dart';
+import 'package:soundspan/shared/data/podcast/episode_progress_outbox.dart';
+import 'package:soundspan/shared/data/preference_overlay.dart';
 import 'package:soundspan/shared/data/swr.dart';
 import 'package:soundspan/shared/domain/domain.dart';
 import 'package:soundspan_api/soundspan_api.dart' as api;
@@ -26,13 +29,18 @@ const podcastTtl = Duration(minutes: 10);
 /// of episode rows, written in one transaction; it is a cache miss when the
 /// podcast row is gone or an episode row fails to decode. Subscribe and
 /// unsubscribe are direct calls, not outbox operations (doc 07, Operations).
+/// A detail shows the progress of the pending `episodeProgress` ops of the
+/// outbox ([PendingOps]), so a position saved offline wins over the cached
+/// one.
 class CachedPodcastRepository implements PodcastRepository {
-  /// A repository reading [_client] into [_store] through [_swr].
-  new(this._client, this._store, this._swr);
+  /// A repository reading [_client] into [_store] through [_swr], overlaid
+  /// with the ops [_pending] answers.
+  new(this._client, this._store, this._swr, {this._pending = noPendingOps});
 
   final api.PodcastsClient _client;
   final CacheStore _store;
   final Swr _swr;
+  final PendingOps _pending;
 
   @override
   Stream<Cached<List<Podcast>>> subscribed() => _swr.watch(
@@ -50,7 +58,14 @@ class CachedPodcastRepository implements PodcastRepository {
       _swr.refresh(subscribedPodcastsKey, _fetchSubscribed);
 
   @override
-  Stream<Cached<PodcastDetail>> detail(String podcastId) => _swr.watch(
+  Stream<Cached<PodcastDetail>> detail(String podcastId) => overlay(
+    _cachedDetail(podcastId),
+    _pending(episodeProgressOps),
+    (detail, ops) =>
+        detail.copyWith(episodes: overlayEpisodeProgress(detail.episodes, ops)),
+  );
+
+  Stream<Cached<PodcastDetail>> _cachedDetail(String podcastId) => _swr.watch(
     key: podcastEpisodesKey(podcastId),
     ttl: podcastTtl,
     cache: () =>

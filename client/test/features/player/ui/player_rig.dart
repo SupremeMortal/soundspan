@@ -36,6 +36,25 @@ QueueItem playerItem(String id, {String? queueItemId, String? artistId}) =>
       context: testContext,
     );
 
+/// An episode entry [id] titled "Episode [id]" of "The Show", 10 seconds
+/// long, with the podcast cover `cover-show`.
+QueueItem playerEpisode(String id, {EpisodeProgress? progress}) =>
+    QueueItem.episode(
+      queueItemId: id,
+      episode: Episode(
+        id: 'ep-$id',
+        podcastId: 'pod-1',
+        title: 'Episode $id',
+        durationSec: 10,
+        progress: progress,
+      ),
+      podcast: const Podcast(
+        id: 'pod-1',
+        title: 'The Show',
+        artworkRef: 'cover-show',
+      ),
+    );
+
 /// A [PlaybackController] over a [FakeEngine] for widget tests, provided
 /// through [overrides].
 class PlayerRig {

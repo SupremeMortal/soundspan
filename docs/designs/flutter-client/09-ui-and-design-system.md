@@ -182,7 +182,7 @@ Header: artwork (140 compact, 192 medium, 232 expanded), overline type label, ti
 - **Expanded:** now playing is the right panel plus the player bar; an "expand" control shows a large-artwork overlay over the content area with lyrics beside it.
 - **Queue:** "Now playing", "Next up" (reorderable, swipe or button to remove), "Clear". In a Listen Together group the header shows the group and member count.
 - **Lyrics:** synced lyrics scroll with the current line in `content` at `title` size, other lines in `contentSecondary`; tapping a line seeks. Plain lyrics scroll freely. "No lyrics found" otherwise. LRC parsing (`[mm:ss.xx]`) is a pure function with tests.
-- Episodes replace shuffle/repeat with skip-back, skip-forward, and speed.
+- Episodes replace shuffle, previous, next and repeat with skip-back, skip-forward (labelled with the interval, "Skip back 15 seconds") and a speed menu (0.5×–3×) on the player bar and now playing; the mini player shows skip-forward in place of next.
 
 ### Podcasts (M1)
 

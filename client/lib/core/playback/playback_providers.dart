@@ -24,6 +24,7 @@ import 'package:soundspan/core/profile/profile_providers.dart';
 import 'package:soundspan/core/profile/settings/settings_providers.dart';
 import 'package:soundspan/core/profile/settings/user_settings.dart';
 import 'package:soundspan/core/storage/state/queue_dao.dart';
+import 'package:soundspan/core/sync/episode_progress_reporter.dart';
 import 'package:soundspan/core/sync/outbox/outbox.dart';
 import 'package:soundspan/core/sync/play_reporter.dart';
 import 'package:soundspan/core/sync/play_session_store.dart';
@@ -110,6 +111,9 @@ final Provider<QueuePersistence> queuePersistenceProvider =
 /// Its [PlayReporter] reports every play to the scope's outbox, closing the
 /// plays an earlier process left in `play_sessions` first. Ending the scope
 /// writes the open play before playback stops.
+///
+/// Its [EpisodeProgressReporter] saves the progress of the episode playing
+/// through the same outbox.
 final Provider<PlaybackController> playbackControllerProvider =
     Provider<PlaybackController>(
       (ref) {
@@ -171,6 +175,11 @@ final Provider<PlaybackController> playbackControllerProvider =
           ref.watch(clockProvider),
           lifecycleStates.stream,
         );
+        final episodeProgress = EpisodeProgressReporter(
+          ControllerListeningSource(controller),
+          ref.watch(outboxProvider).enqueue,
+          ref.watch(clockProvider),
+        );
         final lifecycle = AppLifecycleListener(
           binding: WidgetsBinding.instance,
           onStateChange: (state) {
@@ -186,6 +195,7 @@ final Provider<PlaybackController> playbackControllerProvider =
           lifecycle.dispose();
           unawaited(lifecycleStates.close());
           unawaited(reporter.dispose());
+          unawaited(episodeProgress.dispose());
           unawaited(stateSync.dispose());
           unawaited(loudness.dispose());
           focus.dispose();

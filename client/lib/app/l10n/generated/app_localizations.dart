@@ -2243,6 +2243,30 @@ abstract class AppLocalizations {
   /// **'Pause'**
   String get playerPause;
 
+  /// Tooltip and screen-reader label of the player's button that moves back in an episode by the skip interval.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip back {seconds} seconds'**
+  String playerSkipBack(int seconds);
+
+  /// Tooltip and screen-reader label of the player's button that moves forward in an episode by the skip interval.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip forward {seconds} seconds'**
+  String playerSkipForward(int seconds);
+
+  /// Tooltip and screen-reader label of the player's episode speed menu button.
+  ///
+  /// In en, this message translates to:
+  /// **'Playback speed'**
+  String get playerSpeed;
+
+  /// An episode playback speed on the player's speed button and in its menu, such as 1.25×.
+  ///
+  /// In en, this message translates to:
+  /// **'{speed}×'**
+  String playerSpeedValue(double speed);
+
   /// Tooltip and screen-reader label of the player's button that skips to the next item.
   ///
   /// In en, this message translates to:

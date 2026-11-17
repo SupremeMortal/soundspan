@@ -46,6 +46,33 @@ final PlaybackSnapshot _snapshot = () {
   );
 }();
 
+/// A paused episode at 12:30 of 48:00, at 1.5× with a 30-second skip.
+final PlaybackSnapshot _episodeSnapshot = () {
+  final item = playerEpisode('e');
+  return PlaybackSnapshot(
+    queue: QueueState(items: [item], cursor: 0),
+    current: item,
+    status: EngineStatus.ready,
+    playing: false,
+    position: const Duration(minutes: 12, seconds: 30),
+    buffered: const Duration(minutes: 20),
+    duration: const Duration(minutes: 48),
+    speed: 1.5,
+    skipInterval: const Duration(seconds: 30),
+  );
+}();
+
+/// The overrides of the player goldens, showing [snapshot].
+List<Override> _overridesOf(PlaybackSnapshot snapshot) => [
+  playbackControllerProvider.overrideWith((ref) {
+    final controller = PlayerRig().controller;
+    ref.onDispose(controller.dispose);
+    return controller;
+  }),
+  playbackStateProvider.overrideWith((ref) => Stream.value(snapshot)),
+  playbackSnapshotProvider.overrideWith((ref) => Stream.value(snapshot)),
+];
+
 final List<Override> _overrides = [
   playbackControllerProvider.overrideWith((ref) {
     final controller = PlayerRig().controller;
@@ -219,6 +246,21 @@ void main() {
       initialActiveProfileIdProvider.overrideWithValue(null),
       nowPlayingOverlayProvider.overrideWith(_OverlayShown.new),
     ],
+  );
+
+  goldenMatrix(
+    'player_bar_episode',
+    builder: (_) =>
+        _bottom(const Padding(padding: EdgeInsets.all(8), child: PlayerBar())),
+    sizes: const [TestSizes.expanded],
+    overrides: _overridesOf(_episodeSnapshot),
+  );
+
+  goldenMatrix(
+    'now_playing_episode',
+    builder: (_) => _withController(const NowPlayingScreen()),
+    sizes: const [TestSizes.compact],
+    overrides: _overridesOf(_episodeSnapshot),
   );
 
   goldenMatrix(

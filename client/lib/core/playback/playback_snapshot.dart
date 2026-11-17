@@ -63,6 +63,8 @@ final class PlaybackSnapshot {
     this.quality,
     this.error,
     this.isLocalFile = false,
+    this.speed = 1,
+    this.skipInterval = const Duration(seconds: 15),
   });
 
   /// The snapshot of a controller with an empty queue and nothing loaded.
@@ -102,6 +104,14 @@ final class PlaybackSnapshot {
   /// Whether the current item plays from a local file.
   final bool isLocalFile;
 
+  /// The engine's playback speed: the episode speed while an episode is
+  /// current, else 1.0 (doc 06, Podcasts).
+  final double speed;
+
+  /// How far skip forward and skip back move in an episode
+  /// (`playback.skipSeconds`).
+  final Duration skipInterval;
+
   /// Whether [other] differs from this snapshot only in [position] and
   /// [buffered] (or not at all).
   bool differsOnlyInPosition(PlaybackSnapshot other) =>
@@ -112,7 +122,9 @@ final class PlaybackSnapshot {
       other.duration == duration &&
       other.quality == quality &&
       other.error == error &&
-      other.isLocalFile == isLocalFile;
+      other.isLocalFile == isLocalFile &&
+      other.speed == speed &&
+      other.skipInterval == skipInterval;
 
   @override
   String toString() =>

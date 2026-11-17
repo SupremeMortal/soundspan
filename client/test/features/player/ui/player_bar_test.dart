@@ -159,6 +159,100 @@ void main() {
     await rig.close(tester);
   });
 
+  group('an episode', () {
+    Future<PlayerRig> pumpEpisode(
+      WidgetTester tester, {
+      MemoryDeviceSettings? settings,
+    }) async {
+      final rig = PlayerRig(ids: const ['e', 'a'], settings: settings);
+      await pumpBar(tester, rig: rig, start: false);
+      await rig.start(tester, items: [playerEpisode('e')]);
+      return rig;
+    }
+
+    testWidgets('shows skip and speed and hides shuffle, repeat, previous '
+        'and next', (tester) async {
+      final rig = await pumpEpisode(tester);
+
+      expect(find.text('Episode e'), findsOneWidget);
+      expect(find.text('The Show'), findsOneWidget);
+      expect(find.byTooltip('Skip back 15 seconds'), findsOneWidget);
+      expect(find.byTooltip('Skip forward 15 seconds'), findsOneWidget);
+      expect(find.byKey(PlayerTransport.speedKey), findsOneWidget);
+      expect(find.text('1×'), findsOneWidget);
+      for (final tooltip in ['Shuffle', 'Previous', 'Next', 'Repeat']) {
+        expect(find.byTooltip(tooltip), findsNothing, reason: tooltip);
+      }
+      await rig.close(tester);
+    });
+
+    testWidgets('a track shows the opposite', (tester) async {
+      final rig = await pumpBar(tester);
+
+      expect(find.byTooltip('Shuffle'), findsOneWidget);
+      expect(find.byTooltip('Next'), findsOneWidget);
+      expect(find.byKey(PlayerTransport.speedKey), findsNothing);
+      expect(find.byTooltip('Skip forward 15 seconds'), findsNothing);
+      await rig.close(tester);
+    });
+
+    testWidgets('skip buttons seek by the stored interval, named in their '
+        'labels', (tester) async {
+      final settings = MemoryDeviceSettings()
+        ..values['playback.skipSeconds'] = 5;
+      final rig = PlayerRig(ids: const ['e'], settings: settings);
+      await pumpBar(tester, rig: rig, start: false);
+      await rig.settle(tester);
+      await rig.start(tester, items: [playerEpisode('e')], play: false);
+
+      final semantics = tester.ensureSemantics();
+      expect(
+        tester.getSemantics(find.byTooltip('Skip forward 5 seconds')),
+        containsSemantics(tooltip: 'Skip forward 5 seconds', isButton: true),
+      );
+      expect(
+        tester.getSemantics(find.byTooltip('Skip back 5 seconds')),
+        containsSemantics(tooltip: 'Skip back 5 seconds', isButton: true),
+      );
+      semantics.dispose();
+      await tester.tap(find.byTooltip('Skip forward 5 seconds'));
+      await rig.settle(tester);
+      expect(rig.harness.calls.last, 'seek(0:00:05.000000)');
+
+      await tester.tap(find.byTooltip('Skip back 5 seconds'));
+      await rig.settle(tester);
+      expect(rig.harness.calls.last, 'seek(0:00:00.000000)');
+      await rig.close(tester);
+    });
+
+    testWidgets('the speed menu stores and applies the speed', (tester) async {
+      final settings = MemoryDeviceSettings();
+      final rig = PlayerRig(ids: const ['e'], settings: settings);
+      await pumpBar(tester, rig: rig, start: false);
+      await rig.start(tester, items: [playerEpisode('e')], play: false);
+
+      await tester.tap(find.byKey(PlayerTransport.speedKey));
+      await tester.pumpAndSettle();
+      for (final label in ['0.5×', '0.75×', '1.25×', '2.5×', '3×']) {
+        expect(find.text(label), findsOneWidget, reason: label);
+      }
+      await tester.tap(find.text('1.5×'));
+      await tester.pumpAndSettle();
+
+      expect(settings.values['playback.speed.podcast'], 1.5);
+      expect(rig.engine.speed, 1.5);
+      expect(find.text('1.5×'), findsOneWidget);
+      await rig.close(tester);
+    });
+
+    testWidgets('meets the guidelines', (tester) async {
+      final rig = await pumpEpisode(tester);
+
+      await expectMeetsGuidelines(tester);
+      await rig.close(tester);
+    });
+  });
+
   testWidgets('meets the guidelines', (tester) async {
     final rig = await pumpBar(tester, play: false);
 

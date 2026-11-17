@@ -1696,6 +1696,41 @@
   "@playerPause": {
     "description": "Tooltip and screen-reader label of the player's pause button."
   },
+  "playerSkipBack": "[Šķîþ båçķ {seconds} šéçöñðš one two]",
+  "@playerSkipBack": {
+    "description": "Tooltip and screen-reader label of the player's button that moves back in an episode by the skip interval.",
+    "placeholders": {
+      "seconds": {
+        "type": "int",
+        "example": "15"
+      }
+    }
+  },
+  "playerSkipForward": "[Šķîþ föŕŵåŕð {seconds} šéçöñðš one two three]",
+  "@playerSkipForward": {
+    "description": "Tooltip and screen-reader label of the player's button that moves forward in an episode by the skip interval.",
+    "placeholders": {
+      "seconds": {
+        "type": "int",
+        "example": "15"
+      }
+    }
+  },
+  "playerSpeed": "[Þļåýbåçķ šþééð one two]",
+  "@playerSpeed": {
+    "description": "Tooltip and screen-reader label of the player's episode speed menu button."
+  },
+  "playerSpeedValue": "[{speed}× one]",
+  "@playerSpeedValue": {
+    "description": "An episode playback speed on the player's speed button and in its menu, such as 1.25×.",
+    "placeholders": {
+      "speed": {
+        "type": "double",
+        "format": "decimalPattern",
+        "example": "1.25"
+      }
+    }
+  },
   "playerNext": "[Ñéxţ one]",
   "@playerNext": {
     "description": "Tooltip and screen-reader label of the player's button that skips to the next item."

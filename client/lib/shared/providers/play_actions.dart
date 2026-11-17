@@ -40,8 +40,8 @@ final class PlayLoadFailed extends PlayNotice {
 
 /// The one place outside the player UI that changes the queue on the
 /// user's behalf (doc 09, Components; doc 06, Queue Model): playing a list
-/// from a row, playing an album, playlist or artist, Play next and Add to
-/// queue.
+/// from a row, playing an album, playlist or artist, playing an episode,
+/// Play next and Add to queue.
 ///
 /// Only playable tracks are queued: a track with a `playbackId` (a playlist
 /// also leaves out items the server marks not playable). Each queued track
@@ -92,6 +92,17 @@ class PlayActions {
     }
     await _replace(playable, start: start, context: context);
   }
+
+  /// Replaces the queue with the one [episode] of [podcast] and plays it
+  /// from its saved progress (doc 06, Podcasts): one episode at a time.
+  Future<void> playEpisode(Podcast podcast, Episode episode) =>
+      _controller.playItems([
+        QueueItem.episode(
+          queueItemId: Uuid.v4(),
+          episode: episode,
+          podcast: podcast,
+        ),
+      ]);
 
   /// Inserts the playable [tracks], in order, directly after the current
   /// item; on an empty queue they become the queue, paused.

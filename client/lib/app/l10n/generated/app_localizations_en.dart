@@ -1330,6 +1330,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get playerPause => 'Pause';
 
   @override
+  String playerSkipBack(int seconds) {
+    return 'Skip back $seconds seconds';
+  }
+
+  @override
+  String playerSkipForward(int seconds) {
+    return 'Skip forward $seconds seconds';
+  }
+
+  @override
+  String get playerSpeed => 'Playback speed';
+
+  @override
+  String playerSpeedValue(double speed) {
+    final intl.NumberFormat speedNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String speedString = speedNumberFormat.format(speed);
+
+    return '$speedString×';
+  }
+
+  @override
   String get playerNext => 'Next';
 
   @override
@@ -2779,6 +2801,28 @@ class AppLocalizationsEnXa extends AppLocalizationsEn {
 
   @override
   String get playerPause => '[Þåûšé one]';
+
+  @override
+  String playerSkipBack(int seconds) {
+    return '[Šķîþ båçķ $seconds šéçöñðš one two]';
+  }
+
+  @override
+  String playerSkipForward(int seconds) {
+    return '[Šķîþ föŕŵåŕð $seconds šéçöñðš one two three]';
+  }
+
+  @override
+  String get playerSpeed => '[Þļåýbåçķ šþééð one two]';
+
+  @override
+  String playerSpeedValue(double speed) {
+    final intl.NumberFormat speedNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String speedString = speedNumberFormat.format(speed);
+
+    return '[$speedString× one]';
+  }
 
   @override
   String get playerNext => '[Ñéxţ one]';

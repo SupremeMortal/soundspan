@@ -29,6 +29,8 @@ import 'package:soundspan/shared/util/duration_format.dart';
 ///
 /// With [showTimes], the elapsed time is shown before the bar and the
 /// length after it, or with [showRemaining] the time left as `-m:ss`.
+///
+/// Between snapshots the position moves at [speed] times real time.
 class SeekBar extends StatefulWidget {
   /// Creates the bar of an item [duration] long, at [position].
   const new({
@@ -40,6 +42,7 @@ class SeekBar extends StatefulWidget {
     this.onSeek,
     this.showTimes = false,
     this.showRemaining = false,
+    this.speed = 1,
     super.key,
   });
 
@@ -67,6 +70,9 @@ class SeekBar extends StatefulWidget {
   /// Whether the time after the bar is the time left rather than the
   /// length; only with [showTimes].
   final bool showRemaining;
+
+  /// The playback speed the position moves at between snapshots.
+  final double speed;
 
   /// How far an arrow key seeks.
   static const Duration keyStep = Duration(seconds: 5);
@@ -162,7 +168,7 @@ class _SeekBarState extends State<SeekBar> with SingleTickerProviderStateMixin {
 
   void _onTick(Duration elapsed) {
     _elapsed = elapsed;
-    _shown.value = _clamp(_base + (elapsed - _baseElapsed));
+    _shown.value = _clamp(_base + (elapsed - _baseElapsed) * widget.speed);
   }
 
   Duration _clamp(Duration value) {

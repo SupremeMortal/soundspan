@@ -33,7 +33,8 @@ import 'package:soundspan/shared/widgets/quality_badge.dart';
 /// artwork (at most [maxArtworkSize], radius 12), title and artist (a link
 /// to the artist page when the track has one); the [SeekBar] with the
 /// elapsed and remaining time; shuffle, previous, a [playButtonSize]
-/// play/pause circle, next and repeat; and a row with the [QualityBadge]
+/// play/pause circle, next and repeat (for an episode skip back, the
+/// circle, skip forward and the speed); and a row with the [QualityBadge]
 /// and the lyrics and queue buttons, which open the lyrics and the queue
 /// as sheets. A landscape window wider than compact shows the [QueueView]
 /// beside the controls instead, with the [LyricsView] in a second tab. The
@@ -378,6 +379,7 @@ class _Progress extends ConsumerWidget {
       onSeek: ref.read(playbackControllerProvider).seek,
       showTimes: true,
       showRemaining: true,
+      speed: snapshot.speed,
     );
   }
 }

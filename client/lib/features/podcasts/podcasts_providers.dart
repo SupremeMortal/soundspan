@@ -18,6 +18,12 @@ final FutureProvider<PodcastRepository> podcastRepositoryProvider =
         ref.watch(soundspanApiProvider).rest.podcasts,
         await ref.watch(cacheStoreProvider.future),
         ref.watch(swrProvider),
+        pending: ref.watch(pendingOpsProvider),
       ),
-      dependencies: [soundspanApiProvider, cacheStoreProvider, swrProvider],
+      dependencies: [
+        soundspanApiProvider,
+        cacheStoreProvider,
+        swrProvider,
+        pendingOpsProvider,
+      ],
     );

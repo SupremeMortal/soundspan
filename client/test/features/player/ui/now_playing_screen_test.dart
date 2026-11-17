@@ -117,6 +117,22 @@ void main() {
     await rig.close(tester);
   });
 
+  testWidgets('an episode shows skip and speed and hides shuffle, repeat, '
+      'previous and next', (tester) async {
+    final (rig, _) = await pumpNowPlaying(tester, items: [playerEpisode('a')]);
+
+    expect(find.text('Episode a'), findsOneWidget);
+    expect(find.text('The Show'), findsOneWidget);
+    expect(find.byTooltip('Skip back 15 seconds'), findsOneWidget);
+    expect(find.byTooltip('Skip forward 15 seconds'), findsOneWidget);
+    expect(find.byKey(PlayerTransport.speedKey), findsOneWidget);
+    for (final tooltip in ['Shuffle', 'Previous', 'Next', 'Repeat']) {
+      expect(find.byTooltip(tooltip), findsNothing, reason: tooltip);
+    }
+    await expectMeetsGuidelines(tester);
+    await rig.close(tester);
+  });
+
   testWidgets('the artist opens the artist page and closes the screen', (
     tester,
   ) async {

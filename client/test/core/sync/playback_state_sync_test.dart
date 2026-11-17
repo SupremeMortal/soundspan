@@ -718,12 +718,36 @@ void main() {
       });
     }
 
-    test('skips episode items; a skipped current item moves the cursor to '
-        'the first remaining item at position zero', () {
+    test('rebuilds episode items from their podcast and episode ids and '
+        'display fields', () {
       _inFakeTime((async) {
         final (rig, db) = emptyStore(async, (client) {
           client.stored = _wireState([
             _wireEpisode(),
+            _wireTrack('p1'),
+          ], currentTime: 300);
+        });
+        final snapshot = rig.controller.snapshot;
+        expect(snapshot.queue.items, hasLength(2));
+        expect(snapshot.queue.cursor, 0);
+        final current = snapshot.current! as EpisodeQueueItem;
+        expect(current.podcast.id, 'pod-1');
+        expect(current.podcast.title, 'The Show');
+        expect(current.episode.id, 'ep-1');
+        expect(current.episode.podcastId, 'pod-1');
+        expect(current.episode.title, 'Episode one');
+        expect(current.episode.durationSec, 1800);
+        expect(snapshot.position, const Duration(seconds: 300));
+        close(rig, db);
+      });
+    });
+
+    test('skips episode items without their ids; a skipped current item '
+        'moves the cursor to the first remaining item at position zero', () {
+      _inFakeTime((async) {
+        final (rig, db) = emptyStore(async, (client) {
+          client.stored = _wireState([
+            {..._wireEpisode()}..remove('episodeId'),
             _wireTrack('p1'),
             _wireTrack('p2'),
           ], currentTime: 300);

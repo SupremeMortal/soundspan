@@ -11,6 +11,7 @@ import 'package:soundspan/core/playback/failure_policy.dart';
 import 'package:soundspan/core/playback/persistence.dart';
 import 'package:soundspan/core/playback/playback_command.dart';
 import 'package:soundspan/core/playback/playback_snapshot.dart';
+import 'package:soundspan/core/playback/podcast_settings.dart';
 import 'package:soundspan/core/playback/queue/queue_command.dart';
 import 'package:soundspan/core/playback/queue/queue_reducer.dart';
 import 'package:soundspan/core/playback/queue/queue_state.dart';
@@ -78,7 +79,10 @@ class PlaybackController {
     _eventSubscription = _engine.events.listen(
       (event) => unawaited(_enqueue(() => _onEngineEvent(event))),
     );
-    if (_deviceSettings != null) unawaited(_enqueue(_restoreVolume));
+    if (_deviceSettings != null) {
+      unawaited(_enqueue(_restoreVolume));
+      unawaited(_enqueue(_readSkipInterval));
+    }
   }
 
   final PlayerEngine _engine;
@@ -115,6 +119,12 @@ class PlaybackController {
 
   /// Where the current item starts when it is loaded lazily by [play].
   Duration _pendingStartAt = Duration.zero;
+
+  /// The speed last given to the engine; the engine starts at 1.0.
+  double _speed = 1;
+
+  /// The skip interval of episodes, as last read from the device settings.
+  Duration _skipInterval = defaultEpisodeSkipInterval;
 
   final ValueNotifier<double> _volume = ValueNotifier<double>(1);
   double get _userVolume => _volume.value;
@@ -303,12 +313,61 @@ class PlaybackController {
   /// device.
   Future<void> setVolume(double volume) => dispatch(SetVolumeCommand(volume));
 
-  /// Sets the engine speed to [speed] (clamped to 0.5–3.0 by the engine)
-  /// when the current entry is an episode; with a track or nothing current
-  /// it does nothing (doc 06, Podcasts).
-  Future<void> setEpisodeSpeed(double speed) => _enqueue(() async {
-    if (_queue.current is EpisodeQueueItem) await _engine.setSpeed(speed);
-  });
+  /// Sets the engine speed to [speed] (clamped to 0.5–3.0) when the
+  /// current entry is an episode; with a track or nothing current the
+  /// engine is not touched (doc 06, Podcasts). With [remember] the speed
+  /// is also stored as the episode speed, `playback.speed.podcast`, which
+  /// every episode that becomes current plays at.
+  Future<void> setEpisodeSpeed(double speed, {bool remember = false}) =>
+      _enqueue(() async {
+        final clamped = speed.clamp(0.5, 3.0);
+        if (remember) {
+          try {
+            await _deviceSettings?.write(podcastSpeedKey, clamped);
+          } on Object catch (error, stackTrace) {
+            _log.warning(
+              'Storing the episode speed failed',
+              const {},
+              error,
+              stackTrace,
+            );
+          }
+        }
+        if (_queue.current is EpisodeQueueItem) await _setSpeed(clamped);
+      });
+
+  /// Moves forward in the current item by the episode skip interval
+  /// (`playback.skipSeconds`, default 15 s), clamped to its duration.
+  Future<void> skipForward() => _skipBy(forward: true);
+
+  /// Moves back in the current item by the episode skip interval, clamped
+  /// to its start.
+  Future<void> skipBackward() => _skipBy(forward: false);
+
+  /// The episode skip interval as last read from the device settings.
+  Duration get skipInterval => _skipInterval;
+
+  Future<void> _skipBy({required bool forward}) async {
+    await _readSkipInterval();
+    final snapshot = this.snapshot;
+    final current = snapshot.current;
+    if (current == null) return;
+    var target = forward
+        ? snapshot.position + _skipInterval
+        : snapshot.position - _skipInterval;
+    final duration = snapshot.duration ?? _knownDuration(current);
+    if (duration != null && target > duration) target = duration;
+    if (target < Duration.zero) target = Duration.zero;
+    await seek(target);
+  }
+
+  static Duration? _knownDuration(QueueItem item) {
+    final seconds = switch (item) {
+      TrackQueueItem(:final track) => track.meta.durationSec,
+      EpisodeQueueItem(:final episode) => episode.durationSec,
+    };
+    return seconds == null || seconds <= 0 ? null : Duration(seconds: seconds);
+  }
 
   /// Sets the volume factor named [key] (`loudness`, `duck`); the engine
   /// volume is the user volume times every factor, clamped to 0.0–1.0.
@@ -514,7 +573,9 @@ class PlaybackController {
     _error = null;
     if (!retry) _onItemChanged(item);
     if (item == null) return;
-    final startAt = _pendingStartAt;
+    final startAt = !retry && _pendingStartAt == Duration.zero
+        ? _resumePosition(item)
+        : _pendingStartAt;
     _pendingStartAt = Duration.zero;
     _lastPosition = startAt;
     final EngineSource source;
@@ -538,6 +599,65 @@ class PlaybackController {
     _fetchQuality(item, source);
     _publish();
     await _engine.load(source, autoPlay: _playIntent);
+    await _applySpeedFor(item);
+  }
+
+  /// Where [item] starts when nothing else says: an episode at its saved
+  /// progress, anything else at zero.
+  static Duration _resumePosition(QueueItem item) => switch (item) {
+    EpisodeQueueItem(:final episode) => episodeResumePosition(episode),
+    TrackQueueItem() => Duration.zero,
+  };
+
+  /// Gives the engine the speed of [item]: the stored episode speed for
+  /// an episode, 1.0 for anything else.
+  Future<void> _applySpeedFor(QueueItem? item) async {
+    if (item is EpisodeQueueItem) {
+      await _setSpeed(await _readEpisodeSpeed());
+    } else {
+      await _setSpeed(1);
+    }
+  }
+
+  Future<void> _setSpeed(double speed) async {
+    if (speed == _speed || _disposed) return;
+    _speed = speed;
+    await _engine.setSpeed(speed);
+    _publish();
+  }
+
+  Future<double> _readEpisodeSpeed() async {
+    try {
+      return episodeSpeedOf(await _deviceSettings?.read(podcastSpeedKey));
+    } on Object catch (error, stackTrace) {
+      _log.warning(
+        'Reading the episode speed failed',
+        const {},
+        error,
+        stackTrace,
+      );
+      return defaultEpisodeSpeed;
+    }
+  }
+
+  Future<void> _readSkipInterval() async {
+    final settings = _deviceSettings;
+    if (settings == null) return;
+    final Duration interval;
+    try {
+      interval = episodeSkipIntervalOf(await settings.read(skipSecondsKey));
+    } on Object catch (error, stackTrace) {
+      _log.warning(
+        'Reading the skip interval failed',
+        const {},
+        error,
+        stackTrace,
+      );
+      return;
+    }
+    if (interval == _skipInterval || _disposed) return;
+    _skipInterval = interval;
+    _publish();
   }
 
   /// A different item (or none) is current: its retries are unused, a
@@ -682,6 +802,7 @@ class PlaybackController {
         _failureHandled = false;
         _lastPosition = Duration.zero;
         if (preloaded != null) _fetchQuality(_queue.current!, preloaded);
+        await _applySpeedFor(_queue.current);
       } else {
         await _applyEffect(
           transition.effect == QueueEffect.stop
@@ -828,6 +949,8 @@ class PlaybackController {
         quality: _quality,
         error: _error,
         isLocalFile: _currentSource?.uri.isScheme('file') ?? false,
+        speed: _speed,
+        skipInterval: _skipInterval,
       ),
     );
   }
