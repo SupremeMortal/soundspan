@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:path/path.dart' as p;
 import 'package:soundspan/core/connectivity/reachability.dart';
 import 'package:soundspan/core/downloads/download_controller.dart';
 import 'package:soundspan/core/downloads/download_keys.dart';
@@ -485,6 +486,52 @@ void main() {
       final row = (await restarted.item('t1'))!;
       expect(row.status, DownloadStatus.failedRetryable);
       expect(row.failureCode, DownloadFailureCodes.verificationFailed);
+    });
+
+    // The app died just after renaming the .part file to its final name,
+    // before the row was marked completed.
+    String writeFinal(String playbackId, int bytes) {
+      final path = restarted.paths.finalFile(
+        itemKeyHash(TrackItemKey(playbackId)),
+        'audio/flac',
+      );
+      File(path)
+        ..createSync(recursive: true)
+        ..writeAsBytesSync(List.filled(bytes, 1));
+      return path;
+    }
+
+    test('a verifying row with no .part file but a final file of the expected '
+        'size is completed at start-up', () async {
+      await leaveVerifying('t1');
+      final path = writeFinal('t1', 1000);
+
+      await startLikeTheApp();
+
+      final row = (await restarted.item('t1'))!;
+      expect(row.status, DownloadStatus.completed);
+      expect(row.sizeBytes, 1000);
+      expect(row.relativePath, endsWith('.flac'));
+      expect(
+        p.normalize(restarted.paths.resolve(row.relativePath!)),
+        p.normalize(path),
+      );
+      expect(File(path).existsSync(), isTrue);
+      expect(row.serverConfirmed, isTrue);
+    });
+
+    test('a verifying row with no .part file but a final file of the wrong '
+        'size fails and the file is deleted', () async {
+      await leaveVerifying('t1');
+      final path = writeFinal('t1', 999);
+
+      await startLikeTheApp();
+
+      final row = (await restarted.item('t1'))!;
+      expect(row.status, DownloadStatus.failedRetryable);
+      expect(row.failureCode, DownloadFailureCodes.verificationFailed);
+      expect(row.relativePath, isNull);
+      expect(File(path).existsSync(), isFalse);
     });
   });
 }

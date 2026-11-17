@@ -11,6 +11,7 @@ import 'package:drift/drift.dart' show Value;
 import 'package:flutter/foundation.dart'
     show immutable, listEquals, visibleForTesting;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path/path.dart' as p;
 import 'package:soundspan/core/connectivity/reachability.dart';
 import 'package:soundspan/core/downloads/download_keys.dart';
 import 'package:soundspan/core/downloads/download_quota.dart';
@@ -1069,6 +1070,15 @@ class DownloadController {
     final part = paths.partFile(hash);
     final size = await _mediaFiles.length(part);
     final expected = row.expectedBytes;
+    if (size == null) {
+      // The app may have died between renaming the .part file and
+      // recording the result: check the final file instead.
+      final renamed = await _finalFileOf(paths, hash);
+      if (renamed != null) {
+        await _verifyRenamed(key, paths, hash, renamed, expected);
+        return;
+      }
+    }
     if (size == null || size == 0 || (expected != null && size != expected)) {
       _log.info('A download failed verification', {
         'item': hash,
@@ -1092,6 +1102,55 @@ class DownloadController {
       return;
     }
     await _scheduler.deliver(key, VerificationPassed(size, relative));
+    if ((await _store.item(key))?.status == DownloadStatus.completed) {
+      _emit(DownloadItemCompleted(key));
+    }
+  }
+
+  /// The absolute path of item [hash]'s final-named file in its fan-out
+  /// directory, or null when there is none.
+  Future<String?> _finalFileOf(DownloadPaths paths, String hash) async {
+    final part = paths.partFile(hash);
+    for (final file in await _mediaFiles.listFiles(p.dirname(part))) {
+      final name = p.basename(file);
+      if (name.startsWith('$hash.') && name != p.basename(part)) return file;
+    }
+    return null;
+  }
+
+  /// Verifies the final file at [path], renamed from item [key]'s `.part`
+  /// file just before the app died, and completes the item with it; a
+  /// file of the wrong size is deleted and the item fails verification.
+  Future<void> _verifyRenamed(
+    DownloadItemKey key,
+    DownloadPaths paths,
+    String hash,
+    String path,
+    int? expected,
+  ) async {
+    final size = await _mediaFiles.length(path);
+    if (size == null || size == 0 || (expected != null && size != expected)) {
+      _log.info('A renamed download failed verification', {
+        'item': hash,
+        'size': size,
+        'expected': expected,
+      });
+      try {
+        await _mediaFiles.delete(path);
+      } on Object catch (error, stackTrace) {
+        _log.warning(
+          'Could not delete a renamed download',
+          {'item': hash},
+          error,
+          stackTrace,
+        );
+      }
+      await _scheduler.deliver(key, const VerificationFailed());
+      return;
+    }
+    final relative = p.relative(path, from: paths.profile.supportRoot);
+    await _scheduler.deliver(key, VerificationPassed(size, relative));
+    _log.info('Adopted a renamed download', {'item': hash});
     if ((await _store.item(key))?.status == DownloadStatus.completed) {
       _emit(DownloadItemCompleted(key));
     }
