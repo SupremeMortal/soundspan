@@ -22,7 +22,7 @@ Native targets only. On web `PlatformCapabilities.canDownload` is false and ever
    - `downloadable: false` → membership recorded with the item in status `unavailable` and the server's `reason`. Shown greyed out, without source wording: `SOURCE_DOWNLOADS_DISABLED` → "Downloads are turned off on this server", `TRACK_UNAVAILABLE` → "No longer available", `SOURCE_UNAVAILABLE` → "Not available for your account".
    - `downloadable: true` and the item is already `completed` at the same quality → add the membership only.
    - Otherwise upsert the item as `queued` with `downloadUrl`, `expectedBytes`, `quality`, and a metadata snapshot.
-6. Check the local quota (below). Items that do not fit stay `queued` with `waitingFor: space`.
+6. Check the local quota (below, Device limit pass). Items that do not fit stay `queued` with `waitingFor: space`.
 7. Hand queued items to the scheduler.
 
 Offline at step 2: the collection stays `resolving(pendingNetwork)` and is retried when the server is reachable. Nothing is added to the outbox; the collection row is the pending work.
@@ -55,7 +55,7 @@ Podcast episodes do not use `/api/offline/items` (the unified offline API covers
 | Transition | Trigger | Action |
 |---|---|---|
 | `queued → running` | Scheduler slot free, constraints met | Enqueue a `DownloadTask`; store `taskId` |
-| `running → verifying` | Transfer reports complete | See Verification |
+| `running → verifying` | Transfer reports complete | `VerifyFile` effect; see Verification |
 | `verifying → completed` | Size check passes | Atomic rename `.part` → final path; set `sizeBytes`, `completedAt` |
 | `completed → confirmed` | `POST /api/offline/items/complete` succeeds | `serverConfirmed = true` (a flag on the completed row, not a separate status) |
 | `running → paused` | User pause, Wi-Fi-only and not on Wi-Fi, disk full | Cancel the task; the item restarts from byte zero when it runs again (Resume Rule) |
@@ -92,7 +92,7 @@ DownloadTask(
 - **iOS:** background `URLSession`. The OS decides when to run discretionary transfers; user-initiated downloads are marked high priority. After the app is killed and relaunched by the OS for session events, the root-scope handler records results in the right profile's `state.db` ([04](04-auth-and-server-profiles.md), Multiple Profiles).
 - **Desktop:** in-process transfers; they stop when the app quits and resume on next start.
 - **Start-up:** `FileDownloader().start()` re-attaches to OS tasks; `resumeFromBackground()` delivers events that arrived while the app was dead. Then the controller reconciles `download_items` in `running` with the plugin's task records: a `running` row with no live task goes back to `queued`, and each `failedRetryable` row's retry is re-armed from its stored `nextAttemptAt`.
-- **Scheduler:** `DownloadScheduler` (`lib/core/downloads/download_scheduler.dart`, one per profile, started by `startDownloads` in bootstrap step 8) owns the slots, the order and the constraints. It enqueues one task per free slot after checking, in turn: reachability is `online` (otherwise nothing starts and running tasks finish or fail on their own); with `downloads.wifiOnly` the connection is Wi-Fi or another non-cellular kind such as Ethernet (otherwise running tasks are paused with `waitingFor: wifi` and resume when the connection allows); and `DiskSpace.freeBytes(media) − 500 MB` covers the item's remaining bytes (otherwise it stays `queued` with `waitingFor: space`; unknown free space skips this check). A `waitingFor: space` marker the scheduler did not set itself belongs to the device limit and is skipped until cleared. A downloader `noSpace` failure pauses the item for space without counting an attempt; a `cancelled` one it did not ask for is `TaskLost`. It pumps on start, on every terminal event, on a return to `online`, on a connection-type change (`ReachabilityController.connectionTypeChanges`), on a change of `downloads.wifiOnly`, and when the controller calls `pump()`. It runs `EnqueueTask`, `PauseOrCancelKeepingPart`, `ScheduleRetry` and `RefreshCredentials` (`SessionController.refreshNow`) itself and emits the other effects for the controller. A user pause holds a queued item with `waitingFor: user`.
+- **Scheduler:** `DownloadScheduler` (`lib/core/downloads/download_scheduler.dart`, one per profile, started by `startDownloads` in bootstrap step 8) owns the slots, the order and the constraints. It enqueues one task per free slot after checking, in turn: reachability is `online` (otherwise nothing starts and running tasks finish or fail on their own); with `downloads.wifiOnly` the connection is Wi-Fi or another non-cellular kind such as Ethernet (otherwise running tasks are paused with `waitingFor: wifi` and resume when the connection allows); and `DiskSpace.freeBytes(media) − 500 MB` covers the item's remaining bytes (otherwise it stays `queued` with `waitingFor: space`; unknown free space skips this check). A `waitingFor: space` marker the scheduler did not set itself belongs to the device limit and is skipped until cleared. A downloader `noSpace` failure pauses the item for space without counting an attempt; a `cancelled` one it did not ask for is `TaskLost`. It pumps on start, on every terminal event, on a return to `online`, on a connection-type change (`ReachabilityController.connectionTypeChanges`), on a change of `downloads.wifiOnly`, and when the controller calls `pump()`. It runs `EnqueueTask`, `PauseOrCancelKeepingPart`, `ScheduleRetry` and `RefreshCredentials` (`SessionController.refreshNow`) itself and emits the other effects for the controller; it adds the response `Content-Type` it saw to `VerifyFile` (kept in memory only, so a completion delivered after a restart has none and the file gets the `bin` extension). The controller hands its results back with `deliver(key, event)`, which runs in turn with the scheduler's own steps, and sets or clears the device-limit markers with `applyDeviceLimit(fitting, waiting)`. A user pause holds a queued item with `waitingFor: user`.
 - **Credentials in queued tasks:** headers are fixed at enqueue time. JWT sessions call `ensureFresh(minRemaining: 12 h)` before each enqueue. A transfer that still gets 401 is retried with fresh headers.
 
 ### Resume Rule
@@ -109,7 +109,9 @@ The server contract (`unified-playback-api.md`, P4) is: resume with `Range` and 
 - If `expectedBytes` is null, compare with the response `Content-Length` when present; otherwise accept.
 - A zero-byte file is always a failure.
 - No checksum: the server offers none.
-- After the rename, `POST /api/offline/items/complete { deviceId, playbackId, quality, sizeBytes }` is sent directly when online, or as an outbox operation otherwise.
+- The controller checks the `.part` file through the `MediaFiles` seam (`length`). A `Content-Length` sent where the server announced no size is stored as `expectedBytes` when the response arrives, so one comparison covers both rules.
+- A pass renames `.part` to `DownloadPaths.finalFile(hash, contentType)` (`MediaFiles.replace`: same directory, an existing target is replaced) and then delivers `VerificationPassed(sizeBytes, relativePath)`, which sets `completedAt`; the `RenamePartToFinal` effect it emits has nothing left to do. A rename that throws is a `VerificationFailed`, whose `DeleteFile` effect deletes the `.part` file. A crash between the rename and the row update is repaired by the start-up scan (Reconciliation); there is no journal.
+- After the rename, `POST /api/offline/items/complete { deviceId, playbackId, quality, sizeBytes }` is sent directly when online, or as an outbox operation otherwise. A direct call that fails with `Offline`, `ServerError`, `Upstream` or `RateLimited` also goes to the outbox (`OfflineCompleteQueue`, an `offlineComplete` op); when the op is delivered its handler marks the item `serverConfirmed`. Any other refusal, 404 and 409 included, leaves the item `completed` and unconfirmed for reconciliation. `quality` is the item's stored quality, else the `quality.download` setting, else `original`. Episodes are not reported.
 
 ## Storage Accounting and Quota
 
@@ -122,6 +124,8 @@ Two independent limits apply.
 
 - Before queuing, the client sums `sizeBytes` of completed items, `expectedBytes` of queued ones (unknown sizes estimated at 8 MB), and compares with the device limit and with free disk space minus a 500 MB reserve.
 - When pinned content would exceed the device limit, the sheet says how much is needed and offers "Raise limit" or "Download what fits".
+- **Device limit pass** (`DownloadController`, pure part in `download_quota.dart`): `evaluateQuota` takes the queued items in schedule order and fits a prefix of them into `min(limit − committed, free − 500 MB)`, where committed is everything but the queued items and free is the disk's free space less the remaining bytes of running and paused transfers (no disk term when free space is unknown). Items past the cut wait with `waitingFor: space`; items within it lose a `space` marker (the scheduler re-checks free disk space by itself); a user hold is kept. The pass runs after each pin, after each unpin, on `raiseDeviceLimit(bytes)` and `recheckSpace()`, at start-up and whenever `downloads.quotaBytes` changes. The default limit is written the first time a pass has queued items to place. "Download what fits" needs no call: it is the state a pin leaves.
+- `CollectionDownloadState.quotaShortfall` (`QuotaShortfall { neededBytes, availableBytes }`) is set while any of the collection's items is queued or paused with `waitingFor: space`, whether the device limit or a full disk (a downloader `noSpace` failure) put it there: the bytes those items still need and the room left for them after the queued items that fit. A server quota refusal is a `blocked(serverQuota)` collection, not a shortfall.
 - **Auto-cache (non-pinned)** is off in v1. The table and eviction order (`lastPlayedAt` ascending) are in place so that "keep recently played tracks" can be added without a migration; `downloads.autoCacheBytes` defaults to 0.
 - `Settings → Storage` shows per-profile totals for downloads, image cache, and database, with "Remove all downloads" and "Clear cache".
 
@@ -208,8 +212,8 @@ A playlist created offline has a temporary id (`tmp_<uuid>`). When `playlistCrea
 | `Offline`, 5xx, `Upstream` | Stop the pass; `nextAttemptAt` = backoff 5 s × 2^attempts, cap 15 min |
 | `RateLimited` | Stop the pass; retry after the given delay |
 | `Unauthenticated` | Stop; ops are kept across re-sign-in to the same `(baseUrl, userId)` |
-| 404 on the target (playlist or track gone) | Drop the op; one grouped snackbar: "Some changes couldn't be saved because the item no longer exists" |
-| 409 | Drop the op; refetch the entity; snackbar |
+| 404 on the target (playlist or track gone) | Drop the op; one grouped snackbar: "Some changes couldn't be saved because the item no longer exists" (none for `offlineComplete`, which the user never made) |
+| 409 | Drop the op; refetch the entity; snackbar (none for `offlineComplete`) |
 | 400 | Drop the op; log at `severe` (a client bug) |
 
 - The cache is updated before the op is deleted, so an overlay never falls back to the value from before the write between the two steps. An op replaced by coalescing while in flight needs no special case: deleting or recording a failure of a missing `seq` does nothing.

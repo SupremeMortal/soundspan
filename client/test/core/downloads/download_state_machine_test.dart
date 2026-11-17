@@ -34,11 +34,11 @@ void main() {
     expect(t.effects, [const EnqueueTask('abc')]);
   });
 
-  test('running → verifying on transfer complete', () {
+  test('running → verifying on transfer complete, asking for verification', () {
     final t = _reduce(_running, const TransferCompleted());
     expect(t.next.status, DownloadStatus.verifying);
     expect(t.next.taskId, 'task');
-    expect(t.effects, isEmpty);
+    expect(t.effects, [const VerifyFile()]);
   });
 
   test(

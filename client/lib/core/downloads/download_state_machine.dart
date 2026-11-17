@@ -332,6 +332,27 @@ final class DeleteRow extends DownloadEffect {
   const new();
 }
 
+/// Check the finished `.part` file and answer [VerificationPassed] or
+/// [VerificationFailed].
+final class VerifyFile extends DownloadEffect {
+  /// Creates the effect; [contentType] is the response's `Content-Type`,
+  /// which the scheduler adds when it knows it.
+  const new({this.contentType});
+
+  /// The response's `Content-Type`, which picks the final file's extension.
+  final String? contentType;
+
+  @override
+  bool operator ==(Object other) =>
+      other is VerifyFile && other.contentType == contentType;
+
+  @override
+  int get hashCode => contentType.hashCode;
+
+  @override
+  String toString() => 'VerifyFile($contentType)';
+}
+
 /// Rename the `.part` file to [relativePath] atomically.
 final class RenamePartToFinal extends DownloadEffect {
   /// Creates the effect.
@@ -443,7 +464,7 @@ DownloadTransition reduce(
     TransferCompleted() when status == DownloadStatus.running =>
       DownloadTransition(
         state.copyWith(status: DownloadStatus.verifying),
-        const [],
+        const [VerifyFile()],
       ),
     VerificationPassed(:final sizeBytes, :final relativePath)
         when status == DownloadStatus.verifying =>

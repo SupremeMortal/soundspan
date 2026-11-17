@@ -126,6 +126,7 @@ class DownloadScheduler {
   final Map<DownloadItemKey, DateTime> _progressWrittenAt = {};
   final Map<String, DownloadRequest> _pendingRequests = {};
   final Set<DownloadItemKey> _diskWaits = {};
+  final Map<DownloadItemKey, String?> _contentTypes = {};
   final Set<DownloadItemKey> _cancelled = {};
 
   Future<void> _tail = Future<void>.value();
@@ -135,8 +136,9 @@ class DownloadScheduler {
   bool _available = true;
   bool _disposed = false;
 
-  /// The effects the controller runs: `RenamePartToFinal`, `SendComplete`,
-  /// `DeleteFile`, `DeleteRow` and `ReResolveCollection`.
+  /// The effects the controller runs: `VerifyFile` (with the response's
+  /// `Content-Type` when this scheduler saw it), `RenamePartToFinal`,
+  /// `SendComplete`, `DeleteFile`, `DeleteRow` and `ReResolveCollection`.
   Stream<DownloadItemEffect> get effects => _effects.stream;
 
   /// Whether downloads can run on this device: false once the downloader
@@ -279,6 +281,45 @@ class DownloadScheduler {
       final taskId = row.taskId;
       if (taskId != null) {
         await _downloader.cancel(taskId, deletePartial: true);
+      }
+    });
+    pump();
+  }
+
+  /// Applies [event] to item [key] in turn with this scheduler's own steps,
+  /// runs the effects it owns (such as the retry of a failed verification)
+  /// and emits the others on [effects].
+  Future<void> deliver(DownloadItemKey key, DownloadEvent event) =>
+      _serial(() => _apply(key, event));
+
+  /// Applies the device limit (doc 07, Storage Accounting and Quota): each
+  /// queued item of [waiting] waits with `waitingFor: space` until a later
+  /// call lists it in [fitting], which clears that marker. Items the user
+  /// holds keep their marker. Then pumps; free disk space is still checked
+  /// by the pump.
+  Future<void> applyDeviceLimit({
+    required Iterable<DownloadItemKey> fitting,
+    required Iterable<DownloadItemKey> waiting,
+  }) async {
+    await _serial(() async {
+      for (final key in waiting) {
+        final row = await _store.item(key);
+        if (row == null || row.status != DownloadStatus.queued) continue;
+        final reason = DownloadStore.waitReasonOf(row);
+        if (reason == DownloadWaitReason.user) continue;
+        _diskWaits.remove(key);
+        if (reason != DownloadWaitReason.space) {
+          await _store.setWaitingFor(key, DownloadWaitReason.space);
+        }
+      }
+      for (final key in fitting) {
+        final row = await _store.item(key);
+        if (row == null || row.status != DownloadStatus.queued) continue;
+        if (DownloadStore.waitReasonOf(row) != DownloadWaitReason.space) {
+          continue;
+        }
+        _diskWaits.remove(key);
+        await _store.setWaitingFor(key, null);
       }
     });
     pump();
@@ -464,7 +505,12 @@ class DownloadScheduler {
         }
         _progressWrittenAt[key] = now;
         await _store.updateProgress(key, receivedBytes);
-      case DownloaderResponseInfo(:final etag, :final contentLength):
+      case DownloaderResponseInfo(
+        :final etag,
+        :final contentLength,
+        :final contentType,
+      ):
+        _contentTypes[key] = contentType;
         await _store.recordResponse(
           key,
           etag: etag,
@@ -557,6 +603,13 @@ class DownloadScheduler {
             stackTrace,
           );
         }
+      case VerifyFile():
+        _effects.add(
+          DownloadItemEffect(
+            key,
+            VerifyFile(contentType: _contentTypes.remove(key)),
+          ),
+        );
       case RenamePartToFinal() ||
           SendComplete() ||
           DeleteFile() ||

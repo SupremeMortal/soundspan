@@ -8,13 +8,16 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:drift/drift.dart' show Value;
-import 'package:flutter/foundation.dart' show immutable, listEquals;
+import 'package:flutter/foundation.dart'
+    show immutable, listEquals, visibleForTesting;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:soundspan/core/connectivity/reachability.dart';
 import 'package:soundspan/core/downloads/download_keys.dart';
+import 'package:soundspan/core/downloads/download_quota.dart';
 import 'package:soundspan/core/downloads/download_scheduler.dart';
 import 'package:soundspan/core/downloads/download_state_machine.dart';
 import 'package:soundspan/core/downloads/download_store.dart';
+import 'package:soundspan/core/downloads/offline_complete_queue.dart';
 import 'package:soundspan/core/downloads/offline_delete_queue.dart';
 import 'package:soundspan/core/downloads/offline_models.dart';
 import 'package:soundspan/core/downloads/offline_repository.dart';
@@ -25,6 +28,7 @@ import 'package:soundspan/core/profile/profile_providers.dart';
 import 'package:soundspan/core/storage/state/device_settings_dao.dart';
 import 'package:soundspan/core/storage/state/enums.dart';
 import 'package:soundspan/core/storage/state/state_database.dart';
+import 'package:soundspan/platform/disk_space/disk_space.dart';
 import 'package:soundspan/platform/media_files/media_files.dart';
 import 'package:soundspan/shared/clock.dart';
 import 'package:soundspan/shared/data/downloads/download_outbox.dart';
@@ -113,6 +117,7 @@ final class CollectionDownloadState {
     required this.totalBytes,
     this.blockedReason,
     this.blockedDetail,
+    this.quotaShortfall,
   });
 
   /// Where the collection is.
@@ -143,9 +148,14 @@ final class CollectionDownloadState {
   /// quota refusal (`limitBytes`, `usedBytes`, `estimatedBytes`).
   final Map<String, Object?>? blockedDetail;
 
+  /// Set while some of its items wait for space, on the device limit or on
+  /// the disk: what they need and what is free for them.
+  final QuotaShortfall? quotaShortfall;
+
   @override
   bool operator ==(Object other) =>
       other is CollectionDownloadState &&
+      other.quotaShortfall == quotaShortfall &&
       other.status == status &&
       other.blockedReason == blockedReason &&
       other.itemCount == itemCount &&
@@ -164,13 +174,14 @@ final class CollectionDownloadState {
     unavailableCount,
     receivedBytes,
     totalBytes,
+    quotaShortfall,
   );
 
   @override
   String toString() =>
       'CollectionDownloadState($status, block: $blockedReason, '
       '$completedCount/$itemCount, unavailable: $unavailableCount, '
-      '$receivedBytes/$totalBytes bytes)';
+      '$receivedBytes/$totalBytes bytes, shortfall: $quotaShortfall)';
 
   static bool _sameDetail(Map<String, Object?>? a, Map<String, Object?>? b) {
     if (a == null || b == null) return a == b;
@@ -237,10 +248,13 @@ typedef CachedTrackLookup = Future<Track?> Function(PlaybackId playbackId);
 /// Pins collections for offline use and removes them again (doc 07).
 ///
 /// [pin] resolves a collection with the server, records the collection,
-/// its items and their memberships, and hands queued items to the
-/// [DownloadScheduler]; [unpin] removes the memberships and, for every item
-/// left in no collection, its transfer, files and row, and tells the
-/// server through the [OfflineDeleteQueue]. Calls run one at a time.
+/// its items and their memberships, applies the device limit and hands
+/// queued items to the [DownloadScheduler]; [unpin] removes the memberships
+/// and, for every item left in no collection, its transfer, files and row,
+/// and tells the server through the [OfflineDeleteQueue]. A finished
+/// transfer is verified, renamed to its final file and reported to the
+/// server, directly or through the [OfflineCompleteQueue]. Calls run one at
+/// a time.
 class DownloadController {
   /// Creates the controller of the profile whose device id is
   /// `deviceId`. Without `paths` (web) there are no files to delete.
@@ -251,6 +265,8 @@ class DownloadController {
     required this._reachability,
     required this._settings,
     required this._deleteQueue,
+    required this._completeQueue,
+    required this._diskSpace,
     required this._cachedTrack,
     required this._mediaFiles,
     required this._clock,
@@ -266,6 +282,8 @@ class DownloadController {
   final ReachabilityController _reachability;
   final DeviceSettingsDao _settings;
   final OfflineDeleteQueue _deleteQueue;
+  final OfflineCompleteQueue _completeQueue;
+  final DiskSpace _diskSpace;
   final CachedTrackLookup _cachedTrack;
   final MediaFiles _mediaFiles;
   final Clock _clock;
@@ -278,9 +296,11 @@ class DownloadController {
   bool _disposed = false;
 
   /// Retries `pendingNetwork` collections whenever reachability returns to
-  /// `online`, and re-resolves the collections of an item whose transfer
-  /// the server refused (the scheduler's `ReResolveCollection` effect).
-  /// Later calls do nothing.
+  /// `online`; runs the scheduler's controller effects (verifies finished
+  /// transfers, confirms them with the server, deletes files and
+  /// re-resolves the collections of an item the server refused); and
+  /// applies the device limit now and whenever `downloads.quotaBytes`
+  /// changes. Later calls do nothing.
   void start() {
     if (_started || _disposed) return;
     _started = true;
@@ -294,15 +314,64 @@ class DownloadController {
           }
         }),
       )
+      ..add(_scheduler.effects.listen(_onEffect))
       ..add(
-        _scheduler.effects.listen((effect) {
-          if (effect.effect is ReResolveCollection) {
-            unawaited(
-              _guard('re-resolve collections', () => _reResolve(effect.key)),
-            );
-          }
-        }),
+        // The first value is the current one: the start-up pass, which also
+        // clears the free-disk markers a previous run of the scheduler left.
+        _settings
+            .watch(downloadsQuotaKey)
+            .distinct()
+            .listen((_) => unawaited(_guard('recheck space', recheckSpace))),
       );
+  }
+
+  void _onEffect(DownloadItemEffect effect) {
+    final key = effect.key;
+    switch (effect.effect) {
+      case ReResolveCollection():
+        unawaited(_guard('re-resolve collections', () => _reResolve(key)));
+      case VerifyFile(:final contentType):
+        unawaited(
+          _guard(
+            'verify a download',
+            () => _serial(() => _verify(key, contentType)),
+          ),
+        );
+      case SendComplete():
+        unawaited(
+          _guard('confirm a download', () => _serial(() => _sendComplete(key))),
+        );
+      case DeleteFile():
+        unawaited(
+          _guard(
+            'delete a download file',
+            () => _serial(() async {
+              await _deleteFiles(key, (await _store.item(key))?.relativePath);
+            }),
+          ),
+        );
+      // The file is renamed before VerificationPassed is delivered; the
+      // row is #177's reconciliation.
+      case RenamePartToFinal() ||
+          DeleteRow() ||
+          EnqueueTask() ||
+          PauseOrCancelKeepingPart() ||
+          ScheduleRetry() ||
+          RefreshCredentials():
+        break;
+    }
+  }
+
+  /// Completes when every call made so far, and every call those make in
+  /// turn, has run.
+  @visibleForTesting
+  Future<void> settle() async {
+    Future<void> tail;
+    do {
+      tail = _tail;
+      await tail;
+      await Future<void>.delayed(Duration.zero);
+    } while (!identical(tail, _tail));
   }
 
   /// Stops listening. Calls already made still finish.
@@ -333,8 +402,25 @@ class DownloadController {
   ///
   /// Every item left in no collection loses its transfer, its `.part` and
   /// final files and its row, and the server is told about removed tracks.
-  Future<void> unpin(CollectionKind kind, String refId) =>
-      _serial(() => _unpin(_kindOf(kind), refId));
+  /// Then the device limit is applied again, so items waiting for the
+  /// space this freed can run.
+  Future<void> unpin(CollectionKind kind, String refId) => _serial(() async {
+    await _unpin(_kindOf(kind), refId);
+    await _applyDeviceLimit();
+  });
+
+  /// Sets the device limit to [bytes] and lets the items that now fit run,
+  /// in schedule order.
+  Future<void> raiseDeviceLimit(int bytes) => _serial(() async {
+    await _settings.write(downloadsQuotaKey, bytes);
+    await _applyDeviceLimit();
+  });
+
+  /// Applies the device limit again: queued items that now fit lose their
+  /// `waitingFor: space` marker, in schedule order, and the scheduler
+  /// pumps. "Download what fits" needs no call: it is the state a pin
+  /// leaves.
+  Future<void> recheckSpace() => _serial(_applyDeviceLimit);
 
   /// The download state of collection [kind]/[refId], again on every
   /// change; null while it is not pinned.
@@ -343,7 +429,11 @@ class DownloadController {
     String refId,
   ) => _store
       .watchCollectionWithItems(_kindOf(kind), refId)
-      .map((row) => row == null ? null : _collectionState(row))
+      .asyncMap(
+        (row) async => row == null
+            ? null
+            : _collectionState(row, await _shortfallOf(row.items)),
+      )
       .distinct();
 
   /// The download state of item [key], again on every change; null while
@@ -486,7 +576,7 @@ class DownloadController {
       );
       return queued;
     });
-    await _applyDeviceLimit(queued);
+    if (queued.isNotEmpty) await _applyDeviceLimit();
     _scheduler.pump();
   }
 
@@ -548,8 +638,193 @@ class DownloadController {
     DownloadStatus.failedRetryable,
   };
 
-  /// Step 6 of doc 07 (the device limit), filled in with quota handling.
-  Future<void> _applyDeviceLimit(List<DownloadItemKey> queued) async {}
+  // Device limit (doc 07, step 6; Storage Accounting and Quota).
+
+  /// Holds the queued items beyond the device limit with `waitingFor:
+  /// space` and releases the others, in schedule order.
+  Future<void> _applyDeviceLimit() async {
+    final scheduled = await _store.queuedInScheduleOrder();
+    if (scheduled.isEmpty) return;
+    final decision = await _evaluateSpace(scheduled, persistDefault: true);
+    final keys = [
+      for (final s in scheduled) DownloadItemKey.decode(s.item.itemKey),
+    ];
+    await _scheduler.applyDeviceLimit(
+      fitting: keys.take(decision.fitCount),
+      waiting: keys.skip(decision.fitCount),
+    );
+  }
+
+  /// Evaluates the [scheduled] queued items against the device limit and
+  /// the free disk space left once the transfers in flight finish.
+  Future<QuotaDecision> _evaluateSpace(
+    List<ScheduledDownload> scheduled, {
+    required bool persistDefault,
+  }) async {
+    final media = _paths?.profile.media;
+    final free = media == null ? null : await _diskSpace.freeBytes(media);
+    final limit = await _deviceLimit(free, persist: persistDefault);
+    final sizes = [for (final s in scheduled) s.item.expectedBytes];
+    var queuedBytes = 0;
+    for (final size in sizes) {
+      queuedBytes += size ?? kUnknownItemBytes;
+    }
+    var inFlight = 0;
+    for (final status in const [
+      DownloadStatus.running,
+      DownloadStatus.paused,
+    ]) {
+      for (final row in await _store.itemsByStatus(status)) {
+        if (DownloadStore.waitReasonOf(row) == DownloadWaitReason.space) {
+          continue;
+        }
+        inFlight += _remainingBytes(row);
+      }
+    }
+    return evaluateQuota(
+      committedBytes: await _store.committedBytes() - queuedBytes,
+      newItemBytes: sizes,
+      deviceLimitBytes: limit,
+      freeDiskBytes: free == null ? null : free - inFlight,
+    );
+  }
+
+  /// The `downloads.quotaBytes` setting; when unset, the default for
+  /// [freeDiskBytes], written with [persist].
+  Future<int> _deviceLimit(int? freeDiskBytes, {required bool persist}) async {
+    final stored = await _settings.read(downloadsQuotaKey);
+    if (stored is int && stored >= 0) return stored;
+    final limit = defaultDeviceLimitBytes(freeDiskBytes);
+    if (persist) await _settings.write(downloadsQuotaKey, limit);
+    return limit;
+  }
+
+  /// What the items of a collection that wait for space need, and the
+  /// room left for them after the queued items that fit; null when none
+  /// waits.
+  Future<QuotaShortfall?> _shortfallOf(List<DownloadItem> items) async {
+    var needed = 0;
+    var waiting = false;
+    for (final item in items) {
+      if ((item.status == DownloadStatus.queued ||
+              item.status == DownloadStatus.paused) &&
+          DownloadStore.waitReasonOf(item) == DownloadWaitReason.space) {
+        waiting = true;
+        needed += _remainingBytes(item);
+      }
+    }
+    if (!waiting) return null;
+    try {
+      final scheduled = await _store.queuedInScheduleOrder();
+      final decision = await _evaluateSpace(scheduled, persistDefault: false);
+      var room = decision.availableBytes;
+      for (final s in scheduled.take(decision.fitCount)) {
+        room -= s.item.expectedBytes ?? kUnknownItemBytes;
+      }
+      return QuotaShortfall(
+        neededBytes: needed,
+        availableBytes: room < 0 ? 0 : room,
+      );
+    } on Object catch (error, stackTrace) {
+      _log.warning('Could not measure free space', const {}, error, stackTrace);
+      return QuotaShortfall(neededBytes: needed, availableBytes: 0);
+    }
+  }
+
+  static int _remainingBytes(DownloadItem row) {
+    final remaining =
+        (row.expectedBytes ?? kUnknownItemBytes) - row.receivedBytes;
+    return remaining < 0 ? 0 : remaining;
+  }
+
+  // Verification and confirmation (doc 07, Verification).
+
+  /// Checks item [key]'s finished `.part` file and renames it to the final
+  /// file named for [contentType]. A Content-Length the server sent where
+  /// it announced no size is already the row's `expectedBytes`.
+  Future<void> _verify(DownloadItemKey key, String? contentType) async {
+    final paths = _paths;
+    if (paths == null) return;
+    final row = await _store.item(key);
+    if (row == null || row.status != DownloadStatus.verifying) return;
+    final hash = itemKeyHash(key);
+    final part = paths.partFile(hash);
+    final size = await _mediaFiles.length(part);
+    final expected = row.expectedBytes;
+    if (size == null || size == 0 || (expected != null && size != expected)) {
+      _log.info('A download failed verification', {
+        'item': hash,
+        'size': size,
+        'expected': expected,
+      });
+      await _scheduler.deliver(key, const VerificationFailed());
+      return;
+    }
+    final relative = paths.relativeFinalFile(hash, contentType);
+    try {
+      await _mediaFiles.replace(part, paths.resolve(relative));
+    } on Object catch (error, stackTrace) {
+      _log.warning(
+        'Could not rename a verified download',
+        {'item': hash},
+        error,
+        stackTrace,
+      );
+      await _scheduler.deliver(key, const VerificationFailed());
+      return;
+    }
+    await _scheduler.deliver(key, VerificationPassed(size, relative));
+  }
+
+  /// Reports completed track [key] to the server: directly when online,
+  /// else, or when the server cannot be reached, through the outbox. A
+  /// refusal (such as a track the server no longer knows) leaves it
+  /// unconfirmed for reconciliation.
+  Future<void> _sendComplete(DownloadItemKey key) async {
+    if (key is! TrackItemKey) return;
+    final row = await _store.item(key);
+    final size = row?.sizeBytes;
+    if (row == null ||
+        row.status != DownloadStatus.completed ||
+        row.serverConfirmed ||
+        size == null) {
+      return;
+    }
+    final quality = row.quality ?? await _downloadQuality() ?? 'original';
+    final playbackId = PlaybackId(key.playbackId);
+    if (_reachability.isOnline) {
+      try {
+        await _offline.complete(
+          deviceId: _deviceId,
+          playbackId: playbackId,
+          quality: quality,
+          sizeBytes: size,
+        );
+        await _store.markServerConfirmed(key, _clock.now());
+        return;
+      } on api.Offline catch (_) {
+        // Sent through the outbox below.
+      } on api.ServerError catch (_) {
+        // Sent through the outbox below.
+      } on api.Upstream catch (_) {
+        // Sent through the outbox below.
+      } on api.RateLimited catch (_) {
+        // Sent through the outbox below.
+      } on api.ApiException catch (error) {
+        _log.info('The server did not record a download', {
+          'item': itemKeyHash(key),
+          'error': '$error',
+        });
+        return;
+      }
+    }
+    await _completeQueue.enqueue(
+      deviceId: _deviceId,
+      playbackId: playbackId,
+      quality: quality,
+      sizeBytes: size,
+    );
+  }
 
   Future<void> _waitForNetwork(DownloadCollectionKind kind, String refId) =>
       _store.setCollectionStatus(
@@ -645,6 +920,7 @@ class DownloadController {
 
   CollectionDownloadState _collectionState(
     ({DownloadCollection collection, List<DownloadItem> items}) row,
+    QuotaShortfall? shortfall,
   ) {
     var completed = 0;
     var unavailable = 0;
@@ -683,6 +959,7 @@ class DownloadController {
       blockedDetail: block == null
           ? null
           : DownloadStore.detailOf(row.collection),
+      quotaShortfall: shortfall,
     );
   }
 
@@ -765,6 +1042,8 @@ final Provider<DownloadController> downloadControllerProvider =
           reachability: ref.watch(reachabilityProvider),
           settings: ref.watch(deviceSettingsDaoProvider),
           deleteQueue: ref.watch(offlineDeleteQueueProvider),
+          completeQueue: ref.watch(offlineCompleteQueueProvider),
+          diskSpace: ref.watch(diskSpaceProvider),
           cachedTrack: (playbackId) async {
             final store = await ref.read(cacheStoreProvider.future);
             return (await store.watchTrack(playbackId.value).first)?.value;
@@ -784,6 +1063,7 @@ final Provider<DownloadController> downloadControllerProvider =
         downloadSchedulerProvider,
         deviceSettingsDaoProvider,
         offlineDeleteQueueProvider,
+        offlineCompleteQueueProvider,
         cacheStoreProvider,
         profileDisposerProvider,
       ],

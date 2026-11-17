@@ -371,6 +371,18 @@ class DownloadStore {
     return transition.effects;
   });
 
+  /// Applies [ServerConfirmed] to item [key] at [now]: a `completed` item
+  /// becomes `serverConfirmed`; any other item, or none, is left as it is.
+  Future<void> markServerConfirmed(DownloadItemKey key, DateTime now) =>
+      _db.transaction(() async {
+        final row = await item(key);
+        if (row == null) return;
+        final state = stateOf(row);
+        final transition = reduce(state, const ServerConfirmed(), now: now);
+        if (transition.next == state) return;
+        await applyTransition(key, transition);
+      });
+
   /// Records [receivedBytes] of item [key]'s transfer.
   Future<void> updateProgress(DownloadItemKey key, int receivedBytes) =>
       _writeItem(

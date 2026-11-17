@@ -14,6 +14,24 @@ final class FakeMediaFiles implements MediaFiles {
   /// Windows does for a file another process holds open.
   Exception? failWith;
 
+  /// When set, every [replace] throws it.
+  Exception? replaceFailsWith;
+
+  @override
+  Future<int?> length(String path) async {
+    final file = File(path);
+    return file.existsSync() ? file.lengthSync() : null;
+  }
+
+  @override
+  Future<void> replace(String from, String to) async {
+    final failure = replaceFailsWith;
+    if (failure != null) throw failure;
+    final target = File(to);
+    if (target.existsSync()) target.deleteSync();
+    File(from).renameSync(to);
+  }
+
   @override
   Future<void> delete(String path) async {
     deleted.add(path);

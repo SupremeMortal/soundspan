@@ -216,6 +216,9 @@ class _Rig {
   Future<DownloadStatus> status(DownloadItemKey key) async =>
       (await row(key)).status;
 
+  Future<DownloadWaitReason?> waitingFor(DownloadItemKey key) async =>
+      DownloadStore.waitReasonOf(await row(key));
+
   Future<List<DownloadItem>> running() =>
       store.itemsByStatus(DownloadStatus.running);
 
@@ -518,6 +521,62 @@ void main() {
 
     expect(await rig.status(keys[0]), DownloadStatus.failedPermanent);
     expect(effects, [DownloadItemEffect(keys[0], const ReResolveCollection())]);
+  });
+
+  test('a finished transfer is handed to the controller for verification '
+      'with the response Content-Type', () async {
+    final effects = <DownloadItemEffect>[];
+    rig.scheduler.effects.listen(effects.add);
+    final keys = await rig.album('a', 1);
+    await rig.start();
+
+    await rig.downloader.complete(
+      itemKeyHash(keys[0]),
+      bytes: 10,
+      contentType: 'audio/flac',
+    );
+    await rig.settle();
+
+    expect(await rig.status(keys[0]), DownloadStatus.verifying);
+    expect(effects, [
+      DownloadItemEffect(keys[0], const VerifyFile(contentType: 'audio/flac')),
+    ]);
+  });
+
+  test('deliver applies an event in turn and runs its retry', () async {
+    final keys = await rig.album('a', 1);
+    await rig.start();
+    await rig.complete(keys[0]);
+
+    await rig.scheduler.deliver(keys[0], const VerificationFailed());
+    expect(await rig.status(keys[0]), DownloadStatus.failedRetryable);
+
+    rig.timers.elapse(const Duration(seconds: 5));
+    await rig.settle();
+    expect(await rig.status(keys[0]), DownloadStatus.running);
+  });
+
+  test('applyDeviceLimit holds and releases queued items, keeping a user '
+      'hold', () async {
+    final keys = await rig.album('a', 4);
+    await rig.start();
+    expect(rig.requested, [_task(keys[0]), _task(keys[1])]);
+    await rig.scheduler.pauseItem(keys[3]);
+
+    await rig.scheduler.applyDeviceLimit(
+      fitting: const [],
+      waiting: [keys[2], keys[3]],
+    );
+    await rig.settle();
+    expect(await rig.waitingFor(keys[2]), DownloadWaitReason.space);
+    expect(await rig.waitingFor(keys[3]), DownloadWaitReason.user);
+
+    await rig.complete(keys[0]);
+    expect(rig.requested, hasLength(2));
+
+    await rig.scheduler.applyDeviceLimit(fitting: [keys[2]], waiting: const []);
+    await rig.settle();
+    expect(rig.requested.last, _task(keys[2]));
   });
 
   test('resumeItem with a task that cannot resume deletes the .part file '

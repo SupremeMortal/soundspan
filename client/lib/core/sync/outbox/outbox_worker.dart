@@ -306,10 +306,10 @@ class OutboxWorker {
         return const _Outcome(_Next.stop);
       case NotFound() || FeatureDisabled():
         await _drop(entry, handler, OutboxDropReason.notFound, fields);
-        return const _Outcome(_Next.proceed, notFound: true);
+        return _Outcome(_Next.proceed, notFound: _notifies(entry.op));
       case Conflict():
         await _drop(entry, handler, OutboxDropReason.conflict, fields);
-        return const _Outcome(_Next.proceed, conflict: true);
+        return _Outcome(_Next.proceed, conflict: _notifies(entry.op));
       case InvalidRequest() || Forbidden():
         _log.severe('Outbox op rejected as invalid', {
           ...fields,
@@ -327,6 +327,10 @@ class OutboxWorker {
         return const _Outcome(_Next.proceed);
     }
   }
+
+  /// Whether dropping [op] is worth a snackbar: not for a download
+  /// confirmation, which the user never made and reconciliation repairs.
+  static bool _notifies(OutboxOp op) => op is! OfflineCompleteOp;
 
   Future<void> _backOff(OutboxEntry entry, Object error) {
     final factor = math.pow(2, math.min(entry.attempts, 20)).toInt();

@@ -576,6 +576,10 @@ final class FakeOfflineClient implements api.OfflineClient {
   /// Every request body (or, for queries, a map of the query), in order.
   final List<Object> requests = [];
 
+  /// When set, `POST /items/complete` records the request and throws it
+  /// instead of answering.
+  api.ApiException? completeError;
+
   int get _usedBytes => devices.values
       .expand((items) => items.values)
       .fold(0, (sum, item) => sum + item.sizeBytes);
@@ -664,6 +668,8 @@ final class FakeOfflineClient implements api.OfflineClient {
     Options? options,
   }) async {
     requests.add(body);
+    final error = completeError;
+    if (error != null) throw error;
     final quality = body.quality.toJson();
     (devices[body.deviceId] ??= {})[body.playbackId] = (
       quality: quality,

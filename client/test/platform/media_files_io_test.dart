@@ -43,6 +43,31 @@ void main() {
     await expectLater(const NoMediaFiles().delete('/any'), completes);
   });
 
+  test('length answers the size, or null for a missing file', () async {
+    final file = File('${dir.path}/a.part')..writeAsBytesSync([1, 2, 3]);
+
+    expect(await const IoMediaFiles().length(file.path), 3);
+    expect(await const IoMediaFiles().length('${dir.path}/missing'), isNull);
+    expect(await const NoMediaFiles().length(file.path), isNull);
+  });
+
+  test('replace renames over an existing file', () async {
+    final from = File('${dir.path}/a.part')..writeAsBytesSync([1, 2, 3]);
+    final to = File('${dir.path}/a.flac')..writeAsStringSync('stale');
+
+    await const IoMediaFiles().replace(from.path, to.path);
+
+    expect(from.existsSync(), isFalse);
+    expect(to.readAsBytesSync(), [1, 2, 3]);
+  });
+
+  test('replace throws when the source is missing', () async {
+    await expectLater(
+      const IoMediaFiles().replace('${dir.path}/missing', '${dir.path}/b'),
+      throwsA(isA<FileSystemException>()),
+    );
+  });
+
   test('createMediaFiles answers the io seam', () {
     expect(createMediaFiles(), isA<IoMediaFiles>());
   });

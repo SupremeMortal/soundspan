@@ -40,6 +40,33 @@ import '../../helpers/fakes/fake_downloader.dart';
 import '../../helpers/fakes/fake_media_files.dart';
 import '../sync/outbox/outbox_test_support.dart' show ManualTimer;
 
+/// A retry timer the test fires with [fire].
+final class RigTimer implements Timer {
+  /// Creates a timer that would run [_callback] after [delay].
+  new(this.delay, this._callback);
+
+  /// The delay the scheduler asked for.
+  final Duration delay;
+  final void Function() _callback;
+  bool _active = true;
+
+  /// Runs the callback, as the delay elapsing would.
+  void fire() {
+    if (!_active) return;
+    _active = false;
+    _callback();
+  }
+
+  @override
+  void cancel() => _active = false;
+
+  @override
+  bool get isActive => _active;
+
+  @override
+  int get tick => _active ? 0 : 1;
+}
+
 /// The device id of the rig's profile.
 const String rigDeviceId = 'device-1';
 
@@ -119,32 +146,40 @@ final class DownloadControllerRig {
       ),
       reachability: reachability,
       settings: settings,
-      diskSpace: FakeDiskSpace(),
+      diskSpace: diskSpace,
       clock: clock,
       profileId: 'p1',
       mediaDirectory: profile.media,
       refreshCredentials: () async {},
+      createTimer: (delay, callback) {
+        final timer = RigTimer(delay, callback);
+        retryTimers.add(timer);
+        return timer;
+      },
     );
     offline = OfflineRepository(offlineClient ?? server.offline);
     outboxStore = OutboxStore(state, clock);
     worker = OutboxWorker(
       outboxStore,
-      OutboxHandlerRegistry(downloadOutboxHandlers(offline)),
+      OutboxHandlerRegistry(
+        downloadOutboxHandlers(offline, store: store, clock: clock),
+      ),
       reachability,
       clock,
       AppLogger.scope('DownloadControllerTest'),
       rewriter: TempIdRewriter(state, () async => cacheDb),
       periodicTimer: ManualTimer.new,
     );
+    final outbox = Outbox(outboxStore, worker);
     controller = DownloadController(
       store: store,
       offline: offline,
       scheduler: scheduler,
       reachability: reachability,
       settings: settings,
-      deleteQueue: OutboxOfflineDeleteQueue(
-        Outbox(outboxStore, worker).enqueue,
-      ),
+      deleteQueue: OutboxOfflineDeleteQueue(outbox.enqueue),
+      completeQueue: OutboxOfflineCompleteQueue(outbox.enqueue),
+      diskSpace: diskSpace,
       cachedTrack: (id) async =>
           (await cache.watchTrack(id.value).first)?.value,
       mediaFiles: mediaFiles,
@@ -165,6 +200,12 @@ final class DownloadControllerRig {
 
   /// The file seam.
   final FakeMediaFiles mediaFiles = FakeMediaFiles();
+
+  /// Free disk space, unknown at first.
+  final FakeDiskSpace diskSpace = FakeDiskSpace();
+
+  /// The scheduler's retry timers, oldest first.
+  final List<RigTimer> retryTimers = [];
 
   late final FakeClock clock;
   late final StateDatabase state;
@@ -188,10 +229,22 @@ final class DownloadControllerRig {
     await settle();
   }
 
-  /// Waits for the scheduler and the outbox worker.
+  /// Waits for the scheduler, the controller and the outbox worker, and
+  /// for the work each hands the others.
   Future<void> settle() async {
-    await scheduler.settle();
-    await worker.idle;
+    for (var round = 0; round < 4; round++) {
+      await scheduler.settle();
+      await controller.settle();
+      await worker.idle;
+    }
+  }
+
+  /// Fires every pending retry timer.
+  void fireRetries() {
+    final due = retryTimers.where((t) => t.isActive).toList();
+    for (final timer in due) {
+      timer.fire();
+    }
   }
 
   /// The `POST /offline/items` bodies the server received.

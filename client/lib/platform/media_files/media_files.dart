@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 
-/// The media-files seam: removes downloaded files (doc 02, Platform Seams;
-/// doc 07, Removing Downloads).
+/// The media-files seam: measures, renames and removes downloaded files
+/// (doc 02, Platform Seams; doc 07, Verification and Removing Downloads).
 ///
 /// Native targets use `dart:io`. On web there are no files and every call
 /// does nothing.
@@ -15,8 +15,16 @@ export 'media_files_web.dart'
     if (dart.library.io) 'media_files_io.dart'
     show createMediaFiles;
 
-/// Removes files of downloaded media.
+/// Measures, renames and removes files of downloaded media.
 abstract interface class MediaFiles {
+  /// The size in bytes of the file at the absolute [path], or null when
+  /// there is no such file.
+  Future<int?> length(String path);
+
+  /// Renames the file at [from] to [to], in the same directory, replacing a
+  /// file already at [to]. Throws when the rename fails.
+  Future<void> replace(String from, String to);
+
   /// Deletes the file at the absolute [path]. A missing file is not an
   /// error; any other failure (for example a file another process holds
   /// open on Windows) throws.
