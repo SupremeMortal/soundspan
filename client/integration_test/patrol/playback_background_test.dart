@@ -114,7 +114,7 @@ void main() {
       final title = first.playerTitle;
       final artist = first.playerSubtitle;
 
-      // 5. Home; the notification shows the track.
+      // 5. Home; the notification in the shade shows the track.
       await $.platform.mobile.pressHome();
       await Future<void>.delayed(const Duration(seconds: 5));
       await $.platform.mobile.openNotifications();
@@ -122,18 +122,9 @@ void main() {
         AndroidSelector(text: title),
         timeout: _wait,
       );
-      final notifications = await $.platform.mobile.getNotifications();
-      expect(
-        notifications.any(
-          (n) =>
-              n.appName == 'soundspan' &&
-              '${n.title} ${n.content}'.contains(title),
-        ),
-        isTrue,
-        reason:
-            'a soundspan notification shows "$title" '
-            '(found ${notifications.map((n) => n.toJson()).toList()})',
-      );
+      // System UI draws the media notification as its media player, which
+      // getNotifications does not list; that its Pause pauses this app
+      // (step 6) shows it is soundspan's.
 
       // 6. Pause from the notification; the player stays paused.
       await $.platform.android.tap(
