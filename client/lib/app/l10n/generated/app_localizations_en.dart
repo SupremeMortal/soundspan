@@ -74,6 +74,20 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String downloadsNotificationTitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Downloading $count items',
+      one: 'Downloading 1 item',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get downloadsNotificationFinished => 'Downloads finished';
+
+  @override
   String get androidAutoKindEpisode => 'Podcast episode';
 
   @override
@@ -2468,6 +2482,20 @@ class AppLocalizationsEnXa extends AppLocalizationsEn {
   String androidAutoDownloadsSubtitle(String kind, int completed) {
     return '[$kind · $completed one]';
   }
+
+  @override
+  String downloadsNotificationTitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Ðöŵñļöåðîñĝ $count îţémš one two',
+      one: 'Ðöŵñļöåðîñĝ 1 îţém one two',
+    );
+    return '[$_temp0]';
+  }
+
+  @override
+  String get downloadsNotificationFinished => '[Ðöŵñļöåðš fîñîšĥéð one two]';
 
   @override
   String get androidAutoKindEpisode => '[Þöðçåšţ éþîšöðé one two]';

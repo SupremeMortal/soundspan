@@ -195,6 +195,10 @@ final class FakeDownloader implements Downloader {
     );
   }
 
+  /// Emits [event] as it is, such as an event of a task this fake never
+  /// enqueued.
+  void emit(DownloaderEvent event) => _events.add(event);
+
   /// Forgets [taskId] without an event, as when the operating system lost
   /// it while the app was dead: [liveTaskIds] no longer lists it.
   void dropTask(String taskId) => _live.remove(taskId);

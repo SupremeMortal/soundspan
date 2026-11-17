@@ -78,7 +78,7 @@ jobs:
           has() { grep -Eq "$1" <<< "$changed" && echo true || echo false; }
           device="$(has '^(client/lib/core/playback/engines/|client/integration_test/|client/lib/platform/player_engine/|client/lib/core/playback/media_controls/|client/lib/platform/media_controls/|client/android/|client/ios/|client/windows/|client/packages/soundspan_smtc/|\.github/workflows/client-device-tests\.yml$)')"
           desktop_integration="$(has '^(client/integration_test/desktop/|client/lib/app/|client/lib/platform/|client/linux/|client/windows/|client/macos/|client/pubspec\.lock$|\.github/workflows/client-device-tests\.yml$)')"
-          patrol="$(has '^(client/integration_test/patrol/|client/android/|client/lib/core/playback/|client/lib/features/connect/|client/pubspec\.lock$|\.github/workflows/client-device-tests\.yml$)')"
+          patrol="$(has '^(client/integration_test/patrol/|client/android/|client/lib/core/playback/|client/lib/core/downloads/|client/lib/platform/downloader/|client/lib/features/connect/|client/pubspec\.lock$|\.github/workflows/client-device-tests\.yml$)')"
           {
             echo "client=$(has '^(client/|\.github/workflows/client-[^/]*\.yml$|\.github/actions/client-flutter/)')"
             echo "apple=$(has '^(client/ios/|client/macos/|client/pubspec\.lock$|client/lib/platform/|\.github/workflows/client-quality\.yml$|\.github/actions/client-flutter/)')"

@@ -154,7 +154,7 @@ The UI reads repositories through the profile-scoped providers in `lib/shared/pr
 7. `runApp`. The router's redirect sends the user to `/connect` if there is no active profile, otherwise to the shell.
 8. After the first frame, in parallel and without blocking UI:
    - `AudioService.init` (or the platform's media-controls adapter) and audio-session configuration.
-   - `FileDownloader` start-up: re-attach to tasks that ran while the app was dead.
+   - `FileDownloader` start-up: `BackgroundDownloadRouter` listens to the downloader, then starts it, which re-attaches to tasks that ran while the app was dead; it records the events of inactive profiles ([07](07-offline-and-downloads.md), Transfers).
    - `Reachability.start()`.
    - Capability refresh for the active profile ([04](04-auth-and-server-profiles.md)).
    - Outbox replay and download reconciliation; `startDownloads` starts the active profile's `DownloadScheduler` where `canDownload` is true.
@@ -273,6 +273,7 @@ Each seam is an abstract class in `lib/platform/<name>/<name>.dart` with `_io.da
 | Audio session | `AudioSessionGateway` (`lib/platform/audio_session/audio_session_gateway.dart`) | `audio_session` (Android, iOS, macOS); no-op on Windows and Linux | No-op (focus always granted, no events) |
 | Media controls | `createMediaControls()` (`lib/platform/media_controls/`) returning a `MediaControls` | `audio_service` (Android, iOS, macOS, Linux via MPRIS), SMTC adapter (Windows) | `audio_service` (Media Session API) |
 | Downloader | `Downloader` | `background_downloader` | `UnsupportedDownloader` (feature hidden) |
+| Download notifications | `DownloadNotifier` | `background_downloader` group notifications and foreground mode on Android and iOS; nothing on desktop | No-op |
 | Disk space | `DiskSpace` (`freeBytes(path)`, null when unknown) | `disk_space_2` (Android, iOS, Windows, Linux); null on macOS, which it does not cover | `UnknownDiskSpace` (null) |
 | Media files | `MediaFiles` (`length(path)`, null for a missing file; `replace(from, to)`, a same-directory rename over any existing target; `delete(path)`, a missing file is not an error; `listFiles(directory)`, every file at any depth, listed off the UI isolate; `removeEmptyDirectories(directory)`, deepest first, keeping `directory`) | `dart:io` | No files: `length` is null, `replace` throws, `listFiles` is empty, `delete` and `removeEmptyDirectories` do nothing |
 | File sizes | `FileSizes` (`directoryBytes(path)` and `filesBytes(paths)`, missing counts as zero; `clearDirectory(path)` empties a directory and keeps it), each call on a background isolate | `dart:io` | No files: sizes are zero, nothing is deleted |

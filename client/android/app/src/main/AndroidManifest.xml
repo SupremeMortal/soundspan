@@ -5,9 +5,12 @@
     <!-- The audio_service playback service (doc 10, Playback service). -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"/>
+    <!-- Download batches estimated above 50 MB run as a foreground service
+         (doc 07, Transfers). -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC"/>
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
-    <!-- Asked at the first playback on Android 13 and later; playback works
-         without it. -->
+    <!-- Asked at the first playback and the first download on Android 13
+         and later; playback and downloads work without it. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-feature android:name="android.hardware.camera" android:required="false"/>
     <application
@@ -58,6 +61,11 @@
                 <action android:name="android.media.browse.MediaBrowserService"/>
             </intent-filter>
         </service>
+        <!-- WorkManager's foreground service, which background_downloader
+             runs large download batches in (doc 07, Transfers). -->
+        <service
+            android:name="androidx.work.impl.foreground.SystemForegroundService"
+            android:foregroundServiceType="dataSync" />
         <!-- Headset buttons; restarts playback from a media button after the
              process was killed (Spike S3 finding). -->
         <receiver

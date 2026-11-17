@@ -88,6 +88,8 @@
 	<string>Scan a soundspan link code.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Connect to a soundspan server on your network.</string>
+	<key>SoundspanDownloadSessionIdentifier</key>
+	<string>io.soundspan.app.downloads</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>audio</string>

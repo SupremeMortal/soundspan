@@ -22,7 +22,8 @@ name: Client Device Tests
 #
 # The patrol suite: patrol-android runs the real app with Patrol on an
 # Android emulator against the contract server: sign in, play, background,
-# pause and resume from the notification, and the play reported.
+# pause and resume from the notification, and the play reported; then
+# download an album, kill the app, relaunch and play it offline.
 
 on:
   workflow_call:
@@ -572,13 +573,15 @@ jobs:
   # The real app with Patrol on an Android emulator against the contract
   # server, started as in client-contract and published on the runner's port
   # 3030, which the emulator reaches as 10.0.2.2 (doc 11, Integration
-  # (mobile)). One retry of the emulator step absorbs emulator start-up
-  # flakiness; a second failure fails the job.
+  # (mobile)): background playback, then download, kill, relaunch and play
+  # offline (integration_test/patrol/run_android.sh). One retry of the
+  # emulator step absorbs emulator start-up flakiness; a second failure
+  # fails the job.
   patrol-android:
     name: patrol-android
     if: inputs.suites == 'all' || contains(format(' {0} ', inputs.suites), ' patrol ')
     runs-on: ubuntu-latest
-    timeout-minutes: 75
+    timeout-minutes: 110
     env:
       LOG_DIR: ${{ github.workspace }}/patrol-android-logs
       COMPOSE_FILE: compose.yaml:${{ github.workspace }}/patrol-android-logs/port.compose.yaml

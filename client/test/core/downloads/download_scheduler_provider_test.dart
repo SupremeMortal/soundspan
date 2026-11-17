@@ -3,6 +3,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:soundspan/bootstrap.dart';
 import 'package:soundspan/core/connectivity/reachability.dart';
+import 'package:soundspan/core/downloads/background_download_router.dart';
 import 'package:soundspan/core/downloads/download_artwork.dart';
 import 'package:soundspan/core/downloads/download_controller.dart';
 import 'package:soundspan/core/downloads/download_scheduler.dart';
@@ -44,12 +45,16 @@ void main() {
     final a = runtime.container!.read(downloadSchedulerProvider);
     await startDownloads(h.root);
     await pumpEventQueue();
-    expect(downloader.startCount, 1);
+    // The background router starts the downloader first, then the scheduler.
+    expect(downloader.startCount, 2);
+    final router = h.root.read(backgroundDownloadRouterProvider);
+    expect(router.activeProfileId, h.a);
 
     await runtime.switchTo(h.b);
     await pumpEventQueue();
     expect(runtime.container!.read(downloadSchedulerProvider), isNot(same(a)));
-    expect(downloader.startCount, 2);
+    expect(downloader.startCount, 3);
+    expect(router.activeProfileId, h.b);
   });
 
   test('a target that cannot download starts no scheduler', () async {

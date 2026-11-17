@@ -96,6 +96,20 @@
       }
     }
   },
+  "downloadsNotificationTitle": "{count, plural, =1{Downloading 1 item} other{Downloading {count} items}}",
+  "@downloadsNotificationTitle": {
+    "description": "Title of the system notification shown while downloads run on Android: how many items the current batch holds. It never names a track or a source.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "12"
+      }
+    }
+  },
+  "downloadsNotificationFinished": "Downloads finished",
+  "@downloadsNotificationFinished": {
+    "description": "Text of the system notification on Android once every download of the batch has finished."
+  },
   "androidAutoKindEpisode": "Podcast episode",
   "@androidAutoKindEpisode": {
     "description": "Kind of a downloaded podcast episode, in the Android Auto Downloads folder."

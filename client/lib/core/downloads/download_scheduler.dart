@@ -8,8 +8,10 @@ import 'dart:async';
 import 'package:flutter/foundation.dart' show immutable, visibleForTesting;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:soundspan/core/connectivity/reachability.dart';
+import 'package:soundspan/core/downloads/background_download_router.dart';
 import 'package:soundspan/core/downloads/collection_upkeep.dart';
 import 'package:soundspan/core/downloads/download_artwork.dart';
+import 'package:soundspan/core/downloads/download_batch_notices.dart';
 import 'package:soundspan/core/downloads/download_controller.dart';
 import 'package:soundspan/core/downloads/download_keys.dart';
 import 'package:soundspan/core/downloads/download_reconciler.dart';
@@ -26,8 +28,11 @@ import 'package:soundspan/core/storage/state/device_settings_dao.dart';
 import 'package:soundspan/core/storage/state/enums.dart';
 import 'package:soundspan/core/storage/state/state_database.dart';
 import 'package:soundspan/platform/capabilities/capabilities.dart';
+import 'package:soundspan/platform/device_info/device_info.dart';
 import 'package:soundspan/platform/disk_space/disk_space.dart';
+import 'package:soundspan/platform/download_notifier/download_notifier.dart';
 import 'package:soundspan/platform/downloader/downloader.dart';
+import 'package:soundspan/platform/notifications/local_notifications.dart';
 import 'package:soundspan/shared/clock.dart';
 import 'package:soundspan_api/soundspan_api.dart';
 
@@ -99,7 +104,9 @@ class DownloadScheduler {
   ///
   /// `refreshCredentials` renews the session after a 401
   /// (`SessionController.refreshNow`); the retry is then built with the
-  /// new headers.
+  /// new headers. `notices`, when given, is told about every batch before
+  /// its slots are granted, and asked for the notification permission when
+  /// a download first starts.
   new({
     required this._store,
     required this._downloader,
@@ -113,6 +120,7 @@ class DownloadScheduler {
     required this._refreshCredentials,
     this._createTimer = Timer.new,
     this._mobileData = false,
+    this._notices,
   }) : _group = downloaderGroup(profileId);
 
   static final AppLogger _log = AppLogger.scope('Downloads');
@@ -128,6 +136,7 @@ class DownloadScheduler {
   final String _mediaDirectory;
   final Future<void> Function() _refreshCredentials;
   final RetryTimerFactory _createTimer;
+  final DownloadBatchNotices? _notices;
 
   /// Whether the device can be on mobile data: the Wi-Fi-only default.
   final bool _mobileData;
@@ -430,6 +439,12 @@ class DownloadScheduler {
       }
     }
 
+    await _notices?.update([
+      ...await _store.itemsByStatus(DownloadStatus.queued),
+      ...await _store.itemsByStatus(DownloadStatus.running),
+      ...await _store.itemsByStatus(DownloadStatus.verifying),
+    ]);
+
     var slots = kMaxRunningDownloads - running.length;
     if (slots <= 0) return;
     for (final scheduled in await _store.queuedInScheduleOrder()) {
@@ -482,6 +497,8 @@ class DownloadScheduler {
       return false;
     }
     _pendingRequests[request.taskId] = request;
+    // The permission dialog never holds up the transfer.
+    unawaited(_notices?.downloadStarting());
     await _apply(key, SlotGranted(request.taskId));
     return true;
   }
@@ -699,6 +716,14 @@ final Provider<DownloadScheduler> downloadSchedulerProvider =
           mediaDirectory: profilePaths.media,
           refreshCredentials: session.refreshNow,
           mobileData: ref.watch(platformCapabilitiesProvider).hasMobileData,
+          notices: DownloadBatchNotices(
+            profileId: context.profile.id,
+            notifier: ref.watch(downloadNotifierProvider),
+            settings: ref.watch(deviceSettingsDaoProvider),
+            notifications: ref.watch(localNotificationsProvider),
+            androidSdkVersion: ref.watch(androidSdkVersionProvider),
+            texts: () => ref.read(downloadNotificationTextsProvider),
+          ),
         );
         ref.watch(profileDisposerProvider).register(scheduler.dispose);
         return scheduler;
@@ -715,20 +740,37 @@ final Provider<DownloadScheduler> downloadSchedulerProvider =
     );
 
 /// The post-first-frame task of downloads (doc 02, Bootstrap Sequence,
-/// step 8): creates the [DownloadController] and starts the
-/// [DownloadScheduler], then the [DownloadArtwork], then the
-/// [DownloadReconciler], then the [CollectionUpkeep], of each profile the
-/// [ProfileRuntime] under [root] activates, now and later, on targets that
-/// can download.
+/// step 8): starts the root-scope [BackgroundDownloadRouter], which starts
+/// the [Downloader] and records the transfers of inactive profiles; then
+/// creates the [DownloadController] and starts the [DownloadScheduler],
+/// then the [DownloadArtwork], then the [DownloadReconciler], then the
+/// [CollectionUpkeep], of each profile the [ProfileRuntime] under [root]
+/// activates, now and later, on targets that can download.
 Future<void> startDownloads(ProviderContainer root) async {
   if (!root.read(platformCapabilitiesProvider).canDownload) return;
+  final router = root.read(backgroundDownloadRouterProvider);
+  try {
+    await router.start();
+  } on Object catch (error, stackTrace) {
+    // The scheduler reports the same failure as downloads being unavailable.
+    DownloadScheduler._log.warning(
+      'The background download router did not start',
+      const {},
+      error,
+      stackTrace,
+    );
+  }
   final runtime = root.read(profileRuntimeProvider);
   final started = Expando<bool>();
   void onState() {
     final container = runtime.container;
-    if (runtime.state.value is! ProfileRuntimeActive || container == null) {
+    final state = runtime.state.value;
+    if (state is! ProfileRuntimeActive || container == null) {
+      router.activeProfileId = null;
       return;
     }
+    // From here on the profile's scheduler handles its own events.
+    router.activeProfileId = state.profileId;
     if (started[container] ?? false) return;
     started[container] = true;
     // The controller retries pending collections and re-resolves refused

@@ -8,7 +8,9 @@ import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:soundspan/core/connectivity/reachability.dart';
+import 'package:soundspan/core/downloads/download_batch_notices.dart';
 import 'package:soundspan/core/downloads/download_keys.dart';
+import 'package:soundspan/core/downloads/download_notification_policy.dart';
 import 'package:soundspan/core/downloads/download_request_builder.dart';
 import 'package:soundspan/core/downloads/download_scheduler.dart';
 import 'package:soundspan/core/downloads/download_state_machine.dart';
@@ -22,8 +24,10 @@ import 'package:soundspan/platform/paths/paths.dart';
 import 'package:soundspan_api/soundspan_api.dart';
 
 import '../../helpers/fake_clock.dart';
+import '../../helpers/fake_local_notifications.dart';
 import '../../helpers/fake_reachability.dart';
 import '../../helpers/fakes/fake_disk_space.dart';
+import '../../helpers/fakes/fake_download_notifier.dart';
 import '../../helpers/fakes/fake_downloader.dart';
 import '../logging/recording_sink.dart';
 
@@ -84,7 +88,7 @@ class _FakeTimer implements Timer {
 
 /// Everything a scheduler runs against, in memory.
 class _Rig {
-  new(this.dir, {bool mobileData = false}) {
+  new(this.dir, {bool mobileData = false, int? androidSdk}) {
     clock = FakeClock(start: DateTime.utc(2026, 3, 1, 12));
     timers = _FakeTimers(clock);
     db = StateDatabase(NativeDatabase.memory());
@@ -118,6 +122,17 @@ class _Rig {
       },
       createTimer: timers.create,
       mobileData: mobileData,
+      notices: DownloadBatchNotices(
+        profileId: 'p1',
+        notifier: notifier,
+        settings: settings,
+        notifications: notifications,
+        androidSdkVersion: () async => androidSdk,
+        texts: () => DownloadNotificationTexts(
+          title: (count) => 'Downloading $count',
+          finished: 'Finished',
+        ),
+      ),
     );
   }
 
@@ -132,6 +147,8 @@ class _Rig {
   late final DownloadScheduler scheduler;
   final FakeReachability reachability = FakeReachability();
   final FakeDiskSpace disk = FakeDiskSpace();
+  final FakeDownloadNotifier notifier = FakeDownloadNotifier();
+  final FakeLocalNotifications notifications = FakeLocalNotifications();
   Credentials credentials = const ApiKeyCredentials(apiKey: 'key-1');
   int refreshes = 0;
 
@@ -851,5 +868,103 @@ void main() {
         lessThanOrEqualTo(2),
       );
     }
+  });
+
+  group('downloads notification', () {
+    test('seven items of unknown size run in the foreground, and the plan '
+        'follows the batch as items finish', () async {
+      final keys = await rig.album('a', 7);
+
+      await rig.start();
+
+      expect(rig.notifier.applied, isNotEmpty);
+      expect(rig.notifier.applied.first.profileId, 'p1');
+      expect(rig.notifier.last!.runInForeground, isTrue);
+      expect(rig.notifier.last!.title, 'Downloading 7');
+      expect(rig.notifier.last!.progress, 0);
+
+      await rig.complete(keys[0]);
+      await rig.scheduler.deliver(
+        keys[0],
+        const VerificationPassed(10, 'media/aa/a.bin'),
+      );
+      rig.scheduler.pump();
+      await rig.settle();
+
+      expect(rig.notifier.last!.title, 'Downloading 7');
+      expect(rig.notifier.last!.progress, closeTo(1 / 7, 1e-9));
+      expect(rig.notifier.last!.runInForeground, isFalse);
+    });
+
+    test('nothing is applied while nothing is queued', () async {
+      await rig.start();
+
+      expect(rig.notifier.applied, isEmpty);
+    });
+
+    test('on Android 13 the permission is asked once when the first download '
+        'starts, and a denial is remembered', () async {
+      await rig.dispose();
+      rig = _Rig(dir, androidSdk: 34);
+      rig.notifications.granted = false;
+      await rig.album('a', 3);
+
+      await rig.start();
+      await pumpEventQueue();
+
+      expect(rig.notifications.permissionRequests, 1);
+      expect(await rig.settings.read(downloadsNotificationsAskedKey), isFalse);
+      expect((await rig.running()).length, 2);
+      expect(rig.notifier.last!.notificationsGranted, isTrue);
+
+      // A later session reads the recorded denial.
+      await rig.dispose();
+      rig = _Rig(dir, androidSdk: 34);
+      await rig.settings.write(downloadsNotificationsAskedKey, false);
+      await rig.album('b', 1);
+      await rig.start();
+      await pumpEventQueue();
+
+      expect(rig.notifications.permissionRequests, 0);
+      expect(rig.notifier.last!.notificationsGranted, isFalse);
+    });
+
+    test(
+      'below Android 13 and off Android the permission is never asked',
+      () async {
+        await rig.album('a', 1);
+
+        await rig.start();
+        await pumpEventQueue();
+
+        expect(rig.notifications.permissionRequests, 0);
+        expect(await rig.settings.read(downloadsNotificationsAskedKey), isNull);
+      },
+    );
+  });
+
+  test('a row the background router left verifying is verified and completed '
+      'at start-up', () async {
+    final effects = <DownloadItemEffect>[];
+    rig.scheduler.effects.listen(effects.add);
+    const key = TrackItemKey('finished-while-inactive');
+    await rig.item(
+      key,
+      at: rig.clock.now(),
+      status: DownloadStatus.verifying,
+      taskId: _task(key),
+    );
+
+    await rig.start();
+    await pumpEventQueue();
+    expect(effects, [const DownloadItemEffect(key, VerifyFile())]);
+    // The controller answers the effect, as after any verification.
+    await rig.scheduler.deliver(
+      key,
+      const VerificationPassed(10, 'media/aa/finished.bin'),
+    );
+    await rig.settle();
+
+    expect(await rig.status(key), DownloadStatus.completed);
   });
 }

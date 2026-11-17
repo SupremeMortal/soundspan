@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 
 import 'package:background_downloader/background_downloader.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:soundspan/platform/downloader/downloader.dart';
 import 'package:soundspan/platform/downloader/downloader_io.dart';
@@ -163,6 +164,56 @@ void main() {
         await kind(TaskResumeException('etag')),
         DownloaderFailureKind.unknown,
       );
+    });
+  });
+
+  group('backup exclusion of the media directory', () {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    const channel = MethodChannel('test/backup');
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    tearDown(() => messenger.setMockMethodCallHandler(channel, null));
+
+    test('asks the runner once per profile, with the media path', () async {
+      final calls = <MethodCall>[];
+      messenger.setMockMethodCallHandler(channel, (call) async {
+        calls.add(call);
+        return null;
+      });
+
+      for (var i = 0; i < 2; i++) {
+        await BackgroundDownloader.excludeMediaFromBackup(
+          'backup-once',
+          appSupport: '/support',
+          channel: channel,
+        );
+      }
+
+      expect(calls, hasLength(1));
+      expect(calls.single.method, 'excludeFromBackup');
+      expect(calls.single.arguments, '/support/profiles/backup-once/media');
+    });
+
+    test('a failure is not thrown and is tried again next time', () async {
+      var calls = 0;
+      messenger.setMockMethodCallHandler(channel, (call) async {
+        calls++;
+        if (calls == 1) throw PlatformException(code: 'backup');
+        return null;
+      });
+
+      await BackgroundDownloader.excludeMediaFromBackup(
+        'backup-retry',
+        appSupport: '/support',
+        channel: channel,
+      );
+      await BackgroundDownloader.excludeMediaFromBackup(
+        'backup-retry',
+        appSupport: '/support',
+        channel: channel,
+      );
+
+      expect(calls, 2);
     });
   });
 }

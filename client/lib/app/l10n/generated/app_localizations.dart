@@ -217,6 +217,18 @@ abstract class AppLocalizations {
   /// **'{kind} · {completed}'**
   String androidAutoDownloadsSubtitle(String kind, int completed);
 
+  /// Title of the system notification shown while downloads run on Android: how many items the current batch holds. It never names a track or a source.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Downloading 1 item} other{Downloading {count} items}}'**
+  String downloadsNotificationTitle(int count);
+
+  /// Text of the system notification on Android once every download of the batch has finished.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloads finished'**
+  String get downloadsNotificationFinished;
+
   /// Kind of a downloaded podcast episode, in the Android Auto Downloads folder.
   ///
   /// In en, this message translates to:

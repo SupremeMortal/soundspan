@@ -5,7 +5,9 @@ import 'dart:io';
 
 import 'package:background_downloader/background_downloader.dart';
 import 'package:flutter/foundation.dart' show visibleForTesting;
+import 'package:flutter/services.dart' show MethodChannel;
 import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import 'package:soundspan/core/logging/app_logger.dart';
 import 'package:soundspan/platform/downloader/downloader.dart';
 
@@ -34,6 +36,21 @@ final class BackgroundDownloader implements Downloader {
 
   /// Whether an unhandled error of the plugin has been logged.
   static bool _unhandledLogged = false;
+
+  /// The plugin's start-up, shared by every caller: the root-scope router
+  /// and each profile's scheduler start the downloader, and the plugin
+  /// re-attaches and delivers background events once.
+  static Future<void>? _started;
+
+  /// The channel of `excludeFromBackup(path)`, registered by the iOS and
+  /// macOS runners.
+  static const MethodChannel backupChannel = MethodChannel(
+    'io.soundspan.app/backup',
+  );
+
+  /// The profiles whose media directory was excluded from backup in this
+  /// process.
+  static final Set<String> _excludedProfiles = {};
 
   /// The plugin's updates. The plugin is first touched here, in a guarded
   /// zone: on Linux it listens to connectivity through NetworkManager and
@@ -76,7 +93,14 @@ final class BackgroundDownloader implements Downloader {
   }
 
   @override
-  Future<void> start() async {
+  Future<void> start() =>
+      _started ??= _start().catchError((Object error, StackTrace stackTrace) {
+        // A failed start may be tried again.
+        _started = null;
+        Error.throwWithStackTrace(error, stackTrace);
+      });
+
+  Future<void> _start() async {
     final ready = Completer<void>();
     // Errors the plugin leaves unhandled while it starts, such as its
     // NetworkManager listener's on Linux (doc 07, Spike S5 finding), are
@@ -98,9 +122,43 @@ final class BackgroundDownloader implements Downloader {
     await ready.future;
   }
 
+  /// Creates the media directory of profile [profileId] under [appSupport]
+  /// and excludes it from iCloud and Time Machine backups (doc 05, Files on
+  /// Disk), once per profile and process. A failure is logged and tried
+  /// again at the next call; the download goes ahead either way.
+  @visibleForTesting
+  static Future<void> excludeMediaFromBackup(
+    String profileId, {
+    required String appSupport,
+    MethodChannel channel = backupChannel,
+  }) async {
+    if (!_excludedProfiles.add(profileId)) return;
+    try {
+      await channel.invokeMethod<void>(
+        'excludeFromBackup',
+        p.join(appSupport, 'profiles', profileId, 'media'),
+      );
+    } on Object catch (error, stackTrace) {
+      _excludedProfiles.remove(profileId);
+      _log.warning(
+        'The media directory was not excluded from backup',
+        const {},
+        error,
+        stackTrace,
+      );
+    }
+  }
+
   @override
   Future<void> enqueue(DownloadRequest request) async {
     _reported.remove(request.taskId);
+    // Android keeps profiles/ out of backups through its backup rules.
+    if (Platform.isIOS || Platform.isMacOS) {
+      await excludeMediaFromBackup(
+        request.profileId,
+        appSupport: (await getApplicationSupportDirectory()).path,
+      );
+    }
     final task = DownloadTask(
       taskId: request.taskId,
       url: request.url.toString(),

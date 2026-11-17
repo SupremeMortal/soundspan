@@ -132,13 +132,13 @@ XmlDocument? _readXml(String path, List<ConfigViolation> out) {
 }
 
 /// The permissions of the doc 10 manifest table, the QR scanner's camera
-/// included. `FOREGROUND_SERVICE_DATA_SYNC` comes with the download
-/// notifications.
+/// included.
 const List<String> androidPermissions = [
   'android.permission.INTERNET',
   'android.permission.ACCESS_NETWORK_STATE',
   'android.permission.FOREGROUND_SERVICE',
   'android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK',
+  'android.permission.FOREGROUND_SERVICE_DATA_SYNC',
   'android.permission.POST_NOTIFICATIONS',
   'android.permission.WAKE_LOCK',
   'android.permission.CAMERA',
@@ -157,8 +157,7 @@ const String fileProviderClass = 'androidx.core.content.FileProvider';
 const String mediaButtonReceiverClass =
     'com.ryanheise.audioservice.MediaButtonReceiver';
 
-/// The doc 10 manifest table (except `FOREGROUND_SERVICE_DATA_SYNC`):
-/// [androidPermissions], the optional camera
+/// The doc 10 manifest table: [androidPermissions], the optional camera
 /// feature of the QR scanner, the `<application>` network security config
 /// and backup rules, cleartext traffic not switched off, `MainActivity` with
 /// `launchMode="singleTask"` and the URL-scheme intent filter (action

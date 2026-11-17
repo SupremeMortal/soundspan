@@ -17,6 +17,8 @@ import 'package:soundspan/app/router/deep_link_router.dart';
 import 'package:soundspan/app/router/notification_taps.dart';
 import 'package:soundspan/app/shell/window_state_controller.dart';
 import 'package:soundspan/core/auth/active_profile.dart';
+import 'package:soundspan/core/downloads/download_batch_notices.dart';
+import 'package:soundspan/core/downloads/download_notification_policy.dart';
 import 'package:soundspan/core/downloads/download_scheduler.dart';
 import 'package:soundspan/core/downloads/download_store.dart'
     show DownloadCollectionKind;
@@ -136,6 +138,15 @@ Future<void> bootstrap({
                     DownloadCollectionKind.episode =>
                       l10n.androidAutoKindEpisode,
                   }, completed),
+            );
+          }),
+          downloadNotificationTextsProvider.overrideWith((ref) {
+            final l10n = lookupAppLocalizations(
+              ref.watch(localeSettingProvider).value ?? const Locale('en'),
+            );
+            return DownloadNotificationTexts(
+              title: l10n.downloadsNotificationTitle,
+              finished: l10n.downloadsNotificationFinished,
             );
           }),
           keyExpiryNotificationTextProvider.overrideWith(
