@@ -108,10 +108,6 @@ $first.Refresh()
 if ($first.HasExited) { Fail "the app exited with $($first.ExitCode) within 20 s" }
 Pass 'the app is running after 20 s'
 
-$logFiles = @(Get-ChildItem -Path $logs -File -ErrorAction SilentlyContinue)
-if ($logFiles.Count -eq 0) { Fail "no log file under $logs" }
-Pass "the app wrote $($logFiles[0].Name)"
-
 $second = Start-Process -FilePath $exe -ArgumentList 'soundspan://album/smoke' -PassThru
 if (-not $second.WaitForExit(10000)) {
   $second.Kill()
@@ -121,6 +117,21 @@ if ($second.ExitCode -ne 0) { Fail "the second launch exited with $($second.Exit
 $first.Refresh()
 if ($first.HasExited) { Fail 'the first instance exited after the second launch' }
 Pass 'the second launch exited 0 and the first instance keeps running'
+
+# The log file appears with the first flushed entry; the forwarded second
+# launch writes one, so wait for it after that.
+$deadline = (Get-Date).AddSeconds(15)
+$logFiles = @()
+while ($logFiles.Count -eq 0 -and (Get-Date) -lt $deadline) {
+  $logFiles = @(Get-ChildItem -Path $logs -File -ErrorAction SilentlyContinue)
+  if ($logFiles.Count -eq 0) { Start-Sleep -Seconds 1 }
+}
+if ($logFiles.Count -eq 0) {
+  Get-ChildItem -Recurse -Path (Join-Path $env:APPDATA 'io.soundspan') -ErrorAction SilentlyContinue |
+    ForEach-Object { Write-Host "  found: $($_.FullName)" }
+  Fail "no log file under $logs"
+}
+Pass "the app wrote $($logFiles[0].Name)"
 
 Stop-App
 
