@@ -96,6 +96,10 @@ class AdaptiveShell extends StatefulWidget {
   /// The key of the content overlay.
   static const Key contentOverlayKey = Key('shell.contentOverlay');
 
+  /// The key of [destination] in the compact navigation bar.
+  static Key destinationKey(ShellDestination destination) =>
+      ValueKey('shell.destination.${destination.name}');
+
   /// The index of the selected [ShellDestination].
   final int selectedIndex;
 
@@ -199,6 +203,7 @@ class _AdaptiveShellState extends State<AdaptiveShell> {
           destinations: [
             for (final destination in ShellDestination.values)
               NavigationDestination(
+                key: AdaptiveShell.destinationKey(destination),
                 icon: Icon(destination.icon),
                 selectedIcon: Icon(destination.selectedIcon),
                 label: destination.label(l10n),

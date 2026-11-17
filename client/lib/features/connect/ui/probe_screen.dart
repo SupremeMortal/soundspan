@@ -44,6 +44,9 @@ class ProbeScreen extends ConsumerStatefulWidget {
   /// What to probe.
   final ProbeRequest request;
 
+  /// The key of "Continue" on a found server shown before sign-in.
+  static const Key continueKey = Key('connect.probe.continue');
+
   @override
   ConsumerState<ProbeScreen> createState() => _ProbeScreenState();
 }
@@ -180,7 +183,11 @@ class _ProbeScreenState extends ConsumerState<ProbeScreen> {
         Center(child: _NotEncryptedChip(label: l10n.connectProbeNotEncrypted)),
       ],
       const SizedBox(height: Spacing.x24),
-      _primary(l10n.connectProbeContinue, () => _continue(result)),
+      _primary(
+        l10n.connectProbeContinue,
+        () => _continue(result),
+        key: ProbeScreen.continueKey,
+      ),
       const SizedBox(height: Spacing.x8),
       _secondary(l10n.connectProbeEditAddress, _editAddress),
     ];
@@ -218,13 +225,15 @@ class _ProbeScreenState extends ConsumerState<ProbeScreen> {
     ];
   }
 
-  Widget _primary(String label, VoidCallback onPressed) => FilledButton(
-    style: FilledButton.styleFrom(
-      minimumSize: const Size.fromHeight(Sizes.touchTarget),
-    ),
-    onPressed: onPressed,
-    child: Text(label),
-  );
+  Widget _primary(String label, VoidCallback onPressed, {Key? key}) =>
+      FilledButton(
+        key: key,
+        style: FilledButton.styleFrom(
+          minimumSize: const Size.fromHeight(Sizes.touchTarget),
+        ),
+        onPressed: onPressed,
+        child: Text(label),
+      );
 
   Widget _secondary(String label, VoidCallback onPressed) => TextButton(
     style: TextButton.styleFrom(

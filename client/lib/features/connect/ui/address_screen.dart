@@ -54,6 +54,12 @@ class AddressScreen extends ConsumerStatefulWidget {
   /// The text the field starts with.
   final String? initialText;
 
+  /// The key of the address field.
+  static const Key addressFieldKey = Key('connect.address');
+
+  /// The key of the submit button.
+  static const Key submitKey = Key('connect.address.submit');
+
   @override
   ConsumerState<AddressScreen> createState() => _AddressScreenState();
 }
@@ -135,6 +141,7 @@ class _AddressScreenState extends ConsumerState<AddressScreen> {
           : null,
       children: [
         TextField(
+          key: AddressScreen.addressFieldKey,
           controller: _text,
           autofocus: true,
           autocorrect: false,
@@ -154,6 +161,7 @@ class _AddressScreenState extends ConsumerState<AddressScreen> {
         ),
         const SizedBox(height: Spacing.x24),
         FilledButton(
+          key: AddressScreen.submitKey,
           style: FilledButton.styleFrom(
             minimumSize: const Size.fromHeight(Sizes.touchTarget),
           ),

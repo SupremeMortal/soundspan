@@ -18,12 +18,18 @@ name: Client Device Tests
 # The desktop suite: every desktop-integration job runs the real app from
 # integration_test/desktop/ against an in-process API server (shell,
 # playback with the real engine, media controls) on Linux, Windows and macOS.
+#
+# The patrol suite: patrol-android runs the real app with Patrol on an
+# Android emulator against the contract server: sign in, play, background,
+# pause and resume from the notification, and the play reported.
 
 on:
   workflow_call:
     inputs:
       suites:
-        description: "The job groups to run: engine, desktop or all."
+        description: >-
+          The job groups to run, separated by spaces: engine, desktop and
+          patrol; or all.
         type: string
         default: all
 
@@ -33,7 +39,7 @@ permissions:
 jobs:
   engine-conformance-android:
     name: engine-conformance-android
-    if: inputs.suites != 'desktop'
+    if: inputs.suites == 'all' || contains(format(' {0} ', inputs.suites), ' engine ')
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
@@ -104,7 +110,7 @@ jobs:
   # slow to start.
   engine-conformance-ios:
     name: engine-conformance-ios
-    if: inputs.suites != 'desktop' && vars.CLIENT_MACOS_CI == 'true'
+    if: (inputs.suites == 'all' || contains(format(' {0} ', inputs.suites), ' engine ')) && vars.CLIENT_MACOS_CI == 'true'
     runs-on: macos-latest
     timeout-minutes: 60
     steps:
@@ -147,7 +153,7 @@ jobs:
 
   engine-conformance-macos:
     name: engine-conformance-macos
-    if: inputs.suites != 'desktop' && vars.CLIENT_MACOS_CI == 'true'
+    if: (inputs.suites == 'all' || contains(format(' {0} ', inputs.suites), ' engine ')) && vars.CLIENT_MACOS_CI == 'true'
     runs-on: macos-latest
     timeout-minutes: 60
     steps:
@@ -176,7 +182,7 @@ jobs:
 
   engine-conformance-web:
     name: engine-conformance-web
-    if: inputs.suites != 'desktop'
+    if: inputs.suites == 'all' || contains(format(' {0} ', inputs.suites), ' engine ')
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
@@ -235,7 +241,7 @@ jobs:
 
   engine-conformance-linux:
     name: engine-conformance-linux
-    if: inputs.suites != 'desktop'
+    if: inputs.suites == 'all' || contains(format(' {0} ', inputs.suites), ' engine ')
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
@@ -307,7 +313,7 @@ jobs:
 
   engine-conformance-windows:
     name: engine-conformance-windows
-    if: inputs.suites != 'desktop'
+    if: inputs.suites == 'all' || contains(format(' {0} ', inputs.suites), ' engine ')
     runs-on: windows-latest
     timeout-minutes: 45
     steps:
@@ -337,7 +343,7 @@ jobs:
   # PulseAudio null sink, which the harness gives mpv as its output (doc 06).
   desktop-integration-linux:
     name: desktop-integration-linux
-    if: inputs.suites != 'engine'
+    if: inputs.suites == 'all' || contains(format(' {0} ', inputs.suites), ' desktop ')
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
@@ -421,7 +427,7 @@ jobs:
   # audio endpoint (engine-conformance-windows).
   desktop-integration-windows:
     name: desktop-integration-windows
-    if: inputs.suites != 'engine'
+    if: inputs.suites == 'all' || contains(format(' {0} ', inputs.suites), ' desktop ')
     runs-on: windows-latest
     timeout-minutes: 45
     defaults:
@@ -483,7 +489,7 @@ jobs:
   # when it has none (engine-conformance-macos).
   desktop-integration-macos:
     name: desktop-integration-macos
-    if: inputs.suites != 'engine' && vars.CLIENT_MACOS_CI == 'true'
+    if: (inputs.suites == 'all' || contains(format(' {0} ', inputs.suites), ' desktop ')) && vars.CLIENT_MACOS_CI == 'true'
     runs-on: macos-latest
     timeout-minutes: 60
     env:
@@ -537,3 +543,164 @@ jobs:
           name: desktop-integration-macos
           path: ${{ env.LOG_DIR }}
           if-no-files-found: warn
+
+  # The real app with Patrol on an Android emulator against the contract
+  # server, started as in client-contract and published on the runner's port
+  # 3030, which the emulator reaches as 10.0.2.2 (doc 11, Integration
+  # (mobile)). One retry of the emulator step absorbs emulator start-up
+  # flakiness; a second failure fails the job.
+  patrol-android:
+    name: patrol-android
+    if: inputs.suites == 'all' || contains(format(' {0} ', inputs.suites), ' patrol ')
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    env:
+      LOG_DIR: ${{ github.workspace }}/patrol-android-logs
+      COMPOSE_FILE: compose.yaml:${{ github.workspace }}/patrol-android-logs/port.compose.yaml
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Java
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+          cache-dependency-path: |
+            client/android/*.gradle*
+            client/android/app/*.gradle*
+            client/android/gradle/wrapper/gradle-wrapper.properties
+
+      - name: Set up Flutter
+        uses: ./.github/actions/client-flutter
+
+      - name: Setup Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+
+      - name: Install ffmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ffmpeg
+
+      # The backend is published on the runner's port 3030 instead of the
+      # contract suite's 13006.
+      - name: Publish the backend on port 3030
+        run: |
+          mkdir -p "$LOG_DIR"
+          cat > "$LOG_DIR/port.compose.yaml" <<'EOF'
+          services:
+            backend:
+              ports: !override
+                - "127.0.0.1:3030:3006"
+          EOF
+
+      - name: Generate the fixture library
+        working-directory: client/contract_test
+        run: fixtures/generate.sh
+
+      - name: Start the contract server
+        working-directory: client/contract_test
+        run: docker compose up -d --build --wait
+
+      - name: Wait for /api/health
+        run: |
+          for _ in $(seq 1 60); do
+            curl -fsS http://127.0.0.1:3030/api/health > /dev/null && exit 0
+            sleep 2
+          done
+          echo "the contract server is not healthy" >&2
+          exit 1
+
+      # The seeded admin has no recorded plays, so the test sees its own.
+      - name: Seed the contract server
+        working-directory: client/contract_test
+        env:
+          CONTRACT_BASE_URL: http://127.0.0.1:3030
+        run: |
+          node seed.ts
+          {
+            echo "E2E_USERNAME=$(jq -r .admin.username .seed/credentials.json)"
+            echo "E2E_PASSWORD=$(jq -r .admin.password .seed/credentials.json)"
+          } >> "$GITHUB_ENV"
+
+      - name: Install patrol_cli
+        run: |
+          dart pub global activate patrol_cli 4.9.0
+          echo "$HOME/.pub-cache/bin" >> "$GITHUB_PATH"
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Emulator snapshot cache
+        id: avd-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-34-x86_64-google_apis-v1
+
+      - name: Create the emulator snapshot
+        if: steps.avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: false
+          script: echo "Created the emulator snapshot."
+
+      - name: Patrol on an emulator
+        id: patrol
+        continue-on-error: true
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          force-avd-creation: false
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          working-directory: client
+          script: integration_test/patrol/run_android.sh "$LOG_DIR/attempt-1"
+
+      - name: Patrol on an emulator (retry)
+        if: steps.patrol.outcome == 'failure'
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          force-avd-creation: false
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          working-directory: client
+          script: integration_test/patrol/run_android.sh "$LOG_DIR/attempt-2"
+
+      - name: Collect the server logs and the Patrol report
+        if: failure() || steps.patrol.outcome == 'failure'
+        run: |
+          (cd client/contract_test && docker compose logs --no-color > "$LOG_DIR/compose-logs.txt" 2>&1) || true
+          cp -r client/build/app/reports/androidTests "$LOG_DIR/report" 2>/dev/null || true
+          cp -r client/build/app/outputs/androidTest-results "$LOG_DIR/results" 2>/dev/null || true
+
+      - name: Upload logs, report and screenshots
+        if: failure() || steps.patrol.outcome == 'failure'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: patrol-android
+          path: ${{ env.LOG_DIR }}
+          if-no-files-found: warn
+
+      - name: Tear down the contract server
+        if: always()
+        working-directory: client/contract_test
+        run: docker compose down -v --remove-orphans

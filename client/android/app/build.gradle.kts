@@ -33,6 +33,8 @@ android {
         ndk {
             abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64")
         }
+        // Patrol (doc 11, Integration (mobile)); no test orchestrator.
+        testInstrumentationRunner = "pl.leancode.patrol.PatrolJUnitRunner"
     }
 
     buildTypes {

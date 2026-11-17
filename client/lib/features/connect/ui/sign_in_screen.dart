@@ -63,6 +63,15 @@ class SignInScreen extends ConsumerStatefulWidget {
   /// Whether to open the device-link panel at once, from `?relink=1`.
   final bool relink;
 
+  /// The key of the username field.
+  static const Key usernameKey = Key('connect.signIn.username');
+
+  /// The key of the password field.
+  static const Key passwordKey = Key('connect.signIn.password');
+
+  /// The key of the submit button of the password form and the code step.
+  static const Key submitKey = Key('connect.signIn.submit');
+
   @override
   ConsumerState<SignInScreen> createState() => _SignInScreenState();
 }
@@ -418,6 +427,7 @@ class _FormBody extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 TextField(
+                  key: SignInScreen.usernameKey,
                   controller: form.username,
                   autofocus: form.username.text.isEmpty,
                   autocorrect: false,
@@ -431,6 +441,7 @@ class _FormBody extends StatelessWidget {
                 ),
                 const SizedBox(height: Spacing.x16),
                 TextField(
+                  key: SignInScreen.passwordKey,
                   controller: form.password,
                   autofocus: form.username.text.isNotEmpty,
                   obscureText: obscured,
@@ -468,6 +479,7 @@ class _FormBody extends StatelessWidget {
         ],
         const SizedBox(height: Spacing.x24),
         FilledButton(
+          key: SignInScreen.submitKey,
           style: FilledButton.styleFrom(
             minimumSize: const Size.fromHeight(Sizes.touchTarget),
           ),

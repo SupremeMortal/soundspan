@@ -38,6 +38,12 @@ class MiniPlayer extends ConsumerWidget {
   /// The key of the played part of the progress line.
   static const Key progressKey = Key('miniPlayer.progress');
 
+  /// The key of the play/pause button.
+  static const Key playPauseKey = Key('miniPlayer.playPause');
+
+  /// The key of the next button (skip forward for an episode).
+  static const Key nextKey = Key('miniPlayer.next');
+
   /// How far up, in logical pixels, a drag must go to open now playing.
   static const double openDragDistance = 24;
 
@@ -104,6 +110,7 @@ class MiniPlayer extends ConsumerWidget {
                       ),
                     ),
                     IconButton(
+                      key: playPauseKey,
                       tooltip: snapshot.playing
                           ? l10n.playerPause
                           : l10n.playerPlay,
@@ -117,6 +124,7 @@ class MiniPlayer extends ConsumerWidget {
                     ),
                     if (current is EpisodeQueueItem)
                       IconButton(
+                        key: nextKey,
                         tooltip: l10n.playerSkipForward(
                           snapshot.skipInterval.inSeconds,
                         ),
@@ -126,6 +134,7 @@ class MiniPlayer extends ConsumerWidget {
                       )
                     else
                       IconButton(
+                        key: nextKey,
                         tooltip: l10n.playerNext,
                         color: colors.content,
                         icon: const Icon(Icons.skip_next_rounded),

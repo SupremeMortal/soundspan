@@ -43,6 +43,9 @@ class LibraryScreen extends StatefulWidget {
   /// `['album', '42']`; empty when none is open.
   final List<String> selected;
 
+  /// The key of [tab]'s tab in the tab bar.
+  static Key tabKey(LibraryTab tab) => ValueKey('library.tab.${tab.name}');
+
   @override
   State<LibraryScreen> createState() => _LibraryScreenState();
 }
@@ -98,7 +101,10 @@ class _LibraryScreenState extends State<LibraryScreen>
               onTap: _select,
               tabs: [
                 for (final tab in LibraryTab.values)
-                  Tab(text: libraryTabLabel(l10n, tab)),
+                  Tab(
+                    key: LibraryScreen.tabKey(tab),
+                    text: libraryTabLabel(l10n, tab),
+                  ),
               ],
             ),
           ),

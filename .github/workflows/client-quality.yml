@@ -78,6 +78,7 @@ jobs:
           has() { grep -Eq "$1" <<< "$changed" && echo true || echo false; }
           device="$(has '^(client/lib/core/playback/engines/|client/integration_test/|client/lib/platform/player_engine/|client/lib/core/playback/media_controls/|client/lib/platform/media_controls/|client/android/|client/ios/|client/windows/|client/packages/soundspan_smtc/|\.github/workflows/client-device-tests\.yml$)')"
           desktop_integration="$(has '^(client/integration_test/desktop/|client/lib/app/|client/lib/platform/|client/linux/|client/windows/|client/macos/|client/pubspec\.lock$|\.github/workflows/client-device-tests\.yml$)')"
+          patrol="$(has '^(client/integration_test/patrol/|client/android/|client/lib/core/playback/|client/lib/features/connect/|client/pubspec\.lock$|\.github/workflows/client-device-tests\.yml$)')"
           {
             echo "client=$(has '^(client/|\.github/workflows/client-[^/]*\.yml$|\.github/actions/client-flutter/)')"
             echo "apple=$(has '^(client/ios/|client/macos/|client/pubspec\.lock$|client/lib/platform/|\.github/workflows/client-quality\.yml$|\.github/actions/client-flutter/)')"
@@ -91,16 +92,16 @@ jobs:
             echo "release_build=$(has '^(\.github/workflows/client-(build|release)\.yml$|client/tool/release/|client/pubspec\.(yaml|lock)$|client/config/|client/(android|ios|linux|macos|windows|web)/)')"
             echo "release_notes=$(has '^(\.github/workflows/client-(build|release)\.yml$|client/tool/release/|client/pubspec\.(yaml|lock)$|client/config/|client/(android|ios|linux|macos|windows|web)/|CHANGELOG\.md$)')"
           } | tee -a "$GITHUB_OUTPUT"
-          # The job groups of client-device-tests.yml: the engine suite when
-          # `device` is true, the desktop suite when the desktop app paths
-          # changed.
-          case "$device/$desktop_integration" in
-            true/true) suites=all ;;
-            true/false) suites=engine ;;
-            false/true) suites=desktop ;;
-            *) suites=none ;;
-          esac
-          echo "device_suites=$suites" | tee -a "$GITHUB_OUTPUT"
+          # The job groups of client-device-tests.yml, separated by spaces:
+          # the engine suite when `device` is true, the desktop suite when the
+          # desktop app paths changed, and the patrol suite when the Patrol
+          # paths changed; `none` when there is none.
+          suites=""
+          [[ "$device" == true ]] && suites+=" engine"
+          [[ "$desktop_integration" == true ]] && suites+=" desktop"
+          [[ "$patrol" == true ]] && suites+=" patrol"
+          suites="${suites# }"
+          echo "device_suites=${suites:-none}" | tee -a "$GITHUB_OUTPUT"
 
       - name: Read the client version
         id: version
@@ -711,9 +712,9 @@ jobs:
           }
 
   # The engine conformance suite on an Android emulator, an iOS simulator,
-  # macOS, headless Chrome, Linux and Windows, and the desktop integration
-  # tests on Linux, Windows and macOS (client-device-tests.yml), each group
-  # when its paths changed.
+  # macOS, headless Chrome, Linux and Windows, the desktop integration tests
+  # on Linux, Windows and macOS, and the Patrol suite on an Android emulator
+  # (client-device-tests.yml), each group when its paths changed.
   client-device-tests:
     name: client-device-tests
     needs: changes

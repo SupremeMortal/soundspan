@@ -80,6 +80,13 @@ dev_dependencies:
   xml: ^7.0.0                    # tool/check_platform_config.dart
   yaml: ^3.1.0                   # tool/license_audit.dart
 
+# Patrol (doc 11, Integration (mobile)); run with patrol_cli 4.9.0.
+patrol:
+  app_name: soundspan
+  test_directory: integration_test/patrol
+  android:
+    package_name: io.soundspan.app
+
 flutter:
   uses-material-design: true
   generate: true

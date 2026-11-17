@@ -50,3 +50,8 @@ app.*.map.json
 # Golden test failure output
 /test/**/failures/
 packages/soundspan_api/lib/src/generated/.swagger_parser.lock
+
+# Patrol: the generated test bundles and local dart-defines
+integration_test/patrol/test_bundle.dart
+.patrol.env
+integration_test/patrol_test_bundle.dart
