@@ -79,15 +79,20 @@ class ProfileHarness {
   new _(this.appDb, this.secrets, this.opener, this.paths, this.clock);
 
   /// Creates the harness; its resources are released when the test ends.
-  /// [opener] replaces the new [TestOpener].
+  /// [opener] replaces the new [TestOpener]; [secrets] the new secret
+  /// store. [appPaths] and [databaseOpener], when given, are what the root
+  /// scope uses instead of [paths] and [opener].
   static Future<ProfileHarness> create({
     String? storedActiveId,
     List<Override> overrides = const [],
     TestOpener? opener,
+    InMemorySecretStore? secrets,
+    AppPaths? appPaths,
+    DatabaseOpener? databaseOpener,
   }) async {
     final harness = ProfileHarness._(
       AppDatabase(NativeDatabase.memory()),
-      InMemorySecretStore(),
+      secrets ?? InMemorySecretStore(),
       opener ?? TestOpener(),
       RecordingAppPaths(),
       FakeClock(),
@@ -97,8 +102,10 @@ class ProfileHarness {
       overrides: [
         appDatabaseProvider.overrideWithValue(harness.appDb),
         secretStoreProvider.overrideWithValue(harness.secrets),
-        databaseOpenerProvider.overrideWithValue(harness.opener),
-        appPathsProvider.overrideWithValue(harness.paths),
+        databaseOpenerProvider.overrideWithValue(
+          databaseOpener ?? harness.opener,
+        ),
+        appPathsProvider.overrideWithValue(appPaths ?? harness.paths),
         clockProvider.overrideWithValue(harness.clock),
         initialActiveProfileIdProvider.overrideWithValue(storedActiveId),
         userAgentProvider.overrideWithValue('soundspan-client/test (test)'),

@@ -71,6 +71,10 @@ class Outbox {
   /// null before. The UI reads this instead of opening its own query.
   ValueListenable<int?> get pendingCount => _worker.pendingCount;
 
+  /// Runs one pass now, unless the server is not reachable, and completes
+  /// when it has ended (doc 04, Sign-Out, step 3).
+  Future<void> flush() => _worker.flush();
+
   /// Starts delivering (doc 02, Bootstrap Sequence, step 8).
   Future<void> start() => _worker.start();
 }

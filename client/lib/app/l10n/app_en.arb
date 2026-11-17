@@ -323,6 +323,82 @@
   "@settingsServersRenameSave": {
     "description": "Rename dialog button: store the new name."
   },
+  "settingsServersSignOut": "Sign out",
+  "@settingsServersSignOut": {
+    "description": "Servers settings action: sign out of this server; its downloads and cached data stay on this device."
+  },
+  "settingsServersRemove": "Remove this server",
+  "@settingsServersRemove": {
+    "description": "Servers settings action: sign out and delete everything stored for this server on this device."
+  },
+  "settingsServersSignOutTitle": "Sign out of {server}?",
+  "@settingsServersSignOutTitle": {
+    "description": "Title of the dialog that confirms signing out of a server.",
+    "placeholders": {
+      "server": {
+        "type": "String",
+        "example": "music.example.com"
+      }
+    }
+  },
+  "settingsServersSignOutBody": "Downloads, cached data and changes not yet sent stay on this device. Sign in again to use this server.",
+  "@settingsServersSignOutBody": {
+    "description": "Body of the sign-out dialog."
+  },
+  "settingsServersSignOutRemoveDownloads": "Also remove downloads",
+  "@settingsServersSignOutRemoveDownloads": {
+    "description": "Sign-out dialog checkbox: delete this server's downloaded music from this device too."
+  },
+  "settingsServersRemoveTitle": "Remove {server}?",
+  "@settingsServersRemoveTitle": {
+    "description": "Title of the dialog that confirms removing a server.",
+    "placeholders": {
+      "server": {
+        "type": "String",
+        "example": "music.example.com"
+      }
+    }
+  },
+  "settingsServersRemoveBody": "This signs out and deletes everything this app stores for {server} on this device, downloads included.",
+  "@settingsServersRemoveBody": {
+    "description": "Body of the dialog that confirms removing a server.",
+    "placeholders": {
+      "server": {
+        "type": "String",
+        "example": "music.example.com"
+      }
+    }
+  },
+  "settingsServersRemovePending": "{count, plural, =1{1 change has not been sent to the server and will be lost.} other{{count} changes have not been sent to the server and will be lost.}}",
+  "@settingsServersRemovePending": {
+    "description": "Remove-server dialog: how many changes made on this device would be lost.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "settingsServersRemoveConfirm": "Remove",
+  "@settingsServersRemoveConfirm": {
+    "description": "Remove-server dialog button: remove the server."
+  },
+  "settingsServersRemoveAnyway": "Remove anyway",
+  "@settingsServersRemoveAnyway": {
+    "description": "Remove-server dialog button when changes have not been sent: remove the server and lose them."
+  },
+  "settingsServersSigningOut": "Signing out…",
+  "@settingsServersSigningOut": {
+    "description": "Shown in the sign-out dialog while the app signs out."
+  },
+  "settingsServersRemoving": "Removing…",
+  "@settingsServersRemoving": {
+    "description": "Shown in the remove-server dialog while the app removes the server."
+  },
+  "settingsServersExitFailed": "The sign-in details on this device could not be deleted. Try again.",
+  "@settingsServersExitFailed": {
+    "description": "Shown in the sign-out and remove-server dialogs when the device's secure storage failed."
+  },
   "commonCancel": "Cancel",
   "@commonCancel": {
     "description": "Dialog button: close without changing anything."

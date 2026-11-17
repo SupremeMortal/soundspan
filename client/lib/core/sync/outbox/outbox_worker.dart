@@ -161,6 +161,13 @@ class OutboxWorker {
     _pass = _runPasses().whenComplete(() => _pass = null);
   }
 
+  /// Triggers a pass and completes when it has finished; while not online
+  /// it completes at once.
+  Future<void> flush() {
+    trigger();
+    return idle;
+  }
+
   /// Completes when the current pass, if any, has finished.
   Future<void> get idle => _pass ?? Future<void>.value();
 

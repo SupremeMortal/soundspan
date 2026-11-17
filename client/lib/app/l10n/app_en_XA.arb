@@ -330,6 +330,82 @@
   "@settingsServersRenameSave": {
     "description": "Rename dialog button: store the new name."
   },
+  "settingsServersSignOut": "[Šîĝñ öûţ one]",
+  "@settingsServersSignOut": {
+    "description": "Servers settings action: sign out of this server; its downloads and cached data stay on this device."
+  },
+  "settingsServersRemove": "[Ŕémövé ţĥîš šéŕvéŕ one two]",
+  "@settingsServersRemove": {
+    "description": "Servers settings action: sign out and delete everything stored for this server on this device."
+  },
+  "settingsServersSignOutTitle": "[Šîĝñ öûţ öf {server}? one two]",
+  "@settingsServersSignOutTitle": {
+    "description": "Title of the dialog that confirms signing out of a server.",
+    "placeholders": {
+      "server": {
+        "type": "String",
+        "example": "music.example.com"
+      }
+    }
+  },
+  "settingsServersSignOutBody": "[Ðöŵñļöåðš, çåçĥéð ðåţå åñð çĥåñĝéš ñöţ ýéţ šéñţ šţåý öñ ţĥîš ðévîçé. Šîĝñ îñ åĝåîñ ţö ûšé ţĥîš šéŕvéŕ. one two three four five six seven eight nine]",
+  "@settingsServersSignOutBody": {
+    "description": "Body of the sign-out dialog."
+  },
+  "settingsServersSignOutRemoveDownloads": "[Åļšö ŕémövé ðöŵñļöåðš one two three]",
+  "@settingsServersSignOutRemoveDownloads": {
+    "description": "Sign-out dialog checkbox: delete this server's downloaded music from this device too."
+  },
+  "settingsServersRemoveTitle": "[Ŕémövé {server}? one]",
+  "@settingsServersRemoveTitle": {
+    "description": "Title of the dialog that confirms removing a server.",
+    "placeholders": {
+      "server": {
+        "type": "String",
+        "example": "music.example.com"
+      }
+    }
+  },
+  "settingsServersRemoveBody": "[Ţĥîš šîĝñš öûţ åñð ðéļéţéš évéŕýţĥîñĝ ţĥîš åþþ šţöŕéš föŕ {server} öñ ţĥîš ðévîçé, ðöŵñļöåðš îñçļûðéð. one two three four five six seven eight]",
+  "@settingsServersRemoveBody": {
+    "description": "Body of the dialog that confirms removing a server.",
+    "placeholders": {
+      "server": {
+        "type": "String",
+        "example": "music.example.com"
+      }
+    }
+  },
+  "settingsServersRemovePending": "[{count, plural, =1{1 çĥåñĝé ĥåš ñöţ bééñ šéñţ ţö ţĥé šéŕvéŕ åñð ŵîļļ bé ļöšţ. one two three four five} other{{count} çĥåñĝéš ĥåvé ñöţ bééñ šéñţ ţö ţĥé šéŕvéŕ åñð ŵîļļ bé ļöšţ. one two three four five}}]",
+  "@settingsServersRemovePending": {
+    "description": "Remove-server dialog: how many changes made on this device would be lost.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "settingsServersRemoveConfirm": "[Ŕémövé one]",
+  "@settingsServersRemoveConfirm": {
+    "description": "Remove-server dialog button: remove the server."
+  },
+  "settingsServersRemoveAnyway": "[Ŕémövé åñýŵåý one two]",
+  "@settingsServersRemoveAnyway": {
+    "description": "Remove-server dialog button when changes have not been sent: remove the server and lose them."
+  },
+  "settingsServersSigningOut": "[Šîĝñîñĝ öûţ… one two]",
+  "@settingsServersSigningOut": {
+    "description": "Shown in the sign-out dialog while the app signs out."
+  },
+  "settingsServersRemoving": "[Ŕémövîñĝ… one]",
+  "@settingsServersRemoving": {
+    "description": "Shown in the remove-server dialog while the app removes the server."
+  },
+  "settingsServersExitFailed": "[Ţĥé šîĝñ-îñ ðéţåîļš öñ ţĥîš ðévîçé çöûļð ñöţ bé ðéļéţéð. Ţŕý åĝåîñ. one two three four five six]",
+  "@settingsServersExitFailed": {
+    "description": "Shown in the sign-out and remove-server dialogs when the device's secure storage failed."
+  },
   "commonCancel": "[Çåñçéļ one]",
   "@commonCancel": {
     "description": "Dialog button: close without changing anything."

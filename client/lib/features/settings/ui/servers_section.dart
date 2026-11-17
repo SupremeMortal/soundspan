@@ -13,6 +13,7 @@ import 'package:soundspan/app/theme/typography.dart';
 import 'package:soundspan/core/auth/active_profile.dart';
 import 'package:soundspan/core/auth/profile.dart';
 import 'package:soundspan/core/profile/profile_runtime.dart';
+import 'package:soundspan/features/settings/ui/servers/server_exit_dialog.dart';
 import 'package:soundspan/platform/url_opener/url_opener.dart';
 
 /// The role of a server administrator.
@@ -23,8 +24,8 @@ Uri serverAdminUrl(Profile profile) => Uri.parse('${profile.baseUrl}/admin');
 
 /// Settings → Servers (doc 04, Multiple Profiles): every profile, most
 /// recently used first, with its host, user, state and last seen server
-/// version; switch, rename, add a server, and "Open server admin" for
-/// administrators.
+/// version; switch, rename, sign out, remove, add a server, and "Open server
+/// admin" for administrators.
 class ServersSection extends ConsumerWidget {
   /// Creates the section.
   const new({super.key});
@@ -147,6 +148,19 @@ class ServerProfileTile extends ConsumerWidget {
               TextButton(
                 onPressed: () => unawaited(_rename(context, ref)),
                 child: Text(l10n.settingsServersRename),
+              ),
+              if (profile.state == ProfileState.active)
+                TextButton(
+                  onPressed: () => unawaited(
+                    showServerExitDialog(context, profile, ServerExit.signOut),
+                  ),
+                  child: Text(l10n.settingsServersSignOut),
+                ),
+              TextButton(
+                onPressed: () => unawaited(
+                  showServerExitDialog(context, profile, ServerExit.remove),
+                ),
+                child: Text(l10n.settingsServersRemove),
               ),
               if (profile.role == adminRole)
                 TextButton(

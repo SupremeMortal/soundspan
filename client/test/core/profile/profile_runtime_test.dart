@@ -227,6 +227,39 @@ void main() {
     expect(runtime.state.value, ProfileRuntimeActive(h.a));
   });
 
+  test('reload creates the active container again from the stored record, '
+      'so a sign-out shows', () async {
+    final (h, runtime) = await setUpRuntime();
+    await runtime.switchTo(h.a);
+    final before = runtime.container!;
+    final repository = h.root.read(profileRepositoryProvider);
+    await repository.deleteCredentials(h.a);
+    await repository.setState(h.a, ProfileState.signedOut);
+
+    await runtime.reload(h.a);
+
+    final after = runtime.container!;
+    expect(after, isNot(same(before)));
+    expect(
+      after.read(profileContextProvider).profile.state,
+      ProfileState.signedOut,
+    );
+    expect(after.read(sessionControllerProvider).current, isNull);
+    expect(runtime.state.value, ProfileRuntimeActive(h.a));
+    expect(h.opener.closed, [StateDatabaseTarget(h.a)]);
+  });
+
+  test('reload of a profile that is not active does nothing', () async {
+    final (h, runtime) = await setUpRuntime();
+    await runtime.switchTo(h.a);
+    final container = runtime.container;
+
+    await runtime.reload(h.b);
+
+    expect(runtime.container, same(container));
+    expect(runtime.state.value, ProfileRuntimeActive(h.a));
+  });
+
   test(
     'switchTo(null) leaves no container and clears the stored active id',
     () async {

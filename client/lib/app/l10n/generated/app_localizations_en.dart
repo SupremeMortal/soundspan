@@ -255,6 +255,62 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsServersRenameSave => 'Save';
 
   @override
+  String get settingsServersSignOut => 'Sign out';
+
+  @override
+  String get settingsServersRemove => 'Remove this server';
+
+  @override
+  String settingsServersSignOutTitle(String server) {
+    return 'Sign out of $server?';
+  }
+
+  @override
+  String get settingsServersSignOutBody =>
+      'Downloads, cached data and changes not yet sent stay on this device. Sign in again to use this server.';
+
+  @override
+  String get settingsServersSignOutRemoveDownloads => 'Also remove downloads';
+
+  @override
+  String settingsServersRemoveTitle(String server) {
+    return 'Remove $server?';
+  }
+
+  @override
+  String settingsServersRemoveBody(String server) {
+    return 'This signs out and deletes everything this app stores for $server on this device, downloads included.';
+  }
+
+  @override
+  String settingsServersRemovePending(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count changes have not been sent to the server and will be lost.',
+      one: '1 change has not been sent to the server and will be lost.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get settingsServersRemoveConfirm => 'Remove';
+
+  @override
+  String get settingsServersRemoveAnyway => 'Remove anyway';
+
+  @override
+  String get settingsServersSigningOut => 'Signing out…';
+
+  @override
+  String get settingsServersRemoving => 'Removing…';
+
+  @override
+  String get settingsServersExitFailed =>
+      'The sign-in details on this device could not be deleted. Try again.';
+
+  @override
   String get commonCancel => 'Cancel';
 
   @override
@@ -1741,6 +1797,63 @@ class AppLocalizationsEnXa extends AppLocalizationsEn {
 
   @override
   String get settingsServersRenameSave => '[Šåvé one]';
+
+  @override
+  String get settingsServersSignOut => '[Šîĝñ öûţ one]';
+
+  @override
+  String get settingsServersRemove => '[Ŕémövé ţĥîš šéŕvéŕ one two]';
+
+  @override
+  String settingsServersSignOutTitle(String server) {
+    return '[Šîĝñ öûţ öf $server? one two]';
+  }
+
+  @override
+  String get settingsServersSignOutBody =>
+      '[Ðöŵñļöåðš, çåçĥéð ðåţå åñð çĥåñĝéš ñöţ ýéţ šéñţ šţåý öñ ţĥîš ðévîçé. Šîĝñ îñ åĝåîñ ţö ûšé ţĥîš šéŕvéŕ. one two three four five six seven eight nine]';
+
+  @override
+  String get settingsServersSignOutRemoveDownloads =>
+      '[Åļšö ŕémövé ðöŵñļöåðš one two three]';
+
+  @override
+  String settingsServersRemoveTitle(String server) {
+    return '[Ŕémövé $server? one]';
+  }
+
+  @override
+  String settingsServersRemoveBody(String server) {
+    return '[Ţĥîš šîĝñš öûţ åñð ðéļéţéš évéŕýţĥîñĝ ţĥîš åþþ šţöŕéš föŕ $server öñ ţĥîš ðévîçé, ðöŵñļöåðš îñçļûðéð. one two three four five six seven eight]';
+  }
+
+  @override
+  String settingsServersRemovePending(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count çĥåñĝéš ĥåvé ñöţ bééñ šéñţ ţö ţĥé šéŕvéŕ åñð ŵîļļ bé ļöšţ. one two three four five',
+      one: '1 çĥåñĝé ĥåš ñöţ bééñ šéñţ ţö ţĥé šéŕvéŕ åñð ŵîļļ bé ļöšţ. one two three four five',
+    );
+    return '[$_temp0]';
+  }
+
+  @override
+  String get settingsServersRemoveConfirm => '[Ŕémövé one]';
+
+  @override
+  String get settingsServersRemoveAnyway => '[Ŕémövé åñýŵåý one two]';
+
+  @override
+  String get settingsServersSigningOut => '[Šîĝñîñĝ öûţ… one two]';
+
+  @override
+  String get settingsServersRemoving => '[Ŕémövîñĝ… one]';
+
+  @override
+  String get settingsServersExitFailed =>
+      '[Ţĥé šîĝñ-îñ ðéţåîļš öñ ţĥîš ðévîçé çöûļð ñöţ bé ðéļéţéð. Ţŕý åĝåîñ. one two three four five six]';
 
   @override
   String get commonCancel => '[Çåñçéļ one]';

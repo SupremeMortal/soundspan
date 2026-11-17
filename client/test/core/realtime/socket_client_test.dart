@@ -959,10 +959,10 @@ void main() {
       final a = runtime.container!;
       final client = a.read(socketClientProvider);
       expect(a.read(socketClientProvider), same(client));
-      expect(
-        a.read(signOutParticipantsProvider).single,
+      expect(a.read(signOutParticipantsProvider), [
+        isA<PlaybackSignOutParticipant>(),
         isA<SocketSignOutParticipant>(),
-      );
+      ]);
       expect(client.connectionState, SocketConnectionState.disconnected);
 
       await runtime.switchTo(harness.b);

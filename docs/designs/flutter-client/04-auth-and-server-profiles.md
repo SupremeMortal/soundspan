@@ -200,6 +200,16 @@ After success the client calls `GET /api/auth/me` (role, display name) and `GET 
 
 Steps 3 and 4 are best-effort with short timeouts; sign-out always completes locally.
 
+`SignOutSequence` (`lib/app/session/sign_out_sequence.dart`) runs these steps; it sits above `core` because it touches playback, sync and auth.
+
+- Steps 1 and 2 are the `SignOutParticipant`s registered in `signOutParticipantsProvider` (profile scope), in registration order: playback stops, which ends the open play, and waits until the play is written to the outbox; then the socket closes. A participant that throws is logged and the next one runs. "Remove this server" runs each participant's `beforeRemove` after its `onSignOut`, before step 3. A participant that also implements `DownloadsSignOutParticipant` and reports downloads makes the sign-out dialog offer "Also remove downloads"; with none, the checkbox is not shown.
+- Step 3 is one outbox pass. Steps 3 and 4 each have a 5 s budget; a timeout or an error is logged by its type only and ignored, and unsent operations stay in `state.db`.
+- Step 4 uses a one-off client built from the stored credential, for the active profile as for an inactive one: `authKind == password` sends `POST /api/auth/logout`, `deviceLink` and `apiKey` send `DELETE /api/api-keys/current`.
+- Step 5 deletes the three secret keys and sets `state = signedOut`. A failure here propagates: the profile stays signed in and the dialog shows an error. For the active profile, `ProfileRuntime.reload` then disposes its container and creates it again, so the router shows `/connect/sign-in` with the server and username prefilled.
+- Signing out of an inactive profile skips steps 1 to 3.
+- "Remove this server" ends with `ProfileRepository.delete` (directory trees, databases, row). When the removed profile was active, the most recently used remaining profile in state `active` becomes active first, or none (the router shows `/connect`). Its dialog counts the outbox's pending operations (for an inactive profile, read from its `state.db`) and, when there are any, says "N changes have not been sent to the server and will be lost" and confirms with "Remove anyway".
+- While a sequence runs, its dialog shows progress and cannot be dismissed.
+
 ## Capability Discovery and Version Gate
 
 Runs after sign-in, on every app start, and on resume after more than one hour in the background. Implemented by `CapabilityRefresher`.

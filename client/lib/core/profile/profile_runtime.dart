@@ -128,6 +128,16 @@ class ProfileRuntime {
   /// container is created again, so a new sign-in takes effect.
   Future<void> switchTo(String? profileId) => _serial(() => _switch(profileId));
 
+  /// Closes the container of [profileId] and creates it again from the
+  /// stored profile, so a change to its record, such as a sign-out, takes
+  /// effect. Does nothing when [profileId] is not the active profile.
+  Future<void> reload(String profileId) => _serial(() async {
+    if (_state.value != ProfileRuntimeActive(profileId)) return;
+    _state.value = ProfileRuntimeState.switching;
+    await _closeCurrent();
+    await _switch(profileId);
+  });
+
   /// Deletes the `state.db` and the directory trees of [profileId], then
   /// activates it. Only ever called from an explicit user action.
   Future<void> resetLocalState(String profileId) => _serial(() async {

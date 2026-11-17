@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:soundspan/core/playback/playback_controller.dart';
+import 'package:soundspan/core/playback/playback_providers.dart';
 import 'package:soundspan/core/realtime/realtime_providers.dart';
 import 'package:soundspan/core/realtime/socket_client.dart';
 
@@ -13,6 +15,38 @@ abstract interface class SignOutParticipant {
 
   /// Extra work for "Remove this server", before the outbox flush.
   Future<void> beforeRemove();
+}
+
+/// A [SignOutParticipant] that may hold downloads of the profile; when one
+/// reports downloads, sign-out offers "Also remove downloads".
+abstract interface class DownloadsSignOutParticipant
+    implements SignOutParticipant {
+  /// Whether the profile has downloaded files on this device.
+  Future<bool> hasDownloads();
+}
+
+/// Playback's part in sign-out: stop, which ends the open play, and wait
+/// until the play is written to the outbox, so the outbox pass that
+/// follows can send it (doc 06, Play Reporting).
+final class PlaybackSignOutParticipant implements SignOutParticipant {
+  /// Creates the participant of the controller [_controller] returns;
+  /// [_written] completes when the plays it ended are stored.
+  const new(this._controller, this._written);
+
+  final PlaybackController Function() _controller;
+  final Future<void> Function() _written;
+
+  @override
+  Future<void> onSignOut({required bool removeDownloads}) async {
+    await _controller().stop();
+    // The ended play reaches the reporter as a stream event; let it arrive
+    // before waiting for the reporter's writes.
+    await Future<void>.delayed(Duration.zero);
+    await _written();
+  }
+
+  @override
+  Future<void> beforeRemove() async {}
 }
 
 /// The socket's part in sign-out: leave the group, disconnect and dispose,
@@ -30,9 +64,17 @@ final class SocketSignOutParticipant implements SignOutParticipant {
   Future<void> beforeRemove() async {}
 }
 
-/// The [SignOutParticipant]s of the profile scope, in execution order.
+/// The [SignOutParticipant]s of the profile scope, in execution order:
+/// playback, then the socket. The playback controller is read when
+/// sign-out runs.
 final Provider<List<SignOutParticipant>> signOutParticipantsProvider =
     Provider<List<SignOutParticipant>>(
-      (ref) => [SocketSignOutParticipant(ref.watch(socketClientProvider))],
-      dependencies: [socketClientProvider],
+      (ref) => [
+        PlaybackSignOutParticipant(
+          () => ref.read(playbackControllerProvider),
+          () => playsWritten(ref.read(playbackControllerProvider)),
+        ),
+        SocketSignOutParticipant(ref.watch(socketClientProvider)),
+      ],
+      dependencies: [socketClientProvider, playbackControllerProvider],
     );

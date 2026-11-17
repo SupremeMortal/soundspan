@@ -449,6 +449,26 @@ void main() {
       expect(await rig.pending(), isEmpty);
     });
 
+    test('flush runs one pass and completes when it has ended', () async {
+      await rig.put(pref('a'));
+      await rig.put(pref('b'));
+
+      await rig.worker.flush();
+
+      expect(rig.handler.sent, [pref('a'), pref('b')]);
+      expect(await rig.pending(), isEmpty);
+    });
+
+    test('flush while not online sends nothing and completes', () async {
+      rig.reachability.set(Reachability.noNetwork);
+      await rig.put(pref('a'));
+
+      await rig.worker.flush();
+
+      expect(rig.handler.sent, isEmpty);
+      expect(await pendingKeys(), ['pref:a']);
+    });
+
     test('start after dispose does nothing', () async {
       await rig.worker.dispose();
       await rig.worker.start();

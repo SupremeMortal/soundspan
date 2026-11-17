@@ -191,6 +191,7 @@ final Provider<PlaybackController> playbackControllerProvider =
             lifecycleStates.add(state);
           },
         );
+        _reporters[controller] = reporter;
         // Closers run in reverse: the open play is written first.
         ref.watch(profileDisposerProvider)
           ..register(controller.dispose)
@@ -221,6 +222,14 @@ final Provider<PlaybackController> playbackControllerProvider =
         playbackStateRepositoryProvider,
       ],
     );
+
+final Expando<PlayReporter> _reporters = Expando<PlayReporter>();
+
+/// Completes when every play [controller]'s reporter has ended so far is
+/// stored, so an outbox pass that follows sends it. Completes at once for a
+/// controller that [playbackControllerProvider] did not create.
+Future<void> playsWritten(PlaybackController controller) =>
+    _reporters[controller]?.flush() ?? Future<void>.value();
 
 /// Every [PlaybackSnapshot] of the profile's [PlaybackController], position
 /// changes included (at most four a second). Only widgets that show the

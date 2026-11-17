@@ -529,6 +529,84 @@ abstract class AppLocalizations {
   /// **'Save'**
   String get settingsServersRenameSave;
 
+  /// Servers settings action: sign out of this server; its downloads and cached data stay on this device.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out'**
+  String get settingsServersSignOut;
+
+  /// Servers settings action: sign out and delete everything stored for this server on this device.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove this server'**
+  String get settingsServersRemove;
+
+  /// Title of the dialog that confirms signing out of a server.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out of {server}?'**
+  String settingsServersSignOutTitle(String server);
+
+  /// Body of the sign-out dialog.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloads, cached data and changes not yet sent stay on this device. Sign in again to use this server.'**
+  String get settingsServersSignOutBody;
+
+  /// Sign-out dialog checkbox: delete this server's downloaded music from this device too.
+  ///
+  /// In en, this message translates to:
+  /// **'Also remove downloads'**
+  String get settingsServersSignOutRemoveDownloads;
+
+  /// Title of the dialog that confirms removing a server.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {server}?'**
+  String settingsServersRemoveTitle(String server);
+
+  /// Body of the dialog that confirms removing a server.
+  ///
+  /// In en, this message translates to:
+  /// **'This signs out and deletes everything this app stores for {server} on this device, downloads included.'**
+  String settingsServersRemoveBody(String server);
+
+  /// Remove-server dialog: how many changes made on this device would be lost.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 change has not been sent to the server and will be lost.} other{{count} changes have not been sent to the server and will be lost.}}'**
+  String settingsServersRemovePending(int count);
+
+  /// Remove-server dialog button: remove the server.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get settingsServersRemoveConfirm;
+
+  /// Remove-server dialog button when changes have not been sent: remove the server and lose them.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove anyway'**
+  String get settingsServersRemoveAnyway;
+
+  /// Shown in the sign-out dialog while the app signs out.
+  ///
+  /// In en, this message translates to:
+  /// **'Signing out…'**
+  String get settingsServersSigningOut;
+
+  /// Shown in the remove-server dialog while the app removes the server.
+  ///
+  /// In en, this message translates to:
+  /// **'Removing…'**
+  String get settingsServersRemoving;
+
+  /// Shown in the sign-out and remove-server dialogs when the device's secure storage failed.
+  ///
+  /// In en, this message translates to:
+  /// **'The sign-in details on this device could not be deleted. Try again.'**
+  String get settingsServersExitFailed;
+
   /// Dialog button: close without changing anything.
   ///
   /// In en, this message translates to:
