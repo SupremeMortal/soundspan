@@ -1275,6 +1275,48 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get nowPlayingOverline => 'Now playing';
+
+  @override
+  String get nowPlayingClose => 'Close';
+
+  @override
+  String get nowPlayingQueue => 'Queue';
+
+  @override
+  String get nowPlayingExpand => 'Show now playing';
+
+  @override
+  String get nowPlayingCollapse => 'Hide now playing';
+
+  @override
+  String get queueTitle => 'Queue';
+
+  @override
+  String get queueNowPlaying => 'Now playing';
+
+  @override
+  String get queueNextUp => 'Next up';
+
+  @override
+  String get queueClear => 'Clear';
+
+  @override
+  String get queueEmpty => 'Nothing is queued';
+
+  @override
+  String get queueRemove => 'Remove from queue';
+
+  @override
+  String get queueMoveUp => 'Move up';
+
+  @override
+  String get queueMoveDown => 'Move down';
+
+  @override
+  String get queueReorderHandle => 'Drag to reorder';
+
+  @override
   String qualityBadgeSampleRate(
     String codec,
     String bitDepth,
@@ -2589,6 +2631,48 @@ class AppLocalizationsEnXa extends AppLocalizationsEn {
   String playerSeekValue(String position, String duration) {
     return '[$position öf $duration one]';
   }
+
+  @override
+  String get nowPlayingOverline => '[Ñöŵ þļåýîñĝ one two]';
+
+  @override
+  String get nowPlayingClose => '[Çļöšé one]';
+
+  @override
+  String get nowPlayingQueue => '[Qûéûé one]';
+
+  @override
+  String get nowPlayingExpand => '[Šĥöŵ ñöŵ þļåýîñĝ one two]';
+
+  @override
+  String get nowPlayingCollapse => '[Ĥîðé ñöŵ þļåýîñĝ one two]';
+
+  @override
+  String get queueTitle => '[Qûéûé one]';
+
+  @override
+  String get queueNowPlaying => '[Ñöŵ þļåýîñĝ one two]';
+
+  @override
+  String get queueNextUp => '[Ñéxţ ûþ one]';
+
+  @override
+  String get queueClear => '[Çļéåŕ one]';
+
+  @override
+  String get queueEmpty => '[Ñöţĥîñĝ îš qûéûéð one two]';
+
+  @override
+  String get queueRemove => '[Ŕémövé fŕöm qûéûé one two]';
+
+  @override
+  String get queueMoveUp => '[Mövé ûþ one]';
+
+  @override
+  String get queueMoveDown => '[Mövé ðöŵñ one]';
+
+  @override
+  String get queueReorderHandle => '[Ðŕåĝ ţö ŕéöŕðéŕ one two]';
 
   @override
   String qualityBadgeSampleRate(

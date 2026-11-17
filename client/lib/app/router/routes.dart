@@ -10,10 +10,13 @@ import 'package:soundspan/app/router/guards.dart';
 import 'package:soundspan/app/router/placeholder_screen.dart';
 import 'package:soundspan/app/router/shell_route.dart';
 import 'package:soundspan/app/shell/shell_history.dart';
+import 'package:soundspan/app/shell/window_class.dart';
 import 'package:soundspan/core/auth/probe/server_probe.dart';
 import 'package:soundspan/core/profile/profile_runtime.dart';
+import 'package:soundspan/core/profile/profile_scope.dart';
 import 'package:soundspan/core/profile/version_gate.dart';
 import 'package:soundspan/features/connect/connect.dart';
+import 'package:soundspan/features/player/player.dart';
 import 'package:soundspan/features/settings/settings.dart';
 
 /// The fixed paths of the router (doc 02, Routing).
@@ -42,6 +45,9 @@ abstract final class RoutePaths {
 
   /// The podcasts branch.
   static const podcasts = '/podcasts';
+
+  /// Now playing, on the root navigator; compact and medium windows only.
+  static const nowPlaying = '/now-playing';
 
   /// Explore; redirected into the selected branch like a detail.
   static const explore = '/explore';
@@ -205,6 +211,11 @@ abstract final class DetailNavigation {
   static void openPlaylist(BuildContext context, String id) =>
       _open(context, DetailKind.playlist, id);
 
+  /// Opens artist [id] in [router]'s selected branch, for callers whose
+  /// context leaves the tree first, such as a route that closes.
+  static void openArtistIn(GoRouter router, String id) =>
+      openLocation(router, _location(DetailKind.artist, id));
+
   /// Opens Explore.
   static void openExplore(BuildContext context) =>
       openLocation(GoRouter.of(context), RoutePaths.explore);
@@ -223,10 +234,10 @@ abstract final class DetailNavigation {
   }
 
   static void _open(BuildContext context, DetailKind kind, String id) =>
-      openLocation(
-        GoRouter.of(context),
-        '/${kind.name}/${Uri.encodeComponent(id)}',
-      );
+      openLocation(GoRouter.of(context), _location(kind, id));
+
+  static String _location(DetailKind kind, String id) =>
+      '/${kind.name}/${Uri.encodeComponent(id)}';
 }
 
 /// Builds the app's router over [gate]. [initialLocation] is where it
@@ -301,6 +312,18 @@ GoRouter createRouter(
               location.detail(kind, state.pathParameters[kind.parameter]!),
         ),
       GoRoute(path: RoutePaths.explore, redirect: (_, _) => location.explore()),
+      GoRoute(
+        path: RoutePaths.nowPlaying,
+        // Expanded windows show now playing in the shell: the player bar,
+        // the right panel and the overlay.
+        redirect: (context, _) {
+          final size = MediaQuery.maybeSizeOf(context);
+          return size != null && windowClassOf(size) == WindowClass.expanded
+              ? location.base.toString()
+              : null;
+        },
+        builder: (_, _) => const ProfileScope(child: NowPlayingScreen()),
+      ),
       GoRoute(
         path: RoutePaths.settings,
         builder: (context, _) => const SettingsScreen(),

@@ -28,7 +28,7 @@ import 'package:soundspan/shared/util/duration_format.dart';
 /// unknown [duration] the bar is disabled and has no thumb.
 ///
 /// With [showTimes], the elapsed time is shown before the bar and the
-/// length after it.
+/// length after it, or with [showRemaining] the time left as `-m:ss`.
 class SeekBar extends StatefulWidget {
   /// Creates the bar of an item [duration] long, at [position].
   const new({
@@ -39,6 +39,7 @@ class SeekBar extends StatefulWidget {
     this.buffered = Duration.zero,
     this.onSeek,
     this.showTimes = false,
+    this.showRemaining = false,
     super.key,
   });
 
@@ -62,6 +63,10 @@ class SeekBar extends StatefulWidget {
 
   /// Whether the elapsed time and the length are shown beside the bar.
   final bool showTimes;
+
+  /// Whether the time after the bar is the time left rather than the
+  /// length; only with [showTimes].
+  final bool showRemaining;
 
   /// How far an arrow key seeks.
   static const Duration keyStep = Duration(seconds: 5);
@@ -243,10 +248,18 @@ class _SeekBarState extends State<SeekBar> with SingleTickerProviderStateMixin {
         Expanded(child: bar),
         const SizedBox(width: Spacing.x8),
         ExcludeSemantics(
-          child: Text(
-            duration == null ? '-:--' : formatTrackDuration(duration),
-            style: style,
-          ),
+          child: duration != null && widget.showRemaining
+              ? ValueListenableBuilder<Duration>(
+                  valueListenable: _shown,
+                  builder: (context, shown, _) => Text(
+                    '-${formatTrackDuration(_clamp(duration - shown))}',
+                    style: style,
+                  ),
+                )
+              : Text(
+                  duration == null ? '-:--' : formatTrackDuration(duration),
+                  style: style,
+                ),
         ),
       ],
     );

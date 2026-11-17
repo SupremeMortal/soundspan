@@ -2165,6 +2165,90 @@ abstract class AppLocalizations {
   /// **'{position} of {duration}'**
   String playerSeekValue(String position, String duration);
 
+  /// Label at the top of the now-playing screen, shown in upper case.
+  ///
+  /// In en, this message translates to:
+  /// **'Now playing'**
+  String get nowPlayingOverline;
+
+  /// Tooltip of the button that closes the now-playing screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get nowPlayingClose;
+
+  /// Tooltip of the button that shows the play queue, on the now-playing screen and on the player bar.
+  ///
+  /// In en, this message translates to:
+  /// **'Queue'**
+  String get nowPlayingQueue;
+
+  /// Tooltip of the player bar button that shows large artwork of the playing item over the content area.
+  ///
+  /// In en, this message translates to:
+  /// **'Show now playing'**
+  String get nowPlayingExpand;
+
+  /// Tooltip of the player bar button that hides the large artwork of the playing item.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide now playing'**
+  String get nowPlayingCollapse;
+
+  /// Title of the play queue panel and sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Queue'**
+  String get queueTitle;
+
+  /// Header of the queue section holding the playing entry.
+  ///
+  /// In en, this message translates to:
+  /// **'Now playing'**
+  String get queueNowPlaying;
+
+  /// Header of the queue section listing the entries that play after the current one.
+  ///
+  /// In en, this message translates to:
+  /// **'Next up'**
+  String get queueNextUp;
+
+  /// Action that empties the play queue.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get queueClear;
+
+  /// Sentence shown when the play queue is empty.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing is queued'**
+  String get queueEmpty;
+
+  /// Tooltip and screen-reader action of the button that removes an entry from the play queue.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from queue'**
+  String get queueRemove;
+
+  /// Screen-reader action that moves a queue entry one place earlier.
+  ///
+  /// In en, this message translates to:
+  /// **'Move up'**
+  String get queueMoveUp;
+
+  /// Screen-reader action that moves a queue entry one place later.
+  ///
+  /// In en, this message translates to:
+  /// **'Move down'**
+  String get queueMoveDown;
+
+  /// Tooltip of the handle that reorders a queue entry by dragging.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag to reorder'**
+  String get queueReorderHandle;
+
   /// Quality badge of the playing stream with a bit depth: codec, bit depth and sample rate in kilohertz, e.g. FLAC · 24/96 kHz.
   ///
   /// In en, this message translates to:

@@ -11,6 +11,7 @@ import 'package:soundspan/core/playback/playback_providers.dart';
 import 'package:soundspan/core/playback/playback_snapshot.dart';
 import 'package:soundspan/core/playback/queue/queue_state.dart';
 import 'package:soundspan/features/player/ui/player_item.dart';
+import 'package:soundspan/features/player/ui/right_panel.dart';
 import 'package:soundspan/features/player/ui/seek_bar.dart';
 import 'package:soundspan/shared/widgets/artwork.dart';
 import 'package:soundspan/shared/widgets/quality_badge.dart';
@@ -20,8 +21,10 @@ import 'package:soundspan/shared/widgets/quality_badge.dart';
 ///
 /// Left: the current item's artwork, title, artist and [QualityBadge].
 /// Centre: shuffle, previous, play/pause, next and repeat, with the
-/// [SeekBar] and the elapsed and total times beneath. Right: the volume
-/// slider. It reads only the playback controller's snapshots and calls its
+/// [SeekBar] and the elapsed and total times beneath. Right: the queue
+/// button, which toggles the queue in the right panel, the expand button,
+/// which shows and hides the now-playing overlay, and the volume slider.
+/// It reads only the playback controller's snapshots and calls its
 /// commands; position changes rebuild the seek bar alone. It renders
 /// nothing while the queue is empty.
 class PlayerBar extends ConsumerWidget {
@@ -102,7 +105,7 @@ class PlayerBar extends ConsumerWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    _Transport(snapshot: snapshot),
+                    PlayerTransport(snapshot: snapshot),
                     const _PlayerBarProgress(),
                   ],
                 ),
@@ -113,7 +116,10 @@ class PlayerBar extends ConsumerWidget {
                 child: Align(
                   alignment: AlignmentDirectional.centerEnd,
                   heightFactor: 1,
-                  child: _VolumeControl(),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [_PanelButtons(), _VolumeControl()],
+                  ),
                 ),
               ),
             ],
@@ -124,11 +130,22 @@ class PlayerBar extends ConsumerWidget {
   }
 }
 
-/// Shuffle, previous, play/pause, next and repeat.
-class _Transport extends ConsumerWidget {
-  const new({required this.snapshot});
+/// Shuffle, previous, play/pause, next and repeat, calling the playback
+/// controller.
+class PlayerTransport extends ConsumerWidget {
+  /// Creates the controls for [snapshot], with a play/pause circle
+  /// [playButtonSize] across.
+  const new({
+    required this.snapshot,
+    this.playButtonSize = PlayerBar.playButtonSize,
+    super.key,
+  });
 
+  /// The playback state shown.
   final PlaybackSnapshot snapshot;
+
+  /// The diameter of the play/pause circle.
+  final double playButtonSize;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -161,6 +178,7 @@ class _Transport extends ConsumerWidget {
         const SizedBox(width: Spacing.x4),
         PlayPauseButton(
           snapshot: snapshot,
+          size: playButtonSize,
           onPressed: controller.togglePlayPause,
         ),
         const SizedBox(width: Spacing.x4),
@@ -190,19 +208,22 @@ RepeatMode nextRepeatMode(RepeatMode mode) => switch (mode) {
   RepeatMode.one => RepeatMode.off,
 };
 
-/// An icon button in `positive` while [on], else `contentSecondary`.
+/// An icon button in `positive` (or [onColor]) while [on], else
+/// `contentSecondary`.
 class _ToggleButton extends StatelessWidget {
   const new({
     required this.on,
     required this.label,
     required this.icon,
     required this.onPressed,
+    this.onColor,
   });
 
   final bool on;
   final String label;
   final IconData icon;
   final VoidCallback onPressed;
+  final Color? onColor;
 
   @override
   Widget build(BuildContext context) {
@@ -212,7 +233,7 @@ class _ToggleButton extends StatelessWidget {
         toggled: on,
         child: IconButton(
           tooltip: label,
-          color: on ? colors.positive : colors.contentSecondary,
+          color: on ? onColor ?? colors.positive : colors.contentSecondary,
           icon: Icon(icon),
           onPressed: onPressed,
         ),
@@ -221,15 +242,24 @@ class _ToggleButton extends StatelessWidget {
   }
 }
 
-/// The play/pause circle: [PlayerBar.playButtonSize] in `transport` with
-/// the icon in `onTransport`, ringed by a progress indicator while the
-/// item loads or buffers with the play intent set.
+/// The play/pause circle: [size] across in `transport` with the icon in
+/// `onTransport`, ringed by a progress indicator while the item loads or
+/// buffers with the play intent set.
 class PlayPauseButton extends StatelessWidget {
   /// Creates the button for [snapshot].
-  const new({required this.snapshot, required this.onPressed, super.key});
+  const new({
+    required this.snapshot,
+    required this.onPressed,
+    this.size = PlayerBar.playButtonSize,
+    super.key,
+  });
 
   /// The playback state shown.
   final PlaybackSnapshot snapshot;
+
+  /// The diameter of the circle: [PlayerBar.playButtonSize] on the player
+  /// bar, larger on now playing.
+  final double size;
 
   /// Toggles play and pause.
   final VoidCallback onPressed;
@@ -246,7 +276,7 @@ class PlayPauseButton extends StatelessWidget {
         (snapshot.status == EngineStatus.loading ||
             snapshot.status == EngineStatus.buffering);
     return SizedBox.square(
-      dimension: PlayerBar.playButtonSize,
+      dimension: size,
       child: Stack(
         alignment: Alignment.center,
         children: [
@@ -255,8 +285,9 @@ class PlayPauseButton extends StatelessWidget {
             style: IconButton.styleFrom(
               backgroundColor: colors.transport,
               foregroundColor: colors.onTransport,
-              fixedSize: const Size.square(PlayerBar.playButtonSize),
+              fixedSize: Size.square(size),
             ),
+            iconSize: size / 2,
             icon: Icon(
               snapshot.playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
             ),
@@ -295,6 +326,42 @@ class _PlayerBarProgress extends ConsumerWidget {
       playing: snapshot.playing,
       onSeek: ref.read(playbackControllerProvider).seek,
       showTimes: true,
+    );
+  }
+}
+
+/// The queue button and the expand button.
+class _PanelButtons extends ConsumerWidget {
+  const new();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors = context.colors;
+    final l10n = AppLocalizations.of(context);
+    final queueOpen = ref.watch(rightPanelProvider) == RightPanel.queue;
+    final expanded = ref.watch(nowPlayingOverlayProvider);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _ToggleButton(
+          on: queueOpen,
+          label: l10n.nowPlayingQueue,
+          icon: Icons.queue_music_rounded,
+          onColor: colors.brand,
+          onPressed: () =>
+              ref.read(rightPanelProvider.notifier).toggle(RightPanel.queue),
+        ),
+        _ToggleButton(
+          on: expanded,
+          label: expanded ? l10n.nowPlayingCollapse : l10n.nowPlayingExpand,
+          icon: expanded
+              ? Icons.close_fullscreen_rounded
+              : Icons.open_in_full_rounded,
+          onColor: colors.brand,
+          onPressed: () =>
+              ref.read(nowPlayingOverlayProvider.notifier).toggle(),
+        ),
+      ],
     );
   }
 }

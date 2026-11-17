@@ -1,7 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:soundspan/app/router/routes.dart';
 import 'package:soundspan/app/theme/dimens.dart';
 import 'package:soundspan/core/playback/playback_providers.dart';
 import 'package:soundspan/features/player/player.dart';
@@ -37,7 +41,8 @@ class PlayerBarSlot extends ConsumerWidget {
   }
 }
 
-/// The place of the [MiniPlayer] on compact and medium windows.
+/// The place of the [MiniPlayer] on compact and medium windows; a tap on
+/// the player pushes `/now-playing`.
 ///
 /// It takes no space while the queue is empty, outside a profile, and until
 /// the profile's playback controller exists: the slot does not create it.
@@ -51,6 +56,10 @@ class MiniPlayerSlot extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) =>
       ref.watch(playbackControllerProvider.exists)
-      ? const MiniPlayer(key: slotKey)
+      ? MiniPlayer(
+          key: slotKey,
+          onOpen: () =>
+              unawaited(GoRouter.of(context).push<void>(RoutePaths.nowPlaying)),
+        )
       : const SizedBox(key: slotKey, height: 0, width: double.infinity);
 }

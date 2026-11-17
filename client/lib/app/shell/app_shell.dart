@@ -1,20 +1,24 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:soundspan/app/shell/adaptive_shell.dart';
 import 'package:soundspan/app/shell/avatar_menu.dart';
 import 'package:soundspan/app/shell/player_slots.dart';
 import 'package:soundspan/app/shell/sidebar_playlists.dart';
 import 'package:soundspan/app/shell/top_bar.dart';
+import 'package:soundspan/features/player/player.dart';
 
 /// The [AdaptiveShell] with its slots filled: the [TopBar] on expanded
 /// windows, the [AvatarButton] at the bottom of the rail on medium ones,
-/// the [SidebarPlaylists] under the expanded sidebar's destinations, and the
-/// player slots.
+/// the [SidebarPlaylists] under the expanded sidebar's destinations, the
+/// player slots, the [QueuePanel] in the right panel while
+/// [rightPanelProvider] is [RightPanel.queue], and the [NowPlayingOverlay]
+/// over the content while [nowPlayingOverlayProvider] is set.
 ///
 /// On compact windows the avatar sits in each branch root's app bar, which
 /// the branch screens build.
-class AppShell extends StatelessWidget {
+class AppShell extends ConsumerWidget {
   /// Creates the shell around [child].
   const new({
     required this.selectedIndex,
@@ -59,7 +63,7 @@ class AppShell extends StatelessWidget {
   final Widget child;
 
   @override
-  Widget build(BuildContext context) => AdaptiveShell(
+  Widget build(BuildContext context, WidgetRef ref) => AdaptiveShell(
     selectedIndex: selectedIndex,
     onDestinationSelected: onDestinationSelected,
     topBar: TopBar(
@@ -74,6 +78,13 @@ class AppShell extends StatelessWidget {
     playerBar: const PlayerBarSlot(),
     sidebarPlaylists: SidebarPlaylists(selectedPlaylistId: openPlaylistId),
     onExplore: onExplore,
+    rightPanel: switch (ref.watch(rightPanelProvider)) {
+      RightPanel.queue => const QueuePanel(),
+      RightPanel.none || RightPanel.lyrics => null,
+    },
+    contentOverlay: ref.watch(nowPlayingOverlayProvider)
+        ? const NowPlayingOverlay()
+        : null,
     child: child,
   );
 }

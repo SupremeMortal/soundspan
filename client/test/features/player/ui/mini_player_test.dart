@@ -1,7 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:soundspan/app/router/routes.dart';
+import 'package:soundspan/app/shell/player_slots.dart';
+import 'package:soundspan/core/playback/playback_providers.dart';
 import 'package:soundspan/features/player/player.dart';
 
 import '../../../helpers/guidelines.dart';
@@ -67,6 +71,41 @@ void main() {
     await rig.settle(tester);
     expect(rig.controller.snapshot.current?.queueItemId, 'b');
     expect(find.text('Song b'), findsOneWidget);
+    await rig.close(tester);
+  });
+
+  testWidgets('a tap in the shell slot opens /now-playing', (tester) async {
+    final rig = PlayerRig();
+    final router = GoRouter(
+      initialLocation: RoutePaths.home,
+      routes: [
+        GoRoute(
+          path: RoutePaths.home,
+          builder: (_, _) => const Scaffold(
+            body: Align(
+              alignment: Alignment.bottomCenter,
+              child: MiniPlayerSlot(),
+            ),
+          ),
+        ),
+        GoRoute(
+          path: RoutePaths.nowPlaying,
+          builder: (_, _) => const Text('now playing page'),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+    final container = await tester.pumpApp(
+      Router.withConfig(config: router),
+      overrides: rig.overrides,
+    );
+    container.read(playbackControllerProvider);
+    await rig.start(tester, play: false);
+
+    await tester.tap(find.text('Song a'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('now playing page'), findsOneWidget);
     await rig.close(tester);
   });
 

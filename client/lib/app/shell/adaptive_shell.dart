@@ -46,6 +46,11 @@ enum ShellDestination {
 /// [sidebarWidth] sidebar beside it, the panels separated by
 /// [Spacing.x8] of `ground`. The top bar is shown only on expanded windows,
 /// the rail's trailing slot only on medium ones.
+///
+/// On expanded windows a [rightPanel] sits after the content, [rightPanelWidth]
+/// wide, and a [contentOverlay] covers the content area. While the right
+/// panel is open on a window narrower than [wideWidth] the sidebar collapses
+/// to a [railWidth] rail of the destinations.
 class AdaptiveShell extends StatefulWidget {
   /// Creates the shell around [child].
   const new({
@@ -58,6 +63,8 @@ class AdaptiveShell extends StatefulWidget {
     this.playerBar,
     this.sidebarPlaylists,
     this.onExplore,
+    this.rightPanel,
+    this.contentOverlay,
     super.key,
   });
 
@@ -66,6 +73,22 @@ class AdaptiveShell extends StatefulWidget {
 
   /// The key of the expanded sidebar.
   static const Key sidebarKey = Key('shell.sidebar');
+
+  /// The width of the sidebar collapsed to a rail.
+  static const double railWidth = 72;
+
+  /// The width of the right panel.
+  static const double rightPanelWidth = 360;
+
+  /// The window width below which an open right panel collapses the
+  /// sidebar.
+  static const double wideWidth = 1200;
+
+  /// The key of the right panel.
+  static const Key rightPanelKey = Key('shell.rightPanel');
+
+  /// The key of the content overlay.
+  static const Key contentOverlayKey = Key('shell.contentOverlay');
 
   /// The index of the selected [ShellDestination].
   final int selectedIndex;
@@ -96,6 +119,12 @@ class AdaptiveShell extends StatefulWidget {
   /// (expanded); null leaves the item out.
   final VoidCallback? onExplore;
 
+  /// The right panel (expanded); null leaves it out.
+  final Widget? rightPanel;
+
+  /// What covers the content area (expanded); null leaves it uncovered.
+  final Widget? contentOverlay;
+
   @override
   State<AdaptiveShell> createState() => _AdaptiveShellState();
 }
@@ -117,7 +146,13 @@ class _AdaptiveShellState extends State<AdaptiveShell> {
           child: switch (windowClass) {
             WindowClass.compact => _compact(context, content),
             WindowClass.medium => _medium(context, content),
-            WindowClass.expanded => _expanded(context, content),
+            WindowClass.expanded => _expanded(
+              context,
+              content,
+              collapsed:
+                  widget.rightPanel != null &&
+                  constraints.maxWidth < AdaptiveShell.wideWidth,
+            ),
           },
         );
       },
@@ -218,10 +253,16 @@ class _AdaptiveShellState extends State<AdaptiveShell> {
     );
   }
 
-  Widget _expanded(BuildContext context, Widget content) {
+  Widget _expanded(
+    BuildContext context,
+    Widget content, {
+    required bool collapsed,
+  }) {
     final l10n = AppLocalizations.of(context);
     final colors = context.colors;
     const panelRadius = BorderRadius.all(Radius.circular(Radii.large));
+    final rightPanel = widget.rightPanel;
+    final overlay = widget.contentOverlay;
     return Scaffold(
       backgroundColor: colors.ground,
       body: SafeArea(
@@ -236,7 +277,9 @@ class _AdaptiveShellState extends State<AdaptiveShell> {
                   children: [
                     SizedBox(
                       key: AdaptiveShell.sidebarKey,
-                      width: AdaptiveShell.sidebarWidth,
+                      width: collapsed
+                          ? AdaptiveShell.railWidth
+                          : AdaptiveShell.sidebarWidth,
                       child: DecoratedBox(
                         decoration: BoxDecoration(
                           color: colors.surfaceRaised,
@@ -262,6 +305,7 @@ class _AdaptiveShellState extends State<AdaptiveShell> {
                                               : destination.icon,
                                           selected:
                                               index == widget.selectedIndex,
+                                          collapsed: collapsed,
                                           onTap: () => widget
                                               .onDestinationSelected(index),
                                         ),
@@ -271,6 +315,7 @@ class _AdaptiveShellState extends State<AdaptiveShell> {
                                           label: l10n.navExplore,
                                           icon: Icons.explore_outlined,
                                           selected: false,
+                                          collapsed: collapsed,
                                           onTap: onExplore,
                                         ),
                                     ],
@@ -278,9 +323,10 @@ class _AdaptiveShellState extends State<AdaptiveShell> {
                                 ),
                               ),
                               Expanded(
-                                child:
-                                    widget.sidebarPlaylists ??
-                                    const SizedBox.shrink(),
+                                child: collapsed
+                                    ? const SizedBox.shrink()
+                                    : widget.sidebarPlaylists ??
+                                          const SizedBox.shrink(),
                               ),
                             ],
                           ),
@@ -291,9 +337,39 @@ class _AdaptiveShellState extends State<AdaptiveShell> {
                     Expanded(
                       child: ClipRRect(
                         borderRadius: panelRadius,
-                        child: content,
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            content,
+                            if (overlay != null)
+                              FocusTraversalGroup(
+                                key: AdaptiveShell.contentOverlayKey,
+                                child: overlay,
+                              ),
+                          ],
+                        ),
                       ),
                     ),
+                    if (rightPanel != null) ...[
+                      const SizedBox(width: Spacing.x8),
+                      SizedBox(
+                        key: AdaptiveShell.rightPanelKey,
+                        width: AdaptiveShell.rightPanelWidth,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: colors.surfaceRaised,
+                            borderRadius: panelRadius,
+                          ),
+                          child: ClipRRect(
+                            borderRadius: panelRadius,
+                            child: Material(
+                              type: MaterialType.transparency,
+                              child: FocusTraversalGroup(child: rightPanel),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -311,17 +387,35 @@ class _SidebarDestination extends StatelessWidget {
     required this.label,
     required this.icon,
     required this.selected,
+    required this.collapsed,
     required this.onTap,
   });
 
   final String label;
   final IconData icon;
   final bool selected;
+  final bool collapsed;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
+    if (collapsed) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: Spacing.x4),
+        child: IconButton(
+          tooltip: label,
+          isSelected: selected,
+          onPressed: onTap,
+          color: colors.contentSecondary,
+          selectedIcon: Icon(icon, color: colors.content),
+          style: IconButton.styleFrom(
+            backgroundColor: selected ? colors.surfaceActive : null,
+          ),
+          icon: Icon(icon),
+        ),
+      );
+    }
     return Tooltip(
       message: label,
       excludeFromSemantics: true,

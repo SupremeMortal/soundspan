@@ -1635,6 +1635,62 @@
       "duration": {"type": "String", "example": "3:41"}
     }
   },
+  "nowPlayingOverline": "Now playing",
+  "@nowPlayingOverline": {
+    "description": "Label at the top of the now-playing screen, shown in upper case."
+  },
+  "nowPlayingClose": "Close",
+  "@nowPlayingClose": {
+    "description": "Tooltip of the button that closes the now-playing screen."
+  },
+  "nowPlayingQueue": "Queue",
+  "@nowPlayingQueue": {
+    "description": "Tooltip of the button that shows the play queue, on the now-playing screen and on the player bar."
+  },
+  "nowPlayingExpand": "Show now playing",
+  "@nowPlayingExpand": {
+    "description": "Tooltip of the player bar button that shows large artwork of the playing item over the content area."
+  },
+  "nowPlayingCollapse": "Hide now playing",
+  "@nowPlayingCollapse": {
+    "description": "Tooltip of the player bar button that hides the large artwork of the playing item."
+  },
+  "queueTitle": "Queue",
+  "@queueTitle": {
+    "description": "Title of the play queue panel and sheet."
+  },
+  "queueNowPlaying": "Now playing",
+  "@queueNowPlaying": {
+    "description": "Header of the queue section holding the playing entry."
+  },
+  "queueNextUp": "Next up",
+  "@queueNextUp": {
+    "description": "Header of the queue section listing the entries that play after the current one."
+  },
+  "queueClear": "Clear",
+  "@queueClear": {
+    "description": "Action that empties the play queue."
+  },
+  "queueEmpty": "Nothing is queued",
+  "@queueEmpty": {
+    "description": "Sentence shown when the play queue is empty."
+  },
+  "queueRemove": "Remove from queue",
+  "@queueRemove": {
+    "description": "Tooltip and screen-reader action of the button that removes an entry from the play queue."
+  },
+  "queueMoveUp": "Move up",
+  "@queueMoveUp": {
+    "description": "Screen-reader action that moves a queue entry one place earlier."
+  },
+  "queueMoveDown": "Move down",
+  "@queueMoveDown": {
+    "description": "Screen-reader action that moves a queue entry one place later."
+  },
+  "queueReorderHandle": "Drag to reorder",
+  "@queueReorderHandle": {
+    "description": "Tooltip of the handle that reorders a queue entry by dragging."
+  },
   "qualityBadgeSampleRate": "{codec} · {bitDepth}/{sampleRate} kHz",
   "@qualityBadgeSampleRate": {
     "description": "Quality badge of the playing stream with a bit depth: codec, bit depth and sample rate in kilohertz, e.g. FLAC · 24/96 kHz.",

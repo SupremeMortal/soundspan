@@ -1641,6 +1641,62 @@
       }
     }
   },
+  "nowPlayingOverline": "[Ñöŵ þļåýîñĝ one two]",
+  "@nowPlayingOverline": {
+    "description": "Label at the top of the now-playing screen, shown in upper case."
+  },
+  "nowPlayingClose": "[Çļöšé one]",
+  "@nowPlayingClose": {
+    "description": "Tooltip of the button that closes the now-playing screen."
+  },
+  "nowPlayingQueue": "[Qûéûé one]",
+  "@nowPlayingQueue": {
+    "description": "Tooltip of the button that shows the play queue, on the now-playing screen and on the player bar."
+  },
+  "nowPlayingExpand": "[Šĥöŵ ñöŵ þļåýîñĝ one two]",
+  "@nowPlayingExpand": {
+    "description": "Tooltip of the player bar button that shows large artwork of the playing item over the content area."
+  },
+  "nowPlayingCollapse": "[Ĥîðé ñöŵ þļåýîñĝ one two]",
+  "@nowPlayingCollapse": {
+    "description": "Tooltip of the player bar button that hides the large artwork of the playing item."
+  },
+  "queueTitle": "[Qûéûé one]",
+  "@queueTitle": {
+    "description": "Title of the play queue panel and sheet."
+  },
+  "queueNowPlaying": "[Ñöŵ þļåýîñĝ one two]",
+  "@queueNowPlaying": {
+    "description": "Header of the queue section holding the playing entry."
+  },
+  "queueNextUp": "[Ñéxţ ûþ one]",
+  "@queueNextUp": {
+    "description": "Header of the queue section listing the entries that play after the current one."
+  },
+  "queueClear": "[Çļéåŕ one]",
+  "@queueClear": {
+    "description": "Action that empties the play queue."
+  },
+  "queueEmpty": "[Ñöţĥîñĝ îš qûéûéð one two]",
+  "@queueEmpty": {
+    "description": "Sentence shown when the play queue is empty."
+  },
+  "queueRemove": "[Ŕémövé fŕöm qûéûé one two]",
+  "@queueRemove": {
+    "description": "Tooltip and screen-reader action of the button that removes an entry from the play queue."
+  },
+  "queueMoveUp": "[Mövé ûþ one]",
+  "@queueMoveUp": {
+    "description": "Screen-reader action that moves a queue entry one place earlier."
+  },
+  "queueMoveDown": "[Mövé ðöŵñ one]",
+  "@queueMoveDown": {
+    "description": "Screen-reader action that moves a queue entry one place later."
+  },
+  "queueReorderHandle": "[Ðŕåĝ ţö ŕéöŕðéŕ one two]",
+  "@queueReorderHandle": {
+    "description": "Tooltip of the handle that reorders a queue entry by dragging."
+  },
   "qualityBadgeSampleRate": "[{codec} · {bitDepth}/{sampleRate} ķĤž one]",
   "@qualityBadgeSampleRate": {
     "description": "Quality badge of the playing stream with a bit depth: codec, bit depth and sample rate in kilohertz, e.g. FLAC · 24/96 kHz.",

@@ -217,7 +217,7 @@ WindowClass windowClassOf(Size size) => switch (size.width) {
 |---|---|---|---|
 | Navigation | Bottom bar (4 destinations) | Navigation rail | Sidebar, 256 px, with playlist list |
 | Player | Mini player above the bottom bar; `/now-playing` full screen | Mini player at the bottom; `/now-playing` full screen | Persistent player bar, 96 px; now-playing opens as an overlay over the content area |
-| Queue and lyrics | Tabs inside now-playing | Tabs inside now-playing | Right-hand panel, 360 px, toggled from the player bar |
+| Queue and lyrics | Sheets over now-playing | Sheets over now-playing; beside the controls in landscape | Right-hand panel, 360 px, toggled from the player bar |
 | Detail navigation | Push | List–detail two-pane where it helps (Library → Album) | Push inside the content area |
 | Input | Touch | Touch, optional keyboard | Pointer, keyboard shortcuts, context menus, drag and drop |
 

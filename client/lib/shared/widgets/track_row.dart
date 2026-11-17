@@ -65,6 +65,7 @@ final class TrackRowThumbnail extends TrackRowLeading {
 /// With [onToggleLike], a [LikeButton] showing [liked] sits before the
 /// duration and the node gains a "Like" or "Remove like" custom action;
 /// without it the slot is left out, as for a track with no `playbackId`.
+/// [semanticActions] adds further custom actions to the node.
 class TrackRow extends StatefulWidget {
   /// Creates a row for the track [title] by [artist].
   const new({
@@ -81,6 +82,7 @@ class TrackRow extends StatefulWidget {
     this.liked = false,
     this.onToggleLike,
     this.playbackId,
+    this.semanticActions = const {},
     super.key,
   });
 
@@ -127,6 +129,10 @@ class TrackRow extends StatefulWidget {
   /// Called when the heart or the row's like action is used; null leaves
   /// the heart out.
   final VoidCallback? onToggleLike;
+
+  /// Further custom actions of the row's semantics node, after the like
+  /// action.
+  final Map<CustomSemanticsAction, VoidCallback> semanticActions;
 
   /// The key of the focus ring while it is shown.
   static const Key focusRingKey = ValueKey('TrackRow.focusRing');
@@ -306,14 +312,16 @@ class _TrackRowState extends State<TrackRow> {
       hint: onTap != null ? l10n.trackRowPlayHint : null,
       excludeSemantics: true,
       onTap: onTap,
-      customSemanticsActions: onToggleLike == null
+      customSemanticsActions:
+          onToggleLike == null && widget.semanticActions.isEmpty
           ? null
           : {
               CustomSemanticsAction(
                 label: widget.liked
                     ? l10n.likeButtonRemove
                     : l10n.likeButtonLike,
-              ): onToggleLike,
+              ): ?onToggleLike,
+              ...widget.semanticActions,
             },
       child: child,
     );

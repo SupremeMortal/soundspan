@@ -22,4 +22,19 @@ extension PlayerItemText on QueueItem {
     EpisodeQueueItem(:final episode, :final podcast) =>
       episode.artworkRef ?? podcast.artworkRef,
   };
+
+  /// The length of the item; zero when it is not known.
+  Duration get playerDuration => Duration(
+    seconds: switch (this) {
+      TrackQueueItem(:final track) => track.meta.durationSec,
+      EpisodeQueueItem(:final episode) => episode.durationSec ?? 0,
+    },
+  );
+
+  /// The artist page a track links to; null for an episode and for a track
+  /// without one.
+  String? get playerArtistId => switch (this) {
+    TrackQueueItem(:final track) => track.artistId,
+    EpisodeQueueItem() => null,
+  };
 }
