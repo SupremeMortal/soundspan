@@ -587,6 +587,10 @@ final class FakeOfflineClient implements api.OfflineClient {
   /// of answering.
   api.ApiException? deleteError;
 
+  /// When set, `GET /items` records the request and throws it instead of
+  /// answering.
+  api.ApiException? listError;
+
   int get _usedBytes => devices.values
       .expand((items) => items.values)
       .fold(0, (sum, item) => sum + item.sizeBytes);
@@ -714,6 +718,8 @@ final class FakeOfflineClient implements api.OfflineClient {
     Options? options,
   }) async {
     requests.add({'deviceId': deviceId});
+    final error = listError;
+    if (error != null) throw error;
     final held = devices[deviceId] ?? {};
     return api.DeviceOfflineItemsResponse(
       items: [

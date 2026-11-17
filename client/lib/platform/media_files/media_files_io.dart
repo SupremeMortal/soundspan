@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 
 import 'dart:io';
+import 'dart:isolate';
 
 import 'package:soundspan/platform/media_files/media_files.dart';
 
@@ -67,6 +68,50 @@ final class IoMediaFiles implements MediaFiles {
       await directory.delete(recursive: true);
     } on PathNotFoundException {
       // Already gone.
+    }
+  }
+
+  @override
+  Future<List<String>> listFiles(String directory) =>
+      Isolate.run(() => _listFiles(directory));
+
+  @override
+  Future<void> removeEmptyDirectories(String directory) =>
+      Isolate.run(() => _removeEmptyDirectories(directory));
+}
+
+List<String> _listFiles(String path) {
+  final directory = Directory(path);
+  if (!directory.existsSync()) return const [];
+  try {
+    return [
+      for (final entity in directory.listSync(
+        recursive: true,
+        followLinks: false,
+      ))
+        if (entity is File) entity.path,
+    ];
+  } on FileSystemException {
+    // The directory changed while it was listed; the next scan sees it.
+    return const [];
+  }
+}
+
+void _removeEmptyDirectories(String path) {
+  final directory = Directory(path);
+  if (!directory.existsSync()) return;
+  final directories = [
+    for (final entity in directory.listSync(
+      recursive: true,
+      followLinks: false,
+    ))
+      if (entity is Directory) entity,
+  ]..sort((a, b) => b.path.length.compareTo(a.path.length));
+  for (final child in directories) {
+    try {
+      if (child.listSync(followLinks: false).isEmpty) child.deleteSync();
+    } on FileSystemException {
+      // Something was written to it meanwhile; it stays.
     }
   }
 }

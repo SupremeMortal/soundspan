@@ -272,7 +272,7 @@ Each seam is an abstract class in `lib/platform/<name>/<name>.dart` with `_io.da
 | Media controls | `createMediaControls()` (`lib/platform/media_controls/`) returning a `MediaControls` | `audio_service` (Android, iOS, macOS, Linux via MPRIS), SMTC adapter (Windows) | `audio_service` (Media Session API) |
 | Downloader | `Downloader` | `background_downloader` | `UnsupportedDownloader` (feature hidden) |
 | Disk space | `DiskSpace` (`freeBytes(path)`, null when unknown) | `disk_space_2` (Android, iOS, Windows, Linux); null on macOS, which it does not cover | `UnknownDiskSpace` (null) |
-| Media files | `MediaFiles` (`length(path)`, null for a missing file; `replace(from, to)`, a same-directory rename over any existing target; `delete(path)`, a missing file is not an error) | `dart:io` | No files: `length` is null, `replace` throws, `delete` does nothing |
+| Media files | `MediaFiles` (`length(path)`, null for a missing file; `replace(from, to)`, a same-directory rename over any existing target; `delete(path)`, a missing file is not an error; `listFiles(directory)`, every file at any depth, listed off the UI isolate; `removeEmptyDirectories(directory)`, deepest first, keeping `directory`) | `dart:io` | No files: `length` is null, `replace` throws, `listFiles` is empty, `delete` and `removeEmptyDirectories` do nothing |
 | File sizes | `FileSizes` (`directoryBytes(path)` and `filesBytes(paths)`, missing counts as zero; `clearDirectory(path)` empties a directory and keeps it), each call on a background isolate | `dart:io` | No files: sizes are zero, nothing is deleted |
 | Stream credentials | `StreamAuth` | Header | `?token=` query |
 | Window and tray | `DesktopShell` | `window_manager`, `tray_manager` | No-op |

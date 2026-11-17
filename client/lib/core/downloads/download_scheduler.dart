@@ -11,6 +11,7 @@ import 'package:soundspan/core/connectivity/reachability.dart';
 import 'package:soundspan/core/downloads/download_artwork.dart';
 import 'package:soundspan/core/downloads/download_controller.dart';
 import 'package:soundspan/core/downloads/download_keys.dart';
+import 'package:soundspan/core/downloads/download_reconciler.dart';
 import 'package:soundspan/core/downloads/download_request_builder.dart';
 import 'package:soundspan/core/downloads/download_state_machine.dart';
 import 'package:soundspan/core/downloads/download_store.dart';
@@ -714,7 +715,8 @@ final Provider<DownloadScheduler> downloadSchedulerProvider =
 
 /// The post-first-frame task of downloads (doc 02, Bootstrap Sequence,
 /// step 8): creates the [DownloadController] and starts the
-/// [DownloadScheduler], then the [DownloadArtwork], of each profile the
+/// [DownloadScheduler], then the [DownloadArtwork], then the
+/// [DownloadReconciler], of each profile the
 /// [ProfileRuntime] under [root] activates, now and later, on targets that
 /// can download.
 Future<void> startDownloads(ProviderContainer root) async {
@@ -736,6 +738,9 @@ Future<void> startDownloads(ProviderContainer root) async {
           .read(downloadSchedulerProvider)
           .start()
           .then((_) => container.read(downloadArtworkProvider).start())
+          // Reconciliation scans the files at once and asks the server
+          // when online (doc 07, Reconciliation).
+          .then((_) => container.read(downloadReconcilerProvider).start())
           .catchError(
             (Object error, StackTrace stackTrace) => DownloadScheduler._log
                 .severe('Downloads did not start', const {}, error, stackTrace),

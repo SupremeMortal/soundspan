@@ -73,4 +73,27 @@ final class FakeMediaFiles implements MediaFiles {
     }
     directory.deleteSync(recursive: true);
   }
+
+  @override
+  Future<List<String>> listFiles(String directory) async {
+    final dir = Directory(directory);
+    if (!dir.existsSync()) return const [];
+    return [
+      for (final entity in dir.listSync(recursive: true, followLinks: false))
+        if (entity is File) entity.path,
+    ];
+  }
+
+  @override
+  Future<void> removeEmptyDirectories(String directory) async {
+    final dir = Directory(directory);
+    if (!dir.existsSync()) return;
+    final children = [
+      for (final entity in dir.listSync(recursive: true, followLinks: false))
+        if (entity is Directory) entity,
+    ]..sort((a, b) => b.path.length.compareTo(a.path.length));
+    for (final child in children) {
+      if (child.listSync().isEmpty) child.deleteSync();
+    }
+  }
 }

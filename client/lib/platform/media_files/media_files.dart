@@ -35,6 +35,14 @@ abstract interface class MediaFiles {
   /// deleted; the first failure is thrown at the end and the directory is
   /// left. A missing directory is not an error.
   Future<void> deleteTree(String path);
+
+  /// The absolute paths of every file under [directory], at any depth, or
+  /// none when it does not exist. Native targets list off the UI isolate.
+  Future<List<String>> listFiles(String directory);
+
+  /// Removes every empty directory under [directory], deepest first, and
+  /// keeps [directory] itself.
+  Future<void> removeEmptyDirectories(String directory);
 }
 
 /// The process-wide [MediaFiles] of the platform; tests override it.

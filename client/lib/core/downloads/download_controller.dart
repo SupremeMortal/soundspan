@@ -392,10 +392,17 @@ class DownloadController {
             }),
           ),
         );
-      // The file is renamed before VerificationPassed is delivered; the
-      // row is #177's reconciliation.
+      // A revoked item's row goes after its files (DeleteFile comes
+      // first), and its memberships with it.
+      case DeleteRow():
+        unawaited(
+          _guard(
+            'delete a download row',
+            () => _serial(() => _store.deleteItem(key)),
+          ),
+        );
+      // The file is renamed before VerificationPassed is delivered.
       case RenamePartToFinal() ||
-          DeleteRow() ||
           EnqueueTask() ||
           PauseOrCancelKeepingPart() ||
           ScheduleRetry() ||
@@ -852,17 +859,25 @@ class DownloadController {
     }
   }
 
+  /// Reports completed track [key] to the server again, even when it was
+  /// confirmed before: reconciliation found the server does not know it
+  /// (doc 07, Reconciliation, rule 3). Directly when online, else, or when
+  /// the server cannot be reached, through the outbox.
+  Future<void> resendComplete(DownloadItemKey key) =>
+      _serial(() => _sendComplete(key, again: true));
+
   /// Reports completed track [key] to the server: directly when online,
   /// else, or when the server cannot be reached, through the outbox. A
   /// refusal (such as a track the server no longer knows) leaves it
-  /// unconfirmed for reconciliation.
-  Future<void> _sendComplete(DownloadItemKey key) async {
+  /// unconfirmed for reconciliation. Without [again] a confirmed item is
+  /// not reported.
+  Future<void> _sendComplete(DownloadItemKey key, {bool again = false}) async {
     if (key is! TrackItemKey) return;
     final row = await _store.item(key);
     final size = row?.sizeBytes;
     if (row == null ||
         row.status != DownloadStatus.completed ||
-        row.serverConfirmed ||
+        (row.serverConfirmed && !again) ||
         size == null) {
       return;
     }

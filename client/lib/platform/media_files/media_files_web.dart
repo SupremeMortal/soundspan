@@ -22,4 +22,10 @@ final class NoMediaFiles implements MediaFiles {
 
   @override
   Future<void> deleteTree(String path) async {}
+
+  @override
+  Future<List<String>> listFiles(String directory) async => const [];
+
+  @override
+  Future<void> removeEmptyDirectories(String directory) async {}
 }

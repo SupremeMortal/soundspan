@@ -140,7 +140,7 @@ The other tables. `DateTime` columns are UTC ISO-8601 text. A column listed as "
 - A `playbackId` is stored verbatim wherever it appears and is never parsed or prefixed beyond the `itemKey` format above.
 - The tables exist on web too; the download tables stay empty there.
 
-`device_settings` keys: `quality.wifi`, `quality.cellular`, `quality.download` (each `serverDefault|original|high|medium|low`), `downloads.wifiOnly`, `downloads.quotaBytes`, `downloads.autoCacheBytes`, `playback.volume`, `playback.speed.podcast`, `playback.skipSeconds`, `offline.forced`, `versionNotice.dismissed` (the server version whose "newer than tested" notice was dismissed, or `unknown`).
+`device_settings` keys: `quality.wifi`, `quality.cellular`, `quality.download` (each `serverDefault|original|high|medium|low`), `downloads.wifiOnly`, `downloads.quotaBytes`, `downloads.autoCacheBytes`, `downloads.lastReconciledAt` (ISO-8601 UTC time of the last successful reconciliation server pass), `playback.volume`, `playback.speed.podcast`, `playback.skipSeconds`, `offline.forced`, `versionNotice.dismissed` (the server version whose "newer than tested" notice was dismissed, or `unknown`).
 
 Metadata needed to render and play a downloaded item offline is stored on the `download_items` row itself (`metaJson`), so offline playback never depends on `cache.db`.
 
