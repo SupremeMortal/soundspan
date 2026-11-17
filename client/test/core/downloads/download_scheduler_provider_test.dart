@@ -3,6 +3,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:soundspan/bootstrap.dart';
 import 'package:soundspan/core/connectivity/reachability.dart';
+import 'package:soundspan/core/downloads/download_artwork.dart';
 import 'package:soundspan/core/downloads/download_controller.dart';
 import 'package:soundspan/core/downloads/download_scheduler.dart';
 import 'package:soundspan/core/downloads/offline_models.dart';
@@ -77,5 +78,35 @@ void main() {
 
     await runtime.switchTo(h.b);
     expect(runtime.container!.read(downloadControllerProvider), isNot(same(a)));
+  });
+
+  test('each activated profile that can download has its own download '
+      'artwork', () async {
+    final (h, _) = await harness(PlatformCapabilities.android);
+    final runtime = h.root.read(profileRuntimeProvider);
+    addTearDown(runtime.dispose);
+
+    await runtime.switchTo(h.a);
+    await startDownloads(h.root);
+    await pumpEventQueue();
+    final a = runtime.container!.read(downloadArtworkProvider);
+    expect(a, isA<ProfileDownloadArtwork>());
+    expect(await a.fileFor('cover-1'), isNull);
+
+    await runtime.switchTo(h.b);
+    expect(runtime.container!.read(downloadArtworkProvider), isNot(same(a)));
+  });
+
+  test('a target that cannot download has the no-op download '
+      'artwork', () async {
+    final (h, _) = await harness(PlatformCapabilities.web);
+    final runtime = h.root.read(profileRuntimeProvider);
+    addTearDown(runtime.dispose);
+    await runtime.switchTo(h.a);
+
+    expect(
+      runtime.container!.read(downloadArtworkProvider),
+      isA<NoDownloadArtwork>(),
+    );
   });
 }

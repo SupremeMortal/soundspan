@@ -8,6 +8,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart' show immutable, visibleForTesting;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:soundspan/core/connectivity/reachability.dart';
+import 'package:soundspan/core/downloads/download_artwork.dart';
 import 'package:soundspan/core/downloads/download_controller.dart';
 import 'package:soundspan/core/downloads/download_keys.dart';
 import 'package:soundspan/core/downloads/download_request_builder.dart';
@@ -692,7 +693,7 @@ final Provider<DownloadScheduler> downloadSchedulerProvider =
 
 /// The post-first-frame task of downloads (doc 02, Bootstrap Sequence,
 /// step 8): creates the [DownloadController] and starts the
-/// [DownloadScheduler] of each profile the
+/// [DownloadScheduler], then the [DownloadArtwork], of each profile the
 /// [ProfileRuntime] under [root] activates, now and later, on targets that
 /// can download.
 Future<void> startDownloads(ProviderContainer root) async {
@@ -713,6 +714,7 @@ Future<void> startDownloads(ProviderContainer root) async {
       container
           .read(downloadSchedulerProvider)
           .start()
+          .then((_) => container.read(downloadArtworkProvider).start())
           .catchError(
             (Object error, StackTrace stackTrace) => DownloadScheduler._log
                 .severe('Downloads did not start', const {}, error, stackTrace),

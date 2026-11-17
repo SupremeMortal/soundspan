@@ -13,6 +13,7 @@ import 'package:soundspan/core/playback/playback_providers.dart';
 import 'package:soundspan/core/profile/profile_context.dart';
 import 'package:soundspan/core/profile/profile_providers.dart';
 import 'package:soundspan/core/profile/profile_runtime.dart';
+import 'package:soundspan/core/storage/artwork_fetcher.dart';
 import 'package:soundspan/core/sync/sync_providers.dart';
 import 'package:soundspan/platform/artwork_store/artwork_store.dart';
 import 'package:soundspan/platform/media_controls/media_controls_factory.dart';
@@ -76,14 +77,7 @@ final Provider<ArtworkPinner> artworkPinnerProvider = Provider<ArtworkPinner>(
     return ArtworkPinner(
       urls: ImageUrls(ref.watch(apiConfigProvider).baseUrl),
       credentials: () => session.current,
-      fetch: (fetch) async {
-        final file = await manager.getSingleFile(
-          fetch.url.toString(),
-          key: fetch.cacheKey,
-          headers: fetch.headers,
-        );
-        return await file.readAsBytes();
-      },
+      fetch: imageCacheBytesFetcher(manager),
       store: ref.watch(artworkStoreProvider),
       artDirectory: ref.watch(profileContextProvider).paths?.art,
       isWeb: kIsWeb,

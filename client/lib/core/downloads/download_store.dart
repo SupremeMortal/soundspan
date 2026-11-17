@@ -127,6 +127,11 @@ class DownloadStore {
     _db.downloadCollections,
   )..orderBy([(c) => OrderingTerm.asc(c.requestedAt)])).watch();
 
+  /// Every collection, in request order.
+  Future<List<DownloadCollection>> collections() => (_db.select(
+    _db.downloadCollections,
+  )..orderBy([(c) => OrderingTerm.asc(c.requestedAt)])).get();
+
   /// The collection [kind]/[refId], or null.
   Future<DownloadCollection?> collection(
     DownloadCollectionKind kind,
@@ -263,6 +268,11 @@ class DownloadStore {
       (rows) => [for (final r in rows) r.readTable(_db.downloadItems)],
     );
   }
+
+  /// Every item, in request order.
+  Future<List<DownloadItem>> items() => (_db.select(
+    _db.downloadItems,
+  )..orderBy([(i) => OrderingTerm.asc(i.requestedAt)])).get();
 
   /// The items in [status].
   Future<List<DownloadItem>> itemsByStatus(DownloadStatus status) =>

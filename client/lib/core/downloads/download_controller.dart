@@ -242,6 +242,46 @@ final class ItemDownloadState {
       'failure: $failureCode, waiting: $waitingFor)';
 }
 
+/// Something the [DownloadController] did that others react to, such as
+/// pinning artwork (doc 05, Image Cache).
+sealed class DownloadControllerEvent {
+  const new();
+}
+
+/// Item [key] reached `completed`: its file is verified and in place.
+final class DownloadItemCompleted extends DownloadControllerEvent {
+  /// Creates the event.
+  const new(this.key);
+
+  /// The item.
+  final DownloadItemKey key;
+}
+
+/// Collection [kind]/[refId] resolved to `ready`.
+final class DownloadCollectionReady extends DownloadControllerEvent {
+  /// Creates the event.
+  const new(this.kind, this.refId);
+
+  /// The collection's kind.
+  final DownloadCollectionKind kind;
+
+  /// The collection's id.
+  final String refId;
+}
+
+/// Collection [kind]/[refId] was removed with the items left in no
+/// collection.
+final class DownloadCollectionRemoved extends DownloadControllerEvent {
+  /// Creates the event.
+  const new(this.kind, this.refId);
+
+  /// The collection's kind.
+  final DownloadCollectionKind kind;
+
+  /// The collection's id.
+  final String refId;
+}
+
 /// Looks up a track in the profile's `cache.db` by its playback id.
 typedef CachedTrackLookup = Future<Track?> Function(PlaybackId playbackId);
 
@@ -291,6 +331,8 @@ class DownloadController {
   final DownloadPaths? _paths;
 
   final List<StreamSubscription<Object?>> _subscriptions = [];
+  final StreamController<DownloadControllerEvent> _events =
+      StreamController<DownloadControllerEvent>.broadcast();
   Future<void> _tail = Future<void>.value();
   bool _started = false;
   bool _disposed = false;
@@ -362,6 +404,15 @@ class DownloadController {
     }
   }
 
+  /// What this controller did, as it happens: items that reached
+  /// `completed`, collections that resolved to `ready` and collections
+  /// removed. Closed by [dispose].
+  Stream<DownloadControllerEvent> get events => _events.stream;
+
+  void _emit(DownloadControllerEvent event) {
+    if (!_events.isClosed) _events.add(event);
+  }
+
   /// Completes when every call made so far, and every call those make in
   /// turn, has run.
   @visibleForTesting
@@ -383,6 +434,7 @@ class DownloadController {
     }
     _subscriptions.clear();
     await _tail;
+    await _events.close();
   }
 
   /// Pins the track, album or playlist [refId] of [kind]; pinning a pinned
@@ -576,6 +628,7 @@ class DownloadController {
       );
       return queued;
     });
+    _emit(DownloadCollectionReady(storeKind, refId));
     if (queued.isNotEmpty) await _applyDeviceLimit();
     _scheduler.pump();
   }
@@ -774,6 +827,9 @@ class DownloadController {
       return;
     }
     await _scheduler.deliver(key, VerificationPassed(size, relative));
+    if ((await _store.item(key))?.status == DownloadStatus.completed) {
+      _emit(DownloadItemCompleted(key));
+    }
   }
 
   /// Reports completed track [key] to the server: directly when online,
@@ -863,6 +919,7 @@ class DownloadController {
       );
       start = end;
     }
+    _emit(DownloadCollectionRemoved(kind, refId));
   }
 
   Future<void> _deleteFiles(DownloadItemKey key, String? relativePath) async {

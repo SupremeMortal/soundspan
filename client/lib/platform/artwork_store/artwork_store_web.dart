@@ -15,4 +15,13 @@ final class WebArtworkStore implements ArtworkStore {
 
   @override
   Future<Uri?> write(String path, Uint8List bytes) async => null;
+
+  @override
+  Future<bool> exists(String path) async => false;
+
+  @override
+  Future<List<String>> list(String directory) async => const [];
+
+  @override
+  Future<void> delete(String path) async {}
 }

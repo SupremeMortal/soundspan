@@ -4,6 +4,9 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:path/path.dart' as p;
+import 'package:soundspan/core/downloads/download_artwork.dart'
+    show downloadArtworkFileName;
 import 'package:soundspan/core/playback/media_controls/artwork_pinner.dart';
 import 'package:soundspan/platform/artwork_store/artwork_store.dart';
 import 'package:soundspan/platform/artwork_store/artwork_store_io.dart'
@@ -22,6 +25,18 @@ class _MemoryStore implements ArtworkStore {
     files[path] = bytes;
     return Uri.file(path);
   }
+
+  @override
+  Future<bool> exists(String path) async => files.containsKey(path);
+
+  @override
+  Future<List<String>> list(String directory) async => [
+    for (final path in files.keys)
+      if (p.dirname(path) == directory) p.basename(path),
+  ];
+
+  @override
+  Future<void> delete(String path) async => files.remove(path);
 }
 
 /// Answers each fetch with the bytes of [bytes], recording it.
@@ -144,8 +159,56 @@ void main() {
       expect(File('$path.tmp').existsSync(), isFalse);
     });
 
+    test('the native store lists, checks and deletes files', () async {
+      final root = await Directory.systemTemp.createTemp('artwork_store');
+      addTearDown(() => root.delete(recursive: true));
+      final art = '${root.path}/art';
+      const store = IoArtworkStore();
+      expect(await store.list(art), isEmpty);
+
+      await store.write('$art/a.img', Uint8List.fromList([1]));
+      await store.write('$art/b.img', Uint8List.fromList([2]));
+      expect(await store.list(art), unorderedEquals(['a.img', 'b.img']));
+      expect(await store.exists('$art/a.img'), isTrue);
+
+      await store.delete('$art/a.img');
+      await store.delete('$art/a.img');
+      expect(await store.exists('$art/a.img'), isFalse);
+      expect(await store.list(art), ['b.img']);
+    });
+
     test('the web store stores nothing', () async {
-      expect(await const WebArtworkStore().write('/x', Uint8List(1)), isNull);
+      const store = WebArtworkStore();
+      expect(await store.write('/x', Uint8List(1)), isNull);
+      expect(await store.exists('/x'), isFalse);
+      expect(await store.list('/'), isEmpty);
+      await store.delete('/x');
+    });
+
+    test('now-playing.img and a download artwork file coexist', () async {
+      final root = await Directory.systemTemp.createTemp('artwork_store');
+      addTearDown(() => root.delete(recursive: true));
+      final art = '${root.path}/profiles/p1/art';
+      const store = IoArtworkStore();
+      final pinner = ArtworkPinner(
+        urls: ImageUrls(Uri.parse('https://music.example')),
+        credentials: () => _jwt,
+        fetch: fetcher.fetch,
+        store: store,
+        artDirectory: art,
+        isWeb: false,
+      );
+      final download = '$art/${downloadArtworkFileName('al-2')}';
+      await store.write(download, Uint8List.fromList([5]));
+
+      await pinner.pin('al-1');
+
+      expect(File('$art/now-playing.img').readAsBytesSync(), [1, 2, 3]);
+      expect(File(download).readAsBytesSync(), [5]);
+      expect(
+        await store.list(art),
+        unorderedEquals(['now-playing.img', downloadArtworkFileName('al-2')]),
+      );
     });
 
     test('the platform store of the test host is the native one', () {

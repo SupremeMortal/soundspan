@@ -18,11 +18,23 @@ export 'artwork_store_web.dart'
     if (dart.library.io) 'artwork_store_io.dart'
     show createArtworkStore;
 
-/// Writes artwork files the OS can load without credentials.
+/// Writes, lists and deletes artwork files the OS can load without
+/// credentials.
 abstract interface class ArtworkStore {
   /// Replaces the file at [path] with [bytes] and returns its `file://`
   /// URI, or null where nothing is stored.
   Future<Uri?> write(String path, Uint8List bytes);
+
+  /// Whether a file exists at [path]; always false where nothing is
+  /// stored.
+  Future<bool> exists(String path);
+
+  /// The names of the files directly in [directory]; empty when it does
+  /// not exist or nothing is stored.
+  Future<List<String>> list(String directory);
+
+  /// Deletes the file at [path]; a missing file is not an error.
+  Future<void> delete(String path);
 }
 
 /// The platform's [ArtworkStore]; tests override it.

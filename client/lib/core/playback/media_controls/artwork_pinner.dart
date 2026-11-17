@@ -1,16 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 
-import 'dart:typed_data';
-
 import 'package:path/path.dart' as p;
 import 'package:soundspan/core/logging/app_logger.dart';
+import 'package:soundspan/core/storage/artwork_fetcher.dart';
 import 'package:soundspan/platform/artwork_store/artwork_store.dart';
-import 'package:soundspan/shared/providers/images.dart';
 import 'package:soundspan_api/soundspan_api.dart';
 
-/// Fetches the bytes of one cover through the profile's authenticated image
-/// cache.
-typedef ArtworkBytesFetcher = Future<Uint8List> Function(ArtworkFetch fetch);
+export 'package:soundspan/core/storage/artwork_fetcher.dart'
+    show ArtworkBytesFetcher;
 
 /// Gives the OS media surface an artwork URI it can load without
 /// credentials (doc 06, OS Media Controls).
@@ -35,7 +32,7 @@ final class ArtworkPinner {
   });
 
   /// The pixel size of the pinned cover.
-  static const int pixelSize = 512;
+  static const int pixelSize = localArtworkPixelSize;
 
   /// The file name of the pinned cover under the profile's `art/`.
   static const String fileName = 'now-playing.img';
@@ -53,21 +50,24 @@ final class ArtworkPinner {
   Future<Uri?> pin(String? artworkRef) async {
     if (artworkRef == null) return null;
     try {
-      final fetch = artworkFetch(
-        ArtworkRequest(
+      if (_isWeb) {
+        return localArtworkFetch(
           artworkRef,
-          logicalPx: pixelSize.toDouble(),
-          devicePixelRatio: 1,
-        ),
-        urls: _urls,
-        credentials: _credentials(),
-        isWeb: _isWeb,
-      );
-      if (_isWeb) return fetch.url;
+          urls: _urls,
+          credentials: _credentials(),
+          isWeb: true,
+        ).url;
+      }
       final directory = _artDirectory;
       if (directory == null) return null;
-      final bytes = await _fetch(fetch);
-      return await _store.write(p.join(directory, fileName), bytes);
+      return await fetchAndStoreArtwork(
+        artworkRef,
+        path: p.join(directory, fileName),
+        urls: _urls,
+        credentials: _credentials(),
+        fetch: _fetch,
+        store: _store,
+      );
     } on Object catch (error, stackTrace) {
       _log.warning('Artwork was not pinned', const {}, error, stackTrace);
       return null;

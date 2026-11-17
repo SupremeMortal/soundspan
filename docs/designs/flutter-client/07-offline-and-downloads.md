@@ -133,6 +133,10 @@ Two independent limits apply.
 
 `unpin(kind, refId)`: delete the collection and its membership rows; for each item left with no membership, cancel its transfer (`DownloadScheduler.cancelItem`), delete its `.part` and final files through the `MediaFiles` seam, delete the row, and add its `playbackId` to a batched `DELETE /api/offline/items { deviceId, playbackIds }` (≤ 500 per request). The batches always go through the outbox as `offlineDelete` operations, which drain at once when online; the outbox handler, bound in `lib/shared/data/downloads/` because `downloads` and `sync` may not import each other, calls `OfflineRepository.delete`. Unavailable items are removed with their membership and not reported. Removing an item that is currently playing lets playback finish from the open file handle on POSIX systems; on Windows the delete fails while the engine holds the file, the error is ignored, and the start-up scan (Reconciliation, step 5) removes the orphaned file.
 
+### Artwork
+
+`DownloadArtwork` (`lib/core/downloads/download_artwork.dart`, one per profile, started by `startDownloads` after the scheduler) keeps the covers of downloaded items and their collections in `profiles/<id>/art/<sha1(ref)>.img` (the lower-case hex SHA-1 of the artwork ref, which is hashed and never parsed), so offline rows, the Downloads tab and the Android Auto Downloads root show covers with no network and no credentials. It fetches the 512-pixel cover through the profile's image cache (`lib/core/storage/artwork_fetcher.dart`, shared with `now-playing.img`) and writes it through the `ArtworkStore` seam. It reacts to the `DownloadController.events`: an item reaching `completed` pins its own ref and those of its collections; a collection resolving to `ready` pins its ref at once; a removed collection runs `removeUnreferenced`, which deletes every `<sha1>.img` no item or collection `metaJson` references and never touches `now-playing.img`. The first time reachability is `online` after start, refs of `completed` items and `ready` collections with no file are pinned one after another, at most four fetches a second. A failed fetch is logged at `fine` and repaired at the next start; it never fails an item. Offline, nothing is fetched. Pins of one ref share one fetch, and an existing file is answered without a request. `pin` and `fileFor` answer absolute paths, because `dart:io` stays under `lib/platform/`. Where `PlatformCapabilities.canDownload` is false the provider is `NoDownloadArtwork`. Artwork does not count toward the device limit.
+
 ## Keeping Collections Current
 
 - **Playlists:** when a pinned playlist's detail is refreshed and its track list differs from the membership set, the controller re-runs `POST /offline/items { kind: playlist }` and diffs: new items are queued, removed ones are unpinned. A local edit to a pinned playlist triggers the same pass.
@@ -147,7 +151,7 @@ Runs at start-up when online, after sign-in, and at most every 6 hours.
 2. Server item with `revoked: true` → delete the local file and row, then include it in `DELETE /offline/items`.
 3. Local `completed` item unknown to the server → re-send `complete` (this happens after a failed confirmation or a server restore).
 4. Server item unknown locally (reinstall with the same `deviceId` is impossible because `deviceId` is regenerated; this occurs after "Clear local state") → `DELETE /offline/items` for it.
-5. Local scan: every `completed` row's file must exist with the recorded size; otherwise `missing`. Files in `media/` with no row (and `.part` files with no live task) are deleted.
+5. Local scan: every `completed` row's file must exist with the recorded size; otherwise `missing`. Files in `media/` with no row (and `.part` files with no live task) are deleted, and `DownloadArtwork.removeUnreferenced` removes pinned covers nothing references.
 
 ## Reachability and Offline Mode
 
