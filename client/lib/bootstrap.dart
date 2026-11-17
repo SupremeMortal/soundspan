@@ -19,6 +19,7 @@ import 'package:soundspan/core/auth/active_profile.dart';
 import 'package:soundspan/core/downloads/download_scheduler.dart';
 import 'package:soundspan/core/logging/app_logger.dart';
 import 'package:soundspan/core/logging/console_log_sink.dart';
+import 'package:soundspan/core/playback/media_controls/browse/browse_tree.dart';
 import 'package:soundspan/core/playback/media_controls/media_controls_providers.dart';
 import 'package:soundspan/core/playback/playback_providers.dart';
 import 'package:soundspan/core/profile/capability_refresher.dart';
@@ -113,6 +114,16 @@ Future<void> bootstrap({
             );
             return (liked) =>
                 liked ? l10n.likeButtonRemove : l10n.likeButtonLike;
+          }),
+          mediaControlsBrowseTitlesProvider.overrideWith((ref) {
+            final l10n = lookupAppLocalizations(
+              ref.watch(localeSettingProvider).value ?? const Locale('en'),
+            );
+            return () => BrowseRootTitles(
+              recent: l10n.androidAutoRecent,
+              playlists: l10n.androidAutoPlaylists,
+              albums: l10n.androidAutoAlbums,
+            );
           }),
           keyExpiryNotificationTextProvider.overrideWith(
             (ref) => keyExpiryNotificationText(

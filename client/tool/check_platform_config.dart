@@ -147,20 +147,24 @@ const List<String> androidPermissions = [
 /// The `audio_service` playback service.
 const String audioServiceClass = 'com.ryanheise.audioservice.AudioService';
 
+/// The `<meta-data>` name that lists the app in Android Auto.
+const String carApplicationMetaData = 'com.google.android.gms.car.application';
+
 /// The `audio_service` media-button receiver.
 const String mediaButtonReceiverClass =
     'com.ryanheise.audioservice.MediaButtonReceiver';
 
-/// The doc 10 manifest table (except `FOREGROUND_SERVICE_DATA_SYNC` and the
-/// Android Auto meta-data): [androidPermissions], the optional camera
+/// The doc 10 manifest table (except `FOREGROUND_SERVICE_DATA_SYNC`):
+/// [androidPermissions], the optional camera
 /// feature of the QR scanner, the `<application>` network security config
 /// and backup rules, cleartext traffic not switched off, `MainActivity` with
 /// `launchMode="singleTask"` and the URL-scheme intent filter (action
 /// `VIEW`, categories `DEFAULT` and `BROWSABLE`,
 /// `<data android:scheme="soundspan"/>`), the exported `AudioService` with
 /// `foregroundServiceType="mediaPlayback"` and the `MediaBrowserService`
-/// intent filter, and the exported `MediaButtonReceiver` with the
-/// `MEDIA_BUTTON` intent filter.
+/// intent filter, the exported `MediaButtonReceiver` with the
+/// `MEDIA_BUTTON` intent filter, and the Android Auto `<meta-data>` naming
+/// `@xml/automotive_app_desc`.
 List<ConfigViolation> checkAndroidManifest(String path) {
   final out = <ConfigViolation>[];
   final document = _readXml(path, out);
@@ -255,6 +259,23 @@ List<ConfigViolation> checkAndroidManifest(String path) {
     );
   }
 
+  if (application == null ||
+      !application
+          .findElements('meta-data')
+          .any(
+            (e) =>
+                attr(e, 'name') == carApplicationMetaData &&
+                attr(e, 'resource') == '@xml/automotive_app_desc',
+          )) {
+    out.add(
+      ConfigViolation(
+        path,
+        '<meta-data android:name="$carApplicationMetaData" '
+        'android:resource="@xml/automotive_app_desc"/>',
+      ),
+    );
+  }
+
   final activity = document.findAllElements('activity').where((e) {
     final name = attr(e, 'name');
     return name == '.MainActivity' ||
@@ -334,7 +355,8 @@ const List<(String, String)> backupExclusions = [
 /// and trusts the system and user certificate authorities;
 /// `xml/data_extraction_rules.xml` (`<cloud-backup>` and
 /// `<device-transfer>`) and `xml/backup_rules.xml` exclude every one of
-/// [backupExclusions].
+/// [backupExclusions]; `xml/automotive_app_desc.xml` declares
+/// `<uses name="media"/>` for Android Auto.
 List<ConfigViolation> checkAndroidRes(String dir) {
   final out = <ConfigViolation>[];
   final security = '$dir/xml/network_security_config.xml';
@@ -408,6 +430,17 @@ List<ConfigViolation> checkAndroidRes(String dir) {
           ? full.rootElement
           : null,
       'full-backup-content',
+    );
+  }
+  final automotive = '$dir/xml/automotive_app_desc.xml';
+  final app = _readXml(automotive, out);
+  if (app != null &&
+      (app.rootElement.name.local != 'automotiveApp' ||
+          !app.rootElement
+              .findElements('uses')
+              .any((e) => e.getAttribute('name') == 'media'))) {
+    out.add(
+      ConfigViolation(automotive, '<uses name="media"/> in <automotiveApp>'),
     );
   }
   return out;

@@ -187,6 +187,24 @@ abstract class AppLocalizations {
   /// **'Playback'**
   String get playbackNotificationChannelName;
 
+  /// Title of the Android Auto browse folder listing recently listened tracks.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent'**
+  String get androidAutoRecent;
+
+  /// Title of the Android Auto browse folder listing the user's playlists.
+  ///
+  /// In en, this message translates to:
+  /// **'Playlists'**
+  String get androidAutoPlaylists;
+
+  /// Title of the Android Auto browse folder listing the library's albums.
+  ///
+  /// In en, this message translates to:
+  /// **'Albums'**
+  String get androidAutoAlbums;
+
   /// Screen name: the storage settings page.
   ///
   /// In en, this message translates to:

@@ -13,6 +13,7 @@ library;
 import 'dart:async';
 
 import 'package:audio_service/audio_service.dart' as svc;
+import 'package:soundspan/core/playback/media_controls/browse/browse_tree.dart';
 import 'package:soundspan/core/playback/media_controls/media_controls.dart';
 import 'package:soundspan/shared/clock.dart';
 
@@ -42,6 +43,10 @@ const Duration pausedServiceTimeout = Duration(minutes: 10);
 /// The label of the Like action: what pressing it does, for an item shown
 /// [liked] or not.
 typedef LikeLabel = String Function(bool liked);
+
+/// The localized titles of the Android Auto browse root, read each time
+/// the root is listed.
+typedef BrowseTitles = BrowseRootTitles Function();
 
 /// Starts `audio_service` with the handler [builder] makes and [config],
 /// returning that handler. Called once per process.
@@ -84,13 +89,23 @@ svc.AudioServiceConfig audioServiceConfigFor({
 /// After [pausedServiceTimeout] continuously paused it calls [stop]. [stop]
 /// shows the idle state, which ends the Android service and removes the
 /// notification; paused states are not shown again until one is playing.
+///
+/// With [browseTitles] (Android) it serves the Android Auto browse tree
+/// over [MediaCommandHandler.browseSource] (doc 10, Android Auto): browse
+/// items carry no artwork, a playable id or a voice search plays through
+/// [MediaCommandHandler.playRequest], and an id or search with nothing to
+/// play leaves playback unchanged. Without a source the tree is empty.
 class SoundspanAudioHandler extends svc.BaseAudioHandler
     with svc.QueueHandler, svc.SeekHandler {
-  /// Creates a handler forwarding to [commands].
-  new(this.commands);
+  /// Creates a handler forwarding to [commands]; [browseTitles] titles
+  /// the Android Auto browse root.
+  new(this.commands, {this.browseTitles});
 
   /// Where the buttons go.
   final MediaCommandHandler commands;
+
+  /// The titles of the Android Auto browse root; null serves no tree.
+  final BrowseTitles? browseTitles;
 
   Timer? _pausedTimer;
   bool _ended = false;
@@ -163,6 +178,52 @@ class SoundspanAudioHandler extends svc.BaseAudioHandler
     if (name != likeActionName || liked == null) return;
     await commands.setLiked(!liked);
   }
+
+  BrowseTree? _tree() {
+    final titles = browseTitles;
+    final source = commands.browseSource;
+    if (titles == null || source == null) return null;
+    return BrowseTree(source: source, titles: titles());
+  }
+
+  @override
+  Future<List<svc.MediaItem>> getChildren(
+    String parentMediaId, [
+    Map<String, dynamic>? options,
+  ]) async => _itemsOf(await _tree()?.children(parentMediaId));
+
+  @override
+  Future<List<svc.MediaItem>> search(
+    String query, [
+    Map<String, dynamic>? extras,
+  ]) async => _itemsOf(await _tree()?.searchResults(query));
+
+  @override
+  Future<void> playFromMediaId(
+    String mediaId, [
+    Map<String, dynamic>? extras,
+  ]) => _play(_tree()?.resolve(mediaId));
+
+  @override
+  Future<void> playFromSearch(String query, [Map<String, dynamic>? extras]) =>
+      _play(_tree()?.search(query));
+
+  Future<void> _play(Future<PlayRequest?>? pending) async {
+    final request = await pending;
+    if (request == null) return;
+    _cancelPausedTimer();
+    await commands.playRequest(request);
+  }
+
+  static List<svc.MediaItem> _itemsOf(List<BrowseNode>? nodes) => [
+    for (final node in nodes ?? const <BrowseNode>[])
+      svc.MediaItem(
+        id: node.id,
+        title: node.title,
+        artist: node.subtitle,
+        playable: node.playable,
+      ),
+  ];
 }
 
 /// What `audio_service` shows for [state]: the media item (null for
@@ -265,23 +326,29 @@ class SoundspanAudioHandler extends svc.BaseAudioHandler
 final class AudioServiceControls implements MediaControls {
   /// Creates the controls; `start` starts the plugin with `config` at
   /// [init], and `clock` stamps every published position. With a
-  /// `likeLabel` (Android) the Like action is shown.
+  /// `likeLabel` (Android) the Like action is shown, and with
+  /// `browseTitles` (Android) the Android Auto browse tree is served.
   new({
     required this._config,
     required this._start,
     required this._clock,
     this._likeLabel,
+    this._browseTitles,
   });
 
   final svc.AudioServiceConfig Function() _config;
   final AudioServiceStarter _start;
   final Clock _clock;
   final LikeLabel? _likeLabel;
+  final BrowseTitles? _browseTitles;
   SoundspanAudioHandler? _handler;
 
   @override
   Future<void> init(MediaCommandHandler handler) async {
-    _handler = await _start(() => SoundspanAudioHandler(handler), _config());
+    _handler = await _start(
+      () => SoundspanAudioHandler(handler, browseTitles: _browseTitles),
+      _config(),
+    );
   }
 
   @override

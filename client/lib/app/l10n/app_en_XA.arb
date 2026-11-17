@@ -66,6 +66,18 @@
   "@playbackNotificationChannelName": {
     "description": "Name of the Android notification channel of the playback notification, shown in the system's notification settings for the app."
   },
+  "androidAutoRecent": "[Ŕéçéñţ one]",
+  "@androidAutoRecent": {
+    "description": "Title of the Android Auto browse folder listing recently listened tracks."
+  },
+  "androidAutoPlaylists": "[Þļåýļîšţš one]",
+  "@androidAutoPlaylists": {
+    "description": "Title of the Android Auto browse folder listing the user's playlists."
+  },
+  "androidAutoAlbums": "[Åļbûmš one]",
+  "@androidAutoAlbums": {
+    "description": "Title of the Android Auto browse folder listing the library's albums."
+  },
   "screenSettingsStorage": "[Šţöŕåĝé one]",
   "@screenSettingsStorage": {
     "description": "Screen name: the storage settings page."

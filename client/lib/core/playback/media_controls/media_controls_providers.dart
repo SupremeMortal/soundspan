@@ -4,6 +4,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:soundspan/app/media_browse_source_impl.dart';
 import 'package:soundspan/core/playback/media_controls/artwork_pinner.dart';
 import 'package:soundspan/core/playback/media_controls/audio_service_controls.dart';
 import 'package:soundspan/core/playback/media_controls/media_controls.dart';
@@ -36,14 +37,25 @@ final Provider<LikeLabel> mediaControlsLikeLabelProvider = Provider<LikeLabel>(
   ),
 );
 
+/// The localized titles of the Android Auto browse root. Bootstrap
+/// overrides it; it throws until then.
+final Provider<BrowseTitles> mediaControlsBrowseTitlesProvider =
+    Provider<BrowseTitles>(
+      (ref) => throw UnimplementedError(
+        'mediaControlsBrowseTitlesProvider is set by bootstrap',
+      ),
+    );
+
 /// The platform's [MediaControls], built by the media controls seam
 /// (`audio_service` on Android, iOS, macOS, Linux and the web; none on
-/// Windows). The channel name is read when they are initialised.
+/// Windows). The channel name is read when they are initialised, the
+/// Android Auto root titles each time the root is listed.
 final Provider<MediaControls> mediaControlsProvider = Provider<MediaControls>(
   (ref) => createMediaControls(
     channelName: () => ref.read(mediaControlsChannelNameProvider),
     clock: ref.watch(clockProvider),
     likeLabel: (liked) => ref.read(mediaControlsLikeLabelProvider)(liked),
+    browseTitles: () => ref.read(mediaControlsBrowseTitlesProvider)(),
   ),
 );
 
@@ -88,8 +100,8 @@ final Provider<ArtworkPinner> artworkPinnerProvider = Provider<ArtworkPinner>(
 /// After the first frame (doc 02, Bootstrap Sequence, step 8): initialises
 /// the OS media surface once, then renders the active profile's
 /// playback controller on it, rebinding whenever the active profile
-/// changes. With no active profile the surface shows
-/// [MediaSessionState.empty].
+/// changes; Android Auto browses that profile's library. With no active
+/// profile the surface shows [MediaSessionState.empty].
 Future<void> startMediaControls(ProviderContainer root) async {
   final host = root.read(mediaControlsHostProvider);
   await root.read(mediaControlsProvider).init(host);
@@ -118,6 +130,7 @@ Future<void> startMediaControls(ProviderContainer root) async {
                 like: (track, {required liked}) => active
                     .read(preferenceRepositoryProvider)
                     .setTrackLiked(track, liked: liked),
+                browseSource: active.read(mediaBrowseSourceProvider),
               ),
       ),
     );

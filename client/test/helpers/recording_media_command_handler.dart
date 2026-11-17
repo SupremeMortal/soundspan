@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 
+import 'package:soundspan/core/playback/media_controls/browse/browse_tree.dart';
+import 'package:soundspan/core/playback/media_controls/browse/media_browse_source.dart';
 import 'package:soundspan/core/playback/media_controls/media_controls.dart';
 
 /// A [MediaCommandHandler] that records the commands it receives, by name
-/// (`seek` with its position in milliseconds, `setLiked` with its value).
+/// (`seek` with its position in milliseconds, `setLiked` with its value,
+/// `playRequest` with its start index); it has no browse source.
 class RecordingMediaCommandHandler implements MediaCommandHandler {
   /// The commands received, in order.
   final List<String> calls = [];
@@ -35,4 +38,11 @@ class RecordingMediaCommandHandler implements MediaCommandHandler {
 
   @override
   Future<void> setLiked(bool liked) async => calls.add('setLiked $liked');
+
+  @override
+  MediaBrowseSource? get browseSource => null;
+
+  @override
+  Future<void> playRequest(PlayRequest request) async =>
+      calls.add('playRequest ${request.startIndex}');
 }

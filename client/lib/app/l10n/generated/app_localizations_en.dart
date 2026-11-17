@@ -57,6 +57,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get playbackNotificationChannelName => 'Playback';
 
   @override
+  String get androidAutoRecent => 'Recent';
+
+  @override
+  String get androidAutoPlaylists => 'Playlists';
+
+  @override
+  String get androidAutoAlbums => 'Albums';
+
+  @override
   String get screenSettingsStorage => 'Storage';
 
   @override
@@ -1706,6 +1715,15 @@ class AppLocalizationsEnXa extends AppLocalizationsEn {
 
   @override
   String get playbackNotificationChannelName => '[Þļåýbåçķ one]';
+
+  @override
+  String get androidAutoRecent => '[Ŕéçéñţ one]';
+
+  @override
+  String get androidAutoPlaylists => '[Þļåýļîšţš one]';
+
+  @override
+  String get androidAutoAlbums => '[Åļbûmš one]';
 
   @override
   String get screenSettingsStorage => '[Šţöŕåĝé one]';

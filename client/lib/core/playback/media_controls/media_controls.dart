@@ -6,6 +6,8 @@
 library;
 
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:soundspan/core/playback/media_controls/browse/browse_tree.dart';
+import 'package:soundspan/core/playback/media_controls/browse/media_browse_source.dart';
 
 part 'media_controls.freezed.dart';
 
@@ -55,6 +57,14 @@ abstract interface class MediaCommandHandler {
 
   /// Likes or unlikes the current item.
   Future<void> setLiked(bool liked);
+
+  /// The library Android Auto browses (doc 10, Android Auto); null when
+  /// there is none to browse.
+  MediaBrowseSource? get browseSource;
+
+  /// Replaces the queue with the tracks of [request] and plays from its
+  /// start index.
+  Future<void> playRequest(PlayRequest request);
 }
 
 /// An action the OS media surface may offer.

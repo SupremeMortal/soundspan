@@ -19,6 +19,8 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:soundspan/core/playback/media_controls/audio_service_controls.dart';
+import 'package:soundspan/core/playback/media_controls/browse/browse_tree.dart';
+import 'package:soundspan/core/playback/media_controls/browse/media_browse_source.dart';
 import 'package:soundspan/core/playback/media_controls/media_controls.dart';
 import 'package:soundspan/platform/clock/system_clock.dart';
 import 'package:soundspan/platform/media_controls/media_controls_factory.dart';
@@ -54,6 +56,12 @@ class _Commands implements MediaCommandHandler {
 
   @override
   Future<void> setLiked(bool liked) async {}
+
+  @override
+  MediaBrowseSource? get browseSource => null;
+
+  @override
+  Future<void> playRequest(PlayRequest request) async {}
 }
 
 void main() {

@@ -47,6 +47,8 @@ const _manifest = '''
         <action android:name="android.intent.action.MEDIA_BUTTON"/>
       </intent-filter>
     </receiver>
+    <meta-data android:name="com.google.android.gms.car.application"
+        android:resource="@xml/automotive_app_desc"/>
   </application>
 </manifest>
 ''';
@@ -129,7 +131,25 @@ const List<(String, String, String)> _manifestRows = [
     '',
     'android:fullBackupContent="@xml/backup_rules"',
   ),
+  (
+    'android:resource="@xml/automotive_app_desc"',
+    'android:resource="@xml/other"',
+    '<meta-data android:name="com.google.android.gms.car.application" '
+        'android:resource="@xml/automotive_app_desc"/>',
+  ),
+  (
+    'android:name="com.google.android.gms.car.application"',
+    'android:name="other"',
+    '<meta-data android:name="com.google.android.gms.car.application" '
+        'android:resource="@xml/automotive_app_desc"/>',
+  ),
 ];
+
+const _automotiveAppDesc = '''
+<automotiveApp>
+  <uses name="media"/>
+</automotiveApp>
+''';
 
 const _networkSecurityConfig = '''
 <?xml version="1.0" encoding="utf-8"?>
@@ -337,15 +357,17 @@ String _write(String name, String content) {
   return path;
 }
 
-/// A resource directory with the three XML files, each overridable.
+/// A resource directory with the four XML files, each overridable.
 String _res({
   String networkSecurityConfig = _networkSecurityConfig,
   String dataExtractionRules = _dataExtractionRules,
   String backupRules = _backupRules,
+  String automotiveAppDesc = _automotiveAppDesc,
 }) {
   _write('res/xml/network_security_config.xml', networkSecurityConfig);
   _write('res/xml/data_extraction_rules.xml', dataExtractionRules);
   _write('res/xml/backup_rules.xml', backupRules);
+  _write('res/xml/automotive_app_desc.xml', automotiveAppDesc);
   return p.join(_dir.path, 'res');
 }
 
@@ -557,6 +579,22 @@ void main() {
         ),
       );
       expect(checkAndroidRes(res).map((v) => v.entry), ['<cloud-backup>']);
+    });
+
+    test('an Android Auto descriptor without the media use fails', () {
+      final res = _res(
+        automotiveAppDesc: _automotiveAppDesc.replaceFirst('media', 'video'),
+      );
+      final path = p.join(res, 'xml', 'automotive_app_desc.xml');
+      expect(checkAndroidRes(res).map((v) => v.toString()), [
+        '$path: missing <uses name="media"/> in <automotiveApp>',
+      ]);
+    });
+
+    test('a missing Android Auto descriptor is reported', () {
+      final res = _res();
+      File(p.join(res, 'xml', 'automotive_app_desc.xml')).deleteSync();
+      expect(checkAndroidRes(res).single.entry, 'the file');
     });
 
     test('a missing resource file is reported', () {

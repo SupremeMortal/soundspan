@@ -3,6 +3,8 @@
 import 'dart:async';
 
 import 'package:soundspan/core/logging/app_logger.dart';
+import 'package:soundspan/core/playback/media_controls/browse/browse_tree.dart';
+import 'package:soundspan/core/playback/media_controls/browse/media_browse_source.dart';
 import 'package:soundspan/core/playback/media_controls/media_controls.dart';
 import 'package:soundspan/core/playback/media_controls/media_session_mapper.dart';
 import 'package:soundspan/core/playback/playback_controller.dart';
@@ -10,6 +12,7 @@ import 'package:soundspan/core/playback/playback_snapshot.dart';
 import 'package:soundspan/shared/clock.dart';
 import 'package:soundspan/shared/domain/queue_item.dart';
 import 'package:soundspan/shared/domain/track.dart';
+import 'package:soundspan/shared/util/uuid.dart';
 
 /// Gives the OS an artwork URI for a cover value; see `ArtworkPinner.pin`.
 typedef ArtworkPin = Future<Uri?> Function(String? artworkRef);
@@ -32,17 +35,21 @@ typedef LikeTrack = Future<void> Function(Track track, {required bool liked});
 ///
 /// As a [MediaCommandHandler] it dispatches the surface's buttons to the
 /// controller. Like goes to [_like]: the current item is shown with the
-/// new liked flag at once, until another item becomes current.
+/// new liked flag at once, until another item becomes current. A
+/// [PlayRequest] of Android Auto replaces the queue, each track a fresh
+/// entry.
 class MediaControlsBinder implements MediaCommandHandler {
   /// Starts rendering [_controller]'s snapshots on [_controls]; artwork is
   /// pinned by [_pin], elapsed time read from [_clock], and likes stored
-  /// through `like` (without it, Like does nothing).
+  /// through `like` (without it, Like does nothing). Android Auto browses
+  /// [browseSource].
   new({
     required this._controller,
     required this._controls,
     required this._pin,
     required this._clock,
     this._like,
+    this.browseSource,
   }) {
     _subscription = _controller.snapshots.listen(_onSnapshot);
   }
@@ -58,6 +65,9 @@ class MediaControlsBinder implements MediaCommandHandler {
   final ArtworkPin _pin;
   final Clock _clock;
   final LikeTrack? _like;
+
+  @override
+  final MediaBrowseSource? browseSource;
 
   late final StreamSubscription<PlaybackSnapshot> _subscription;
   bool _started = false;
@@ -169,6 +179,23 @@ class MediaControlsBinder implements MediaCommandHandler {
       _log.severe('Like not stored', const {}, error, stackTrace);
     }
   }
+
+  @override
+  Future<void> playRequest(PlayRequest request) async {
+    if (_disposed || request.tracks.isEmpty) return;
+    await _controller.playItems(
+      [
+        for (final track in request.tracks)
+          QueueItem.track(
+            queueItemId: Uuid.v4(),
+            track: track,
+            context: request.context,
+          ),
+      ],
+      startIndex: request.startIndex,
+      context: request.context,
+    );
+  }
 }
 
 /// The one [MediaCommandHandler] the OS media surface is initialised with,
@@ -225,4 +252,11 @@ class MediaControlsHost implements MediaCommandHandler {
   @override
   Future<void> setLiked(bool liked) =>
       _binder?.setLiked(liked) ?? Future<void>.value();
+
+  @override
+  MediaBrowseSource? get browseSource => _binder?.browseSource;
+
+  @override
+  Future<void> playRequest(PlayRequest request) =>
+      _binder?.playRequest(request) ?? Future<void>.value();
 }

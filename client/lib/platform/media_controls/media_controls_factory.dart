@@ -50,27 +50,32 @@ MediaControlsKind mediaControlsKindFor({
 /// Builds the [MediaControls] that [mediaControlsKindFor] selects;
 /// [channelName] is read when the controls are initialised. On Android the
 /// notification shows the Like action labelled by [likeLabel] (doc 10,
-/// Playback service); elsewhere it is not shown.
+/// Playback service), and Android Auto browses a tree whose root is titled
+/// by [browseTitles] (doc 10, Android Auto); elsewhere neither is shown.
 MediaControls mediaControlsFor({
   required String operatingSystem,
   required bool web,
   required String Function() channelName,
   required Clock clock,
   LikeLabel? likeLabel,
-}) =>
-    switch (mediaControlsKindFor(operatingSystem: operatingSystem, web: web)) {
-      MediaControlsKind.audioService => AudioServiceControls(
-        config: () => audioServiceConfigFor(
-          operatingSystem: web ? 'web' : operatingSystem,
-          channelName: channelName(),
-        ),
-        start: startAudioService,
-        clock: clock,
-        likeLabel: !web && operatingSystem == 'android' ? likeLabel : null,
-      ),
-      MediaControlsKind.smtc => SmtcControls(
-        gateway: WindowsSmtcGateway(),
-        clock: clock,
-      ),
-      MediaControlsKind.none => const NoopMediaControls(),
-    };
+  BrowseTitles? browseTitles,
+}) => switch (mediaControlsKindFor(
+  operatingSystem: operatingSystem,
+  web: web,
+)) {
+  MediaControlsKind.audioService => AudioServiceControls(
+    config: () => audioServiceConfigFor(
+      operatingSystem: web ? 'web' : operatingSystem,
+      channelName: channelName(),
+    ),
+    start: startAudioService,
+    clock: clock,
+    likeLabel: !web && operatingSystem == 'android' ? likeLabel : null,
+    browseTitles: !web && operatingSystem == 'android' ? browseTitles : null,
+  ),
+  MediaControlsKind.smtc => SmtcControls(
+    gateway: WindowsSmtcGateway(),
+    clock: clock,
+  ),
+  MediaControlsKind.none => const NoopMediaControls(),
+};

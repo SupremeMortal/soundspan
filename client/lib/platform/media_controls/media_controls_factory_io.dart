@@ -12,10 +12,12 @@ MediaControls createMediaControls({
   required String Function() channelName,
   required Clock clock,
   LikeLabel? likeLabel,
+  BrowseTitles? browseTitles,
 }) => mediaControlsFor(
   operatingSystem: Platform.operatingSystem,
   web: false,
   channelName: channelName,
   clock: clock,
   likeLabel: likeLabel,
+  browseTitles: browseTitles,
 );
