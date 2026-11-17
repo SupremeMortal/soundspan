@@ -132,26 +132,46 @@ class DownloadScheduler {
   bool _pumpQueued = false;
   bool _wifiOnly = false;
   bool _started = false;
+  bool _available = true;
   bool _disposed = false;
 
   /// The effects the controller runs: `RenamePartToFinal`, `SendComplete`,
   /// `DeleteFile`, `DeleteRow` and `ReResolveCollection`.
   Stream<DownloadItemEffect> get effects => _effects.stream;
 
+  /// Whether downloads can run on this device: false once the downloader
+  /// failed to initialise, such as on a Linux desktop without an XDG
+  /// documents directory. Nothing is enqueued while false.
+  bool get isAvailable => _available;
+
   /// Re-attaches to the operating system's tasks, reconciles `running`
   /// rows with them, re-arms the retries of `failedRetryable` rows, and
   /// pumps. Events the downloader delivers while starting are processed
-  /// like live ones. Later calls do nothing.
+  /// like live ones. When the downloader cannot initialise, that is logged
+  /// once and [isAvailable] turns false instead of an error. Later calls
+  /// do nothing.
   Future<void> start() async {
     if (_started || _disposed) return;
     _started = true;
     _wifiOnly = await _settings.read(downloadsWifiOnlyKey) == true;
-    _subscriptions
-      ..add(
+    try {
+      _subscriptions.add(
         _downloader.events
             .where((event) => event.group == _group)
             .listen((event) => _serial(() => _onEvent(event))),
-      )
+      );
+      await _downloader.start();
+    } on Object catch (error, stackTrace) {
+      _available = false;
+      _log.warning(
+        'The downloader cannot initialise; downloads are unavailable',
+        const {},
+        error,
+        stackTrace,
+      );
+      return;
+    }
+    _subscriptions
       ..add(
         _reachability.changes.listen((state) {
           if (state == Reachability.online) pump();
@@ -166,7 +186,6 @@ class DownloadScheduler {
           pump();
         }),
       );
-    await _downloader.start();
     await _serial(_reattach);
     pump();
   }
@@ -174,7 +193,7 @@ class DownloadScheduler {
   /// Fills free slots with queued items. Idempotent: calls made while a
   /// pump is waiting to run share it.
   void pump() {
-    if (_disposed || !_started || _pumpQueued) return;
+    if (_disposed || !_started || !_available || _pumpQueued) return;
     _pumpQueued = true;
     unawaited(
       _serial(() async {

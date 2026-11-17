@@ -4,13 +4,16 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:soundspan/core/logging/app_logger.dart';
 import 'package:soundspan/platform/notifications/local_notifications.dart';
 
 /// The native [LocalNotifications], over `flutter_local_notifications`.
 LocalNotifications createLocalNotifications() => PluginLocalNotifications();
 
 /// [LocalNotifications] over `flutter_local_notifications`. The plugin is
-/// initialized on first use, without asking for permission.
+/// initialized on first use, without asking for permission. Where the
+/// platform has no launch details (Linux), the failure is logged and [taps]
+/// starts without a launch payload.
 class PluginLocalNotifications implements LocalNotifications {
   /// Creates the notifications over [plugin].
   new({FlutterLocalNotificationsPlugin? plugin})
@@ -22,6 +25,8 @@ class PluginLocalNotifications implements LocalNotifications {
   static const _channelNames = <String, String>{
     accountNotificationChannel: 'Account',
   };
+
+  static final AppLogger _log = AppLogger.scope('Notifications');
 
   final FlutterLocalNotificationsPlugin _plugin;
   final StreamController<String> _taps = StreamController<String>.broadcast();
@@ -54,7 +59,18 @@ class PluginLocalNotifications implements LocalNotifications {
         if (payload != null) _taps.add(payload);
       },
     );
-    final launch = await _plugin.getNotificationAppLaunchDetails();
+    final NotificationAppLaunchDetails? launch;
+    try {
+      launch = await _plugin.getNotificationAppLaunchDetails();
+    } on Object catch (error, stackTrace) {
+      _log.warning(
+        'The platform has no notification launch details',
+        const {},
+        error,
+        stackTrace,
+      );
+      return;
+    }
     if (launch?.didNotificationLaunchApp ?? false) {
       _launchPayload = launch?.notificationResponse?.payload;
     }

@@ -3,6 +3,7 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart' show immutable;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:soundspan/core/logging/app_logger.dart';
 
 /// The kind of network a device is connected through.
 enum ConnectivityType {
@@ -71,17 +72,43 @@ ConnectivityInfo connectivityInfoFrom(List<ConnectivityResult> results) {
 }
 
 /// The [ConnectivitySource] of the running app, through `connectivity_plus`.
+///
+/// Where the platform cannot report connectivity, such as a Linux desktop
+/// without NetworkManager on the system bus, the failure is logged once and
+/// nothing is reported for it: connectivity stays unknown, which the
+/// reachability controller treats as an interface up (doc 07, Reachability
+/// and Offline Mode). Later changes the platform reports still arrive.
 class PlusConnectivitySource implements ConnectivitySource {
   /// Creates the source.
   new([Connectivity? connectivity])
     : _connectivity = connectivity ?? Connectivity();
 
+  static final AppLogger _log = AppLogger.scope('Connectivity');
+
   final Connectivity _connectivity;
+  bool _failureLogged = false;
 
   @override
   Stream<ConnectivityInfo> watch() async* {
-    yield connectivityInfoFrom(await _connectivity.checkConnectivity());
-    yield* _connectivity.onConnectivityChanged.map(connectivityInfoFrom);
+    try {
+      yield connectivityInfoFrom(await _connectivity.checkConnectivity());
+    } on Object catch (error, stackTrace) {
+      _logFailure(error, stackTrace);
+    }
+    yield* _connectivity.onConnectivityChanged
+        .map(connectivityInfoFrom)
+        .handleError(_logFailure);
+  }
+
+  void _logFailure(Object error, StackTrace stackTrace) {
+    if (_failureLogged) return;
+    _failureLogged = true;
+    _log.warning(
+      'The platform cannot report connectivity; it stays unknown',
+      const {},
+      error,
+      stackTrace,
+    );
   }
 }
 

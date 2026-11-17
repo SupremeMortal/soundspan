@@ -32,12 +32,20 @@ final class FakeDownloader implements Downloader {
   /// How many times [start] ran.
   int startCount = 0;
 
+  /// When set, [start] throws it, as the native downloader does when it
+  /// cannot initialise.
+  Exception? startError;
+
   final _live = <String, DownloadRequest>{};
   final _known = <String, DownloadRequest>{};
   final _events = StreamController<DownloaderEvent>.broadcast(sync: true);
 
   @override
-  Future<void> start() async => startCount++;
+  Future<void> start() async {
+    startCount++;
+    final error = startError;
+    if (error != null) throw error;
+  }
 
   @override
   Future<void> enqueue(DownloadRequest request) async {

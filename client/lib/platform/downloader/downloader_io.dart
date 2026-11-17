@@ -32,37 +32,68 @@ final class BackgroundDownloader implements Downloader {
   /// [DownloaderResponseInfo] is emitted once per transfer.
   static final Set<String> _reported = {};
 
-  static Stream<TaskUpdate> get _updates =>
-      _sharedUpdates ??= FileDownloader().updates.asBroadcastStream();
+  /// Whether an unhandled error of the plugin has been logged.
+  static bool _unhandledLogged = false;
+
+  /// The plugin's updates. The plugin is first touched here, in a guarded
+  /// zone: on Linux it listens to connectivity through NetworkManager and
+  /// does not handle that listener's error where the service is absent
+  /// (doc 07, Spike S5 finding), so the error is logged once here instead
+  /// of reaching the caller's zone. An error thrown while creating the
+  /// plugin still reaches the caller.
+  static Stream<TaskUpdate> get _updates {
+    final existing = _sharedUpdates;
+    if (existing != null) return existing;
+    Object? failure;
+    StackTrace failureTrace = StackTrace.empty;
+    final updates = runZonedGuarded(() {
+      try {
+        return FileDownloader().updates.asBroadcastStream();
+      } on Object catch (error, stackTrace) {
+        failure = error;
+        failureTrace = stackTrace;
+        return null;
+      }
+    }, _logUnhandled);
+    if (updates == null) {
+      Error.throwWithStackTrace(
+        failure ?? StateError('no updates'),
+        failureTrace,
+      );
+    }
+    return _sharedUpdates = updates;
+  }
+
+  static void _logUnhandled(Object error, StackTrace stackTrace) {
+    if (_unhandledLogged) return;
+    _unhandledLogged = true;
+    _log.warning(
+      'background_downloader reported an unhandled error',
+      const {},
+      error,
+      stackTrace,
+    );
+  }
 
   @override
   Future<void> start() async {
     final ready = Completer<void>();
-    // On Linux the plugin listens to connectivity through NetworkManager;
-    // where that service is absent the listener fails asynchronously and
-    // the plugin does not handle the error (doc 07, Spike S5 finding). The
-    // plugin is first touched in this zone so that error is logged here.
+    // Errors the plugin leaves unhandled while it starts, such as its
+    // NetworkManager listener's on Linux (doc 07, Spike S5 finding), are
+    // logged once here, like those of its creation in [_updates].
     unawaited(
-      runZonedGuarded(
-        () async {
-          try {
-            _updates;
-            // Retries and restarts of killed tasks belong to the state
-            // machine and the scheduler, not the plugin.
-            await FileDownloader().start(doRescheduleKilledTasks: false);
-            await FileDownloader().resumeFromBackground();
-            ready.complete();
-          } on Object catch (error, stackTrace) {
-            if (!ready.isCompleted) ready.completeError(error, stackTrace);
-          }
-        },
-        (error, stackTrace) => _log.warning(
-          'background_downloader reported an unhandled error',
-          const {},
-          error,
-          stackTrace,
-        ),
-      ),
+      runZonedGuarded(() async {
+        try {
+          _updates;
+          // Retries and restarts of killed tasks belong to the state
+          // machine and the scheduler, not the plugin.
+          await FileDownloader().start(doRescheduleKilledTasks: false);
+          await FileDownloader().resumeFromBackground();
+          ready.complete();
+        } on Object catch (error, stackTrace) {
+          if (!ready.isCompleted) ready.completeError(error, stackTrace);
+        }
+      }, _logUnhandled),
     );
     await ready.future;
   }

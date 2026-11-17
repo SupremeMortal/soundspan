@@ -13,6 +13,7 @@ import 'package:soundspan/core/downloads/download_request_builder.dart';
 import 'package:soundspan/core/downloads/download_scheduler.dart';
 import 'package:soundspan/core/downloads/download_state_machine.dart';
 import 'package:soundspan/core/downloads/download_store.dart';
+import 'package:soundspan/core/logging/app_logger.dart';
 import 'package:soundspan/core/storage/state/device_settings_dao.dart';
 import 'package:soundspan/core/storage/state/enums.dart';
 import 'package:soundspan/core/storage/state/state_database.dart';
@@ -24,6 +25,7 @@ import '../../helpers/fake_clock.dart';
 import '../../helpers/fake_reachability.dart';
 import '../../helpers/fakes/fake_disk_space.dart';
 import '../../helpers/fakes/fake_downloader.dart';
+import '../logging/recording_sink.dart';
 
 const int _mb = 1024 * 1024;
 
@@ -256,6 +258,26 @@ void main() {
   tearDown(() async {
     await rig.dispose();
     dir.deleteSync(recursive: true);
+  });
+
+  test('a downloader that cannot initialise is logged once and reports '
+      'downloads as unavailable instead of throwing', () async {
+    final sink = RecordingSink();
+    AppLogging.configure(sinks: [sink], releaseMode: true);
+    addTearDown(AppLogging.reset);
+    rig.downloader.startError = const FileSystemException(
+      'Unable to get application documents directory',
+    );
+    expect(rig.scheduler.isAvailable, isTrue);
+    await rig.album('a', 2);
+
+    await rig.start();
+    rig.scheduler.pump();
+    await rig.settle();
+
+    expect(rig.scheduler.isAvailable, isFalse);
+    expect(rig.requested, isEmpty);
+    expect(sink.entries.where((e) => e.scope == 'Downloads').length, 1);
   });
 
   test('five queued items: exactly two are enqueued, and completing one '
