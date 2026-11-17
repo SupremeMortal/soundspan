@@ -3,6 +3,7 @@
 import 'package:flutter/semantics.dart' show CustomSemanticsAction;
 import 'package:material_ui/material_ui.dart';
 import 'package:soundspan/app/l10n/generated/app_localizations.dart';
+import 'package:soundspan/app/shell/shortcuts/shortcut_intents.dart';
 import 'package:soundspan/app/theme/dimens.dart';
 import 'package:soundspan/app/theme/extensions.dart';
 import 'package:soundspan/app/theme/typography.dart';
@@ -20,8 +21,9 @@ import 'package:soundspan/shared/widgets/mosaic_artwork.dart';
 /// when [onTap] is set.
 ///
 /// With [onMenu], a long press or a secondary click opens the item's menu
-/// (at the pointer for the click), and screen readers get a "More options"
-/// custom action.
+/// (at the pointer for the click), the Menu key and Shift+F10
+/// ([OpenMenuIntent]) open it below the focused card, and screen readers
+/// get a "More options" custom action.
 class MediaCard extends StatefulWidget {
   /// Creates a card titled [title] over [subtitle] with the cover
   /// [artworkRef].
@@ -188,6 +190,14 @@ class _MediaCardState extends State<MediaCard> {
               ActivateIntent: CallbackAction<ActivateIntent>(
                 onInvoke: (_) => onTap?.call(),
               ),
+              if (onMenu != null)
+                OpenMenuIntent: CallbackAction<OpenMenuIntent>(
+                  onInvoke: (_) {
+                    final box = context.findRenderObject()! as RenderBox;
+                    onMenu(box.localToGlobal(box.size.bottomLeft(Offset.zero)));
+                    return null;
+                  },
+                ),
             },
             child: MouseRegion(
               onEnter: (_) => setState(() => _hovered = true),

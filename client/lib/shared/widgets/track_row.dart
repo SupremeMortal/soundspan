@@ -1,9 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 
+import 'dart:async';
+
+import 'package:flutter/gestures.dart'
+    show PointerDeviceKind, kDoubleTapTimeout;
 import 'package:flutter/semantics.dart' show CustomSemanticsAction;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:soundspan/app/l10n/generated/app_localizations.dart';
+import 'package:soundspan/app/shell/shortcuts/shortcut_intents.dart';
 import 'package:soundspan/app/theme/dimens.dart';
 import 'package:soundspan/app/theme/extensions.dart';
 import 'package:soundspan/app/theme/typography.dart';
@@ -19,6 +24,7 @@ import 'package:soundspan/shared/widgets/context_menu.dart';
 import 'package:soundspan/shared/widgets/download_glyph.dart';
 import 'package:soundspan/shared/widgets/equaliser_bars.dart';
 import 'package:soundspan/shared/widgets/like_button.dart';
+import 'package:soundspan/shared/widgets/track_selection.dart';
 
 /// What a [TrackRow] starts with: the track's number or its cover.
 sealed class TrackRowLeading {
@@ -77,7 +83,16 @@ final class TrackRowThumbnail extends TrackRowLeading {
 /// long press or a secondary click opens the menu too (at the pointer for
 /// the click); the node gains a "More options" custom action. With
 /// [onAddToQueue] the node gains an "Add to queue" custom action. A
-/// disabled row keeps its menu.
+/// disabled row keeps its menu. While the row has focus, the Menu key and
+/// Shift+F10 ([OpenMenuIntent]) open the menu positioned at the row.
+///
+/// With [onSelect], a mouse click selects the row instead of playing it
+/// (doc 09, Desktop Interaction: Selection): the click's [SelectGesture]
+/// follows the modifiers held, the row takes focus, and a double click
+/// calls [onTap]. Touch input keeps tap-to-play. A [selected] row is read
+/// as selected. Enter ([PlayRowIntent]) calls [onTap] unless [rowActions]
+/// handles it; [rowActions] also handles [PlayRowNextIntent] and
+/// [RemoveRowIntent] while the row has focus.
 class TrackRow extends StatefulWidget {
   /// Creates a row for the track [title] by [artist].
   const new({
@@ -97,8 +112,22 @@ class TrackRow extends StatefulWidget {
     this.semanticActions = const {},
     this.onMenu,
     this.onAddToQueue,
+    this.onSelect,
+    this.focusNode,
+    this.rowActions = const {},
     super.key,
   });
+
+  /// Selects the row on a mouse click with the gesture of the modifiers
+  /// held; null keeps click-to-play.
+  final ValueChanged<SelectGesture>? onSelect;
+
+  /// The focus node of the row, which a [SelectionController] moves.
+  final FocusNode? focusNode;
+
+  /// Actions of the row's intents ([PlayRowIntent], [PlayRowNextIntent],
+  /// [RemoveRowIntent]) while it has focus.
+  final Map<Type, Action<Intent>> rowActions;
 
   /// Opens the row's menu, at the global pointer position for a secondary
   /// click and at the overflow button otherwise; null leaves out the
@@ -202,6 +231,44 @@ class TrackRow extends StatefulWidget {
 class _TrackRowState extends State<TrackRow> {
   bool _hovered = false;
   bool _focused = false;
+  PointerDeviceKind? _tapKind;
+  Timer? _doubleClick;
+  FocusNode? _ownNode;
+
+  FocusNode get _node =>
+      widget.focusNode ?? (_ownNode ??= FocusNode(debugLabel: 'TrackRow'));
+
+  @override
+  void dispose() {
+    _doubleClick?.cancel();
+    _ownNode?.dispose();
+    super.dispose();
+  }
+
+  /// A tap: with [TrackRow.onSelect] and a mouse, the first click selects
+  /// and a second one within the double-tap timeout plays.
+  void _onTap(VoidCallback onTap) {
+    final onSelect = widget.onSelect;
+    final mouse = _tapKind == PointerDeviceKind.mouse;
+    if (onSelect == null || !mouse) {
+      onTap();
+      return;
+    }
+    if (_doubleClick?.isActive ?? false) {
+      _doubleClick!.cancel();
+      onTap();
+      return;
+    }
+    _doubleClick = Timer(kDoubleTapTimeout, () {});
+    onSelect(currentSelectGesture());
+    _node.requestFocus();
+  }
+
+  /// Opens the menu below the start of the row.
+  void _openMenuAtRow(void Function(Offset? position) onMenu) {
+    final box = context.findRenderObject()! as RenderBox;
+    onMenu(box.localToGlobal(box.size.bottomLeft(Offset.zero)));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -343,6 +410,7 @@ class _TrackRowState extends State<TrackRow> {
     Widget semantics(String label, Widget child) => Semantics(
       container: true,
       button: onTap != null,
+      selected: widget.onSelect == null ? null : widget.selected,
       label: label,
       hint: onTap != null ? l10n.trackRowPlayHint : null,
       excludeSemantics: true,
@@ -370,18 +438,30 @@ class _TrackRowState extends State<TrackRow> {
 
     final interactive = FocusableActionDetector(
       enabled: onTap != null,
+      focusNode: _node,
       mouseCursor: onTap != null ? SystemMouseCursors.click : MouseCursor.defer,
       onShowFocusHighlight: (value) => setState(() => _focused = value),
       actions: {
         ActivateIntent: CallbackAction<ActivateIntent>(
           onInvoke: (_) => onTap?.call(),
         ),
+        PlayRowIntent: CallbackAction<PlayRowIntent>(
+          onInvoke: (_) => onTap?.call(),
+        ),
+        if (onMenu != null)
+          OpenMenuIntent: CallbackAction<OpenMenuIntent>(
+            onInvoke: (_) => _openMenuAtRow(onMenu),
+          ),
+        ...widget.rowActions,
       },
       child: MouseRegion(
         onEnter: (_) => setState(() => _hovered = true),
         onExit: (_) => setState(() => _hovered = false),
         child: GestureDetector(
-          onTap: onTap,
+          onTapDown: onTap == null
+              ? null
+              : (details) => _tapKind = details.kind,
+          onTap: onTap == null ? null : () => _onTap(onTap),
           onLongPress: onMenu == null ? null : () => onMenu(null),
           onSecondaryTapUp: onMenu == null
               ? null

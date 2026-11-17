@@ -18,6 +18,7 @@ import 'package:soundspan/features/playlist/ui/playlist_dialogs.dart';
 import 'package:soundspan/features/playlist/ui/playlist_view_model.dart';
 import 'package:soundspan/shared/actions/app_menu_commands.dart';
 import 'package:soundspan/shared/actions/track_actions.dart';
+import 'package:soundspan/shared/actions/track_row_selection.dart';
 import 'package:soundspan/shared/domain/domain.dart';
 import 'package:soundspan/shared/providers/likes.dart';
 import 'package:soundspan/shared/providers/play_actions.dart';
@@ -28,6 +29,7 @@ import 'package:soundspan/shared/widgets/detail_page.dart';
 import 'package:soundspan/shared/widgets/empty_state.dart';
 import 'package:soundspan/shared/widgets/mosaic_artwork.dart';
 import 'package:soundspan/shared/widgets/track_row.dart';
+import 'package:soundspan/shared/widgets/track_selection.dart';
 
 /// The reserved playlist id of the user's liked tracks (doc 02, Routing).
 const String likedPlaylistId = 'liked';
@@ -105,6 +107,8 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
   int? _first;
   int? _last;
   bool _reportScheduled = false;
+  final SelectionController<PlaylistItem> _selection =
+      SelectionController<PlaylistItem>();
 
   String? _resolvedId;
   StreamSubscription<PlaylistIdResolved>? _resolvedSub;
@@ -150,6 +154,7 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
   @override
   void dispose() {
     unawaited(_resolvedSub?.cancel());
+    _selection.dispose();
     super.dispose();
   }
 
@@ -168,17 +173,20 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
   Widget _playlistPage() {
     final id = _id;
     final detail = ref.watch(playlistDetailProvider(id));
-    return DetailPage<PlaylistDetail>(
-      value: detail.whenData((cached) => cached.value),
-      refreshError: detail.value?.refreshError,
-      thumbnails: true,
-      onRefresh: () async {
-        final repository = await ref.read(playlistRepositoryProvider.future);
-        await repository.refreshPlaylist(id);
-        await refreshDownloadedCollection(ref, CollectionKind.playlist, id);
-      },
-      onRetry: () => ref.invalidate(playlistDetailProvider(id)),
-      builder: _playlistSlivers,
+    return SelectionShortcuts<PlaylistItem>(
+      controller: _selection,
+      child: DetailPage<PlaylistDetail>(
+        value: detail.whenData((cached) => cached.value),
+        refreshError: detail.value?.refreshError,
+        thumbnails: true,
+        onRefresh: () async {
+          final repository = await ref.read(playlistRepositoryProvider.future);
+          await repository.refreshPlaylist(id);
+          await refreshDownloadedCollection(ref, CollectionKind.playlist, id);
+        },
+        onRetry: () => ref.invalidate(playlistDetailProvider(id)),
+        builder: _playlistSlivers,
+      ),
     );
   }
 
@@ -186,6 +194,7 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
     final l10n = AppLocalizations.of(context);
     final summary = detail.summary;
     final items = detail.items;
+    _selection.items = items;
     final windowClass = WindowClass.of(context);
     final total = Duration(
       seconds: items.fold(0, (sum, item) => sum + item.track.meta.durationSec),
@@ -235,25 +244,34 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
     PlaylistItem item,
     AppLocalizations l10n,
   ) {
-    final playable = item.isPlayable && item.track.playbackId != null;
     final queued = _playableTracks(detail);
     final summary = detail.summary;
-    return _row(
-      item.track,
-      WindowClass.of(context),
-      enabled: playable,
-      reason: item.message ?? l10n.trackNotPlayable,
-      onTap: () => _playItem(detail, item),
-      onAddToQueue: addToQueueOf(ref, item.track, playable: playable),
-      scope: TrackActionScope(
-        track: item.track,
-        tracks: queued,
-        index: queued.indexWhere((track) => identical(track, item.track)),
-        context: _contextOf(summary),
-        ownedPlaylist: summary.isOwner
-            ? OwnedPlaylist(playlistId: summary.id, item: item)
-            : null,
-        playable: playable,
+    TrackActionScope scopeOf(PlaylistItem item) => TrackActionScope(
+      track: item.track,
+      tracks: queued,
+      index: queued.indexWhere((track) => identical(track, item.track)),
+      context: _contextOf(summary),
+      ownedPlaylist: summary.isOwner
+          ? OwnedPlaylist(playlistId: summary.id, item: item)
+          : null,
+      playable: item.isPlayable && item.track.playbackId != null,
+    );
+    final scope = scopeOf(item);
+    return selectableTrackRow<PlaylistItem>(
+      ref,
+      selection: _selection,
+      index: detail.items.indexOf(item),
+      scopeOf: scopeOf,
+      play: () => _playItem(detail, item),
+      builder: (wiring) => _row(
+        item.track,
+        WindowClass.of(context),
+        enabled: scope.playable,
+        reason: item.message ?? l10n.trackNotPlayable,
+        onTap: () => _playItem(detail, item),
+        onAddToQueue: addToQueueOf(ref, item.track, playable: scope.playable),
+        scope: scope,
+        wiring: wiring,
       ),
     );
   }
@@ -560,6 +578,7 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
     required VoidCallback onTap,
     required VoidCallback? onAddToQueue,
     required TrackActionScope scope,
+    TrackRowSelection? wiring,
   }) => TrackRow(
     title: track.meta.title,
     artist: track.meta.artist,
@@ -574,8 +593,14 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
     playbackId: track.playbackId,
     onTap: onTap,
     onAddToQueue: onAddToQueue,
-    onMenu: (position) =>
-        unawaited(openTrackMenu(context, ref, scope, position: position)),
+    selected: wiring?.selected ?? false,
+    onSelect: wiring?.onSelect,
+    focusNode: wiring?.focusNode,
+    rowActions: wiring?.rowActions ?? const {},
+    onMenu:
+        wiring?.onMenu ??
+        (position) =>
+            unawaited(openTrackMenu(context, ref, scope, position: position)),
   );
 }
 

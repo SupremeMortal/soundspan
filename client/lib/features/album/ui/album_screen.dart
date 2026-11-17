@@ -16,6 +16,7 @@ import 'package:soundspan/features/downloads/downloads.dart';
 import 'package:soundspan/features/playlist/playlist.dart';
 import 'package:soundspan/shared/actions/app_menu_commands.dart';
 import 'package:soundspan/shared/actions/track_actions.dart';
+import 'package:soundspan/shared/actions/track_row_selection.dart';
 import 'package:soundspan/shared/domain/domain.dart';
 import 'package:soundspan/shared/providers/likes.dart';
 import 'package:soundspan/shared/providers/play_actions.dart';
@@ -26,6 +27,7 @@ import 'package:soundspan/shared/widgets/detail_page.dart';
 import 'package:soundspan/shared/widgets/media_card.dart';
 import 'package:soundspan/shared/widgets/shelf.dart';
 import 'package:soundspan/shared/widgets/track_row.dart';
+import 'package:soundspan/shared/widgets/track_selection.dart';
 
 /// The album with its tracks, from [LibraryRepository.album].
 final StreamProviderFamily<Cached<AlbumDetail>, String> albumDetailProvider =
@@ -90,20 +92,25 @@ class AlbumScreen extends ConsumerWidget {
       screen: l10n.screenAlbum,
       child: Scaffold(
         backgroundColor: context.colors.surface,
-        body: DetailPage<AlbumDetail>(
-          value: detail.whenData((cached) => cached.value),
-          refreshError: detail.value?.refreshError,
-          onRefresh: () async {
-            final repository = await ref.read(libraryRepositoryProvider.future);
-            await repository.refreshAlbum(albumId);
-            await refreshDownloadedCollection(
-              ref,
-              CollectionKind.album,
-              albumId,
-            );
-          },
-          onRetry: () => ref.invalidate(albumDetailProvider(albumId)),
-          builder: (context, detail) => _slivers(context, ref, detail),
+        body: SelectableList<Track>(
+          builder: (context, selection) => DetailPage<AlbumDetail>(
+            value: detail.whenData((cached) => cached.value),
+            refreshError: detail.value?.refreshError,
+            onRefresh: () async {
+              final repository = await ref.read(
+                libraryRepositoryProvider.future,
+              );
+              await repository.refreshAlbum(albumId);
+              await refreshDownloadedCollection(
+                ref,
+                CollectionKind.album,
+                albumId,
+              );
+            },
+            onRetry: () => ref.invalidate(albumDetailProvider(albumId)),
+            builder: (context, detail) =>
+                _slivers(context, ref, detail, selection),
+          ),
         ),
       ),
     );
@@ -113,6 +120,7 @@ class AlbumScreen extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
     AlbumDetail detail,
+    SelectionController<Track> selection,
   ) {
     final l10n = AppLocalizations.of(context);
     final colors = context.colors;
@@ -129,6 +137,7 @@ class AlbumScreen extends ConsumerWidget {
     }
     final grouped = discs.length > 1;
     final ordered = [for (final disc in discs.values) ...disc];
+    selection.items = ordered;
     final queueContext = QueueContext(
       kind: QueueContextKind.album,
       id: album.id,
@@ -234,32 +243,37 @@ class AlbumScreen extends ConsumerWidget {
                 itemBuilder: (context, index) {
                   final track = discTracks[index];
                   final artist = track.meta.artist;
-                  return TrackRow(
-                    title: track.meta.title,
-                    artist: artist == album.artistName ? '' : artist,
-                    duration: Duration(seconds: track.meta.durationSec),
-                    leading: TrackRowLeading.index(
-                      track.trackNumber ?? index + 1,
-                    ),
-                    enabled: track.playbackId != null,
-                    disabledReason: l10n.trackNotPlayable,
-                    liked: track.isLiked,
-                    onToggleLike: toggleLikeOf(ref, track),
-                    playbackId: track.playbackId,
-                    onTap: () => play(track),
-                    onAddToQueue: addToQueueOf(ref, track),
-                    onMenu: (position) => unawaited(
-                      openTrackMenu(
-                        context,
-                        ref,
-                        TrackActionScope(
-                          track: track,
-                          tracks: ordered,
-                          index: ordered.indexWhere((t) => identical(t, track)),
-                          context: queueContext,
-                        ),
-                        position: position,
+                  TrackActionScope scopeOf(Track track) => TrackActionScope(
+                    track: track,
+                    tracks: ordered,
+                    index: ordered.indexWhere((t) => identical(t, track)),
+                    context: queueContext,
+                  );
+                  return selectableTrackRow<Track>(
+                    ref,
+                    selection: selection,
+                    index: ordered.indexWhere((t) => identical(t, track)),
+                    scopeOf: scopeOf,
+                    play: () => play(track),
+                    builder: (wiring) => TrackRow(
+                      title: track.meta.title,
+                      artist: artist == album.artistName ? '' : artist,
+                      duration: Duration(seconds: track.meta.durationSec),
+                      leading: TrackRowLeading.index(
+                        track.trackNumber ?? index + 1,
                       ),
+                      enabled: track.playbackId != null,
+                      disabledReason: l10n.trackNotPlayable,
+                      liked: track.isLiked,
+                      onToggleLike: toggleLikeOf(ref, track),
+                      playbackId: track.playbackId,
+                      onTap: () => play(track),
+                      onAddToQueue: addToQueueOf(ref, track),
+                      selected: wiring.selected,
+                      onSelect: wiring.onSelect,
+                      focusNode: wiring.focusNode,
+                      rowActions: wiring.rowActions,
+                      onMenu: wiring.onMenu,
                     ),
                   );
                 },

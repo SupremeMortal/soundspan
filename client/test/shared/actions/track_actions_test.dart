@@ -549,4 +549,92 @@ void main() {
       );
     });
   });
+
+  group('selection menu', () {
+    const playlist = QueueContext(kind: QueueContextKind.playlist, id: 'pl-1');
+    TrackActionScope row(String itemId, {bool playable = true, bool? owned}) {
+      final track = _track(playable: playable);
+      return TrackActionScope(
+        track: track,
+        tracks: [track],
+        index: 0,
+        context: playlist,
+        ownedPlaylist: owned == null
+            ? null
+            : OwnedPlaylist(
+                playlistId: owned ? 'pl-1' : 'pl-2',
+                item: PlaylistItem(
+                  id: itemId,
+                  sort: 1,
+                  track: track,
+                  isPlayable: playable,
+                ),
+              ),
+      );
+    }
+
+    test('one scope is the single track menu', () {
+      final one = row('item-1', owned: true);
+      expect(
+        trackSelectionActions(
+          [one],
+          l10n: l10n,
+          commands: commands,
+        ).map((entry) => entry.id),
+        ids(one),
+      );
+    });
+
+    test('several scopes have the multi-track entries over the playable '
+        'tracks, and each calls its command', () {
+      final entries = trackSelectionActions(
+        [row('item-1'), row('item-2', playable: false), row('item-3')],
+        l10n: l10n,
+        commands: commands,
+      );
+      expect(entries.map((entry) => entry.id), [
+        MenuIds.playNow,
+        MenuIds.playNext,
+        MenuIds.addToQueue,
+        MenuIds.addToPlaylist,
+      ]);
+      for (final entry in entries) {
+        entry.onSelected();
+      }
+      expect(commands.calls, [
+        'playTracks 0 playlist',
+        'playNext 2',
+        'addToQueue 2',
+        'addToPlaylist 2',
+      ]);
+    });
+
+    test('rows of one owned playlist can be removed together', () async {
+      final entries = trackSelectionActions(
+        [row('item-1', owned: true), row('item-2', owned: true)],
+        l10n: l10n,
+        commands: commands,
+      );
+      expect(entries.last.id, MenuIds.removeFromPlaylist);
+      entries.last.onSelected();
+      await Future<void>.delayed(Duration.zero);
+      expect(commands.calls, ['remove pl-1 item-1', 'remove pl-1 item-2']);
+    });
+
+    test('rows of different playlists, or one not owned, cannot', () {
+      for (final scopes in [
+        [row('item-1', owned: true), row('item-2', owned: false)],
+        [row('item-1', owned: true), row('item-2')],
+      ]) {
+        expect(
+          trackSelectionActions(
+            scopes,
+            l10n: l10n,
+            commands: commands,
+          ).map((entry) => entry.id),
+          isNot(contains(MenuIds.removeFromPlaylist)),
+        );
+      }
+    });
+  });
 }

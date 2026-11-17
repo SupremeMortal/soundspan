@@ -269,6 +269,83 @@ List<MenuEntry> trackActions(
   ];
 }
 
+/// The menu of the tracks of [scopes], the selection of one list in list
+/// order (doc 09, Desktop Interaction: Selection). One scope answers
+/// [trackActions]. Several answer, in this order: Play now, Play next, Add
+/// to queue, Add to playlist… (each over the playable tracks, when there
+/// is one) and Remove from this playlist (when every row sits in the same
+/// playlist the user owns). The entries of a single track (Like, Download,
+/// Go to, Share) are left out.
+List<MenuEntry> trackSelectionActions(
+  List<TrackActionScope> scopes, {
+  required AppLocalizations l10n,
+  required MenuCommands commands,
+  DownloadGlyphState? download,
+}) {
+  if (scopes.length == 1) {
+    return trackActions(
+      scopes.single,
+      l10n: l10n,
+      commands: commands,
+      download: download,
+    );
+  }
+  final tracks = [
+    for (final scope in scopes)
+      if (scope.playable) scope.track,
+  ];
+  final owned = [for (final scope in scopes) ?scope.ownedPlaylist];
+  final playlistId = owned.firstOrNull?.playlistId;
+  final removable =
+      scopes.isNotEmpty &&
+      owned.length == scopes.length &&
+      owned.every((row) => row.playlistId == playlistId);
+  return [
+    if (tracks.isNotEmpty) ...[
+      MenuEntry(
+        id: MenuIds.playNow,
+        label: l10n.menuPlayNow,
+        icon: Icons.play_arrow_rounded,
+        onSelected: () =>
+            unawaited(commands.playTracks(tracks, 0, scopes.first.context)),
+      ),
+      MenuEntry(
+        id: MenuIds.playNext,
+        label: l10n.menuPlayNext,
+        icon: Icons.playlist_play_rounded,
+        onSelected: () => unawaited(commands.playNext(tracks)),
+      ),
+      MenuEntry(
+        id: MenuIds.addToQueue,
+        label: l10n.menuAddToQueue,
+        icon: Icons.queue_music_rounded,
+        onSelected: () => unawaited(commands.addToQueue(tracks)),
+      ),
+      MenuEntry(
+        id: MenuIds.addToPlaylist,
+        label: l10n.menuAddToPlaylist,
+        icon: Icons.playlist_add_rounded,
+        onSelected: () => unawaited(commands.addToPlaylist(tracks)),
+      ),
+    ],
+    if (removable)
+      MenuEntry(
+        id: MenuIds.removeFromPlaylist,
+        label: l10n.menuRemoveFromPlaylist,
+        icon: Icons.playlist_remove_rounded,
+        destructive: true,
+        onSelected: () => unawaited(removeRows(commands, owned)),
+      ),
+  ];
+}
+
+/// Removes [rows] from their playlist one after the other.
+Future<void> removeRows(MenuCommands commands, List<OwnedPlaylist> rows) async {
+  for (final row in rows) {
+    await commands.removeFromPlaylist(row.playlistId, row.item);
+  }
+}
+
 /// The menu of [album]: Play now, Play next, Add to queue, Add to
 /// playlist…, Like or Remove like, Go to artist (not on that artist's
 /// page) and Share link.

@@ -217,3 +217,26 @@ VoidCallback? addToQueueOf(WidgetRef ref, Track track, {bool? playable}) {
   if (!(playable ?? track.playbackId != null)) return null;
   return () => unawaited(ref.read(playActionsProvider).addToQueue([track]));
 }
+
+/// Opens the menu of the tracks of [scopes] from [context], at [position]
+/// with a pointer: [trackSelectionActions], which is the single track's
+/// menu for one scope.
+Future<void> openTrackSelectionMenu(
+  BuildContext context,
+  WidgetRef ref,
+  List<TrackActionScope> scopes, {
+  Offset? position,
+}) {
+  if (scopes.length == 1) {
+    return openTrackMenu(context, ref, scopes.single, position: position);
+  }
+  return showContextMenu(
+    context,
+    trackSelectionActions(
+      scopes,
+      l10n: AppLocalizations.of(context),
+      commands: AppMenuCommands(context, ref),
+    ),
+    position: position,
+  );
+}
