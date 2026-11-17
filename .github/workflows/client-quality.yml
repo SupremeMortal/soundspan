@@ -87,7 +87,7 @@ jobs:
             echo "web_storage=$(has '^(client/lib/platform/|client/web/|client/integration_test/web/|client/pubspec\.lock$|\.github/workflows/client-quality\.yml$)')"
             echo "desktop=$(has '^(client/linux/|client/windows/|client/lib/platform/desktop_shell/|client/lib/app/shell/window_state_controller\.dart$|client/integration_test/desktop/|client/tool/ci/|\.github/workflows/client-quality\.yml$)')"
             echo "device=$device"
-            echo "workflows=$(has '^(\.github/workflows/client-[^/]*\.yml$|scripts/ci/client-nightly-report\.mjs$|scripts/ci/__tests__/client-nightly-report\.test\.mjs$)')"
+            echo "workflows=$(has '^(\.github/workflows/client-[^/]*\.yml$|scripts/ci/client-nightly-report\.mjs$|scripts/ci/__tests__/client-nightly-report\.test\.mjs$|scripts/ci/ensure-ubuntu-apt-sources\.sh$|scripts/ci/__tests__/ensure-ubuntu-apt-sources\.test\.mjs$|\.github/actions/client-flutter/)')"
             echo "downloads=$(has '^(client/lib/platform/downloader/|client/lib/core/downloads/|client/integration_test/downloads/|client/integration_test/support/throttled_file_server\.dart$|\.github/workflows/client-quality\.yml$)')"
             echo "release_build=$(has '^(\.github/workflows/client-(build|release)\.yml$|client/tool/release/|client/pubspec\.(yaml|lock)$|client/config/|client/(android|ios|linux|macos|windows|web)/)')"
             echo "release_notes=$(has '^(\.github/workflows/client-(build|release)\.yml$|client/tool/release/|client/pubspec\.(yaml|lock)$|client/config/|client/(android|ios|linux|macos|windows|web)/|CHANGELOG\.md$)')"
@@ -756,6 +756,9 @@ jobs:
 
       - name: Nightly report script self-test
         run: node --test scripts/ci/__tests__/client-nightly-report.test.mjs
+
+      - name: Ubuntu apt sources script self-test
+        run: node --test scripts/ci/__tests__/ensure-ubuntu-apt-sources.test.mjs
 
   # Dry run of the reusable release build: every target in release mode,
   # unsigned, plus SHA256SUMS. Nothing is published; artifacts expire

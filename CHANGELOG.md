@@ -110,6 +110,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The API Keys settings page now says that a key is sent in an `X-API-Key` header and shows a copy-ready example; sending it as a Bearer token returned an unexplained 401 (#897).
 - Native dropdown menus (sort, genre, and pagination on the Audiobooks and Podcasts pages, and other built-in selects) no longer render white text on a white popup; the app now declares its dark color scheme to the browser so native controls match the theme.
 - Audiobook listening progress and playback state are now tied to their audiobook at the database level: removing a book — scheduled prune, manual sync, or federation cleanup — atomically deletes its progress rows and nulls the active-audiobook reference in playback state, closing a race where progress saved mid-removal could linger as a phantom entry in Continue Listening; the upgrade migration also removes any orphaned progress rows left behind by earlier removals (#866).
+- Client CI jobs that install Ubuntu packages no longer fail with "Unable to locate package" on hosted runners whose image has no Ubuntu archive among its apt sources. `scripts/ci/ensure-ubuntu-apt-sources.sh` runs `apt-get update` and, when no index of origin Ubuntu comes back, adds the archive for the image's codename and updates again.
 
 ### Client
 

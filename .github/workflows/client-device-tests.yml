@@ -582,7 +582,7 @@ jobs:
 
       - name: Install ffmpeg
         run: |
-          sudo apt-get update
+          sudo "$GITHUB_WORKSPACE/scripts/ci/ensure-ubuntu-apt-sources.sh"
           sudo apt-get install -y --no-install-recommends ffmpeg
 
       # The backend is published on the runner's port 3030 instead of the
