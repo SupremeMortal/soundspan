@@ -12,6 +12,8 @@ import 'package:soundspan/app/theme/dimens.dart';
 import 'package:soundspan/features/library/ui/library_controls.dart';
 import 'package:soundspan/features/library/ui/library_queries.dart';
 import 'package:soundspan/features/library/ui/paged_library_view.dart';
+import 'package:soundspan/shared/actions/app_menu_commands.dart';
+import 'package:soundspan/shared/actions/track_actions.dart';
 import 'package:soundspan/shared/domain/domain.dart';
 import 'package:soundspan/shared/providers/likes.dart';
 import 'package:soundspan/shared/providers/play_actions.dart';
@@ -134,10 +136,36 @@ class SongsTab extends ConsumerWidget {
               onToggleLike: toggleLikeOf(ref, track),
               playbackId: track.playbackId,
               onTap: () => _play(ref, snapshot!, index),
+              onAddToQueue: addToQueueOf(ref, track),
+              onMenu: (position) => unawaited(
+                openTrackMenu(
+                  context,
+                  ref,
+                  _scope(snapshot!, index, track),
+                  position: position,
+                ),
+              ),
             ),
           );
         },
       ),
+    );
+  }
+
+  /// The menu scope of row [index]: Play now plays the loaded rows in list
+  /// order from it.
+  TrackActionScope _scope(
+    PagedSnapshot<Track> snapshot,
+    int index,
+    Track track,
+  ) {
+    final loaded = snapshot.loaded.entries.toList()
+      ..sort((a, b) => a.key.compareTo(b.key));
+    return TrackActionScope(
+      track: track,
+      tracks: [for (final entry in loaded) entry.value],
+      index: loaded.indexWhere((entry) => entry.key == index),
+      context: const QueueContext(kind: QueueContextKind.library),
     );
   }
 

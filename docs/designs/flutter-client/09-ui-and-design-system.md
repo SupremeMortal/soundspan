@@ -111,7 +111,7 @@ Shared widgets in `lib/shared/widgets/`. Each has a golden test at three widths 
 | `MediaCard` | Artwork, title (1 line), subtitle (1 line). Hover or focus shows a 40 px `accent` play button at the bottom right of the artwork. Used in carousels and grids |
 | `Shelf` | Section header (`title`) with an optional "Show all", and a horizontal list of `MediaCard`s. Arrow buttons on pointer devices; snap scrolling on touch |
 | `TrackRow` | Index or thumbnail, title + artist, optional album column, download state glyph, like (`LikeButton`: an outlined heart in `contentSecondary`, filled in `brand` when liked, "Like" / "Remove like"; left out for a track without `playbackId`; a disliked track shows not liked), duration, overflow. The playing row shows animated equaliser bars in `brand` and a `brand`-coloured title. Disabled (not playable or not available offline) rows render at 40 % opacity with a reason in the tooltip and semantics label |
-| `ActionBar` | Detail-page actions: Play (pill, `accent`), Shuffle, Download, Like, Add to playlist, overflow |
+| `ActionBar` | Detail-page actions: Play (pill, `accent`), Shuffle, Download, Like (albums), Add to playlist (albums and playlists), overflow (the entity menu). A button whose action cannot work is left out; the bar wraps rather than overflows |
 | `PlayerBar` | Expanded layout. Left: artwork 56, title, artist, quality badge. Centre: shuffle, previous, play/pause (48 px `transport` circle), next, repeat, with the seek bar and times beneath. Right: like, lyrics, queue, volume, expand |
 | `MiniPlayer` | Compact and medium. 2 px progress line on top; artwork 44, title, artist, like, play/pause, next. Tap or swipe up opens now playing |
 | `SeekBar` | 4 px track, `brand` fill, thumb on hover/drag/focus. Buffered range in `lineStrong`. Keyboard: arrows ±5 s. Semantics: slider with "m:ss of m:ss" |
@@ -119,12 +119,14 @@ Shared widgets in `lib/shared/widgets/`. Each has a golden test at three widths 
 | `DownloadGlyph` | States: none, queued (outlined arrow), running (determinate ring), completed (filled check, `positive`), failed (`danger`), unavailable (struck through) |
 | `AppBanner` | Inline, full width: offline, link expiring, server newer than tested or version unknown. A live region, announced when it appears. Named `AppBanner` because Flutter already has a `Banner` |
 | `EmptyState`, `ErrorView` | Icon, one sentence, one action |
-| `ContextMenu` | One menu definition per entity rendered as a bottom sheet on touch and a popup at the pointer on desktop |
+| `ContextMenu` | One menu definition per entity rendered as a bottom sheet (radius 12, `surfaceOverlay`) on touch and a popup at the pointer (`surfaceOverlay` with a `line` hairline) with pointer input; destructive entries in `danger`. Input mode follows [02](02-architecture.md#adaptive-layout), never the window width |
 | `CodeCells` | Six cells for the device-link code |
 
 ### Track Actions (one definition, every surface)
 
-Play now, Play next, Add to queue, Add to playlist…, Like / Remove like, Download / Remove download, Go to album, Go to artist, Start radio (M4, when available), Share link (copies `soundspan://…`). Items are hidden, not disabled, when the capability is absent on this platform or server.
+Play now, Play next, Add to queue, Add to playlist…, Like / Remove like, Download / Remove download, Remove from this playlist (inside a playlist the user owns), Go to album, Go to artist, Start radio (M4, when available), Share link (copies `soundspan://…`; the link scheme has no track route, so a track shares its album's link). Items are hidden, not disabled, when the capability is absent on this platform or server, or when the action cannot work: the queue and playlist entries need a playable track, Like needs a `playbackId`, and Go to album and Go to artist are left out on that album's or artist's own page.
+
+The definitions live in `lib/shared/actions/track_actions.dart` (`trackActions`, `albumActions`, `playlistActions`, `artistActions`) as plain entry lists whose effects go through one `MenuCommands` interface, so every feature reaches them and a test reads them without a widget. Album menu: Play now, Play next, Add to queue, Add to playlist…, Like / Remove like, Go to artist, Share link. Playlist menu: Play now, Play next, Add to queue, Share link, and for the owner Rename and Delete. Artist menu: Share link. Track rows open the track menu from their overflow button, a long press and a secondary click, and expose "Add to queue" and "More options" as custom semantics actions; cards open the album or playlist menu from a long press or a secondary click.
 
 ## Shell by Window Class
 

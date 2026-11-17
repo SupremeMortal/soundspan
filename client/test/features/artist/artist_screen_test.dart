@@ -394,8 +394,8 @@ void main() {
     expect(find.text('Song 1.1'), findsOneWidget);
   });
 
-  testWidgets('the only controls are the Popular rows, navigation, expand '
-      'and collapse, and refresh', (tester) async {
+  testWidgets('the only controls are the action bar, the Popular rows, '
+      'navigation, expand and collapse, and refresh', (tester) async {
     await pumpDetail(
       tester,
       _screen,
@@ -407,7 +407,9 @@ void main() {
     final labels = <String>[];
     void visit(SemanticsNode node) {
       final data = node.getSemanticsData();
-      if (data.hasAction(SemanticsAction.tap)) labels.add(data.label);
+      if (!node.isMergedIntoParent && data.hasAction(SemanticsAction.tap)) {
+        labels.add(data.label);
+      }
       node.visitChildren((child) {
         visit(child);
         return true;
@@ -436,6 +438,9 @@ void main() {
       labels,
       unorderedEquals([
         ...cards,
+        'Play',
+        'Shuffle',
+        'More options',
         'Show more',
         'Read more',
         for (var n = 1; n <= 5; n++) startsWith('Song 1.$n, '),

@@ -11,6 +11,7 @@ import 'package:soundspan/shared/domain/playback_id.dart';
 import 'package:soundspan/shared/providers/now_playing.dart';
 import 'package:soundspan/shared/util/duration_format.dart';
 import 'package:soundspan/shared/widgets/artwork.dart';
+import 'package:soundspan/shared/widgets/context_menu.dart';
 import 'package:soundspan/shared/widgets/equaliser_bars.dart';
 import 'package:soundspan/shared/widgets/like_button.dart';
 
@@ -66,6 +67,12 @@ final class TrackRowThumbnail extends TrackRowLeading {
 /// duration and the node gains a "Like" or "Remove like" custom action;
 /// without it the slot is left out, as for a track with no `playbackId`.
 /// [semanticActions] adds further custom actions to the node.
+///
+/// With [onMenu], an overflow button ("More options") ends the row, and a
+/// long press or a secondary click opens the menu too (at the pointer for
+/// the click); the node gains a "More options" custom action. With
+/// [onAddToQueue] the node gains an "Add to queue" custom action. A
+/// disabled row keeps its menu.
 class TrackRow extends StatefulWidget {
   /// Creates a row for the track [title] by [artist].
   const new({
@@ -83,8 +90,19 @@ class TrackRow extends StatefulWidget {
     this.onToggleLike,
     this.playbackId,
     this.semanticActions = const {},
+    this.onMenu,
+    this.onAddToQueue,
     super.key,
   });
+
+  /// Opens the row's menu, at the global pointer position for a secondary
+  /// click and at the overflow button otherwise; null leaves out the
+  /// button and the gestures.
+  final void Function(Offset? position)? onMenu;
+
+  /// Adds the track to the queue, the row's "Add to queue" custom action;
+  /// null leaves the action out.
+  final VoidCallback? onAddToQueue;
 
   /// The track's playback id, which marks the row while that track is
   /// current; null never marks it.
@@ -140,6 +158,9 @@ class TrackRow extends StatefulWidget {
   /// The key of the equaliser bars of the playing row.
   static const Key playingIndicatorKey = ValueKey('TrackRow.playing');
 
+  /// The key of the overflow button.
+  static const Key overflowKey = ValueKey('TrackRow.overflow');
+
   /// The key of the box that draws the hover and selection fill.
   static const Key backgroundKey = ValueKey('TrackRow.background');
 
@@ -181,6 +202,8 @@ class _TrackRowState extends State<TrackRow> {
     final l10n = AppLocalizations.of(context);
     final onTap = widget.enabled ? widget.onTap : null;
     final onToggleLike = widget.onToggleLike;
+    final onMenu = widget.onMenu;
+    final onAddToQueue = widget.onAddToQueue;
     final reason = widget.enabled ? null : widget.disabledReason;
     final withThumbnail = widget.leading is TrackRowThumbnail;
 
@@ -271,6 +294,7 @@ class _TrackRowState extends State<TrackRow> {
           color: colors.contentSecondary,
         ),
       ),
+      overflow: onMenu == null ? null : _OverflowButton(onMenu: onMenu),
     );
 
     content = Stack(
@@ -313,7 +337,10 @@ class _TrackRowState extends State<TrackRow> {
       excludeSemantics: true,
       onTap: onTap,
       customSemanticsActions:
-          onToggleLike == null && widget.semanticActions.isEmpty
+          onToggleLike == null &&
+              onAddToQueue == null &&
+              onMenu == null &&
+              widget.semanticActions.isEmpty
           ? null
           : {
               CustomSemanticsAction(
@@ -321,6 +348,10 @@ class _TrackRowState extends State<TrackRow> {
                     ? l10n.likeButtonRemove
                     : l10n.likeButtonLike,
               ): ?onToggleLike,
+              CustomSemanticsAction(label: l10n.menuAddToQueue): ?onAddToQueue,
+              if (onMenu != null)
+                CustomSemanticsAction(label: l10n.menuMoreOptions): () =>
+                    onMenu(null),
               ...widget.semanticActions,
             },
       child: child,
@@ -340,6 +371,10 @@ class _TrackRowState extends State<TrackRow> {
         onExit: (_) => setState(() => _hovered = false),
         child: GestureDetector(
           onTap: onTap,
+          onLongPress: onMenu == null ? null : () => onMenu(null),
+          onSecondaryTapUp: onMenu == null
+              ? null
+              : (details) => onMenu(details.globalPosition),
           behavior: HitTestBehavior.opaque,
           child: content,
         ),
@@ -491,6 +526,7 @@ class _RowLayout extends StatelessWidget {
     required this.duration,
     this.album,
     this.like,
+    this.overflow,
   });
 
   final bool withThumbnail;
@@ -499,6 +535,7 @@ class _RowLayout extends StatelessWidget {
   final Widget? album;
   final Widget? like;
   final Widget duration;
+  final Widget? overflow;
 
   /// The width of the index column.
   static const double _indexWidth = 32;
@@ -511,6 +548,7 @@ class _RowLayout extends StatelessWidget {
     final scaler = MediaQuery.textScalerOf(context);
     final album = this.album;
     final like = this.like;
+    final overflow = this.overflow;
     return ConstrainedBox(
       constraints: BoxConstraints(
         minHeight: withThumbnail ? Sizes.trackRow : Sizes.albumTrackRow,
@@ -542,9 +580,39 @@ class _RowLayout extends StatelessWidget {
                 child: duration,
               ),
             ),
+            if (overflow != null) ...[
+              const SizedBox(width: Spacing.x4),
+              overflow,
+            ],
           ],
         ),
       ),
+    );
+  }
+}
+
+/// The overflow button of a row: "More options", opening the menu at the
+/// button. 48 px on touch input and 32 px with a pointer (doc 09, Shape).
+class _OverflowButton extends StatelessWidget {
+  const new({required this.onMenu});
+
+  final void Function(Offset? position) onMenu;
+
+  @override
+  Widget build(BuildContext context) {
+    final size = usesPointerInput() ? Sizes.pointerTarget : Sizes.touchTarget;
+    return IconButton(
+      key: TrackRow.overflowKey,
+      tooltip: AppLocalizations.of(context).menuMoreOptions,
+      constraints: BoxConstraints.tightFor(width: size, height: size),
+      padding: EdgeInsets.zero,
+      iconSize: 20,
+      color: context.colors.contentSecondary,
+      icon: const Icon(Icons.more_horiz_rounded),
+      onPressed: () {
+        final box = context.findRenderObject()! as RenderBox;
+        onMenu(box.localToGlobal(box.size.bottomCenter(Offset.zero)));
+      },
     );
   }
 }

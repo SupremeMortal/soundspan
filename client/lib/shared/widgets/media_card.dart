@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 
+import 'package:flutter/semantics.dart' show CustomSemanticsAction;
 import 'package:material_ui/material_ui.dart';
 import 'package:soundspan/app/l10n/generated/app_localizations.dart';
 import 'package:soundspan/app/theme/dimens.dart';
@@ -17,6 +18,10 @@ import 'package:soundspan/shared/widgets/mosaic_artwork.dart';
 /// artwork. Keyboard focus draws a 2 px `brand` ring 2 px outside the card.
 /// Screen readers get one node, "title, subtitle", which is a button only
 /// when [onTap] is set.
+///
+/// With [onMenu], a long press or a secondary click opens the item's menu
+/// (at the pointer for the click), and screen readers get a "More options"
+/// custom action.
 class MediaCard extends StatefulWidget {
   /// Creates a card titled [title] over [subtitle] with the cover
   /// [artworkRef].
@@ -28,8 +33,13 @@ class MediaCard extends StatefulWidget {
     this.mosaicRefs,
     this.onTap,
     this.onPlay,
+    this.onMenu,
     super.key,
   });
+
+  /// Opens the item's menu, at the global pointer position for a secondary
+  /// click; null leaves the gestures out.
+  final void Function(Offset? position)? onMenu;
 
   /// The first line, in `body`.
   final String title;
@@ -87,6 +97,7 @@ class _MediaCardState extends State<MediaCard> {
     final lines = _textLines(context);
     final onTap = widget.onTap;
     final onPlay = widget.onPlay;
+    final onMenu = widget.onMenu;
     final highlighted = _hovered || _focused;
 
     return LayoutBuilder(
@@ -153,6 +164,14 @@ class _MediaCardState extends State<MediaCard> {
           container: true,
           button: onTap != null,
           label: '${widget.title}, ${widget.subtitle}',
+          customSemanticsActions: onMenu == null
+              ? null
+              : {
+                  CustomSemanticsAction(
+                    label: AppLocalizations.of(context).menuMoreOptions,
+                  ): () =>
+                      onMenu(null),
+                },
           child: FocusableActionDetector(
             enabled: onTap != null || onPlay != null,
             mouseCursor: onTap != null
@@ -169,6 +188,10 @@ class _MediaCardState extends State<MediaCard> {
               onExit: (_) => setState(() => _hovered = false),
               child: GestureDetector(
                 onTap: onTap,
+                onLongPress: onMenu == null ? null : () => onMenu(null),
+                onSecondaryTapUp: onMenu == null
+                    ? null
+                    : (details) => onMenu(details.globalPosition),
                 behavior: HitTestBehavior.opaque,
                 child: Stack(
                   clipBehavior: Clip.none,

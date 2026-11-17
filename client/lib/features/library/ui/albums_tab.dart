@@ -9,6 +9,7 @@ import 'package:soundspan/app/router/routes.dart';
 import 'package:soundspan/features/library/ui/library_controls.dart';
 import 'package:soundspan/features/library/ui/library_queries.dart';
 import 'package:soundspan/features/library/ui/paged_media_grid.dart';
+import 'package:soundspan/shared/actions/app_menu_commands.dart';
 import 'package:soundspan/shared/domain/domain.dart';
 import 'package:soundspan/shared/providers/play_actions.dart';
 import 'package:soundspan/shared/widgets/media_card.dart';
@@ -57,6 +58,8 @@ class AlbumsTab extends ConsumerWidget {
         onTap: () => DetailNavigation.openAlbum(context, album.id),
         onPlay: () =>
             unawaited(ref.read(playActionsProvider).playAlbum(album.id)),
+        onMenu: (position) =>
+            unawaited(openAlbumMenu(context, ref, album, position: position)),
       ),
     );
   }

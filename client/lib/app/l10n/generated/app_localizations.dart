@@ -2432,6 +2432,96 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{codec} · {bitrate} kbps'**
   String qualityBadgeBitrate(String codec, String bitrate);
+
+  /// Menu entry that replaces the queue with the list and plays this item.
+  ///
+  /// In en, this message translates to:
+  /// **'Play now'**
+  String get menuPlayNow;
+
+  /// Menu entry that inserts the item after the current queue item.
+  ///
+  /// In en, this message translates to:
+  /// **'Play next'**
+  String get menuPlayNext;
+
+  /// Menu entry and track-row accessibility action that appends the item to the queue.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to queue'**
+  String get menuAddToQueue;
+
+  /// Menu entry that opens the playlist picker to add the item's songs.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to playlist…'**
+  String get menuAddToPlaylist;
+
+  /// Menu entry of a track inside a playlist the user owns that removes it from that playlist.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from this playlist'**
+  String get menuRemoveFromPlaylist;
+
+  /// Menu entry that opens the track's album page.
+  ///
+  /// In en, this message translates to:
+  /// **'Go to album'**
+  String get menuGoToAlbum;
+
+  /// Menu entry that opens the artist page.
+  ///
+  /// In en, this message translates to:
+  /// **'Go to artist'**
+  String get menuGoToArtist;
+
+  /// Menu entry that copies a soundspan:// link to the item to the clipboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Share link'**
+  String get menuShareLink;
+
+  /// Snackbar after Share link copied a link to the clipboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Link copied'**
+  String get menuLinkCopied;
+
+  /// Menu entry of a playlist the user owns that renames it.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename'**
+  String get menuRename;
+
+  /// Menu entry of a playlist the user owns that deletes it, after a confirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get menuDelete;
+
+  /// Tooltip, accessibility label and track-row accessibility action of the button that opens an item's menu.
+  ///
+  /// In en, this message translates to:
+  /// **'More options'**
+  String get menuMoreOptions;
+
+  /// Label of the Play button of an album, artist or playlist page.
+  ///
+  /// In en, this message translates to:
+  /// **'Play'**
+  String get actionPlay;
+
+  /// Tooltip and accessibility label of the Shuffle button of an album, artist or playlist page.
+  ///
+  /// In en, this message translates to:
+  /// **'Shuffle'**
+  String get actionShuffle;
+
+  /// Tooltip and accessibility label of the Add to playlist button of an album or playlist page.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to playlist'**
+  String get actionAddToPlaylist;
 }
 
 class _AppLocalizationsDelegate

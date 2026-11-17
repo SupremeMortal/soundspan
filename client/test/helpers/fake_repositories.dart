@@ -454,6 +454,9 @@ class FakeRepositories {
   /// The like command fake.
   final FakeTrackLikes likes = FakeTrackLikes();
 
+  /// The album like command fake.
+  final FakeAlbumLikes albumLikes = FakeAlbumLikes();
+
   /// Overrides of the four repository providers and the like command with
   /// these fakes.
   List<Override> get overrides => [
@@ -462,6 +465,7 @@ class FakeRepositories {
     homeRepositoryProvider.overrideWithValue(AsyncData(home)),
     searchRepositoryProvider.overrideWithValue(AsyncData(search)),
     trackLikesProvider.overrideWithValue(likes),
+    albumLikesProvider.overrideWithValue(albumLikes),
   ];
 }
 
@@ -473,4 +477,14 @@ class FakeTrackLikes implements TrackLikes {
 
   @override
   Future<void> toggleLike(Track track) async => toggled.add(track);
+}
+
+/// An [AlbumLikes] that records each change as `albumId liked`.
+class FakeAlbumLikes implements AlbumLikes {
+  /// The changes, in order: each one is one outbox op.
+  final List<String> changes = [];
+
+  @override
+  Future<void> setAlbumLiked(String albumId, {required bool liked}) async =>
+      changes.add('$albumId $liked');
 }

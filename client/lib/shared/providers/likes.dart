@@ -37,6 +37,31 @@ final Provider<TrackLikes> trackLikesProvider = Provider<TrackLikes>(
   dependencies: [preferenceRepositoryProvider],
 );
 
+/// The album like command of the album page and album menus.
+abstract interface class AlbumLikes {
+  /// Likes the album [albumId] when [liked] is true and removes its like
+  /// otherwise.
+  Future<void> setAlbumLiked(String albumId, {required bool liked});
+}
+
+/// [AlbumLikes] through a [PreferenceRepository].
+final class RepositoryAlbumLikes implements AlbumLikes {
+  /// Creates the command over [_preferences].
+  const new(this._preferences);
+
+  final PreferenceRepository _preferences;
+
+  @override
+  Future<void> setAlbumLiked(String albumId, {required bool liked}) =>
+      _preferences.setAlbumLiked(albumId, liked: liked);
+}
+
+/// The profile's [AlbumLikes].
+final Provider<AlbumLikes> albumLikesProvider = Provider<AlbumLikes>(
+  (ref) => RepositoryAlbumLikes(ref.watch(preferenceRepositoryProvider)),
+  dependencies: [preferenceRepositoryProvider],
+);
+
 final AppLogger _log = AppLogger.scope('Likes');
 
 /// The `onToggleLike` of a row showing [track], through [trackLikesProvider];

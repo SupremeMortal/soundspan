@@ -9,15 +9,19 @@ import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:soundspan/app/l10n/generated/app_localizations.dart';
 import 'package:soundspan/app/router/placeholder_screen.dart';
+import 'package:soundspan/app/router/routes.dart';
 import 'package:soundspan/app/shell/window_class.dart';
 import 'package:soundspan/app/theme/dimens.dart';
 import 'package:soundspan/app/theme/extensions.dart';
 import 'package:soundspan/features/playlist/ui/playlist_dialogs.dart';
 import 'package:soundspan/features/playlist/ui/playlist_view_model.dart';
+import 'package:soundspan/shared/actions/app_menu_commands.dart';
+import 'package:soundspan/shared/actions/track_actions.dart';
 import 'package:soundspan/shared/domain/domain.dart';
 import 'package:soundspan/shared/providers/likes.dart';
 import 'package:soundspan/shared/providers/play_actions.dart';
 import 'package:soundspan/shared/providers/repositories.dart';
+import 'package:soundspan/shared/widgets/action_bar.dart';
 import 'package:soundspan/shared/widgets/detail_header.dart';
 import 'package:soundspan/shared/widgets/detail_page.dart';
 import 'package:soundspan/shared/widgets/empty_state.dart';
@@ -75,6 +79,12 @@ final StreamProvider<PagedSnapshot<Track>> likedTracksProvider =
 /// yet loaded. The owner of a playlist whose items all have a `playbackId`
 /// reorders them by dragging: a drag handle on touch platforms, the row
 /// itself with a pointer. Other viewers see no edit affordance.
+///
+/// The header's [ActionBar] plays the playlist from its start or shuffled,
+/// adds its playable tracks to another playlist and opens the playlist
+/// menu (Rename and Delete for the owner; a deleted playlist's page
+/// closes). Liked Songs has Play and Shuffle. Each row opens the track
+/// menu, with "Remove from this playlist" for the owner.
 ///
 /// A playlist created on this device opens under its temporary id; when
 /// the server assigns its id the page stays mounted, follows the new id
@@ -192,6 +202,7 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
             if (summary.isPublic) l10n.playlistPublic,
           ],
         ),
+        actions: _playlistActions(detail),
         slivers: [
           if (items.isEmpty)
             SliverPadding(
@@ -221,13 +232,82 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
     PlaylistDetail detail,
     PlaylistItem item,
     AppLocalizations l10n,
-  ) => _row(
-    item.track,
-    WindowClass.of(context),
-    enabled: item.isPlayable && item.track.playbackId != null,
-    reason: item.message ?? l10n.trackNotPlayable,
-    onTap: () => _playItem(detail, item),
+  ) {
+    final playable = item.isPlayable && item.track.playbackId != null;
+    final queued = _playableTracks(detail);
+    final summary = detail.summary;
+    return _row(
+      item.track,
+      WindowClass.of(context),
+      enabled: playable,
+      reason: item.message ?? l10n.trackNotPlayable,
+      onTap: () => _playItem(detail, item),
+      onAddToQueue: addToQueueOf(ref, item.track, playable: playable),
+      scope: TrackActionScope(
+        track: item.track,
+        tracks: queued,
+        index: queued.indexWhere((track) => identical(track, item.track)),
+        context: _contextOf(summary),
+        ownedPlaylist: summary.isOwner
+            ? OwnedPlaylist(playlistId: summary.id, item: item)
+            : null,
+        playable: playable,
+      ),
+    );
+  }
+
+  static List<Track> _playableTracks(PlaylistDetail detail) => [
+    for (final item in detail.items)
+      if (item.isPlayable) item.track,
+  ];
+
+  static QueueContext _contextOf(PlaylistSummary summary) => QueueContext(
+    kind: QueueContextKind.playlist,
+    id: summary.id,
+    title: summary.name,
   );
+
+  /// The [ActionBar] of an ordinary playlist.
+  Widget _playlistActions(PlaylistDetail detail) {
+    final summary = detail.summary;
+    final playable = [
+      for (final track in _playableTracks(detail))
+        if (track.playbackId != null) track,
+    ];
+    PlayActions play() => ref.read(playActionsProvider);
+    return ActionBar(
+      onPlay: playable.isEmpty
+          ? null
+          : () => unawaited(play().playPlaylist(summary.id)),
+      onShuffle: playable.isEmpty
+          ? null
+          : () => unawaited(play().playPlaylist(summary.id, shuffle: true)),
+      onAddToPlaylist: playable.isEmpty
+          ? null
+          : () => unawaited(addTracksToPlaylist(context, ref, playable)),
+      onMenu: (position) => unawaited(
+        openPlaylistMenu(
+          context,
+          ref,
+          summary,
+          position: position,
+          onDeleted: (_) => _close(),
+        ),
+      ),
+    );
+  }
+
+  /// Leaves the page of a deleted playlist: back, or to the Library.
+  void _close() {
+    if (!mounted) return;
+    final router = GoRouter.maybeOf(context);
+    if (router == null) return;
+    if (router.canPop()) {
+      router.pop();
+    } else {
+      router.go(RoutePaths.library);
+    }
+  }
 
   /// Plays the playable items of [detail] from [item].
   void _playItem(PlaylistDetail detail, PlaylistItem item) {
@@ -241,11 +321,7 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
           .playTracks(
             [for (final other in playable) other.track],
             startIndex: playable.indexWhere((other) => identical(other, item)),
-            context: QueueContext(
-              kind: QueueContextKind.playlist,
-              id: detail.summary.id,
-              title: detail.summary.name,
-            ),
+            context: _contextOf(detail.summary),
           ),
     );
   }
@@ -355,6 +431,18 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
         metadata: DetailMetadataLine(
           parts: [if (total != null) l10n.detailSongCount(total)],
         ),
+        actions: total == null || total == 0
+            ? null
+            : ActionBar(
+                onPlay: () => unawaited(
+                  ref.read(playActionsProvider).playPlaylist(likedPlaylistId),
+                ),
+                onShuffle: () => unawaited(
+                  ref
+                      .read(playActionsProvider)
+                      .playPlaylist(likedPlaylistId, shuffle: true),
+                ),
+              ),
         slivers: [
           if (total == 0)
             SliverPadding(
@@ -383,12 +471,36 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
                   enabled: track.playbackId != null,
                   reason: l10n.trackNotPlayable,
                   onTap: () => _playLiked(snapshot, index),
+                  onAddToQueue: addToQueueOf(ref, track),
+                  scope: _likedScope(snapshot, index, track, l10n),
                 );
               },
             ),
         ],
       ),
     ];
+  }
+
+  /// The menu scope of liked row [index]: Play now plays the loaded
+  /// tracks in list order from it.
+  TrackActionScope _likedScope(
+    PagedSnapshot<Track> snapshot,
+    int index,
+    Track track,
+    AppLocalizations l10n,
+  ) {
+    final loaded = snapshot.loaded.entries.toList()
+      ..sort((a, b) => a.key.compareTo(b.key));
+    return TrackActionScope(
+      track: track,
+      tracks: [for (final entry in loaded) entry.value],
+      index: loaded.indexWhere((entry) => entry.key == index),
+      context: QueueContext(
+        kind: QueueContextKind.playlist,
+        id: likedPlaylistId,
+        title: l10n.playlistLikedTitle,
+      ),
+    );
   }
 
   /// Records that row [index] was built, and tells the liked source the
@@ -434,6 +546,8 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
     required bool enabled,
     required String reason,
     required VoidCallback onTap,
+    required VoidCallback? onAddToQueue,
+    required TrackActionScope scope,
   }) => TrackRow(
     title: track.meta.title,
     artist: track.meta.artist,
@@ -447,6 +561,9 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
     onToggleLike: toggleLikeOf(ref, track),
     playbackId: track.playbackId,
     onTap: onTap,
+    onAddToQueue: onAddToQueue,
+    onMenu: (position) =>
+        unawaited(openTrackMenu(context, ref, scope, position: position)),
   );
 }
 

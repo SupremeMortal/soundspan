@@ -14,7 +14,8 @@ import '../../helpers/golden.dart';
 const Duration _duration = Duration(minutes: 3, seconds: 41);
 
 /// Index (liked), thumbnail (not liked), with the album column, selected,
-/// disabled, and both skeletons.
+/// disabled, and both skeletons; the first two and the disabled row have
+/// the overflow button.
 Widget _rows(BuildContext context) => Padding(
   padding: const EdgeInsets.all(16),
   child: Column(
@@ -29,6 +30,7 @@ Widget _rows(BuildContext context) => Padding(
         onTap: () {},
         liked: true,
         onToggleLike: () {},
+        onMenu: (_) {},
       ),
       TrackRow(
         title: 'So What',
@@ -38,6 +40,7 @@ Widget _rows(BuildContext context) => Padding(
         leading: const TrackRowLeading.thumbnail('album-2'),
         onTap: () {},
         onToggleLike: () {},
+        onMenu: (_) {},
       ),
       TrackRow(
         title: 'A title far too long to fit on one line of any window',
@@ -65,6 +68,7 @@ Widget _rows(BuildContext context) => Padding(
         enabled: false,
         disabledReason: 'Not available offline',
         onTap: () {},
+        onMenu: (_) {},
       ),
       const TrackRowSkeleton(withThumbnail: true),
       const TrackRowSkeleton(withThumbnail: false),

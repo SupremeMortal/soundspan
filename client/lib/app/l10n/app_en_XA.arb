@@ -1872,5 +1872,65 @@
         "example": "256"
       }
     }
+  },
+  "menuPlayNow": "[Þļåý ñöŵ one]",
+  "@menuPlayNow": {
+    "description": "Menu entry that replaces the queue with the list and plays this item."
+  },
+  "menuPlayNext": "[Þļåý ñéxţ one]",
+  "@menuPlayNext": {
+    "description": "Menu entry that inserts the item after the current queue item."
+  },
+  "menuAddToQueue": "[Åðð ţö qûéûé one two]",
+  "@menuAddToQueue": {
+    "description": "Menu entry and track-row accessibility action that appends the item to the queue."
+  },
+  "menuAddToPlaylist": "[Åðð ţö þļåýļîšţ… one two]",
+  "@menuAddToPlaylist": {
+    "description": "Menu entry that opens the playlist picker to add the item's songs."
+  },
+  "menuRemoveFromPlaylist": "[Ŕémövé fŕöm ţĥîš þļåýļîšţ one two three]",
+  "@menuRemoveFromPlaylist": {
+    "description": "Menu entry of a track inside a playlist the user owns that removes it from that playlist."
+  },
+  "menuGoToAlbum": "[Ĝö ţö åļbûm one two]",
+  "@menuGoToAlbum": {
+    "description": "Menu entry that opens the track's album page."
+  },
+  "menuGoToArtist": "[Ĝö ţö åŕţîšţ one two]",
+  "@menuGoToArtist": {
+    "description": "Menu entry that opens the artist page."
+  },
+  "menuShareLink": "[Šĥåŕé ļîñķ one]",
+  "@menuShareLink": {
+    "description": "Menu entry that copies a soundspan:// link to the item to the clipboard."
+  },
+  "menuLinkCopied": "[Ļîñķ çöþîéð one two]",
+  "@menuLinkCopied": {
+    "description": "Snackbar after Share link copied a link to the clipboard."
+  },
+  "menuRename": "[Ŕéñåmé one]",
+  "@menuRename": {
+    "description": "Menu entry of a playlist the user owns that renames it."
+  },
+  "menuDelete": "[Ðéļéţé one]",
+  "@menuDelete": {
+    "description": "Menu entry of a playlist the user owns that deletes it, after a confirmation."
+  },
+  "menuMoreOptions": "[Möŕé öþţîöñš one two]",
+  "@menuMoreOptions": {
+    "description": "Tooltip, accessibility label and track-row accessibility action of the button that opens an item's menu."
+  },
+  "actionPlay": "[Þļåý one]",
+  "@actionPlay": {
+    "description": "Label of the Play button of an album, artist or playlist page."
+  },
+  "actionShuffle": "[Šĥûffļé one]",
+  "@actionShuffle": {
+    "description": "Tooltip and accessibility label of the Shuffle button of an album, artist or playlist page."
+  },
+  "actionAddToPlaylist": "[Åðð ţö þļåýļîšţ one two]",
+  "@actionAddToPlaylist": {
+    "description": "Tooltip and accessibility label of the Add to playlist button of an album or playlist page."
   }
 }

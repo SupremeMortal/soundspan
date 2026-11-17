@@ -13,11 +13,15 @@ import 'package:soundspan/app/shell/window_class.dart';
 import 'package:soundspan/app/theme/dimens.dart';
 import 'package:soundspan/app/theme/extensions.dart';
 import 'package:soundspan/app/theme/typography.dart';
+import 'package:soundspan/shared/actions/app_menu_commands.dart';
+import 'package:soundspan/shared/actions/track_actions.dart';
 import 'package:soundspan/shared/domain/domain.dart';
 import 'package:soundspan/shared/providers/likes.dart';
 import 'package:soundspan/shared/providers/play_actions.dart';
 import 'package:soundspan/shared/providers/repositories.dart';
+import 'package:soundspan/shared/widgets/action_bar.dart';
 import 'package:soundspan/shared/widgets/artwork.dart';
+import 'package:soundspan/shared/widgets/context_menu.dart';
 import 'package:soundspan/shared/widgets/detail_header.dart';
 import 'package:soundspan/shared/widgets/detail_page.dart';
 import 'package:soundspan/shared/widgets/media_card.dart';
@@ -116,6 +120,15 @@ class ArtistScreen extends ConsumerWidget {
               onTap: () => DetailNavigation.openAlbum(context, album.id),
               onPlay: () =>
                   unawaited(ref.read(playActionsProvider).playAlbum(album.id)),
+              onMenu: (position) => unawaited(
+                openAlbumMenu(
+                  context,
+                  ref,
+                  album,
+                  position: position,
+                  onArtistPage: true,
+                ),
+              ),
             ),
           );
         },
@@ -130,6 +143,33 @@ class ArtistScreen extends ConsumerWidget {
         title: artist.name,
         metadata: DetailMetadataLine(
           parts: detail.genres.take(maxGenres).toList(),
+        ),
+        actions: Consumer(
+          builder: (context, ref, _) {
+            final playable = detail.topTracks.any(
+              (track) => track.playbackId != null,
+            );
+            PlayActions play() => ref.read(playActionsProvider);
+            return ActionBar(
+              onPlay: playable
+                  ? () => unawaited(play().playArtist(artist.id))
+                  : null,
+              onShuffle: playable
+                  ? () => unawaited(play().playArtist(artist.id, shuffle: true))
+                  : null,
+              onMenu: (position) => unawaited(
+                showContextMenu(
+                  context,
+                  artistActions(
+                    artist.id,
+                    l10n: l10n,
+                    commands: AppMenuCommands(context, ref),
+                  ),
+                  position: position,
+                ),
+              ),
+            );
+          },
         ),
         slivers: [
           if (detail.topTracks.isNotEmpty)
@@ -277,6 +317,11 @@ class _PopularSectionState extends State<_PopularSection> {
             itemBuilder: (context, index) {
               final track = tracks[index];
               final artist = track.meta.artist;
+              final queueContext = QueueContext(
+                kind: QueueContextKind.artist,
+                id: widget.artist.id,
+                title: widget.artist.name,
+              );
               return Consumer(
                 builder: (context, ref, _) => TrackRow(
                   title: track.meta.title,
@@ -294,12 +339,22 @@ class _PopularSectionState extends State<_PopularSection> {
                         .playTracks(
                           tracks.sublist(0, shown),
                           startIndex: index,
-                          context: QueueContext(
-                            kind: QueueContextKind.artist,
-                            id: widget.artist.id,
-                            title: widget.artist.name,
-                          ),
+                          context: queueContext,
                         ),
+                  ),
+                  onAddToQueue: addToQueueOf(ref, track),
+                  onMenu: (position) => unawaited(
+                    openTrackMenu(
+                      context,
+                      ref,
+                      TrackActionScope(
+                        track: track,
+                        tracks: tracks.sublist(0, shown),
+                        index: index,
+                        context: queueContext,
+                      ),
+                      position: position,
+                    ),
                   ),
                 ),
               );

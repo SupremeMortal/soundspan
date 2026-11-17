@@ -172,11 +172,18 @@ void main() {
     );
     expect(find.byType(ReorderableListView), findsNothing);
     expect(find.byType(ReorderableDragStartListener), findsNothing);
-    // The only buttons in the list are the tracks' hearts.
+    // The only buttons in the rows are the tracks' hearts and menus.
     expect(
-      find.byType(IconButton),
-      findsNWidgets(find.byType(LikeButton).evaluate().length),
+      find.descendant(
+        of: find.byType(TrackRow),
+        matching: find.byType(IconButton),
+      ),
+      findsNWidgets(
+        find.byType(LikeButton).evaluate().length +
+            find.byKey(TrackRow.overflowKey).evaluate().length,
+      ),
     );
+    expect(find.byKey(TrackRow.overflowKey), findsNWidgets(2));
     expect(find.byType(TextField), findsNothing);
   });
 

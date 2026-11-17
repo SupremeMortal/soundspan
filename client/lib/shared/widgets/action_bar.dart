@@ -1,0 +1,145 @@
+// SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
+
+import 'package:material_ui/material_ui.dart';
+import 'package:soundspan/app/l10n/generated/app_localizations.dart';
+import 'package:soundspan/app/shell/window_class.dart';
+import 'package:soundspan/app/theme/dimens.dart';
+import 'package:soundspan/app/theme/extensions.dart';
+import 'package:soundspan/app/theme/typography.dart';
+import 'package:soundspan/shared/widgets/like_button.dart';
+
+/// The actions of an album, artist or playlist page (doc 09, Components:
+/// `ActionBar`), for the actions slot of `DetailHeader`.
+///
+/// Play is an `accent` pill; Shuffle, Like, Add to playlist and the
+/// overflow ("More options") are icon buttons with tooltips. A button whose
+/// callback is null is left out. The buttons wrap onto a second line rather
+/// than overflow, and are centred on compact windows like the header text.
+class ActionBar extends StatelessWidget {
+  /// Creates the bar.
+  const new({
+    this.onPlay,
+    this.onShuffle,
+    this.liked = false,
+    this.onToggleLike,
+    this.onAddToPlaylist,
+    this.onMenu,
+    super.key,
+  });
+
+  /// Plays the page's collection from its start.
+  final VoidCallback? onPlay;
+
+  /// Plays it shuffled.
+  final VoidCallback? onShuffle;
+
+  /// Whether the heart is filled.
+  final bool liked;
+
+  /// Likes or removes the like (albums).
+  final VoidCallback? onToggleLike;
+
+  /// Adds every playable track to a playlist.
+  final VoidCallback? onAddToPlaylist;
+
+  /// Opens the page's entity menu at the given global position.
+  final void Function(Offset position)? onMenu;
+
+  /// The key of the Play pill.
+  static const Key playKey = ValueKey('ActionBar.play');
+
+  /// The key of the Shuffle button.
+  static const Key shuffleKey = ValueKey('ActionBar.shuffle');
+
+  /// The key of the Like button.
+  static const Key likeKey = ValueKey('ActionBar.like');
+
+  /// The key of the Add to playlist button.
+  static const Key addToPlaylistKey = ValueKey('ActionBar.addToPlaylist');
+
+  /// The key of the overflow button.
+  static const Key menuKey = ValueKey('ActionBar.menu');
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final colors = context.colors;
+    final compact = WindowClass.of(context) == WindowClass.compact;
+    final onPlay = this.onPlay;
+    final onShuffle = this.onShuffle;
+    final onToggleLike = this.onToggleLike;
+    final onAddToPlaylist = this.onAddToPlaylist;
+    final onMenu = this.onMenu;
+    Widget icon({
+      required Key key,
+      required IconData glyph,
+      required String tooltip,
+      required VoidCallback onPressed,
+    }) => MergeSemantics(
+      child: Semantics(
+        label: tooltip,
+        child: IconButton(
+          key: key,
+          tooltip: tooltip,
+          color: colors.contentSecondary,
+          icon: Icon(glyph),
+          onPressed: onPressed,
+        ),
+      ),
+    );
+    return Wrap(
+      alignment: compact ? WrapAlignment.center : WrapAlignment.start,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: Spacing.x8,
+      runSpacing: Spacing.x8,
+      children: [
+        if (onPlay != null)
+          FilledButton.icon(
+            key: playKey,
+            style: FilledButton.styleFrom(
+              backgroundColor: colors.accent,
+              foregroundColor: colors.onAccent,
+              shape: Radii.pill,
+              minimumSize: const Size(0, Sizes.touchTarget),
+              padding: const EdgeInsets.symmetric(horizontal: Spacing.x24),
+              textStyle: context.typography.subtitle,
+            ),
+            onPressed: onPlay,
+            icon: const Icon(Icons.play_arrow_rounded),
+            label: Text(l10n.actionPlay),
+          ),
+        if (onShuffle != null)
+          icon(
+            key: shuffleKey,
+            glyph: Icons.shuffle_rounded,
+            tooltip: l10n.actionShuffle,
+            onPressed: onShuffle,
+          ),
+        if (onToggleLike != null)
+          KeyedSubtree(
+            key: likeKey,
+            child: LikeButton(liked: liked, onToggle: onToggleLike),
+          ),
+        if (onAddToPlaylist != null)
+          icon(
+            key: addToPlaylistKey,
+            glyph: Icons.playlist_add_rounded,
+            tooltip: l10n.actionAddToPlaylist,
+            onPressed: onAddToPlaylist,
+          ),
+        if (onMenu != null)
+          Builder(
+            builder: (context) => icon(
+              key: menuKey,
+              glyph: Icons.more_horiz_rounded,
+              tooltip: l10n.menuMoreOptions,
+              onPressed: () {
+                final box = context.findRenderObject()! as RenderBox;
+                onMenu(box.localToGlobal(box.size.bottomCenter(Offset.zero)));
+              },
+            ),
+          ),
+      ],
+    );
+  }
+}

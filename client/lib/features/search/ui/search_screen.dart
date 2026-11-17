@@ -15,6 +15,8 @@ import 'package:soundspan/app/theme/extensions.dart';
 import 'package:soundspan/app/theme/typography.dart';
 import 'package:soundspan/features/search/domain/search_sections.dart';
 import 'package:soundspan/features/search/ui/search_view_model.dart';
+import 'package:soundspan/shared/actions/app_menu_commands.dart';
+import 'package:soundspan/shared/actions/track_actions.dart';
 import 'package:soundspan/shared/domain/domain.dart';
 import 'package:soundspan/shared/providers/likes.dart';
 import 'package:soundspan/shared/providers/play_actions.dart';
@@ -499,6 +501,20 @@ Widget _songRow(BuildContext context, List<Track> tracks, int index) {
             .read(playActionsProvider)
             .playTracks(tracks, startIndex: index, context: _searchContext),
       ),
+      onAddToQueue: addToQueueOf(ref, track),
+      onMenu: (position) => unawaited(
+        openTrackMenu(
+          context,
+          ref,
+          TrackActionScope(
+            track: track,
+            tracks: tracks,
+            index: index,
+            context: _searchContext,
+          ),
+          position: position,
+        ),
+      ),
     ),
   );
 }
@@ -565,6 +581,16 @@ Widget _cardOf(
       onPlay: libraryId == null
           ? null
           : () => unawaited(actions().playAlbum(libraryId)),
+      onMenu: libraryId == null
+          ? null
+          : (position) => unawaited(
+              openAlbumMenu(
+                context,
+                ref,
+                album.copyWith(id: libraryId),
+                position: position,
+              ),
+            ),
     ),
     SearchPlaylistItem(:final playlist) => MediaCard(
       title: playlist.name,
@@ -574,6 +600,9 @@ Widget _cardOf(
       onTap: () =>
           onOpened(() => DetailNavigation.openPlaylist(context, playlist.id)),
       onPlay: () => unawaited(actions().playPlaylist(playlist.id)),
+      onMenu: (position) => unawaited(
+        openPlaylistMenu(context, ref, playlist, position: position),
+      ),
     ),
     SearchPodcastItem(:final podcast) => MediaCard(
       title: podcast.title,

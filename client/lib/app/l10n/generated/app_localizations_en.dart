@@ -1441,6 +1441,51 @@ class AppLocalizationsEn extends AppLocalizations {
   String qualityBadgeBitrate(String codec, String bitrate) {
     return '$codec · $bitrate kbps';
   }
+
+  @override
+  String get menuPlayNow => 'Play now';
+
+  @override
+  String get menuPlayNext => 'Play next';
+
+  @override
+  String get menuAddToQueue => 'Add to queue';
+
+  @override
+  String get menuAddToPlaylist => 'Add to playlist…';
+
+  @override
+  String get menuRemoveFromPlaylist => 'Remove from this playlist';
+
+  @override
+  String get menuGoToAlbum => 'Go to album';
+
+  @override
+  String get menuGoToArtist => 'Go to artist';
+
+  @override
+  String get menuShareLink => 'Share link';
+
+  @override
+  String get menuLinkCopied => 'Link copied';
+
+  @override
+  String get menuRename => 'Rename';
+
+  @override
+  String get menuDelete => 'Delete';
+
+  @override
+  String get menuMoreOptions => 'More options';
+
+  @override
+  String get actionPlay => 'Play';
+
+  @override
+  String get actionShuffle => 'Shuffle';
+
+  @override
+  String get actionAddToPlaylist => 'Add to playlist';
 }
 
 /// The translations for English (`en_XA`).
@@ -2914,4 +2959,50 @@ class AppLocalizationsEnXa extends AppLocalizationsEn {
   String qualityBadgeBitrate(String codec, String bitrate) {
     return '[$codec · $bitrate ķbþš one]';
   }
+
+  @override
+  String get menuPlayNow => '[Þļåý ñöŵ one]';
+
+  @override
+  String get menuPlayNext => '[Þļåý ñéxţ one]';
+
+  @override
+  String get menuAddToQueue => '[Åðð ţö qûéûé one two]';
+
+  @override
+  String get menuAddToPlaylist => '[Åðð ţö þļåýļîšţ… one two]';
+
+  @override
+  String get menuRemoveFromPlaylist =>
+      '[Ŕémövé fŕöm ţĥîš þļåýļîšţ one two three]';
+
+  @override
+  String get menuGoToAlbum => '[Ĝö ţö åļbûm one two]';
+
+  @override
+  String get menuGoToArtist => '[Ĝö ţö åŕţîšţ one two]';
+
+  @override
+  String get menuShareLink => '[Šĥåŕé ļîñķ one]';
+
+  @override
+  String get menuLinkCopied => '[Ļîñķ çöþîéð one two]';
+
+  @override
+  String get menuRename => '[Ŕéñåmé one]';
+
+  @override
+  String get menuDelete => '[Ðéļéţé one]';
+
+  @override
+  String get menuMoreOptions => '[Möŕé öþţîöñš one two]';
+
+  @override
+  String get actionPlay => '[Þļåý one]';
+
+  @override
+  String get actionShuffle => '[Šĥûffļé one]';
+
+  @override
+  String get actionAddToPlaylist => '[Åðð ţö þļåýļîšţ one two]';
 }

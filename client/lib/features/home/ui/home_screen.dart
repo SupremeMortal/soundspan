@@ -18,6 +18,7 @@ import 'package:soundspan/core/profile/version_notice.dart';
 import 'package:soundspan/features/discover/discover.dart';
 import 'package:soundspan/features/home/ui/expiry_banner.dart';
 import 'package:soundspan/features/home/ui/home_view_model.dart';
+import 'package:soundspan/shared/actions/app_menu_commands.dart';
 import 'package:soundspan/shared/clock.dart';
 import 'package:soundspan/shared/domain/domain.dart';
 import 'package:soundspan/shared/providers/play_actions.dart';
@@ -243,6 +244,9 @@ class _ShelfSlotState extends ConsumerState<_ShelfSlot> {
           onTap: () => DetailNavigation.openPlaylist(context, playlist.id),
           onPlay: () => unawaited(
             ref.read(playActionsProvider).playPlaylist(playlist.id),
+          ),
+          onMenu: (position) => unawaited(
+            openPlaylistMenu(context, ref, playlist, position: position),
           ),
         ),
         onShowAll: () =>

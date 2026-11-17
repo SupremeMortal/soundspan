@@ -12,10 +12,14 @@ import 'package:soundspan/app/shell/window_class.dart';
 import 'package:soundspan/app/theme/dimens.dart';
 import 'package:soundspan/app/theme/extensions.dart';
 import 'package:soundspan/app/theme/typography.dart';
+import 'package:soundspan/features/playlist/playlist.dart';
+import 'package:soundspan/shared/actions/app_menu_commands.dart';
+import 'package:soundspan/shared/actions/track_actions.dart';
 import 'package:soundspan/shared/domain/domain.dart';
 import 'package:soundspan/shared/providers/likes.dart';
 import 'package:soundspan/shared/providers/play_actions.dart';
 import 'package:soundspan/shared/providers/repositories.dart';
+import 'package:soundspan/shared/widgets/action_bar.dart';
 import 'package:soundspan/shared/widgets/detail_header.dart';
 import 'package:soundspan/shared/widgets/detail_page.dart';
 import 'package:soundspan/shared/widgets/media_card.dart';
@@ -61,6 +65,12 @@ final StreamProviderFamily<List<Album>, String> artistAlbumsProvider =
 /// that track ([PlayActions.playTracks], context `album`); a track without
 /// a playback id is disabled as not playable. The shelf's cards play their
 /// album from the play button.
+///
+/// The header's [ActionBar] plays the album from its start or shuffled,
+/// likes it, adds its playable tracks to a playlist and opens the album
+/// menu; Play, Shuffle and Add to playlist are left out when no track is
+/// playable. Each row and card opens its menu ([trackActions],
+/// [albumActions]).
 class AlbumScreen extends ConsumerWidget {
   /// Creates the page of album [albumId].
   const new({required this.albumId, super.key});
@@ -127,6 +137,11 @@ class AlbumScreen extends ConsumerWidget {
             context: queueContext,
           ),
     );
+    final playable = [
+      for (final track in ordered)
+        if (track.playbackId != null) track,
+    ];
+    final liked = album.preference == Preference.liked;
     final more = [
       for (final other
           in ref.watch(artistAlbumsProvider(album.artistId)).value ??
@@ -147,6 +162,29 @@ class AlbumScreen extends ConsumerWidget {
             l10n.detailSongCount(tracks.length),
             formatTotalDuration(l10n, total),
           ],
+        ),
+        actions: ActionBar(
+          onPlay: playable.isEmpty
+              ? null
+              : () => unawaited(
+                  ref.read(playActionsProvider).playAlbum(album.id),
+                ),
+          onShuffle: playable.isEmpty
+              ? null
+              : () => unawaited(
+                  ref
+                      .read(playActionsProvider)
+                      .playAlbum(album.id, shuffle: true),
+                ),
+          liked: liked,
+          onToggleLike: () => unawaited(
+            ref.read(albumLikesProvider).setAlbumLiked(album.id, liked: !liked),
+          ),
+          onAddToPlaylist: playable.isEmpty
+              ? null
+              : () => unawaited(addTracksToPlaylist(context, ref, playable)),
+          onMenu: (position) =>
+              unawaited(openAlbumMenu(context, ref, album, position: position)),
         ),
         slivers: [
           for (final MapEntry(key: disc, value: discTracks)
@@ -192,6 +230,20 @@ class AlbumScreen extends ConsumerWidget {
                     onToggleLike: toggleLikeOf(ref, track),
                     playbackId: track.playbackId,
                     onTap: () => play(track),
+                    onAddToQueue: addToQueueOf(ref, track),
+                    onMenu: (position) => unawaited(
+                      openTrackMenu(
+                        context,
+                        ref,
+                        TrackActionScope(
+                          track: track,
+                          tracks: ordered,
+                          index: ordered.indexWhere((t) => identical(t, track)),
+                          context: queueContext,
+                        ),
+                        position: position,
+                      ),
+                    ),
                   );
                 },
               ),
@@ -215,6 +267,9 @@ class AlbumScreen extends ConsumerWidget {
                     onTap: () => DetailNavigation.openAlbum(context, other.id),
                     onPlay: () => unawaited(
                       ref.read(playActionsProvider).playAlbum(other.id),
+                    ),
+                    onMenu: (position) => unawaited(
+                      openAlbumMenu(context, ref, other, position: position),
                     ),
                   );
                 },

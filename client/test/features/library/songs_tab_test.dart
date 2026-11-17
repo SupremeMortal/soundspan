@@ -304,8 +304,12 @@ void main() {
             .first,
       );
       final actions = semantics.properties.customSemanticsActions!;
-      expect(actions.keys.single.label, 'Like');
-      actions.values.single();
+      expect(actions.keys.map((action) => action.label), [
+        'Like',
+        'Add to queue',
+        'More options',
+      ]);
+      actions.values.first();
       await tester.pump();
 
       expect(likesOf(harness).toggled, [lib.trackList[0]]);

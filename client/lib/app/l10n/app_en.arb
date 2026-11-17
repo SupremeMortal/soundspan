@@ -1834,5 +1834,65 @@
       "codec": {"type": "String", "example": "AAC"},
       "bitrate": {"type": "String", "example": "256"}
     }
+  },
+  "menuPlayNow": "Play now",
+  "@menuPlayNow": {
+    "description": "Menu entry that replaces the queue with the list and plays this item."
+  },
+  "menuPlayNext": "Play next",
+  "@menuPlayNext": {
+    "description": "Menu entry that inserts the item after the current queue item."
+  },
+  "menuAddToQueue": "Add to queue",
+  "@menuAddToQueue": {
+    "description": "Menu entry and track-row accessibility action that appends the item to the queue."
+  },
+  "menuAddToPlaylist": "Add to playlist…",
+  "@menuAddToPlaylist": {
+    "description": "Menu entry that opens the playlist picker to add the item's songs."
+  },
+  "menuRemoveFromPlaylist": "Remove from this playlist",
+  "@menuRemoveFromPlaylist": {
+    "description": "Menu entry of a track inside a playlist the user owns that removes it from that playlist."
+  },
+  "menuGoToAlbum": "Go to album",
+  "@menuGoToAlbum": {
+    "description": "Menu entry that opens the track's album page."
+  },
+  "menuGoToArtist": "Go to artist",
+  "@menuGoToArtist": {
+    "description": "Menu entry that opens the artist page."
+  },
+  "menuShareLink": "Share link",
+  "@menuShareLink": {
+    "description": "Menu entry that copies a soundspan:// link to the item to the clipboard."
+  },
+  "menuLinkCopied": "Link copied",
+  "@menuLinkCopied": {
+    "description": "Snackbar after Share link copied a link to the clipboard."
+  },
+  "menuRename": "Rename",
+  "@menuRename": {
+    "description": "Menu entry of a playlist the user owns that renames it."
+  },
+  "menuDelete": "Delete",
+  "@menuDelete": {
+    "description": "Menu entry of a playlist the user owns that deletes it, after a confirmation."
+  },
+  "menuMoreOptions": "More options",
+  "@menuMoreOptions": {
+    "description": "Tooltip, accessibility label and track-row accessibility action of the button that opens an item's menu."
+  },
+  "actionPlay": "Play",
+  "@actionPlay": {
+    "description": "Label of the Play button of an album, artist or playlist page."
+  },
+  "actionShuffle": "Shuffle",
+  "@actionShuffle": {
+    "description": "Tooltip and accessibility label of the Shuffle button of an album, artist or playlist page."
+  },
+  "actionAddToPlaylist": "Add to playlist",
+  "@actionAddToPlaylist": {
+    "description": "Tooltip and accessibility label of the Add to playlist button of an album or playlist page."
   }
 }

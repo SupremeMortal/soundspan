@@ -172,6 +172,34 @@ class PlayActions {
         );
       }, shuffle: shuffle);
 
+  /// The playable tracks of the album [albumId], in order, for Play next,
+  /// Add to queue and Add to playlist of its menu; empty, reported to the
+  /// notices, when loading fails.
+  Future<List<Track>> albumTracks(String albumId) => _playableOf(
+    () async => (await _first((await _library()).album(albumId))).tracks,
+  );
+
+  /// The playable tracks of the playlist [playlistId], in order, for Play
+  /// next and Add to queue of its menu; empty, reported to the notices,
+  /// when loading fails.
+  Future<List<Track>> playlistTracks(String playlistId) =>
+      _playableOf(() async {
+        final detail = await _first((await _playlists()).playlist(playlistId));
+        return [
+          for (final item in detail.items)
+            if (item.isPlayable) item.track,
+        ];
+      });
+
+  Future<List<Track>> _playableOf(Future<List<Track>> Function() load) async {
+    try {
+      return (await load()).where(_isPlayable).toList();
+    } on Object catch (error, stackTrace) {
+      _failed(error, stackTrace);
+      return const [];
+    }
+  }
+
   /// "Shuffle all" of Library Songs: plays the library tracks the server
   /// shuffled, in its order, with shuffle off.
   Future<void> shuffleLibrary() async {
