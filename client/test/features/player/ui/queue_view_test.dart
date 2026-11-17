@@ -281,6 +281,7 @@ void main() {
       MenuIds.addToQueue,
       MenuIds.addToPlaylist,
       MenuIds.like,
+      MenuIds.download,
       MenuIds.goToAlbum,
       MenuIds.share,
     ];

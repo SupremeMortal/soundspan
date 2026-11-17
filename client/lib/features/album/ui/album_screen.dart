@@ -12,6 +12,7 @@ import 'package:soundspan/app/shell/window_class.dart';
 import 'package:soundspan/app/theme/dimens.dart';
 import 'package:soundspan/app/theme/extensions.dart';
 import 'package:soundspan/app/theme/typography.dart';
+import 'package:soundspan/features/downloads/downloads.dart';
 import 'package:soundspan/features/playlist/playlist.dart';
 import 'package:soundspan/shared/actions/app_menu_commands.dart';
 import 'package:soundspan/shared/actions/track_actions.dart';
@@ -176,6 +177,17 @@ class AlbumScreen extends ConsumerWidget {
                       .read(playActionsProvider)
                       .playAlbum(album.id, shuffle: true),
                 ),
+          download: CollectionDownloadButton.orNull(
+            ref,
+            kind: CollectionKind.album,
+            refId: album.id,
+            snapshot: () => CollectionSnapshot(
+              title: album.title,
+              subtitle: album.artistName,
+              artworkRef: album.artworkRef,
+              tracks: ordered,
+            ),
+          ),
           liked: liked,
           onToggleLike: () => unawaited(
             ref.read(albumLikesProvider).setAlbumLiked(album.id, liked: !liked),

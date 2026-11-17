@@ -20,6 +20,7 @@ class ActionBar extends StatelessWidget {
   const new({
     this.onPlay,
     this.onShuffle,
+    this.download,
     this.liked = false,
     this.onToggleLike,
     this.onAddToPlaylist,
@@ -32,6 +33,10 @@ class ActionBar extends StatelessWidget {
 
   /// Plays it shuffled.
   final VoidCallback? onShuffle;
+
+  /// The Download button (the downloads feature's), after Shuffle; left out
+  /// when null, such as where the platform does not download.
+  final Widget? download;
 
   /// Whether the heart is filled.
   final bool liked;
@@ -67,6 +72,7 @@ class ActionBar extends StatelessWidget {
     final compact = WindowClass.of(context) == WindowClass.compact;
     final onPlay = this.onPlay;
     final onShuffle = this.onShuffle;
+    final download = this.download;
     final onToggleLike = this.onToggleLike;
     final onAddToPlaylist = this.onAddToPlaylist;
     final onMenu = this.onMenu;
@@ -115,6 +121,7 @@ class ActionBar extends StatelessWidget {
             tooltip: l10n.actionShuffle,
             onPressed: onShuffle,
           ),
+        ?download,
         if (onToggleLike != null)
           KeyedSubtree(
             key: likeKey,

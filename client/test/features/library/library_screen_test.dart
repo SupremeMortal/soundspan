@@ -31,7 +31,7 @@ void main() {
         .widgetList<Tab>(find.byType(Tab))
         .map((t) => t.text)
         .toList();
-    expect(labels, ['Playlists', 'Artists', 'Albums', 'Songs']);
+    expect(labels, ['Playlists', 'Artists', 'Albums', 'Songs', 'Downloads']);
     final controller = tester.widget<TabBar>(find.byType(TabBar)).controller!;
     expect(controller.index, LibraryTab.artists.index);
 

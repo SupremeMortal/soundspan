@@ -7,6 +7,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:soundspan/app/l10n/generated/app_localizations.dart';
 import 'package:soundspan/app/router/routes.dart';
+import 'package:soundspan/core/downloads/download_controller.dart';
+import 'package:soundspan/core/downloads/download_keys.dart';
+import 'package:soundspan/features/downloads/downloads.dart';
 import 'package:soundspan/features/playlist/playlist.dart';
 import 'package:soundspan/shared/actions/track_actions.dart';
 import 'package:soundspan/shared/domain/domain.dart';
@@ -59,6 +62,40 @@ class AppMenuCommands implements MenuCommands {
   Future<void> removeFromPlaylist(String playlistId, PlaylistItem item) async {
     final repository = await _ref.read(playlistRepositoryProvider.future);
     await repository.removeItem(playlistId, item);
+  }
+
+  @override
+  Future<void> downloadTrack(Track track) async {
+    final playbackId = track.playbackId;
+    if (playbackId == null || !_context.mounted) return;
+    await pinCollection(
+      _context,
+      _ref,
+      CollectionKind.track,
+      playbackId.value,
+      trackSnapshot(track),
+    );
+  }
+
+  @override
+  Future<void> retryTrackDownload(Track track) async {
+    final playbackId = track.playbackId;
+    if (playbackId == null) return;
+    await _ref
+        .read(downloadControllerProvider)
+        .retry(TrackItemKey(playbackId.value));
+  }
+
+  @override
+  Future<void> removeTrackDownload(Track track) async {
+    final playbackId = track.playbackId;
+    if (playbackId == null || !_context.mounted) return;
+    await confirmAndUnpin(
+      _context,
+      _ref,
+      CollectionKind.track,
+      playbackId.value,
+    );
   }
 
   @override
@@ -133,6 +170,7 @@ Future<void> openTrackMenu(
     scope,
     l10n: AppLocalizations.of(context),
     commands: AppMenuCommands(context, ref),
+    download: trackMenuGlyph(ref, scope.track.playbackId),
   ),
   position: position,
 );

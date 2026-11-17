@@ -1798,6 +1798,161 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsStorageCancel => 'Cancel';
+
+  @override
+  String get downloadGlyphQueued => 'Waiting to download';
+
+  @override
+  String downloadGlyphRunning(int percent) {
+    return 'Downloading, $percent percent';
+  }
+
+  @override
+  String get downloadGlyphRunningUnknown => 'Downloading';
+
+  @override
+  String get downloadGlyphCompleted => 'Downloaded';
+
+  @override
+  String get downloadGlyphFailed => 'Download failed';
+
+  @override
+  String get downloadGlyphUnavailable => 'Not available for download';
+
+  @override
+  String get trackRowDownloaded => 'downloaded';
+
+  @override
+  String get menuDownload => 'Download';
+
+  @override
+  String get menuRemoveDownload => 'Remove download';
+
+  @override
+  String get menuRetryDownload => 'Retry download';
+
+  @override
+  String get downloadRemoveTitle => 'Remove download?';
+
+  @override
+  String get downloadRemoveBody =>
+      'Its files are deleted from this device. You can download it again later.';
+
+  @override
+  String get downloadRemoveConfirm => 'Remove';
+
+  @override
+  String get downloadCancel => 'Cancel';
+
+  @override
+  String get downloadClose => 'Close';
+
+  @override
+  String get downloadServerQuotaTitle => 'Not enough space on the server';
+
+  @override
+  String get downloadServerQuotaBody =>
+      'Remove downloads to free up space, or raise the download limit in the server’s settings.';
+
+  @override
+  String downloadSizeNeeded(String size) {
+    return 'Needed: $size';
+  }
+
+  @override
+  String downloadSizeUsed(String size) {
+    return 'Used: $size';
+  }
+
+  @override
+  String downloadSizeLimit(String size) {
+    return 'Limit: $size';
+  }
+
+  @override
+  String downloadSizeAvailable(String size) {
+    return 'Available: $size';
+  }
+
+  @override
+  String get downloadManage => 'Manage downloads';
+
+  @override
+  String downloadShortfallTitle(String size) {
+    return '$size more needed on this device';
+  }
+
+  @override
+  String get downloadRaiseLimit => 'Raise limit';
+
+  @override
+  String get downloadWhatFits => 'Download what fits';
+
+  @override
+  String get downloadRaiseLimitDiskFull =>
+      'There isn’t enough free space on this device. Free up space, then try again.';
+
+  @override
+  String get downloadUnavailableTitle => 'Some tracks can’t be downloaded';
+
+  @override
+  String get downloadUnavailableOther => 'Not available';
+
+  @override
+  String get libraryTabDownloads => 'Downloads';
+
+  @override
+  String downloadsSummary(int count, String size) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count items',
+      one: '1 item',
+      zero: 'No items',
+    );
+    return '$_temp0 · $size';
+  }
+
+  @override
+  String downloadsInProgressCount(int count) {
+    return '$count in progress';
+  }
+
+  @override
+  String get downloadsFilterInProgress => 'In progress';
+
+  @override
+  String get downloadsPauseAll => 'Pause all';
+
+  @override
+  String get downloadsResumeAll => 'Resume all';
+
+  @override
+  String get downloadsEmpty =>
+      'Nothing downloaded yet. Choose Download on an album, a playlist or a song to keep it on this device.';
+
+  @override
+  String get downloadsWaitingForConnection => 'Waiting for connection';
+
+  @override
+  String get downloadsKindAlbum => 'Album';
+
+  @override
+  String get downloadsKindPlaylist => 'Playlist';
+
+  @override
+  String get downloadsKindTrack => 'Song';
+
+  @override
+  String downloadsItemsProgress(String kind, int completed, int total) {
+    return '$kind · $completed of $total';
+  }
+
+  @override
+  String get downloadsPause => 'Pause';
+
+  @override
+  String get downloadsResume => 'Resume';
 }
 
 /// The translations for English (`en_XA`).
@@ -3634,4 +3789,163 @@ class AppLocalizationsEnXa extends AppLocalizationsEn {
 
   @override
   String get settingsStorageCancel => '[Çåñçéļ one]';
+
+  @override
+  String get downloadGlyphQueued => '[Ŵåîţîñĝ ţö ðöŵñļöåð one two]';
+
+  @override
+  String downloadGlyphRunning(int percent) {
+    return '[Ðöŵñļöåðîñĝ, $percent þéŕçéñţ one two three]';
+  }
+
+  @override
+  String get downloadGlyphRunningUnknown => '[Ðöŵñļöåðîñĝ one two]';
+
+  @override
+  String get downloadGlyphCompleted => '[Ðöŵñļöåðéð one]';
+
+  @override
+  String get downloadGlyphFailed => '[Ðöŵñļöåð fåîļéð one two]';
+
+  @override
+  String get downloadGlyphUnavailable =>
+      '[Ñöţ åvåîļåbļé föŕ ðöŵñļöåð one two three]';
+
+  @override
+  String get trackRowDownloaded => '[ðöŵñļöåðéð one]';
+
+  @override
+  String get menuDownload => '[Ðöŵñļöåð one]';
+
+  @override
+  String get menuRemoveDownload => '[Ŕémövé ðöŵñļöåð one two]';
+
+  @override
+  String get menuRetryDownload => '[Ŕéţŕý ðöŵñļöåð one two]';
+
+  @override
+  String get downloadRemoveTitle => '[Ŕémövé ðöŵñļöåð? one two]';
+
+  @override
+  String get downloadRemoveBody =>
+      '[Îţš fîļéš åŕé ðéļéţéð fŕöm ţĥîš ðévîçé. Ýöû çåñ ðöŵñļöåð îţ åĝåîñ ļåţéŕ. one two three four five six seven]';
+
+  @override
+  String get downloadRemoveConfirm => '[Ŕémövé one]';
+
+  @override
+  String get downloadCancel => '[Çåñçéļ one]';
+
+  @override
+  String get downloadClose => '[Çļöšé one]';
+
+  @override
+  String get downloadServerQuotaTitle =>
+      '[Ñöţ éñöûĝĥ šþåçé öñ ţĥé šéŕvéŕ one two three]';
+
+  @override
+  String get downloadServerQuotaBody =>
+      '[Ŕémövé ðöŵñļöåðš ţö fŕéé ûþ šþåçé, öŕ ŕåîšé ţĥé ðöŵñļöåð ļîmîţ îñ ţĥé šéŕvéŕ’š šéţţîñĝš. one two three four five six seven eight]';
+
+  @override
+  String downloadSizeNeeded(String size) {
+    return '[Ñééðéð: $size one]';
+  }
+
+  @override
+  String downloadSizeUsed(String size) {
+    return '[Ûšéð: $size one]';
+  }
+
+  @override
+  String downloadSizeLimit(String size) {
+    return '[Ļîmîţ: $size one]';
+  }
+
+  @override
+  String downloadSizeAvailable(String size) {
+    return '[Åvåîļåbļé: $size one two]';
+  }
+
+  @override
+  String get downloadManage => '[Måñåĝé ðöŵñļöåðš one two]';
+
+  @override
+  String downloadShortfallTitle(String size) {
+    return '[$size möŕé ñééðéð öñ ţĥîš ðévîçé one two three]';
+  }
+
+  @override
+  String get downloadRaiseLimit => '[Ŕåîšé ļîmîţ one two]';
+
+  @override
+  String get downloadWhatFits => '[Ðöŵñļöåð ŵĥåţ fîţš one two]';
+
+  @override
+  String get downloadRaiseLimitDiskFull =>
+      '[Ţĥéŕé îšñ’ţ éñöûĝĥ fŕéé šþåçé öñ ţĥîš ðévîçé. Fŕéé ûþ šþåçé, ţĥéñ ţŕý åĝåîñ. one two three four five six seven]';
+
+  @override
+  String get downloadUnavailableTitle =>
+      '[Šömé ţŕåçķš çåñ’ţ bé ðöŵñļöåðéð one two three]';
+
+  @override
+  String get downloadUnavailableOther => '[Ñöţ åvåîļåbļé one two]';
+
+  @override
+  String get libraryTabDownloads => '[Ðöŵñļöåðš one]';
+
+  @override
+  String downloadsSummary(int count, String size) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count îţémš one',
+      one: '1 îţém one',
+      zero: 'Ñö îţémš one',
+    );
+    return '[$_temp0 · $size one]';
+  }
+
+  @override
+  String downloadsInProgressCount(int count) {
+    return '[$count îñ þŕöĝŕéšš one two]';
+  }
+
+  @override
+  String get downloadsFilterInProgress => '[Îñ þŕöĝŕéšš one two]';
+
+  @override
+  String get downloadsPauseAll => '[Þåûšé åļļ one]';
+
+  @override
+  String get downloadsResumeAll => '[Ŕéšûmé åļļ one]';
+
+  @override
+  String get downloadsEmpty =>
+      '[Ñöţĥîñĝ ðöŵñļöåðéð ýéţ. Çĥööšé Ðöŵñļöåð öñ åñ åļbûm, å þļåýļîšţ öŕ å šöñĝ ţö ķééþ îţ öñ ţĥîš ðévîçé. one two three four five six seven eight]';
+
+  @override
+  String get downloadsWaitingForConnection =>
+      '[Ŵåîţîñĝ föŕ çöññéçţîöñ one two three]';
+
+  @override
+  String get downloadsKindAlbum => '[Åļbûm one]';
+
+  @override
+  String get downloadsKindPlaylist => '[Þļåýļîšţ one]';
+
+  @override
+  String get downloadsKindTrack => '[Šöñĝ one]';
+
+  @override
+  String downloadsItemsProgress(String kind, int completed, int total) {
+    return '[$kind · $completed öf $total one]';
+  }
+
+  @override
+  String get downloadsPause => '[Þåûšé one]';
+
+  @override
+  String get downloadsResume => '[Ŕéšûmé one]';
 }

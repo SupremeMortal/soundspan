@@ -2370,5 +2370,227 @@
   "settingsStorageCancel": "[Çåñçéļ one]",
   "@settingsStorageCancel": {
     "description": "Cancel button of the storage settings dialogs."
+  },
+  "downloadGlyphQueued": "[Ŵåîţîñĝ ţö ðöŵñļöåð one two]",
+  "@downloadGlyphQueued": {
+    "description": "Screen-reader label of the download glyph of an item waiting to download."
+  },
+  "downloadGlyphRunning": "[Ðöŵñļöåðîñĝ, {percent} þéŕçéñţ one two three]",
+  "@downloadGlyphRunning": {
+    "description": "Screen-reader label of the download glyph of an item being downloaded.",
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "downloadGlyphRunningUnknown": "[Ðöŵñļöåðîñĝ one two]",
+  "@downloadGlyphRunningUnknown": {
+    "description": "Screen-reader label of the download glyph of an item being downloaded whose size is not known."
+  },
+  "downloadGlyphCompleted": "[Ðöŵñļöåðéð one]",
+  "@downloadGlyphCompleted": {
+    "description": "Screen-reader label of the download glyph of a downloaded item."
+  },
+  "downloadGlyphFailed": "[Ðöŵñļöåð fåîļéð one two]",
+  "@downloadGlyphFailed": {
+    "description": "Screen-reader label of the download glyph of an item whose download failed."
+  },
+  "downloadGlyphUnavailable": "[Ñöţ åvåîļåbļé föŕ ðöŵñļöåð one two three]",
+  "@downloadGlyphUnavailable": {
+    "description": "Screen-reader label of the download glyph of an item the server will not let this device download."
+  },
+  "trackRowDownloaded": "[ðöŵñļöåðéð one]",
+  "@trackRowDownloaded": {
+    "description": "Appended to a track row’s screen-reader label when the track is downloaded, as in 'Title, Artist, 3 minutes, downloaded'."
+  },
+  "menuDownload": "[Ðöŵñļöåð one]",
+  "@menuDownload": {
+    "description": "Menu entry and action-bar button that keeps a track, album or playlist on this device."
+  },
+  "menuRemoveDownload": "[Ŕémövé ðöŵñļöåð one two]",
+  "@menuRemoveDownload": {
+    "description": "Menu entry and action-bar button that deletes a downloaded track, album or playlist from this device."
+  },
+  "menuRetryDownload": "[Ŕéţŕý ðöŵñļöåð one two]",
+  "@menuRetryDownload": {
+    "description": "Menu entry that tries a failed download again."
+  },
+  "downloadRemoveTitle": "[Ŕémövé ðöŵñļöåð? one two]",
+  "@downloadRemoveTitle": {
+    "description": "Title of the dialog confirming that a download is removed."
+  },
+  "downloadRemoveBody": "[Îţš fîļéš åŕé ðéļéţéð fŕöm ţĥîš ðévîçé. Ýöû çåñ ðöŵñļöåð îţ åĝåîñ ļåţéŕ. one two three four five six seven]",
+  "@downloadRemoveBody": {
+    "description": "Body of the dialog confirming that a download is removed."
+  },
+  "downloadRemoveConfirm": "[Ŕémövé one]",
+  "@downloadRemoveConfirm": {
+    "description": "Confirm button of the dialog removing a download."
+  },
+  "downloadCancel": "[Çåñçéļ one]",
+  "@downloadCancel": {
+    "description": "Cancel button of the download dialogs."
+  },
+  "downloadClose": "[Çļöšé one]",
+  "@downloadClose": {
+    "description": "Button that closes a download sheet."
+  },
+  "downloadServerQuotaTitle": "[Ñöţ éñöûĝĥ šþåçé öñ ţĥé šéŕvéŕ one two three]",
+  "@downloadServerQuotaTitle": {
+    "description": "Title of the sheet shown when the server refused a download because the user’s download limit there is reached."
+  },
+  "downloadServerQuotaBody": "[Ŕémövé ðöŵñļöåðš ţö fŕéé ûþ šþåçé, öŕ ŕåîšé ţĥé ðöŵñļöåð ļîmîţ îñ ţĥé šéŕvéŕ’š šéţţîñĝš. one two three four five six seven eight]",
+  "@downloadServerQuotaBody": {
+    "description": "Body of the sheet shown when the server’s download limit is reached."
+  },
+  "downloadSizeNeeded": "[Ñééðéð: {size} one]",
+  "@downloadSizeNeeded": {
+    "description": "A byte value on a download sheet: what the download needs.",
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadSizeUsed": "[Ûšéð: {size} one]",
+  "@downloadSizeUsed": {
+    "description": "A byte value on a download sheet: what is already used.",
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadSizeLimit": "[Ļîmîţ: {size} one]",
+  "@downloadSizeLimit": {
+    "description": "A byte value on a download sheet: the limit.",
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadSizeAvailable": "[Åvåîļåbļé: {size} one two]",
+  "@downloadSizeAvailable": {
+    "description": "A byte value on a download sheet: the room left on this device.",
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadManage": "[Måñåĝé ðöŵñļöåðš one two]",
+  "@downloadManage": {
+    "description": "Action of the server-limit sheet that opens the Downloads tab."
+  },
+  "downloadShortfallTitle": "[{size} möŕé ñééðéð öñ ţĥîš ðévîçé one two three]",
+  "@downloadShortfallTitle": {
+    "description": "Title of the sheet shown when a download does not fit in the device limit.",
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadRaiseLimit": "[Ŕåîšé ļîmîţ one two]",
+  "@downloadRaiseLimit": {
+    "description": "Action that raises the device download limit so the whole download fits."
+  },
+  "downloadWhatFits": "[Ðöŵñļöåð ŵĥåţ fîţš one two]",
+  "@downloadWhatFits": {
+    "description": "Action that keeps the device limit and downloads what fits in it."
+  },
+  "downloadRaiseLimitDiskFull": "[Ţĥéŕé îšñ’ţ éñöûĝĥ fŕéé šþåçé öñ ţĥîš ðévîçé. Fŕéé ûþ šþåçé, ţĥéñ ţŕý åĝåîñ. one two three four five six seven]",
+  "@downloadRaiseLimitDiskFull": {
+    "description": "Shown instead of raising the device limit when free disk space, not the limit, is what stops the download."
+  },
+  "downloadUnavailableTitle": "[Šömé ţŕåçķš çåñ’ţ bé ðöŵñļöåðéð one two three]",
+  "@downloadUnavailableTitle": {
+    "description": "Title of the sheet listing the tracks of an album or playlist that cannot be downloaded."
+  },
+  "downloadUnavailableOther": "[Ñöţ åvåîļåbļé one two]",
+  "@downloadUnavailableOther": {
+    "description": "Shown on a greyed-out track of a downloaded album or playlist for a reason this app does not know."
+  },
+  "libraryTabDownloads": "[Ðöŵñļöåðš one]",
+  "@libraryTabDownloads": {
+    "description": "Library tab listing what is downloaded on this device."
+  },
+  "downloadsSummary": "[{count, plural, =0{Ñö îţémš one} =1{1 îţém one} other{{count} îţémš one}} · {size} one]",
+  "@downloadsSummary": {
+    "description": "Storage summary at the top of the Downloads tab: the number of downloaded items and their size.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadsInProgressCount": "[{count} îñ þŕöĝŕéšš one two]",
+  "@downloadsInProgressCount": {
+    "description": "Shown in the Downloads tab header while items are downloading.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "downloadsFilterInProgress": "[Îñ þŕöĝŕéšš one two]",
+  "@downloadsFilterInProgress": {
+    "description": "Filter chip of the Downloads tab showing only collections still downloading."
+  },
+  "downloadsPauseAll": "[Þåûšé åļļ one]",
+  "@downloadsPauseAll": {
+    "description": "Downloads tab button pausing every download."
+  },
+  "downloadsResumeAll": "[Ŕéšûmé åļļ one]",
+  "@downloadsResumeAll": {
+    "description": "Downloads tab button resuming every paused download."
+  },
+  "downloadsEmpty": "[Ñöţĥîñĝ ðöŵñļöåðéð ýéţ. Çĥööšé Ðöŵñļöåð öñ åñ åļbûm, å þļåýļîšţ öŕ å šöñĝ ţö ķééþ îţ öñ ţĥîš ðévîçé. one two three four five six seven eight]",
+  "@downloadsEmpty": {
+    "description": "Empty state of the Downloads tab."
+  },
+  "downloadsWaitingForConnection": "[Ŵåîţîñĝ föŕ çöññéçţîöñ one two three]",
+  "@downloadsWaitingForConnection": {
+    "description": "Shown on a Downloads tab row that waits for the server to be reachable."
+  },
+  "downloadsKindAlbum": "[Åļbûm one]",
+  "@downloadsKindAlbum": {
+    "description": "Kind of a downloaded collection, on a Downloads tab row."
+  },
+  "downloadsKindPlaylist": "[Þļåýļîšţ one]",
+  "@downloadsKindPlaylist": {
+    "description": "Kind of a downloaded collection, on a Downloads tab row."
+  },
+  "downloadsKindTrack": "[Šöñĝ one]",
+  "@downloadsKindTrack": {
+    "description": "Kind of a downloaded collection, on a Downloads tab row."
+  },
+  "downloadsItemsProgress": "[{kind} · {completed} öf {total} one]",
+  "@downloadsItemsProgress": {
+    "description": "Subtitle of a Downloads tab row: its kind and how many of its items are downloaded.",
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      },
+      "completed": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "downloadsPause": "[Þåûšé one]",
+  "@downloadsPause": {
+    "description": "Downloads tab row menu entry pausing its download."
+  },
+  "downloadsResume": "[Ŕéšûmé one]",
+  "@downloadsResume": {
+    "description": "Downloads tab row menu entry resuming its download."
   }
 }

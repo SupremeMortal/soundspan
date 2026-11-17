@@ -3020,6 +3020,258 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Cancel'**
   String get settingsStorageCancel;
+
+  /// Screen-reader label of the download glyph of an item waiting to download.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting to download'**
+  String get downloadGlyphQueued;
+
+  /// Screen-reader label of the download glyph of an item being downloaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading, {percent} percent'**
+  String downloadGlyphRunning(int percent);
+
+  /// Screen-reader label of the download glyph of an item being downloaded whose size is not known.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading'**
+  String get downloadGlyphRunningUnknown;
+
+  /// Screen-reader label of the download glyph of a downloaded item.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloaded'**
+  String get downloadGlyphCompleted;
+
+  /// Screen-reader label of the download glyph of an item whose download failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Download failed'**
+  String get downloadGlyphFailed;
+
+  /// Screen-reader label of the download glyph of an item the server will not let this device download.
+  ///
+  /// In en, this message translates to:
+  /// **'Not available for download'**
+  String get downloadGlyphUnavailable;
+
+  /// Appended to a track row’s screen-reader label when the track is downloaded, as in 'Title, Artist, 3 minutes, downloaded'.
+  ///
+  /// In en, this message translates to:
+  /// **'downloaded'**
+  String get trackRowDownloaded;
+
+  /// Menu entry and action-bar button that keeps a track, album or playlist on this device.
+  ///
+  /// In en, this message translates to:
+  /// **'Download'**
+  String get menuDownload;
+
+  /// Menu entry and action-bar button that deletes a downloaded track, album or playlist from this device.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove download'**
+  String get menuRemoveDownload;
+
+  /// Menu entry that tries a failed download again.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry download'**
+  String get menuRetryDownload;
+
+  /// Title of the dialog confirming that a download is removed.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove download?'**
+  String get downloadRemoveTitle;
+
+  /// Body of the dialog confirming that a download is removed.
+  ///
+  /// In en, this message translates to:
+  /// **'Its files are deleted from this device. You can download it again later.'**
+  String get downloadRemoveBody;
+
+  /// Confirm button of the dialog removing a download.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get downloadRemoveConfirm;
+
+  /// Cancel button of the download dialogs.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get downloadCancel;
+
+  /// Button that closes a download sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get downloadClose;
+
+  /// Title of the sheet shown when the server refused a download because the user’s download limit there is reached.
+  ///
+  /// In en, this message translates to:
+  /// **'Not enough space on the server'**
+  String get downloadServerQuotaTitle;
+
+  /// Body of the sheet shown when the server’s download limit is reached.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove downloads to free up space, or raise the download limit in the server’s settings.'**
+  String get downloadServerQuotaBody;
+
+  /// A byte value on a download sheet: what the download needs.
+  ///
+  /// In en, this message translates to:
+  /// **'Needed: {size}'**
+  String downloadSizeNeeded(String size);
+
+  /// A byte value on a download sheet: what is already used.
+  ///
+  /// In en, this message translates to:
+  /// **'Used: {size}'**
+  String downloadSizeUsed(String size);
+
+  /// A byte value on a download sheet: the limit.
+  ///
+  /// In en, this message translates to:
+  /// **'Limit: {size}'**
+  String downloadSizeLimit(String size);
+
+  /// A byte value on a download sheet: the room left on this device.
+  ///
+  /// In en, this message translates to:
+  /// **'Available: {size}'**
+  String downloadSizeAvailable(String size);
+
+  /// Action of the server-limit sheet that opens the Downloads tab.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage downloads'**
+  String get downloadManage;
+
+  /// Title of the sheet shown when a download does not fit in the device limit.
+  ///
+  /// In en, this message translates to:
+  /// **'{size} more needed on this device'**
+  String downloadShortfallTitle(String size);
+
+  /// Action that raises the device download limit so the whole download fits.
+  ///
+  /// In en, this message translates to:
+  /// **'Raise limit'**
+  String get downloadRaiseLimit;
+
+  /// Action that keeps the device limit and downloads what fits in it.
+  ///
+  /// In en, this message translates to:
+  /// **'Download what fits'**
+  String get downloadWhatFits;
+
+  /// Shown instead of raising the device limit when free disk space, not the limit, is what stops the download.
+  ///
+  /// In en, this message translates to:
+  /// **'There isn’t enough free space on this device. Free up space, then try again.'**
+  String get downloadRaiseLimitDiskFull;
+
+  /// Title of the sheet listing the tracks of an album or playlist that cannot be downloaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Some tracks can’t be downloaded'**
+  String get downloadUnavailableTitle;
+
+  /// Shown on a greyed-out track of a downloaded album or playlist for a reason this app does not know.
+  ///
+  /// In en, this message translates to:
+  /// **'Not available'**
+  String get downloadUnavailableOther;
+
+  /// Library tab listing what is downloaded on this device.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloads'**
+  String get libraryTabDownloads;
+
+  /// Storage summary at the top of the Downloads tab: the number of downloaded items and their size.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No items} =1{1 item} other{{count} items}} · {size}'**
+  String downloadsSummary(int count, String size);
+
+  /// Shown in the Downloads tab header while items are downloading.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} in progress'**
+  String downloadsInProgressCount(int count);
+
+  /// Filter chip of the Downloads tab showing only collections still downloading.
+  ///
+  /// In en, this message translates to:
+  /// **'In progress'**
+  String get downloadsFilterInProgress;
+
+  /// Downloads tab button pausing every download.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause all'**
+  String get downloadsPauseAll;
+
+  /// Downloads tab button resuming every paused download.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume all'**
+  String get downloadsResumeAll;
+
+  /// Empty state of the Downloads tab.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing downloaded yet. Choose Download on an album, a playlist or a song to keep it on this device.'**
+  String get downloadsEmpty;
+
+  /// Shown on a Downloads tab row that waits for the server to be reachable.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for connection'**
+  String get downloadsWaitingForConnection;
+
+  /// Kind of a downloaded collection, on a Downloads tab row.
+  ///
+  /// In en, this message translates to:
+  /// **'Album'**
+  String get downloadsKindAlbum;
+
+  /// Kind of a downloaded collection, on a Downloads tab row.
+  ///
+  /// In en, this message translates to:
+  /// **'Playlist'**
+  String get downloadsKindPlaylist;
+
+  /// Kind of a downloaded collection, on a Downloads tab row.
+  ///
+  /// In en, this message translates to:
+  /// **'Song'**
+  String get downloadsKindTrack;
+
+  /// Subtitle of a Downloads tab row: its kind and how many of its items are downloaded.
+  ///
+  /// In en, this message translates to:
+  /// **'{kind} · {completed} of {total}'**
+  String downloadsItemsProgress(String kind, int completed, int total);
+
+  /// Downloads tab row menu entry pausing its download.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause'**
+  String get downloadsPause;
+
+  /// Downloads tab row menu entry resuming its download.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume'**
+  String get downloadsResume;
 }
 
 class _AppLocalizationsDelegate

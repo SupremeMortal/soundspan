@@ -13,6 +13,7 @@ import 'package:soundspan/app/router/routes.dart';
 import 'package:soundspan/app/shell/window_class.dart';
 import 'package:soundspan/app/theme/dimens.dart';
 import 'package:soundspan/app/theme/extensions.dart';
+import 'package:soundspan/features/downloads/downloads.dart';
 import 'package:soundspan/features/playlist/ui/playlist_dialogs.dart';
 import 'package:soundspan/features/playlist/ui/playlist_view_model.dart';
 import 'package:soundspan/shared/actions/app_menu_commands.dart';
@@ -282,6 +283,16 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
       onShuffle: playable.isEmpty
           ? null
           : () => unawaited(play().playPlaylist(summary.id, shuffle: true)),
+      download: CollectionDownloadButton.orNull(
+        ref,
+        kind: CollectionKind.playlist,
+        refId: summary.id,
+        snapshot: () => CollectionSnapshot(
+          title: summary.name,
+          artworkRef: summary.coverRefs.firstOrNull,
+          tracks: [for (final item in detail.items) item.track],
+        ),
+      ),
       onAddToPlaylist: playable.isEmpty
           ? null
           : () => unawaited(addTracksToPlaylist(context, ref, playable)),

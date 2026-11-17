@@ -16,7 +16,7 @@ import 'package:soundspan/platform/artwork_store/artwork_store_web.dart'
 
 export 'artwork_store_web.dart'
     if (dart.library.io) 'artwork_store_io.dart'
-    show createArtworkStore;
+    show artworkFileImage, createArtworkStore;
 
 /// Writes, lists and deletes artwork files the OS can load without
 /// credentials.

@@ -212,6 +212,7 @@ void main() {
         MenuIds.addToQueue,
         MenuIds.addToPlaylist,
         MenuIds.like,
+        MenuIds.download,
         MenuIds.goToArtist,
         MenuIds.share,
       ];
@@ -234,7 +235,10 @@ void main() {
       await mouse.down(tester.getCenter(find.text('Song 1.1')));
       await mouse.up();
       await tester.pumpAndSettle();
-      expect(find.byType(PopupMenuItem<String>), findsNWidgets(7));
+      expect(
+        find.byType(PopupMenuItem<String>),
+        findsNWidgets(expected.length),
+      );
       expect(_entries(tester), expected);
     });
 
@@ -472,6 +476,7 @@ void main() {
         MenuIds.addToQueue,
         MenuIds.addToPlaylist,
         MenuIds.like,
+        MenuIds.download,
         MenuIds.removeFromPlaylist,
         MenuIds.goToAlbum,
         MenuIds.goToArtist,
@@ -546,6 +551,7 @@ void main() {
         MenuIds.addToQueue,
         MenuIds.addToPlaylist,
         MenuIds.like,
+        MenuIds.download,
         MenuIds.goToAlbum,
         MenuIds.share,
       ]);

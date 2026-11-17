@@ -7,11 +7,16 @@ import 'package:soundspan/app/l10n/generated/app_localizations.dart';
 import 'package:soundspan/app/theme/dimens.dart';
 import 'package:soundspan/app/theme/extensions.dart';
 import 'package:soundspan/app/theme/typography.dart';
+import 'package:soundspan/core/downloads/download_controller.dart';
+import 'package:soundspan/core/downloads/download_keys.dart';
+import 'package:soundspan/core/storage/state/enums.dart';
+import 'package:soundspan/features/downloads/downloads.dart';
 import 'package:soundspan/shared/domain/playback_id.dart';
 import 'package:soundspan/shared/providers/now_playing.dart';
 import 'package:soundspan/shared/util/duration_format.dart';
 import 'package:soundspan/shared/widgets/artwork.dart';
 import 'package:soundspan/shared/widgets/context_menu.dart';
+import 'package:soundspan/shared/widgets/download_glyph.dart';
 import 'package:soundspan/shared/widgets/equaliser_bars.dart';
 import 'package:soundspan/shared/widgets/like_button.dart';
 
@@ -161,6 +166,9 @@ class TrackRow extends StatefulWidget {
   /// The key of the overflow button.
   static const Key overflowKey = ValueKey('TrackRow.overflow');
 
+  /// The key of the row's download glyph.
+  static const Key downloadGlyphKey = ValueKey('TrackRow.downloadGlyph');
+
   /// The key of the box that draws the hover and selection fill.
   static const Key backgroundKey = ValueKey('TrackRow.background');
 
@@ -284,6 +292,9 @@ class _TrackRowState extends State<TrackRow> {
               ),
             )
           : null,
+      download: playbackId == null
+          ? null
+          : _DownloadSlot(playbackId: playbackId),
       like: onToggleLike == null
           ? null
           : LikeButton(liked: widget.liked, onToggle: onToggleLike),
@@ -383,11 +394,16 @@ class _TrackRowState extends State<TrackRow> {
     if (playbackId == null) return semantics(label, interactive);
     return _PlayingSemantics(
       playbackId: playbackId,
-      builder: (state) => semantics(switch (state) {
-        _PlayingState.none => label,
-        _PlayingState.playing => '$label, ${l10n.trackRowPlaying}',
-        _PlayingState.paused => '$label, ${l10n.trackRowPaused}',
-      }, interactive),
+      builder: (state, downloaded) {
+        final withDownload = downloaded
+            ? '$label, ${l10n.trackRowDownloaded}'
+            : label;
+        return semantics(switch (state) {
+          _PlayingState.none => withDownload,
+          _PlayingState.playing => '$withDownload, ${l10n.trackRowPlaying}',
+          _PlayingState.paused => '$withDownload, ${l10n.trackRowPaused}',
+        }, interactive);
+      },
       child: interactive,
     );
   }
@@ -494,12 +510,45 @@ class _PlayingSemantics extends ConsumerWidget {
   });
 
   final PlaybackId playbackId;
-  final Widget Function(_PlayingState state) builder;
+  final Widget Function(_PlayingState state, bool downloaded) builder;
   final Widget child;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) =>
-      builder(_watchState(ref, playbackId));
+  Widget build(BuildContext context, WidgetRef ref) {
+    final key = TrackItemKey(playbackId.value);
+    final downloaded = ref.watch(
+      itemDownloadStatesProvider.select(
+        (states) => states.value?[key]?.status == DownloadStatus.completed,
+      ),
+    );
+    return builder(_watchState(ref, playbackId), downloaded);
+  }
+}
+
+/// The row's download glyph, rebuilt only when this track's glyph changes;
+/// a failed one retries when tapped.
+class _DownloadSlot extends ConsumerWidget {
+  const new({required this.playbackId});
+
+  final PlaybackId playbackId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final glyph = watchTrackGlyph(ref, playbackId);
+    if (glyph == DownloadGlyphState.none) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsetsDirectional.only(start: Spacing.x8),
+      child: DownloadGlyph(
+        key: TrackRow.downloadGlyphKey,
+        state: glyph,
+        onTap: glyph == DownloadGlyphState.failed
+            ? () => ref
+                  .read(downloadControllerProvider)
+                  .retry(TrackItemKey(playbackId.value))
+            : null,
+      ),
+    );
+  }
 }
 
 /// [duration] as a screen reader says it: "3 minutes 41 seconds",
@@ -525,6 +574,7 @@ class _RowLayout extends StatelessWidget {
     required this.titleAndArtist,
     required this.duration,
     this.album,
+    this.download,
     this.like,
     this.overflow,
   });
@@ -533,6 +583,7 @@ class _RowLayout extends StatelessWidget {
   final Widget leading;
   final Widget titleAndArtist;
   final Widget? album;
+  final Widget? download;
   final Widget? like;
   final Widget duration;
   final Widget? overflow;
@@ -547,6 +598,7 @@ class _RowLayout extends StatelessWidget {
   Widget build(BuildContext context) {
     final scaler = MediaQuery.textScalerOf(context);
     final album = this.album;
+    final download = this.download;
     final like = this.like;
     final overflow = this.overflow;
     return ConstrainedBox(
@@ -570,6 +622,7 @@ class _RowLayout extends StatelessWidget {
               const SizedBox(width: Spacing.x16),
               Expanded(flex: 2, child: album),
             ],
+            ?download,
             if (like != null) ...[const SizedBox(width: Spacing.x8), like],
             const SizedBox(width: Spacing.x16),
             SizedBox(

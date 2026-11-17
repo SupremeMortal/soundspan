@@ -101,7 +101,10 @@ enum LibraryTab {
   albums,
 
   /// Songs.
-  songs;
+  songs,
+
+  /// Downloads; only where the platform downloads.
+  downloads;
 
   /// The tab named [segment], or null when there is none.
   static LibraryTab? tryParse(String segment) {

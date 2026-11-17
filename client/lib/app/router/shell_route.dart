@@ -70,7 +70,7 @@ List<String> _paneSelection(GoRouterState state, int depth) =>
 /// redirects to Playlists. Every tab is the same page, so switching tabs
 /// keeps the screen and the state of each tab. Details opened from the
 /// Playlists, Artists and Albums tabs open in the detail pane of a
-/// two-pane window.
+/// two-pane window; Songs and Downloads stay single-pane.
 GoRoute libraryTabRoute() => GoRoute(
   path: ':tab',
   redirect: (_, state) =>
@@ -86,8 +86,10 @@ GoRoute libraryTabRoute() => GoRoute(
   ),
   routes: detailRoutes(
     paneEligible: (state) =>
-        LibraryTab.tryParse(state.pathParameters['tab'] ?? '') !=
-        LibraryTab.songs,
+        switch (LibraryTab.tryParse(state.pathParameters['tab'] ?? '')) {
+          LibraryTab.songs || LibraryTab.downloads => false,
+          _ => true,
+        },
   ),
 );
 

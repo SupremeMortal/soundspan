@@ -16,6 +16,7 @@ import 'package:material_ui/material_ui.dart' show Icons;
 import 'package:soundspan/app/l10n/generated/app_localizations.dart';
 import 'package:soundspan/shared/domain/domain.dart';
 import 'package:soundspan/shared/widgets/context_menu.dart';
+import 'package:soundspan/shared/widgets/download_glyph.dart';
 
 /// The entry ids of the menus, in no particular order.
 abstract final class MenuIds {
@@ -33,6 +34,15 @@ abstract final class MenuIds {
 
   /// Like or Remove like.
   static const String like = 'like';
+
+  /// Download.
+  static const String download = 'download';
+
+  /// Retry download.
+  static const String retryDownload = 'retryDownload';
+
+  /// Remove download.
+  static const String removeDownload = 'removeDownload';
 
   /// Remove from this playlist.
   static const String removeFromPlaylist = 'removeFromPlaylist';
@@ -73,6 +83,15 @@ abstract interface class MenuCommands {
 
   /// Removes [item] from the playlist [playlistId].
   Future<void> removeFromPlaylist(String playlistId, PlaylistItem item);
+
+  /// Keeps [track] on this device.
+  Future<void> downloadTrack(Track track);
+
+  /// Tries the failed download of [track] again.
+  Future<void> retryTrackDownload(Track track);
+
+  /// Confirms and deletes the download of [track] from this device.
+  Future<void> removeTrackDownload(Track track);
 
   /// Opens the album [id].
   void openAlbum(String id);
@@ -162,14 +181,18 @@ class TrackActionScope {
 
 /// The menu of one track (doc 09, Track Actions), in this order: Play now,
 /// Play next, Add to queue, Add to playlist… (each when playable), Like or
-/// Remove like (with a `playbackId`), Remove from this playlist (in an
-/// owned playlist), Go to album and Go to artist (with the id, and not on
-/// that album's or artist's own page) and Share link (with an album id; the
-/// link scheme has no track route, so the album's link is copied).
+/// Remove like (with a `playbackId`), Download or Retry download and
+/// Remove download (with a `playbackId`, where the platform downloads:
+/// [download] is the track's glyph, null where it does not), Remove from
+/// this playlist (in an owned playlist), Go to album and Go to artist (with
+/// the id, and not on that album's or artist's own page) and Share link
+/// (with an album id; the link scheme has no track route, so the album's
+/// link is copied).
 List<MenuEntry> trackActions(
   TrackActionScope scope, {
   required AppLocalizations l10n,
   required MenuCommands commands,
+  DownloadGlyphState? download,
 }) {
   final track = scope.track;
   final context = scope.context;
@@ -216,6 +239,8 @@ List<MenuEntry> trackActions(
             : Icons.favorite_border_rounded,
         onSelected: () => unawaited(commands.toggleLike(track)),
       ),
+    if (track.playbackId != null && download != null)
+      ..._downloadEntries(track, download, l10n, commands),
     if (owned != null)
       MenuEntry(
         id: MenuIds.removeFromPlaylist,
@@ -363,6 +388,36 @@ String playlistLink(String id) =>
 
 /// The `soundspan://` link of the artist [id].
 String artistLink(String id) => 'soundspan://artist/${Uri.encodeComponent(id)}';
+
+List<MenuEntry> _downloadEntries(
+  Track track,
+  DownloadGlyphState download,
+  AppLocalizations l10n,
+  MenuCommands commands,
+) => [
+  if (download == DownloadGlyphState.none)
+    MenuEntry(
+      id: MenuIds.download,
+      label: l10n.menuDownload,
+      icon: Icons.download_rounded,
+      onSelected: () => unawaited(commands.downloadTrack(track)),
+    )
+  else ...[
+    if (download == DownloadGlyphState.failed)
+      MenuEntry(
+        id: MenuIds.retryDownload,
+        label: l10n.menuRetryDownload,
+        icon: Icons.refresh_rounded,
+        onSelected: () => unawaited(commands.retryTrackDownload(track)),
+      ),
+    MenuEntry(
+      id: MenuIds.removeDownload,
+      label: l10n.menuRemoveDownload,
+      icon: Icons.delete_outline_rounded,
+      onSelected: () => unawaited(commands.removeTrackDownload(track)),
+    ),
+  ],
+];
 
 MenuEntry _share(AppLocalizations l10n, MenuCommands commands, String link) =>
     MenuEntry(

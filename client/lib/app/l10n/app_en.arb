@@ -2320,5 +2320,227 @@
   "settingsStorageCancel": "Cancel",
   "@settingsStorageCancel": {
     "description": "Cancel button of the storage settings dialogs."
+  },
+  "downloadGlyphQueued": "Waiting to download",
+  "@downloadGlyphQueued": {
+    "description": "Screen-reader label of the download glyph of an item waiting to download."
+  },
+  "downloadGlyphRunning": "Downloading, {percent} percent",
+  "@downloadGlyphRunning": {
+    "description": "Screen-reader label of the download glyph of an item being downloaded.",
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "downloadGlyphRunningUnknown": "Downloading",
+  "@downloadGlyphRunningUnknown": {
+    "description": "Screen-reader label of the download glyph of an item being downloaded whose size is not known."
+  },
+  "downloadGlyphCompleted": "Downloaded",
+  "@downloadGlyphCompleted": {
+    "description": "Screen-reader label of the download glyph of a downloaded item."
+  },
+  "downloadGlyphFailed": "Download failed",
+  "@downloadGlyphFailed": {
+    "description": "Screen-reader label of the download glyph of an item whose download failed."
+  },
+  "downloadGlyphUnavailable": "Not available for download",
+  "@downloadGlyphUnavailable": {
+    "description": "Screen-reader label of the download glyph of an item the server will not let this device download."
+  },
+  "trackRowDownloaded": "downloaded",
+  "@trackRowDownloaded": {
+    "description": "Appended to a track row’s screen-reader label when the track is downloaded, as in 'Title, Artist, 3 minutes, downloaded'."
+  },
+  "menuDownload": "Download",
+  "@menuDownload": {
+    "description": "Menu entry and action-bar button that keeps a track, album or playlist on this device."
+  },
+  "menuRemoveDownload": "Remove download",
+  "@menuRemoveDownload": {
+    "description": "Menu entry and action-bar button that deletes a downloaded track, album or playlist from this device."
+  },
+  "menuRetryDownload": "Retry download",
+  "@menuRetryDownload": {
+    "description": "Menu entry that tries a failed download again."
+  },
+  "downloadRemoveTitle": "Remove download?",
+  "@downloadRemoveTitle": {
+    "description": "Title of the dialog confirming that a download is removed."
+  },
+  "downloadRemoveBody": "Its files are deleted from this device. You can download it again later.",
+  "@downloadRemoveBody": {
+    "description": "Body of the dialog confirming that a download is removed."
+  },
+  "downloadRemoveConfirm": "Remove",
+  "@downloadRemoveConfirm": {
+    "description": "Confirm button of the dialog removing a download."
+  },
+  "downloadCancel": "Cancel",
+  "@downloadCancel": {
+    "description": "Cancel button of the download dialogs."
+  },
+  "downloadClose": "Close",
+  "@downloadClose": {
+    "description": "Button that closes a download sheet."
+  },
+  "downloadServerQuotaTitle": "Not enough space on the server",
+  "@downloadServerQuotaTitle": {
+    "description": "Title of the sheet shown when the server refused a download because the user’s download limit there is reached."
+  },
+  "downloadServerQuotaBody": "Remove downloads to free up space, or raise the download limit in the server’s settings.",
+  "@downloadServerQuotaBody": {
+    "description": "Body of the sheet shown when the server’s download limit is reached."
+  },
+  "downloadSizeNeeded": "Needed: {size}",
+  "@downloadSizeNeeded": {
+    "description": "A byte value on a download sheet: what the download needs.",
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadSizeUsed": "Used: {size}",
+  "@downloadSizeUsed": {
+    "description": "A byte value on a download sheet: what is already used.",
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadSizeLimit": "Limit: {size}",
+  "@downloadSizeLimit": {
+    "description": "A byte value on a download sheet: the limit.",
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadSizeAvailable": "Available: {size}",
+  "@downloadSizeAvailable": {
+    "description": "A byte value on a download sheet: the room left on this device.",
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadManage": "Manage downloads",
+  "@downloadManage": {
+    "description": "Action of the server-limit sheet that opens the Downloads tab."
+  },
+  "downloadShortfallTitle": "{size} more needed on this device",
+  "@downloadShortfallTitle": {
+    "description": "Title of the sheet shown when a download does not fit in the device limit.",
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadRaiseLimit": "Raise limit",
+  "@downloadRaiseLimit": {
+    "description": "Action that raises the device download limit so the whole download fits."
+  },
+  "downloadWhatFits": "Download what fits",
+  "@downloadWhatFits": {
+    "description": "Action that keeps the device limit and downloads what fits in it."
+  },
+  "downloadRaiseLimitDiskFull": "There isn’t enough free space on this device. Free up space, then try again.",
+  "@downloadRaiseLimitDiskFull": {
+    "description": "Shown instead of raising the device limit when free disk space, not the limit, is what stops the download."
+  },
+  "downloadUnavailableTitle": "Some tracks can’t be downloaded",
+  "@downloadUnavailableTitle": {
+    "description": "Title of the sheet listing the tracks of an album or playlist that cannot be downloaded."
+  },
+  "downloadUnavailableOther": "Not available",
+  "@downloadUnavailableOther": {
+    "description": "Shown on a greyed-out track of a downloaded album or playlist for a reason this app does not know."
+  },
+  "libraryTabDownloads": "Downloads",
+  "@libraryTabDownloads": {
+    "description": "Library tab listing what is downloaded on this device."
+  },
+  "downloadsSummary": "{count, plural, =0{No items} =1{1 item} other{{count} items}} · {size}",
+  "@downloadsSummary": {
+    "description": "Storage summary at the top of the Downloads tab: the number of downloaded items and their size.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadsInProgressCount": "{count} in progress",
+  "@downloadsInProgressCount": {
+    "description": "Shown in the Downloads tab header while items are downloading.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "downloadsFilterInProgress": "In progress",
+  "@downloadsFilterInProgress": {
+    "description": "Filter chip of the Downloads tab showing only collections still downloading."
+  },
+  "downloadsPauseAll": "Pause all",
+  "@downloadsPauseAll": {
+    "description": "Downloads tab button pausing every download."
+  },
+  "downloadsResumeAll": "Resume all",
+  "@downloadsResumeAll": {
+    "description": "Downloads tab button resuming every paused download."
+  },
+  "downloadsEmpty": "Nothing downloaded yet. Choose Download on an album, a playlist or a song to keep it on this device.",
+  "@downloadsEmpty": {
+    "description": "Empty state of the Downloads tab."
+  },
+  "downloadsWaitingForConnection": "Waiting for connection",
+  "@downloadsWaitingForConnection": {
+    "description": "Shown on a Downloads tab row that waits for the server to be reachable."
+  },
+  "downloadsKindAlbum": "Album",
+  "@downloadsKindAlbum": {
+    "description": "Kind of a downloaded collection, on a Downloads tab row."
+  },
+  "downloadsKindPlaylist": "Playlist",
+  "@downloadsKindPlaylist": {
+    "description": "Kind of a downloaded collection, on a Downloads tab row."
+  },
+  "downloadsKindTrack": "Song",
+  "@downloadsKindTrack": {
+    "description": "Kind of a downloaded collection, on a Downloads tab row."
+  },
+  "downloadsItemsProgress": "{kind} · {completed} of {total}",
+  "@downloadsItemsProgress": {
+    "description": "Subtitle of a Downloads tab row: its kind and how many of its items are downloaded.",
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      },
+      "completed": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "downloadsPause": "Pause",
+  "@downloadsPause": {
+    "description": "Downloads tab row menu entry pausing its download."
+  },
+  "downloadsResume": "Resume",
+  "@downloadsResume": {
+    "description": "Downloads tab row menu entry resuming its download."
   }
 }

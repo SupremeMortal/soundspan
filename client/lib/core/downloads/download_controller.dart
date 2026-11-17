@@ -115,6 +115,9 @@ final class CollectionDownloadState {
     required this.unavailableCount,
     required this.receivedBytes,
     required this.totalBytes,
+    this.activeCount = 0,
+    this.failedCount = 0,
+    this.pausedCount = 0,
     this.blockedReason,
     this.blockedDetail,
     this.quotaShortfall,
@@ -134,6 +137,16 @@ final class CollectionDownloadState {
 
   /// The number of `unavailable` items.
   final int unavailableCount;
+
+  /// The number of items still to download: `queued`, `running`,
+  /// `verifying`, `paused` or `missing`.
+  final int activeCount;
+
+  /// The number of `failedRetryable` or `failedPermanent` items.
+  final int failedCount;
+
+  /// The number of active items the user paused or holds.
+  final int pausedCount;
 
   /// Bytes on disk: the size of completed items plus the bytes received of
   /// the others.
@@ -161,6 +174,9 @@ final class CollectionDownloadState {
       other.itemCount == itemCount &&
       other.completedCount == completedCount &&
       other.unavailableCount == unavailableCount &&
+      other.activeCount == activeCount &&
+      other.failedCount == failedCount &&
+      other.pausedCount == pausedCount &&
       other.receivedBytes == receivedBytes &&
       other.totalBytes == totalBytes &&
       _sameDetail(other.blockedDetail, blockedDetail);
@@ -172,6 +188,9 @@ final class CollectionDownloadState {
     itemCount,
     completedCount,
     unavailableCount,
+    activeCount,
+    failedCount,
+    pausedCount,
     receivedBytes,
     totalBytes,
     quotaShortfall,
@@ -181,6 +200,7 @@ final class CollectionDownloadState {
   String toString() =>
       'CollectionDownloadState($status, block: $blockedReason, '
       '$completedCount/$itemCount, unavailable: $unavailableCount, '
+      'active: $activeCount, failed: $failedCount, paused: $pausedCount, '
       '$receivedBytes/$totalBytes bytes, shortfall: $quotaShortfall)';
 
   static bool _sameDetail(Map<String, Object?>? a, Map<String, Object?>? b) {
@@ -188,6 +208,74 @@ final class CollectionDownloadState {
     return listEquals(a.keys.toList(), b.keys.toList()) &&
         a.keys.every((k) => a[k] == b[k]);
   }
+}
+
+/// One pinned collection as the Downloads tab lists it: what it is, what
+/// the caller showed of it when pinning, and its download state.
+@immutable
+final class DownloadCollectionEntry {
+  /// Creates the entry.
+  const new({
+    required this.kind,
+    required this.refId,
+    required this.title,
+    required this.state,
+    this.subtitle,
+    this.artworkRef,
+    this.albumId,
+  });
+
+  /// The collection's kind.
+  final CollectionKind kind;
+
+  /// The album or playlist id, or the playback id of a single track.
+  final String refId;
+
+  /// The title of the snapshot it was pinned with; empty when none was
+  /// given.
+  final String title;
+
+  /// The line under the title, if any.
+  final String? subtitle;
+
+  /// The cover's artwork ref, if any.
+  final String? artworkRef;
+
+  /// The album of a single track, from its stored metadata, if known.
+  final String? albumId;
+
+  /// Its download state.
+  final CollectionDownloadState state;
+
+  @override
+  bool operator ==(Object other) =>
+      other is DownloadCollectionEntry &&
+      other.kind == kind &&
+      other.refId == refId &&
+      other.title == title &&
+      other.subtitle == subtitle &&
+      other.artworkRef == artworkRef &&
+      other.albumId == albumId &&
+      other.state == state;
+
+  @override
+  int get hashCode =>
+      Object.hash(kind, refId, title, subtitle, artworkRef, albumId, state);
+}
+
+/// An item of a collection the server will not let this device download:
+/// its title from the stored metadata and the reason, null for a reason
+/// this client does not know.
+@immutable
+final class UnavailableDownload {
+  /// Creates the value.
+  const new({required this.title, this.reason});
+
+  /// The track's title; empty when unknown.
+  final String title;
+
+  /// Why it cannot be downloaded.
+  final DownloadUnavailableReason? reason;
 }
 
 /// One item's download state for the UI.
@@ -198,6 +286,7 @@ final class ItemDownloadState {
     required this.status,
     required this.receivedBytes,
     this.expectedBytes,
+    this.sizeBytes,
     this.failureCode,
     this.waitingFor,
   });
@@ -210,6 +299,9 @@ final class ItemDownloadState {
 
   /// The size the server announced, if any.
   final int? expectedBytes;
+
+  /// The size of the file on disk, once completed.
+  final int? sizeBytes;
 
   /// Why it failed or is unavailable; for `unavailable` see
   /// [DownloadUnavailableReason.fromCode].
@@ -224,6 +316,7 @@ final class ItemDownloadState {
       other.status == status &&
       other.receivedBytes == receivedBytes &&
       other.expectedBytes == expectedBytes &&
+      other.sizeBytes == sizeBytes &&
       other.failureCode == failureCode &&
       other.waitingFor == waitingFor;
 
@@ -232,6 +325,7 @@ final class ItemDownloadState {
     status,
     receivedBytes,
     expectedBytes,
+    sizeBytes,
     failureCode,
     waitingFor,
   );
@@ -495,6 +589,21 @@ class DownloadController {
     await _applyDeviceLimit();
   });
 
+  /// The device limit at which every queued item fits: what downloads
+  /// hold or are about to hold, queued items included ("Raise limit").
+  /// Null when free disk space, not the limit, is what stops them.
+  Future<int?> deviceLimitToFitAll() => _serial(() async {
+    final committed = await _store.committedBytes();
+    final scheduled = await _store.queuedInScheduleOrder();
+    if (scheduled.isEmpty) return committed;
+    final decision = await _evaluateSpace(
+      scheduled,
+      persistDefault: false,
+      deviceLimit: committed,
+    );
+    return decision.fitsAll ? committed : null;
+  });
+
   /// Applies the device limit again: queued items that now fit lose their
   /// `waitingFor: space` marker, in schedule order, and the scheduler
   /// pumps. "Download what fits" needs no call: it is the state a pin
@@ -519,18 +628,145 @@ class DownloadController {
   /// there is no such item.
   Stream<ItemDownloadState?> watchItem(DownloadItemKey key) => _store
       .watchItem(key)
-      .map(
-        (row) => row == null
-            ? null
-            : ItemDownloadState(
-                status: row.status,
-                receivedBytes: row.receivedBytes,
-                expectedBytes: row.expectedBytes,
-                failureCode: row.failureCode,
-                waitingFor: DownloadStore.waitReasonOf(row),
-              ),
-      )
+      .map((row) => row == null ? null : _itemState(row))
       .distinct();
+
+  /// The download state of every item by its key, again on every change.
+  Stream<Map<DownloadItemKey, ItemDownloadState>> watchItems() =>
+      _store.watchItems().map(
+        (rows) => {
+          for (final row in rows)
+            DownloadItemKey.decode(row.itemKey): _itemState(row),
+        },
+      );
+
+  /// Every track, album and playlist collection in request order with its
+  /// download state, again on every change.
+  Stream<List<DownloadCollectionEntry>> watchCollectionEntries() => _store
+      .watchCollectionsWithItems()
+      .asyncMap((rows) async {
+        final entries = <DownloadCollectionEntry>[];
+        for (final row in rows) {
+          final kind = _collectionKindOf(row.collection.kind);
+          if (kind == null) continue;
+          final meta = _decodeObject(row.collection.metaJson);
+          final firstItem = row.items.isEmpty ? null : row.items.first;
+          final albumId = kind == CollectionKind.track && firstItem != null
+              ? _decodeObject(firstItem.metaJson)['albumId']
+              : null;
+          entries.add(
+            DownloadCollectionEntry(
+              kind: kind,
+              refId: row.collection.refId,
+              title: row.collection.title,
+              subtitle: meta['subtitle'] as String?,
+              artworkRef: meta['artworkRef'] as String?,
+              albumId: albumId is String ? albumId : null,
+              state: _collectionState(row, await _shortfallOf(row.items)),
+            ),
+          );
+        }
+        return entries;
+      })
+      .distinct(listEquals);
+
+  /// The unavailable items of collection [kind]/[refId] in membership
+  /// order, with their titles and reasons.
+  Future<List<UnavailableDownload>> unavailableItems(
+    CollectionKind kind,
+    String refId,
+  ) async {
+    final row = await _store
+        .watchCollectionWithItems(_kindOf(kind), refId)
+        .first;
+    return [
+      for (final item in row?.items ?? const <DownloadItem>[])
+        if (item.status == DownloadStatus.unavailable)
+          UnavailableDownload(
+            title: switch (_decodeObject(item.metaJson)['title']) {
+              final String title => title,
+              _ => '',
+            },
+            reason: DownloadUnavailableReason.fromCode(item.failureCode),
+          ),
+    ];
+  }
+
+  /// Queues the failed item [key] again with its attempts reset (the
+  /// user's Retry).
+  Future<void> retry(DownloadItemKey key) async {
+    await _scheduler.deliver(key, const RetryPressed());
+    _scheduler.pump();
+  }
+
+  /// Retries every failed item of collection [kind]/[refId]; a collection
+  /// that is blocked or waiting for the network is resolved again.
+  Future<void> retryCollection(CollectionKind kind, String refId) async {
+    final storeKind = _kindOf(kind);
+    final collection = await _store.collection(storeKind, refId);
+    if (collection == null) return;
+    final status = DownloadStore.statusOf(collection);
+    if (status == DownloadCollectionStatus.blocked ||
+        status == DownloadCollectionStatus.pendingNetwork) {
+      await pin(kind, refId);
+      return;
+    }
+    for (final item in await _itemsOf(storeKind, refId)) {
+      if (item.status == DownloadStatus.failedRetryable ||
+          item.status == DownloadStatus.failedPermanent) {
+        await _scheduler.deliver(
+          DownloadItemKey.decode(item.itemKey),
+          const RetryPressed(),
+        );
+      }
+    }
+    _scheduler.pump();
+  }
+
+  /// Pauses every item of collection [kind]/[refId] for the user.
+  Future<void> pauseCollection(CollectionKind kind, String refId) async {
+    for (final item in await _itemsOf(_kindOf(kind), refId)) {
+      await _scheduler.pauseItem(DownloadItemKey.decode(item.itemKey));
+    }
+  }
+
+  /// Resumes every item of collection [kind]/[refId] the user paused.
+  Future<void> resumeCollection(CollectionKind kind, String refId) async {
+    for (final item in await _itemsOf(_kindOf(kind), refId)) {
+      await _scheduler.resumeItem(DownloadItemKey.decode(item.itemKey));
+    }
+  }
+
+  /// Pauses every transfer and holds every queued item, for the user.
+  Future<void> pauseAll() => _scheduler.pauseAll();
+
+  /// Resumes every item the user paused or held.
+  Future<void> resumeAll() => _scheduler.resumeAll();
+
+  Future<List<DownloadItem>> _itemsOf(
+    DownloadCollectionKind kind,
+    String refId,
+  ) async =>
+      (await _store.watchCollectionWithItems(kind, refId).first)?.items ??
+      const [];
+
+  static ItemDownloadState _itemState(DownloadItem row) => ItemDownloadState(
+    status: row.status,
+    receivedBytes: row.receivedBytes,
+    expectedBytes: row.expectedBytes,
+    sizeBytes: row.sizeBytes,
+    failureCode: row.failureCode,
+    waitingFor: DownloadStore.waitReasonOf(row),
+  );
+
+  static Map<String, Object?> _decodeObject(String json) {
+    try {
+      final decoded = jsonDecode(json);
+      return decoded is Map<String, Object?> ? decoded : const {};
+    } on FormatException {
+      return const {};
+    }
+  }
 
   /// Resolves every `pendingNetwork` collection again, with its metadata
   /// from `cache.db`.
@@ -740,10 +976,12 @@ class DownloadController {
   Future<QuotaDecision> _evaluateSpace(
     List<ScheduledDownload> scheduled, {
     required bool persistDefault,
+    int? deviceLimit,
   }) async {
     final media = _paths?.profile.media;
     final free = media == null ? null : await _diskSpace.freeBytes(media);
-    final limit = await _deviceLimit(free, persist: persistDefault);
+    final limit =
+        deviceLimit ?? await _deviceLimit(free, persist: persistDefault);
     final sizes = [for (final s in scheduled) s.item.expectedBytes];
     var queuedBytes = 0;
     for (final size in sizes) {
@@ -1030,6 +1268,9 @@ class DownloadController {
   ) {
     var completed = 0;
     var unavailable = 0;
+    var active = 0;
+    var failed = 0;
+    var paused = 0;
     var received = 0;
     var total = 0;
     for (final item in row.items) {
@@ -1049,6 +1290,18 @@ class DownloadController {
             DownloadStatus.failedPermanent ||
             DownloadStatus.missing ||
             DownloadStatus.revoked:
+          switch (item.status) {
+            case DownloadStatus.failedRetryable ||
+                DownloadStatus.failedPermanent:
+              failed++;
+            case DownloadStatus.revoked:
+              break;
+            case _:
+              active++;
+              if (DownloadStore.waitReasonOf(item) == DownloadWaitReason.user) {
+                paused++;
+              }
+          }
           received += item.receivedBytes;
           total += item.expectedBytes ?? 0;
       }
@@ -1060,6 +1313,9 @@ class DownloadController {
       itemCount: row.items.length,
       completedCount: completed,
       unavailableCount: unavailable,
+      activeCount: active,
+      failedCount: failed,
+      pausedCount: paused,
       receivedBytes: received,
       totalBytes: total,
       blockedDetail: block == null

@@ -2,7 +2,11 @@
 
 import 'dart:typed_data';
 
+import 'package:flutter/painting.dart' show ImageProvider;
 import 'package:soundspan/platform/artwork_store/artwork_store.dart';
+
+/// None: the web has no artwork files.
+ImageProvider? artworkFileImage(String path) => null;
 
 /// The web [ArtworkStore].
 ArtworkStore createArtworkStore() => const WebArtworkStore();

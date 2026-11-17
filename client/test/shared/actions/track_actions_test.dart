@@ -5,6 +5,7 @@ import 'package:material_ui/material_ui.dart' show Locale;
 import 'package:soundspan/app/l10n/generated/app_localizations.dart';
 import 'package:soundspan/shared/actions/track_actions.dart';
 import 'package:soundspan/shared/domain/domain.dart';
+import 'package:soundspan/shared/widgets/download_glyph.dart';
 
 /// Records each command as a string.
 class _RecordingCommands implements MenuCommands {
@@ -36,6 +37,18 @@ class _RecordingCommands implements MenuCommands {
   @override
   Future<void> removeFromPlaylist(String playlistId, PlaylistItem item) async =>
       calls.add('remove $playlistId ${item.id}');
+
+  @override
+  Future<void> downloadTrack(Track track) async =>
+      calls.add('download ${track.playbackId?.value}');
+
+  @override
+  Future<void> retryTrackDownload(Track track) async =>
+      calls.add('retryDownload ${track.playbackId?.value}');
+
+  @override
+  Future<void> removeTrackDownload(Track track) async =>
+      calls.add('removeDownload ${track.playbackId?.value}');
 
   @override
   void openAlbum(String id) => calls.add('openAlbum $id');
@@ -454,5 +467,86 @@ void main() {
     expect(entries.map((entry) => entry.id), [MenuIds.share]);
     entries.single.onSelected();
     expect(commands.calls, ['share soundspan://artist/ar%201']);
+  });
+
+  group('downloads', () {
+    List<String> withDownload(Track track, DownloadGlyphState? glyph) => [
+      for (final entry in trackActions(
+        scope(track),
+        l10n: l10n,
+        commands: commands,
+        download: glyph,
+      ))
+        entry.id,
+    ];
+
+    test('a track not downloaded offers Download after Like, which calls '
+        'downloadTrack', () {
+      final entries = trackActions(
+        scope(_track()),
+        l10n: l10n,
+        commands: commands,
+        download: DownloadGlyphState.none,
+      );
+      final ids = [for (final e in entries) e.id];
+      expect(ids.indexOf(MenuIds.download), ids.indexOf(MenuIds.like) + 1);
+      expect(ids, isNot(contains(MenuIds.removeDownload)));
+      final download = entries.firstWhere((e) => e.id == MenuIds.download);
+      expect(download.label, 'Download');
+      download.onSelected();
+      expect(commands.calls, ['download p-1']);
+    });
+
+    test('a downloaded or downloading track offers Remove download', () {
+      for (final glyph in [
+        DownloadGlyphState.completed,
+        DownloadGlyphState.queued,
+        const DownloadGlyphState.running(0.3),
+        DownloadGlyphState.unavailable,
+      ]) {
+        final ids = withDownload(_track(), glyph);
+        expect(ids, contains(MenuIds.removeDownload), reason: '$glyph');
+        expect(ids, isNot(contains(MenuIds.download)), reason: '$glyph');
+        expect(ids, isNot(contains(MenuIds.retryDownload)), reason: '$glyph');
+      }
+      trackActions(
+        scope(_track()),
+        l10n: l10n,
+        commands: commands,
+        download: DownloadGlyphState.completed,
+      ).firstWhere((e) => e.id == MenuIds.removeDownload).onSelected();
+      expect(commands.calls, ['removeDownload p-1']);
+    });
+
+    test('a failed download offers Retry download, which calls '
+        'retryTrackDownload, and Remove download', () {
+      final entries = trackActions(
+        scope(_track()),
+        l10n: l10n,
+        commands: commands,
+        download: DownloadGlyphState.failed,
+      );
+      final ids = [for (final e in entries) e.id];
+      expect(
+        ids.indexOf(MenuIds.removeDownload),
+        ids.indexOf(MenuIds.retryDownload) + 1,
+      );
+      entries.firstWhere((e) => e.id == MenuIds.retryDownload).onSelected();
+      expect(commands.calls, ['retryDownload p-1']);
+    });
+
+    test('hidden where the platform does not download and for a track '
+        'without playbackId', () {
+      const download = [
+        MenuIds.download,
+        MenuIds.removeDownload,
+        MenuIds.retryDownload,
+      ];
+      expect(withDownload(_track(), null), isNot(anyElement(isIn(download))));
+      expect(
+        withDownload(_track(playable: false), DownloadGlyphState.none),
+        isNot(anyElement(isIn(download))),
+      );
+    });
   });
 }

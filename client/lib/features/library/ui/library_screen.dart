@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:soundspan/app/l10n/generated/app_localizations.dart';
@@ -8,6 +9,7 @@ import 'package:soundspan/app/router/routes.dart';
 import 'package:soundspan/app/shell/avatar_menu.dart';
 import 'package:soundspan/app/shell/two_pane.dart';
 import 'package:soundspan/app/shell/window_class.dart';
+import 'package:soundspan/features/downloads/downloads.dart';
 import 'package:soundspan/features/library/ui/albums_tab.dart';
 import 'package:soundspan/features/library/ui/artists_tab.dart';
 import 'package:soundspan/features/library/ui/playlists_tab.dart';
@@ -20,10 +22,13 @@ String libraryTabLabel(AppLocalizations l10n, LibraryTab tab) => switch (tab) {
   LibraryTab.artists => l10n.libraryTabArtists,
   LibraryTab.albums => l10n.libraryTabAlbums,
   LibraryTab.songs => l10n.libraryTabSongs,
+  LibraryTab.downloads => l10n.libraryTabDownloads,
 };
 
 /// The Library destination (doc 09, Library): the offline notice, then
-/// tabs Playlists, Artists, Albums and Songs over the selected tab's list.
+/// tabs Playlists, Artists, Albums, Songs and, where the platform
+/// downloads, Downloads over the selected tab's list. The Downloads tab's
+/// location shows Playlists where the platform does not download.
 ///
 /// The selected tab is [tab], the route's parameter; selecting another tab
 /// goes to its location. Each tab is built when first shown and keeps its
@@ -32,7 +37,7 @@ String libraryTabLabel(AppLocalizations l10n, LibraryTab tab) => switch (tab) {
 /// In a two-pane window the Playlists, Artists and Albums tabs are a
 /// [TwoPaneList]: the screen takes the list pane and the item whose detail
 /// is open, [selected], is highlighted.
-class LibraryScreen extends StatefulWidget {
+class LibraryScreen extends ConsumerStatefulWidget {
   /// Creates the screen showing [tab].
   const new({required this.tab, this.selected = const [], super.key});
 
@@ -47,35 +52,45 @@ class LibraryScreen extends StatefulWidget {
   static Key tabKey(LibraryTab tab) => ValueKey('library.tab.${tab.name}');
 
   @override
-  State<LibraryScreen> createState() => _LibraryScreenState();
+  ConsumerState<LibraryScreen> createState() => _LibraryScreenState();
 }
 
-class _LibraryScreenState extends State<LibraryScreen>
+class _LibraryScreenState extends ConsumerState<LibraryScreen>
     with SingleTickerProviderStateMixin {
-  late final TabController _tabs = TabController(
-    length: LibraryTab.values.length,
-    initialIndex: widget.tab.index,
+  late final List<LibraryTab> _tabs = [
+    for (final tab in LibraryTab.values)
+      if (tab != LibraryTab.downloads || ref.read(downloadsAvailableProvider))
+        tab,
+  ];
+  late final TabController _controller = TabController(
+    length: _tabs.length,
+    initialIndex: _indexOf(widget.tab),
     vsync: this,
   );
-  late final Set<LibraryTab> _built = {widget.tab};
+  late final Set<LibraryTab> _built = {_shown(widget.tab)};
+
+  LibraryTab _shown(LibraryTab tab) =>
+      _tabs.contains(tab) ? tab : LibraryTab.playlists;
+
+  int _indexOf(LibraryTab tab) => _tabs.indexOf(_shown(tab));
 
   @override
   void didUpdateWidget(LibraryScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.tab != oldWidget.tab) {
-      _built.add(widget.tab);
-      _tabs.index = widget.tab.index;
+      _built.add(_shown(widget.tab));
+      _controller.index = _indexOf(widget.tab);
     }
   }
 
   @override
   void dispose() {
-    _tabs.dispose();
+    _controller.dispose();
     super.dispose();
   }
 
   void _select(int index) {
-    final tab = LibraryTab.values[index];
+    final tab = _tabs[index];
     if (tab == widget.tab) return;
     GoRouter.of(context).go('${RoutePaths.library}/${tab.name}');
   }
@@ -87,7 +102,10 @@ class _LibraryScreenState extends State<LibraryScreen>
     return RouteTitle(
       screen: l10n.navLibrary,
       child: TwoPaneList(
-        enabled: widget.tab != LibraryTab.songs,
+        enabled: switch (_shown(widget.tab)) {
+          LibraryTab.songs || LibraryTab.downloads => false,
+          _ => true,
+        },
         selected: widget.selected,
         list: Scaffold(
           appBar: AppBar(
@@ -95,12 +113,12 @@ class _LibraryScreenState extends State<LibraryScreen>
             toolbarHeight: compact ? kToolbarHeight : 0,
             actions: compact ? const [AvatarButton()] : null,
             bottom: TabBar(
-              controller: _tabs,
+              controller: _controller,
               isScrollable: true,
               tabAlignment: TabAlignment.start,
               onTap: _select,
               tabs: [
-                for (final tab in LibraryTab.values)
+                for (final tab in _tabs)
                   Tab(
                     key: LibraryScreen.tabKey(tab),
                     text: libraryTabLabel(l10n, tab),
@@ -113,9 +131,9 @@ class _LibraryScreenState extends State<LibraryScreen>
               const OfflineBanner(),
               Expanded(
                 child: IndexedStack(
-                  index: widget.tab.index,
+                  index: _indexOf(widget.tab),
                   children: [
-                    for (final tab in LibraryTab.values)
+                    for (final tab in _tabs)
                       if (!_built.contains(tab))
                         const SizedBox.shrink()
                       else
@@ -124,6 +142,7 @@ class _LibraryScreenState extends State<LibraryScreen>
                           LibraryTab.artists => const ArtistsTab(),
                           LibraryTab.albums => const AlbumsTab(),
                           LibraryTab.songs => const SongsTab(),
+                          LibraryTab.downloads => const DownloadsTab(),
                         },
                   ],
                 ),

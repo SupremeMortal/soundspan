@@ -189,6 +189,49 @@ class DownloadStore {
     });
   }
 
+  /// Every collection in request order with its items in membership order,
+  /// again whenever either changes.
+  Stream<List<({DownloadCollection collection, List<DownloadItem> items})>>
+  watchCollectionsWithItems() {
+    final c = _db.downloadCollections;
+    final m = _db.downloadMembership;
+    final i = _db.downloadItems;
+    final query =
+        _db.select(c).join([
+          leftOuterJoin(
+            m,
+            m.kind.equalsExp(c.kind) & m.refId.equalsExp(c.refId),
+          ),
+          leftOuterJoin(i, i.itemKey.equalsExp(m.itemKey)),
+        ])..orderBy([
+          OrderingTerm.asc(c.requestedAt),
+          OrderingTerm.asc(c.kind),
+          OrderingTerm.asc(c.refId),
+          OrderingTerm.asc(m.position),
+        ]);
+    return query.watch().map((rows) {
+      final result =
+          <({DownloadCollection collection, List<DownloadItem> items})>[];
+      for (final row in rows) {
+        final collection = row.readTable(c);
+        final item = row.readTableOrNull(i);
+        final last = result.isEmpty ? null : result.last.collection;
+        if (last == null ||
+            last.kind != collection.kind ||
+            last.refId != collection.refId) {
+          result.add((collection: collection, items: [?item]));
+        } else if (item != null) {
+          result.last.items.add(item);
+        }
+      }
+      return result;
+    });
+  }
+
+  /// Every item as it changes.
+  Stream<List<DownloadItem>> watchItems() =>
+      _db.select(_db.downloadItems).watch();
+
   /// Deletes the collection and, by cascade, its memberships. Items are
   /// kept; use [removeMembershipsOf] first to learn which are orphaned.
   Future<void> deleteCollection(DownloadCollectionKind kind, String refId) =>

@@ -3,8 +3,13 @@
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:flutter/painting.dart' show FileImage, ImageProvider;
 import 'package:path/path.dart' as p;
 import 'package:soundspan/platform/artwork_store/artwork_store.dart';
+
+/// An image of the artwork file at the absolute [path], such as a pinned
+/// cover of a download.
+ImageProvider? artworkFileImage(String path) => FileImage(File(path));
 
 /// The native [ArtworkStore].
 ArtworkStore createArtworkStore() => const IoArtworkStore();
