@@ -75,7 +75,8 @@ typedef SocketTimerFactory = Timer Function(
 typedef ConfirmCredential = Future<void> Function();
 
 /// One reason to keep the socket connected; see [SocketClient.acquire].
-final class SocketLease {
+/// Not final, so tests of its holders can fake it.
+class SocketLease {
   new _(this._client, this.reason);
 
   final SocketClient _client;
@@ -129,7 +130,7 @@ class SocketClient {
     bool Function()? keepAliveInBackground,
     SocketTimerFactory? timers,
     SocketLog? log,
-  }) : _keepAliveInBackground = keepAliveInBackground ?? _never,
+  }) : keepAliveInBackground = keepAliveInBackground ?? _never,
        _timers = timers ?? Timer.new,
        _log = log ?? _silent,
        _online = initiallyOnline {
@@ -199,7 +200,10 @@ class SocketClient {
   final void Function(UnauthenticatedReason reason) _onUnauthenticated;
   final ConfirmCredential _confirmCredential;
   final bool _backgroundDisconnect;
-  final bool Function() _keepAliveInBackground;
+
+  /// Says whether to stay connected in the background ("in a group and
+  /// playing"); Listen Together replaces it.
+  bool Function() keepAliveInBackground;
   final SocketTimerFactory _timers;
   final SocketLog _log;
   late final io.Socket _socket;
@@ -664,7 +668,7 @@ class SocketClient {
         if (!_backgroundDisconnect || _backgroundTimer != null) return;
         _backgroundTimer = _timers(backgroundGrace, () {
           _backgroundTimer = null;
-          if (!_background || _keepAliveInBackground()) return;
+          if (!_background || keepAliveInBackground()) return;
           _backgroundDisconnected = true;
           _log(SocketLogLevel.fine, 'Socket closed in the background');
           _disconnect();

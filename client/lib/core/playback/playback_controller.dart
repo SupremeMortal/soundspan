@@ -15,6 +15,7 @@ import 'package:soundspan/core/playback/podcast_settings.dart';
 import 'package:soundspan/core/playback/queue/queue_command.dart';
 import 'package:soundspan/core/playback/queue/queue_reducer.dart';
 import 'package:soundspan/core/playback/queue/queue_state.dart';
+import 'package:soundspan/core/playback/remote_playback.dart';
 import 'package:soundspan/core/playback/snapshot_publisher.dart';
 import 'package:soundspan/core/playback/source_resolver.dart';
 import 'package:soundspan/core/playback/stream_quality_info.dart';
@@ -152,6 +153,14 @@ class PlaybackController {
   StreamQualityInfo? _quality;
 
   RemoteDriver? _driver;
+  bool _remoteCanControl = true;
+
+  /// The shuffle and repeat of the queue when the driver was attached,
+  /// restored on detach.
+  bool _shuffleBeforeRemote = false;
+  RepeatMode _repeatBeforeRemote = RepeatMode.off;
+
+  late final RemotePlayback _remote = _ControllerRemotePlayback(this);
 
   PauseOrigin? _pauseOrigin;
 
@@ -206,17 +215,128 @@ class PlaybackController {
   bool get hasRemoteDriver => _driver != null;
 
   /// Routes every queue and transport command to [driver] until
-  /// [detachRemoteDriver]; `setVolume` stays local. Throws [StateError]
-  /// when a driver is attached already.
+  /// [detachRemoteDriver]; `setVolume` stays local. Shuffle and repeat are
+  /// turned off while it is attached. Throws [StateError] when a driver is
+  /// attached already.
   void attachRemoteDriver(RemoteDriver driver) {
     if (_driver != null) {
       throw StateError('A RemoteDriver is attached already');
     }
     _driver = driver;
+    _remoteCanControl = true;
+    unawaited(_enqueue(_suspendShuffleAndRepeat));
   }
 
-  /// Applies commands locally again.
-  void detachRemoteDriver() => _driver = null;
+  /// Applies commands locally again and restores the shuffle and repeat the
+  /// queue had when the driver was attached.
+  void detachRemoteDriver() {
+    if (_driver == null) return;
+    _driver = null;
+    _remoteCanControl = true;
+    unawaited(_enqueue(_resumeShuffleAndRepeat));
+  }
+
+  /// How the attached driver applies the state it receives, bypassing the
+  /// routing of commands. Throws [StateError] when no driver is attached.
+  RemotePlayback get remote {
+    if (_driver == null) throw StateError('No RemoteDriver is attached');
+    return _remote;
+  }
+
+  /// Sets whether this device may control playback while a driver is
+  /// attached, published as [PlaybackSnapshot.remoteCanControl]; detaching
+  /// resets it to true.
+  void setRemoteCanControl(bool value) {
+    if (_remoteCanControl == value) return;
+    _remoteCanControl = value;
+    _publish();
+  }
+
+  /// Replaces the queue with [queue], paused at [position] and unloaded, as
+  /// [restore] does: the first [play] loads the current item there. Never
+  /// handed to a driver; Listen Together restores the user's own queue with
+  /// it after leaving a group.
+  Future<void> restoreQueue(QueueState queue, {required Duration position}) =>
+      _enqueue(() async {
+        _endCurrent();
+        await _stopEngine();
+        _queue = queue.copyWith(
+          revision:
+              (queue.revision > _queue.revision
+                  ? queue.revision
+                  : _queue.revision) +
+              1,
+        );
+        _error = null;
+        _onItemChanged(_queue.current);
+        _pendingStartAt = _queue.current == null ? Duration.zero : position;
+        _publish();
+      });
+
+  Future<void> _suspendShuffleAndRepeat() async {
+    _shuffleBeforeRemote = _queue.isShuffled;
+    _repeatBeforeRemote = _queue.repeat;
+    if (_shuffleBeforeRemote) {
+      _queue = _reducer.reduce(_queue, const SetShuffle(false)).state;
+    }
+    if (_repeatBeforeRemote != RepeatMode.off) {
+      _queue = _reducer.reduce(_queue, const SetRepeat(RepeatMode.off)).state;
+    }
+    _publish();
+    _syncNext();
+  }
+
+  Future<void> _resumeShuffleAndRepeat() async {
+    if (_shuffleBeforeRemote) {
+      _queue = _reducer.reduce(_queue, const SetShuffle(true)).state;
+    }
+    if (_repeatBeforeRemote != RepeatMode.off) {
+      _queue = _reducer.reduce(_queue, SetRepeat(_repeatBeforeRemote)).state;
+    }
+    _shuffleBeforeRemote = false;
+    _repeatBeforeRemote = RepeatMode.off;
+    _publish();
+    _syncNext();
+  }
+
+  Future<void> _remoteReplaceQueue(List<QueueItem> items, int cursor) async {
+    final previous = _queue.current?.queueItemId;
+    final transition = _reducer.reduce(
+      QueueState(revision: _queue.revision),
+      ReplaceAll(items, startIndex: cursor),
+    );
+    _queue = transition.state;
+    if (transition.dropped > 0) _notices.add(ItemsDropped(transition.dropped));
+    final current = _queue.current?.queueItemId;
+    if (current != null && current == previous && _currentSource != null) {
+      _publish();
+      _syncNext();
+      return;
+    }
+    if (previous != null) _ended.add(EntryEnded(previous, natural: false));
+    await _stopEngine();
+    _onItemChanged(_queue.current);
+    _pendingStartAt = Duration.zero;
+    _publish();
+  }
+
+  Future<void> _remoteLoadCurrent(Duration position, bool play) async {
+    _playIntent = play;
+    if (_queue.current == null) {
+      _publish();
+      return;
+    }
+    _pendingStartAt = position;
+    await _loadCurrent();
+    _publish();
+    _syncNext();
+  }
+
+  Future<void> _remotePause() async {
+    _playIntent = false;
+    _publish();
+    await _engine.pause();
+  }
 
   /// Rebuilds the queue this device stored, paused at the stored position,
   /// and starts persisting changes. Called once, before any command; it
@@ -955,7 +1075,37 @@ class PlaybackController {
         isLocalFile: _currentSource?.uri.isScheme('file') ?? false,
         speed: _speed,
         skipInterval: _skipInterval,
+        remoteAttached: _driver != null,
+        remoteCanControl: _driver == null || _remoteCanControl,
       ),
     );
   }
+}
+
+/// The [RemotePlayback] of one [PlaybackController]: each call is a step of
+/// the controller's queue.
+final class _ControllerRemotePlayback implements RemotePlayback {
+  new(this._controller);
+
+  final PlaybackController _controller;
+
+  @override
+  Future<void> replaceQueue(List<QueueItem> items, int cursor) => _controller
+      ._enqueue(() => _controller._remoteReplaceQueue(items, cursor));
+
+  @override
+  Future<void> loadCurrent({required Duration position, required bool play}) =>
+      _controller._enqueue(
+        () => _controller._remoteLoadCurrent(position, play),
+      );
+
+  @override
+  Future<void> play() => _controller._enqueue(_controller._play);
+
+  @override
+  Future<void> pause() => _controller._enqueue(_controller._remotePause);
+
+  @override
+  Future<void> seek(Duration position) =>
+      _controller._enqueue(() => _controller._engine.seek(position));
 }

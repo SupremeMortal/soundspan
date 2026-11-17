@@ -65,6 +65,8 @@ final class PlaybackSnapshot {
     this.isLocalFile = false,
     this.speed = 1,
     this.skipInterval = const Duration(seconds: 15),
+    this.remoteAttached = false,
+    this.remoteCanControl = true,
   });
 
   /// The snapshot of a controller with an empty queue and nothing loaded.
@@ -112,6 +114,15 @@ final class PlaybackSnapshot {
   /// (`playback.skipSeconds`).
   final Duration skipInterval;
 
+  /// Whether a remote driver, such as Listen Together, takes the queue and
+  /// transport commands.
+  final bool remoteAttached;
+
+  /// Whether this device may control playback: false for a follower in a
+  /// host-follower group, whose transport controls the UI disables; true
+  /// when no remote driver is attached.
+  final bool remoteCanControl;
+
   /// Whether [other] differs from this snapshot only in [position] and
   /// [buffered] (or not at all).
   bool differsOnlyInPosition(PlaybackSnapshot other) =>
@@ -124,7 +135,9 @@ final class PlaybackSnapshot {
       other.error == error &&
       other.isLocalFile == isLocalFile &&
       other.speed == speed &&
-      other.skipInterval == skipInterval;
+      other.skipInterval == skipInterval &&
+      other.remoteAttached == remoteAttached &&
+      other.remoteCanControl == remoteCanControl;
 
   @override
   String toString() =>

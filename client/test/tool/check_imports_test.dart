@@ -117,6 +117,49 @@ void main() {
     });
   });
 
+  group('feature-controller', () {
+    test("a feature-root controller imported by its feature's domain or "
+        'data fails', () {
+      expect(
+        _ids(
+          _check({
+            'lib/features/album/album_controller.dart': '',
+            'lib/features/album/data/a.dart': "import 'package:soundspan/features/album/album_controller.dart';",
+            'lib/features/album/domain/b.dart':
+                "import '../album_controller.dart';",
+            'lib/features/album/album.dart': "export 'album_controller.dart';",
+          }),
+        ),
+        [
+          'feature-controller lib/features/album/album.dart',
+          'feature-controller lib/features/album/data/a.dart',
+          'feature-controller lib/features/album/domain/b.dart',
+        ],
+      );
+    });
+
+    test('its own ui may import it, and it may import core, its domain and '
+        'its data', () {
+      expect(
+        _check({
+          'lib/features/album/album_controller.dart': '''
+import 'package:soundspan/core/playback/x.dart';
+import 'domain/a.dart';
+import 'data/b.dart';
+''',
+          'lib/features/album/ui/screen.dart':
+              "import '../album_controller.dart';",
+          'lib/features/album/domain/a.dart': '',
+          'lib/features/album/data/b.dart': '',
+          'lib/core/playback/x.dart': '',
+          'lib/features/album/data/c.dart':
+              "import 'package:soundspan/features/album/album_providers.dart';",
+        }),
+        isEmpty,
+      );
+    });
+  });
+
   group('feature-isolation', () {
     test('importing another feature by relative path fails', () {
       expect(

@@ -788,6 +788,22 @@ void main() {
       expect(await server.sockets(), hasLength(1));
     });
 
+    test('a keep-alive predicate set after creation is the one '
+        'asked', () async {
+      final h = _Harness(server);
+      await h.connect();
+      await h.client.joinGroup('g1');
+      h.client.keepAliveInBackground = () => true;
+
+      h.lifecycle.add(SocketAppLifecycle.background);
+      await Future<void>.delayed(Duration.zero);
+      h.timers.advance(const Duration(seconds: 60));
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+
+      expect(h.keepAlive, isFalse);
+      expect(h.client.connectionState, SocketConnectionState.connected);
+    });
+
     test('desktop and web ignore the background rule', () async {
       final h = _Harness(server)..build(backgroundDisconnect: false);
       h.client.acquire('test');

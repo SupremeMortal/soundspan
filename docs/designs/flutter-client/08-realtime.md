@@ -82,6 +82,8 @@ Error acknowledgements `{ error, code?, transient?, retryable?, retryAfterMs? }`
 3. Connect the socket if needed; `join-group { groupId }`; the server emits `group:state`.
 4. Attach the driver. The controller's queue becomes the group's queue.
 
+A failure at any step undoes the earlier ones: the socket lease is released, the REST membership is left, and the local queue keeps playing, since nothing was replaced yet. Joining while in a group leaves that group first. A group created from the current queue starts with the queue's track entries from the current one on, in play order (episodes and entries without a `playbackId` left out, at most 500), with `currentTimeMs` and `isPlaying`; `queueTrackIds` and `currentTrackId` are never sent. After attaching, `setRemoteCanControl` is false for a member other than the host of a `host-follower` group. `ListenTogetherController` lives at the root of `lib/features/listen_together/` (doc 02), and supplies the socket's background keep-alive predicate, "in a group and playing". Closing the profile while in a group leaves it within 2 s and then drops the local state.
+
 ### Clock Synchronisation
 
 Server events carry `serverTime` (server clock, ms) and `positionMs`. The client estimates the offset between its monotonic clock and the server clock:
@@ -95,7 +97,7 @@ on connect, then every 30 s while in a group:
     offset = sample with the smallest rtt
 ```
 
-`serverNow() = monotonicNow() + offset`. A monotonic clock (`Stopwatch`) is used so wall-clock adjustments on the device do not disturb sync.
+`serverNow() = monotonicNow() + offset`. A monotonic clock (`Stopwatch`) is used so wall-clock adjustments on the device do not disturb sync. A round also runs on every reconnection. A ping that fails or times out is skipped; when all five fail the previous offset is kept. The code is `lib/core/realtime/clock_sync.dart`.
 
 ### Applying State
 

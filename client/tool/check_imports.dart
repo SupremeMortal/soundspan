@@ -230,6 +230,15 @@ String? _feature(String path) {
   return null;
 }
 
+/// Whether [path] is a controller at the root of [feature]
+/// (`lib/features/<feature>/<name>_controller.dart`).
+bool _isFeatureController(String path, String feature) {
+  final parts = path.split('/');
+  return parts.length == 4 &&
+      _under(path, 'lib/features/$feature') &&
+      parts[3].endsWith('_controller.dart');
+}
+
 /// Whether core directory [from] may import core directory [to] (doc 02).
 bool _coreMayImport(String from, String to) {
   if (from == to) return true;
@@ -281,6 +290,17 @@ Iterable<(String, String)> _checkImport(String path, String uri) sync* {
     yield (
       'feature-isolation',
       'import lib/features/$toFeature/$toFeature.dart instead of $target',
+    );
+  }
+
+  if (fromFeature != null &&
+      fromFeature == toFeature &&
+      path != target &&
+      _isFeatureController(target, toFeature!) &&
+      !_under(path, 'lib/features/$toFeature/ui')) {
+    yield (
+      'feature-controller',
+      'only lib/features/$toFeature/ui/ may import $target',
     );
   }
 

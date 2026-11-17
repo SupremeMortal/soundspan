@@ -22,6 +22,7 @@ Rules (enforced by `tool/check_imports.dart`, see [01](01-toolchain-and-reposito
 - `ui` depends on `domain` and on providers. It never sees a wire model, a drift row, or dio.
 - `domain` depends on nothing but Dart and `collection`.
 - `data` maps wire models and drift rows to domain entities. Mapping functions live next to the repository and are unit tested.
+- A controller at a feature's root (`features/<f>/<name>_controller.dart`, beside `ui/`, `domain/` and `data/`) may import `core` and its own feature's `domain` and `data`; only its own `ui` imports it. It is for a feature service that needs a `core` service which may not import features, such as `ListenTogetherController` driving `PlaybackController`.
 - `core` services may depend on each other only in this direction: `storage` ← `auth` ← `profile` ← (`sync`, `downloads`, `realtime`) ← `playback`. `playback` may call `downloads` (to resolve a local file) and `sync` (to report plays); nothing in `core` imports `features`.
 
 ## Domain Model (shared)

@@ -396,6 +396,23 @@ abstract interface class RemoteDriver {
 
 `attachRemoteDriver(driver)` throws `StateError` when a driver is attached already; `detachRemoteDriver()` applies commands locally again. `setVolume` always stays local.
 
+The driver applies server state through `remote`, a `RemotePlayback` (`lib/core/playback/remote_playback.dart`) that acts on the reducer and the engine directly, bypassing the routing; reading `remote` without a driver throws `StateError`:
+
+```dart
+abstract interface class RemotePlayback {
+  Future<void> replaceQueue(List<QueueItem> items, int cursor); // keeps the current entry playing when it stays current; otherwise stops
+  Future<void> loadCurrent({required Duration position, required bool play});
+  Future<void> play();
+  Future<void> pause();
+  Future<void> seek(Duration position);
+}
+```
+
+- `setRemoteCanControl(bool)` sets `PlaybackSnapshot.remoteCanControl` (false disables transport controls for a follower in a host-follower group; true whenever no driver is attached). `PlaybackSnapshot.remoteAttached` says whether a driver is attached.
+- Shuffle and repeat are turned off while a driver is attached and restored on detach.
+- Local queue persistence writes nothing while a driver is attached, so a restart never restores a group queue as the user's own.
+- `restoreQueue(queue, position:)` puts a saved queue back paused and unloaded, as `restore` does; Listen Together uses it after leaving.
+
 ## Spike S1 finding
 
 A minimal Flutter app played a two-item playlist `[A, B]` through one `AudioPlayer` configured as above (`setAudioSources`, `AudioSource.uri` with an `X-API-Key` header). A and B are 3-second FLAC files (44.1 kHz) cut at a sample boundary from one continuous 440 Hz tone; C is a 3-second 880 Hz tone. An `HttpServer` inside the test process on `127.0.0.1` served them with Range support, rejected requests without the right key with 401 and recorded every request. Position and index were polled every 5 ms against a `Stopwatch`; the timeline is `index × duration(A) + position`, and the gap is the largest `wallClockDelta − timelineDelta` between consecutive samples within 500 ms of the index change. Each question ran five times per platform.

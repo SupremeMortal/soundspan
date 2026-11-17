@@ -30,6 +30,9 @@ final class FakeApi {
 
   /// The playback resource's lyrics endpoint: `rest.playback`.
   final FakePlaybackClient playback = FakePlaybackClient();
+
+  /// The Listen Together resource: `rest.listenTogether`.
+  final FakeListenTogetherClient listenTogether = FakeListenTogetherClient();
 }
 
 /// An in-memory model of the server's settings endpoints (doc 03,
@@ -1051,4 +1054,180 @@ final class FakeDiscoveryClient implements api.DiscoveryClient {
   @override
   Never noSuchMethod(Invocation invocation) =>
       throw UnimplementedError('${invocation.memberName}');
+}
+
+/// The JSON of a `ListenGroupSnapshot` with the given fields; each queue
+/// entry is `(id, playbackId)`.
+Map<String, Object?> listenGroupJson({
+  String id = 'g1',
+  String name = 'Group',
+  String joinCode = 'ABC123',
+  String groupType = 'host-follower',
+  String visibility = 'private',
+  String hostUserId = 'host',
+  List<String> memberIds = const ['host'],
+  List<(String, String?)> queue = const [],
+  int currentIndex = 0,
+  bool isPlaying = false,
+  num positionMs = 0,
+  int serverTime = 1000,
+  int stateVersion = 1,
+}) => {
+  'id': id,
+  'name': name,
+  'joinCode': joinCode,
+  'groupType': groupType,
+  'visibility': visibility,
+  'isActive': true,
+  'hostUserId': hostUserId,
+  'syncState': isPlaying ? 'playing' : 'paused',
+  'members': [
+    for (final member in memberIds)
+      {
+        'userId': member,
+        'username': 'user $member',
+        'isConnected': true,
+        'isHost': member == hostUserId,
+        'joinedAt': '2025-01-01T00:00:00.000Z',
+      },
+  ],
+  'playback': {
+    'queue': [
+      for (final (trackId, playbackId) in queue)
+        {
+          'id': trackId,
+          'title': 'Song $trackId',
+          'duration': 180,
+          'playbackId': ?playbackId,
+          'artist': {'id': 'ar-1', 'name': 'Band'},
+          'album': {'id': 'al-1', 'title': 'Record', 'coverArt': 'cover-1'},
+        },
+    ],
+    'currentIndex': currentIndex,
+    'trackId': queue.isEmpty ? null : queue[currentIndex].$1,
+    'isPlaying': isPlaying,
+    'positionMs': positionMs,
+    'serverTime': serverTime,
+    'stateVersion': stateVersion,
+  },
+};
+
+/// An in-memory model of the server's Listen Together endpoints (doc 03,
+/// "Home, discovery, social"): the [group] create and join answer, every
+/// call in [calls] (`create`, `join:<code>`, `discover`, `mine`,
+/// `leave:<id>`, `end:<id>`), every create body in [creates], and per-call
+/// failures in [failures] by operation name.
+final class FakeListenTogetherClient implements api.ListenTogetherClient {
+  /// The snapshot JSON create and join answer; create takes its queue from
+  /// the request's `queueTracks`.
+  Map<String, Object?> group = listenGroupJson();
+
+  /// The summaries discover answers, as JSON.
+  final List<Map<String, Object?>> summaries = [];
+
+  /// Whether `mine` answers [group] (else null).
+  bool member = false;
+
+  /// Every call, in order.
+  final List<String> calls = [];
+
+  /// Every `POST /listen-together` body, in order.
+  final List<api.CreateListenGroupRequest> creates = [];
+
+  /// Exceptions to throw, by operation name (`create`, `join`, `discover`,
+  /// `mine`, `leave`, `end`).
+  final Map<String, Exception> failures = {};
+
+  void _call(String name, [String? argument]) {
+    calls.add(argument == null ? name : '$name:$argument');
+    if (failures[name] case final error?) throw error;
+  }
+
+  @override
+  Future<api.ListenGroupSnapshot?> createListenGroup({
+    required api.CreateListenGroupRequest body,
+    Map<String, Object?> extra = const {},
+    CancelToken? cancelToken,
+    Options? options,
+  }) async {
+    creates.add(body);
+    _call('create');
+    member = true;
+    final json = jsonDecode(jsonEncode(group)) as Map<String, Object?>;
+    final playback = json['playback']! as Map<String, Object?>;
+    playback['queue'] = [
+      for (final (i, track) in (body.queueTracks ?? const []).indexed)
+        {
+          'id': 'q$i',
+          'title': track.metadata?.title ?? 'Song $i',
+          'duration': track.metadata?.durationSec ?? 0,
+          'playbackId': track.playbackId,
+          'artist': {'id': 'ar', 'name': track.metadata?.artist ?? ''},
+          'album': {
+            'id': 'al',
+            'title': track.metadata?.album ?? '',
+            'coverArt': null,
+          },
+        },
+    ];
+    return api.ListenGroupSnapshot.fromJson(json);
+  }
+
+  @override
+  Future<api.ListenGroupSnapshot?> joinListenGroup({
+    required api.JoinListenGroupRequest body,
+    Map<String, Object?> extra = const {},
+    CancelToken? cancelToken,
+    Options? options,
+  }) async {
+    _call('join', body.joinCode);
+    member = true;
+    return api.ListenGroupSnapshot.fromJson(group);
+  }
+
+  @override
+  Future<List<api.ListenGroupSummary>> discoverListenGroups({
+    Map<String, Object?> extra = const {},
+    CancelToken? cancelToken,
+    Options? options,
+  }) async {
+    _call('discover');
+    return [
+      for (final json in summaries) api.ListenGroupSummary.fromJson(json),
+    ];
+  }
+
+  @override
+  Future<api.ListenGroupSnapshot?> getMyListenGroup({
+    Map<String, Object?> extra = const {},
+    CancelToken? cancelToken,
+    Options? options,
+  }) async {
+    _call('mine');
+    return member ? api.ListenGroupSnapshot.fromJson(group) : null;
+  }
+
+  @override
+  Future<api.LeaveListenGroupResponse> leaveListenGroup({
+    required String groupId,
+    Map<String, Object?> extra = const {},
+    CancelToken? cancelToken,
+    Options? options,
+  }) async {
+    _call('leave', groupId);
+    member = false;
+    return const api.LeaveListenGroupResponse(ended: false, success: true);
+  }
+
+  @override
+  Future<api.EndListenGroupResponse> endListenGroup({
+    required String groupId,
+    Map<String, Object?> extra = const {},
+    CancelToken? cancelToken,
+    Options? options,
+  }) async {
+    _call('end', groupId);
+    member = false;
+    return const api.EndListenGroupResponse(success: true);
+  }
 }
