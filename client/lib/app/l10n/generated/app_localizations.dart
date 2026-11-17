@@ -3477,6 +3477,18 @@ abstract class AppLocalizations {
   /// **'Song'**
   String get downloadsKindTrack;
 
+  /// Kind of a downloaded podcast episode, on a Downloads tab row.
+  ///
+  /// In en, this message translates to:
+  /// **'Episode'**
+  String get downloadsKindEpisode;
+
+  /// Subtitle of a downloaded podcast episode on the Downloads tab: the podcast it belongs to.
+  ///
+  /// In en, this message translates to:
+  /// **'Episode · {podcast}'**
+  String downloadsEpisodeSubtitle(String podcast);
+
   /// Subtitle of a Downloads tab row: its kind and how many of its items are downloaded.
   ///
   /// In en, this message translates to:

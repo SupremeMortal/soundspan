@@ -8,6 +8,7 @@ library;
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:soundspan/app/l10n/generated/app_localizations.dart';
 import 'package:soundspan/app/router/routes.dart';
@@ -283,9 +284,13 @@ class DownloadCollectionRow extends ConsumerWidget {
       CollectionKind.album => l10n.downloadsKindAlbum,
       CollectionKind.playlist => l10n.downloadsKindPlaylist,
       CollectionKind.track => l10n.downloadsKindTrack,
+      CollectionKind.episode => l10n.downloadsKindEpisode,
     };
     final subtitle = switch (state.status) {
       _ when state.sourceGone => l10n.downloadsSourceGone,
+      // An episode reads as its podcast does: "Episode · Podcast title".
+      _ when entry.kind == CollectionKind.episode && entry.subtitle != null =>
+        l10n.downloadsEpisodeSubtitle(entry.subtitle!),
       DownloadCollectionStatus.pendingNetwork =>
         l10n.downloadsWaitingForConnection,
       DownloadCollectionStatus.blocked => switch (state.blockedReason) {
@@ -420,7 +425,8 @@ class DownloadCollectionRow extends ConsumerWidget {
           onSelected: () =>
               unawaited(controller.resumeCollection(entry.kind, entry.refId)),
         ),
-      if (entry.kind != CollectionKind.track)
+      if (entry.kind == CollectionKind.album ||
+          entry.kind == CollectionKind.playlist)
         MenuEntry(
           id: 'checkForChanges',
           label: l10n.menuCheckForChanges,
@@ -463,6 +469,10 @@ class DownloadCollectionRow extends ConsumerWidget {
         if (entry.albumId case final albumId?) {
           DetailNavigation.openAlbum(context, albumId);
         }
+      case CollectionKind.episode:
+        // The refId is `<podcastId>:<episodeId>`.
+        final podcastId = entry.refId.substring(0, entry.refId.indexOf(':'));
+        GoRouter.of(context).go(podcastLocation(podcastId));
     }
   }
 }

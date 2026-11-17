@@ -2776,6 +2776,19 @@
   "@downloadsKindTrack": {
     "description": "Kind of a downloaded collection, on a Downloads tab row."
   },
+  "downloadsKindEpisode": "Episode",
+  "@downloadsKindEpisode": {
+    "description": "Kind of a downloaded podcast episode, on a Downloads tab row."
+  },
+  "downloadsEpisodeSubtitle": "Episode · {podcast}",
+  "@downloadsEpisodeSubtitle": {
+    "description": "Subtitle of a downloaded podcast episode on the Downloads tab: the podcast it belongs to.",
+    "placeholders": {
+      "podcast": {
+        "type": "String"
+      }
+    }
+  },
   "downloadsItemsProgress": "{kind} · {completed} of {total}",
   "@downloadsItemsProgress": {
     "description": "Subtitle of a Downloads tab row: its kind and how many of its items are downloaded.",

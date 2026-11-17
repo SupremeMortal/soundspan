@@ -7,6 +7,10 @@ library;
 
 export 'package:soundspan/core/downloads/download_controller.dart'
     show CollectionSnapshot;
+export 'package:soundspan/core/downloads/download_keys.dart'
+    show EpisodeItemKey;
+export 'package:soundspan/core/downloads/episode_download_meta.dart'
+    show EpisodeDownloadMeta;
 export 'package:soundspan/core/downloads/offline_models.dart'
     show CollectionKind;
 

@@ -23,13 +23,15 @@ final class OfflineRepository {
   ///
   /// Throws `CacheLimitExceeded` when the items would exceed the user's
   /// server-side limit, and `DownloadsDisabled` when the server refuses the
-  /// request as a whole.
+  /// request as a whole. Episodes have no server-side accounting and are
+  /// never resolved.
   Future<OfflineResolution> resolve(
     CollectionKind kind,
     String id, {
     required String deviceId,
     String? quality,
   }) async {
+    assert(kind != CollectionKind.episode, 'episodes are never resolved');
     final response = await _client.requestOfflineItems(
       body: api.RequestOfflineItemsRequest(
         deviceId: deviceId,

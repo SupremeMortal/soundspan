@@ -2101,6 +2101,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get downloadsKindTrack => 'Song';
 
   @override
+  String get downloadsKindEpisode => 'Episode';
+
+  @override
+  String downloadsEpisodeSubtitle(String podcast) {
+    return 'Episode · $podcast';
+  }
+
+  @override
   String downloadsItemsProgress(String kind, int completed, int total) {
     return '$kind · $completed of $total';
   }
@@ -4554,6 +4562,14 @@ class AppLocalizationsEnXa extends AppLocalizationsEn {
 
   @override
   String get downloadsKindTrack => '[Šöñĝ one]';
+
+  @override
+  String get downloadsKindEpisode => '[Éþîšöðé one]';
+
+  @override
+  String downloadsEpisodeSubtitle(String podcast) {
+    return '[Éþîšöðé · $podcast one]';
+  }
 
   @override
   String downloadsItemsProgress(String kind, int completed, int total) {

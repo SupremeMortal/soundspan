@@ -11,6 +11,7 @@ import 'package:flutter_riverpod/misc.dart'
 import 'package:soundspan/core/downloads/download_artwork.dart';
 import 'package:soundspan/core/downloads/download_controller.dart';
 import 'package:soundspan/core/downloads/download_keys.dart';
+import 'package:soundspan/core/downloads/episode_download_meta.dart';
 import 'package:soundspan/core/downloads/offline_models.dart';
 import 'package:soundspan/features/downloads/ui/download_glyph_mapper.dart';
 import 'package:soundspan/platform/capabilities/capabilities.dart';
@@ -51,6 +52,35 @@ DownloadGlyphState watchTrackGlyph(WidgetRef ref, PlaybackId playbackId) {
   );
 }
 
+/// The glyph of episode [episodeId] of podcast [podcastId], watched through
+/// a `select` so only a change of that episode's glyph rebuilds the caller.
+DownloadGlyphState watchEpisodeGlyph(
+  WidgetRef ref,
+  String podcastId,
+  String episodeId,
+) {
+  final key = EpisodeItemKey(podcastId: podcastId, episodeId: episodeId);
+  return ref.watch(
+    itemDownloadStatesProvider.select(
+      (states) => glyphOfItem(states.value?[key]),
+    ),
+  );
+}
+
+/// The metadata of every downloaded podcast episode; empty where the
+/// platform does not download.
+final StreamProvider<List<EpisodeDownloadMeta>> downloadedEpisodesProvider =
+    StreamProvider<List<EpisodeDownloadMeta>>(
+      (ref) {
+        if (!ref.watch(downloadsAvailableProvider)) {
+          return Stream.value(const []);
+        }
+        return ref.watch(downloadControllerProvider).watchDownloadedEpisodes();
+      },
+      dependencies: [downloadControllerProvider],
+      retry: _noRetry,
+    );
+
 /// The download state of one collection, null while it is not pinned or
 /// where the platform does not download.
 final StreamProviderFamily<
@@ -71,8 +101,8 @@ collectionDownloadStateProvider = StreamProvider.autoDispose
       retry: _noRetry,
     );
 
-/// Every pinned track, album and playlist in request order, for the
-/// Downloads tab.
+/// Every pinned track, album, playlist and episode in request order, for
+/// the Downloads tab.
 final StreamProvider<List<DownloadCollectionEntry>>
 downloadCollectionEntriesProvider =
     StreamProvider.autoDispose<List<DownloadCollectionEntry>>(

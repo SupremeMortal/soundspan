@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 
+import 'dart:async';
+
 import 'package:intl/intl.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:soundspan/app/l10n/generated/app_localizations.dart';
@@ -7,6 +9,8 @@ import 'package:soundspan/app/theme/dimens.dart';
 import 'package:soundspan/app/theme/extensions.dart';
 import 'package:soundspan/app/theme/typography.dart';
 import 'package:soundspan/shared/util/duration_format.dart';
+import 'package:soundspan/shared/widgets/context_menu.dart';
+import 'package:soundspan/shared/widgets/download_glyph.dart';
 
 /// One episode of a podcast page (doc 09, Podcasts): the title (at most two
 /// lines), the publication date and the duration, a thin `brand` progress
@@ -16,6 +20,11 @@ import 'package:soundspan/shared/util/duration_format.dart';
 /// The row is one merged semantics node, such as "Title, Mar 12, 2026,
 /// 42 minutes, played" or "…, 18 minutes left", and is a button only with
 /// an [onTap]. Every row of a list has the height [extentFor] gives.
+///
+/// A [download] glyph other than none follows the metadata, and a [menu]
+/// adds a "More options" button at the end. A row with a [disabledReason]
+/// is drawn at 40 % opacity, ignores taps, gives the reason as its tooltip
+/// and ends its label with it.
 class EpisodeRow extends StatelessWidget {
   /// Creates the row of the episode titled [title].
   const new({
@@ -25,6 +34,10 @@ class EpisodeRow extends StatelessWidget {
     this.position,
     this.isFinished = false,
     this.onTap,
+    this.download,
+    this.onDownloadTap,
+    this.menu,
+    this.disabledReason,
     super.key,
   });
 
@@ -45,6 +58,26 @@ class EpisodeRow extends StatelessWidget {
 
   /// Called when the row is tapped; null makes the row inert.
   final VoidCallback? onTap;
+
+  /// The episode's download glyph; nothing shows for null or none.
+  final DownloadGlyphState? download;
+
+  /// Called when the download glyph is tapped, such as Retry for a failed
+  /// download.
+  final VoidCallback? onDownloadTap;
+
+  /// The entries of the row's "More options" menu; no button when null or
+  /// empty.
+  final List<MenuEntry>? menu;
+
+  /// Why the row is disabled; null while it is enabled.
+  final String? disabledReason;
+
+  /// The key of the download glyph.
+  static const Key downloadGlyphKey = ValueKey('EpisodeRow.download');
+
+  /// The key of the "More options" button.
+  static const Key menuKey = ValueKey('EpisodeRow.menu');
 
   /// The key of the progress bar's filled part.
   static const Key progressKey = ValueKey('EpisodeRow.progress');
@@ -93,6 +126,8 @@ class EpisodeRow extends StatelessWidget {
       if (duration != null) formatTrackDuration(duration),
     ].join(' · ');
 
+    final download = this.download;
+    final disabledReason = this.disabledReason;
     final label = [
       title,
       ?date,
@@ -101,6 +136,8 @@ class EpisodeRow extends StatelessWidget {
         l10n.podcastsEpisodePlayedSpoken
       else if (progress != null)
         l10n.podcastsEpisodeMinutesLeft(_minutesLeft(duration! - position!)),
+      if (download == DownloadGlyphState.completed) l10n.trackRowDownloaded,
+      ?disabledReason,
     ].join(', ');
 
     final content = SizedBox(
@@ -149,6 +186,15 @@ class EpisodeRow extends StatelessWidget {
                       ),
                     ),
                   ],
+                  if (download != null &&
+                      download != DownloadGlyphState.none) ...[
+                    const SizedBox(width: Spacing.x8),
+                    DownloadGlyph(
+                      key: downloadGlyphKey,
+                      state: download,
+                      onTap: onDownloadTap,
+                    ),
+                  ],
                 ],
               ),
               const Spacer(),
@@ -177,8 +223,8 @@ class EpisodeRow extends StatelessWidget {
       ),
     );
 
-    final onTap = this.onTap;
-    return Semantics(
+    final onTap = disabledReason == null ? this.onTap : null;
+    Widget row = Semantics(
       container: true,
       button: onTap != null,
       label: label,
@@ -191,6 +237,40 @@ class EpisodeRow extends StatelessWidget {
               borderRadius: BorderRadius.circular(Radii.small),
               child: content,
             ),
+    );
+    if (disabledReason != null) {
+      row = Tooltip(
+        message: disabledReason,
+        excludeFromSemantics: true,
+        child: Opacity(opacity: 0.4, child: row),
+      );
+    }
+    final menu = this.menu;
+    if (menu == null || menu.isEmpty) return row;
+    return Row(
+      children: [
+        Expanded(child: row),
+        Builder(
+          builder: (context) => IconButton(
+            key: menuKey,
+            tooltip: l10n.menuMoreOptions,
+            color: colors.contentSecondary,
+            icon: const Icon(Icons.more_horiz_rounded),
+            onPressed: () {
+              final box = context.findRenderObject()! as RenderBox;
+              unawaited(
+                showContextMenu(
+                  context,
+                  menu,
+                  position: box.localToGlobal(
+                    box.size.bottomCenter(Offset.zero),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 

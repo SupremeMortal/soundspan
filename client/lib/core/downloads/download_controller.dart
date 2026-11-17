@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 
-/// Pins and unpins tracks, albums and playlists for offline use (doc 07,
-/// Requesting a Download; Removing Downloads).
+/// Pins and unpins tracks, albums, playlists and podcast episodes for
+/// offline use (doc 07, Requesting a Download; Removing Downloads).
 library;
 
 import 'dart:async';
@@ -18,6 +18,7 @@ import 'package:soundspan/core/downloads/download_scheduler.dart';
 import 'package:soundspan/core/downloads/download_state_machine.dart';
 import 'package:soundspan/core/downloads/download_store.dart';
 import 'package:soundspan/core/downloads/download_values.dart';
+import 'package:soundspan/core/downloads/episode_download_meta.dart';
 import 'package:soundspan/core/downloads/offline_complete_queue.dart';
 import 'package:soundspan/core/downloads/offline_delete_queue.dart';
 import 'package:soundspan/core/downloads/offline_models.dart';
@@ -34,6 +35,7 @@ import 'package:soundspan/platform/media_files/media_files.dart';
 import 'package:soundspan/shared/clock.dart';
 import 'package:soundspan/shared/data/downloads/download_outbox.dart';
 import 'package:soundspan/shared/domain/playback_id.dart';
+import 'package:soundspan/shared/domain/podcast.dart';
 import 'package:soundspan/shared/domain/track.dart';
 import 'package:soundspan/shared/providers/cache.dart';
 import 'package:soundspan_api/soundspan_api.dart' as api;
@@ -208,12 +210,108 @@ class DownloadController {
   ///
   /// When the server is unreachable the collection waits as
   /// `pendingNetwork` for [retryPendingCollections]. Throws the server's
-  /// `NotFound` after removing the collection.
+  /// `NotFound` after removing the collection, and an [ArgumentError] for
+  /// an episode, which [pinEpisode] pins.
   Future<void> pin(
     CollectionKind kind,
     String refId, {
     CollectionSnapshot? snapshot,
-  }) => _serial(() => _pin(kind, refId, snapshot: snapshot));
+  }) {
+    if (kind == CollectionKind.episode) {
+      throw ArgumentError.value(kind, 'kind', 'pin episodes with pinEpisode');
+    }
+    return _serial(() => _pin(kind, refId, snapshot: snapshot));
+  }
+
+  /// Pins [episode] of [podcast] (doc 07, Requesting a Download): with no
+  /// server call, the collection, its one item and its membership are
+  /// recorded in one transaction, the item queued for the episode's stream
+  /// URL with its metadata, then the device limit is applied and the
+  /// scheduler pumps. Offline, the item waits for the network. Pinning a
+  /// pinned episode again leaves an item that is downloaded or on its way.
+  Future<void> pinEpisode(
+    Podcast podcast,
+    Episode episode,
+  ) => _serial(() async {
+    final key = EpisodeItemKey(podcastId: podcast.id, episodeId: episode.id);
+    final refId = _episodeRefId(podcast.id, episode.id);
+    final meta = EpisodeDownloadMeta.of(podcast, episode);
+    final now = _clock.now();
+    final queued = await _store.transaction(() async {
+      final existing = await _store.collection(
+        DownloadCollectionKind.episode,
+        refId,
+      );
+      await _store.upsertCollection(
+        kind: DownloadCollectionKind.episode,
+        refId: refId,
+        title: episode.title,
+        metaJson: jsonEncode({
+          'subtitle': podcast.title,
+          'artworkRef': meta.artworkRef,
+        }),
+        status: DownloadCollectionStatus.ready,
+        requestedAt: existing?.requestedAt ?? now,
+      );
+      final item = await _store.item(key);
+      final queued = item == null || !_keeps.contains(item.status);
+      if (queued) {
+        await _store.upsertItem(
+          key,
+          DownloadItemsCompanion(
+            metaJson: Value(meta.toJson()),
+            status: const Value(DownloadStatus.queued),
+            downloadUrl: const Value(null),
+            expectedBytes: const Value(null),
+            quality: const Value(null),
+            requestedAt: Value(now),
+            receivedBytes: const Value(0),
+            attempts: const Value(0),
+            failureCode: const Value(null),
+            waitingFor: const Value(null),
+            taskId: const Value(null),
+            nextAttemptAt: const Value(null),
+          ),
+        );
+      }
+      await _store.addMembership(DownloadCollectionKind.episode, refId, key, 0);
+      await _store.setCollectionStatus(
+        DownloadCollectionKind.episode,
+        refId,
+        DownloadCollectionStatus.ready,
+        resolvedAt: now,
+      );
+      return queued;
+    });
+    _emit(DownloadCollectionReady(DownloadCollectionKind.episode, refId));
+    if (queued) await _applyDeviceLimit();
+    _scheduler.pump();
+  });
+
+  /// Removes the downloaded episode [episodeId] of podcast [podcastId]: its
+  /// transfer, files and row go, and nothing is reported to the server.
+  Future<void> unpinEpisode(String podcastId, String episodeId) =>
+      unpin(CollectionKind.episode, _episodeRefId(podcastId, episodeId));
+
+  /// Keeps [positionSec], the position the user reached in episode
+  /// [episodeId] of podcast [podcastId], in the metadata of its download,
+  /// so playing it offline after a restart resumes there; nothing happens
+  /// when the episode is not downloaded.
+  Future<void> recordEpisodePosition(
+    String podcastId,
+    String episodeId,
+    double positionSec,
+  ) => _serial(() async {
+    final key = EpisodeItemKey(podcastId: podcastId, episodeId: episodeId);
+    final row = await _store.item(key);
+    if (row == null) return;
+    final meta = EpisodeDownloadMeta.fromJson(row.metaJson);
+    if (meta == null || meta.positionSec == positionSec) return;
+    await _store.setItemMeta(key, meta.withPosition(positionSec).toJson());
+  });
+
+  static String _episodeRefId(String podcastId, String episodeId) =>
+      '$podcastId:$episodeId';
 
   /// Resolves the pinned collection [kind]/[refId] again and applies the
   /// difference (doc 07, Keeping Collections Current): new items are
@@ -343,7 +441,23 @@ class DownloadController {
         },
       );
 
-  /// Every track, album and playlist collection in request order with its
+  /// The metadata of every downloaded podcast episode, with a completed
+  /// file, again on every change; what the podcast pages show offline when
+  /// nothing of them is cached.
+  Stream<List<EpisodeDownloadMeta>> watchDownloadedEpisodes() => _store
+      .watchItems()
+      .map(
+        (rows) => [
+          for (final row in rows)
+            if (row.status == DownloadStatus.completed &&
+                row.mediaType == MediaType.episode)
+              ?EpisodeDownloadMeta.fromJson(row.metaJson),
+        ],
+      )
+      .distinct(listEquals);
+
+  /// Every track, album, playlist and episode collection in request order
+  /// with its
   /// download state, again on every change.
   Stream<List<DownloadCollectionEntry>> watchCollectionEntries() => _store
       .watchCollectionsWithItems()
@@ -409,8 +523,9 @@ class DownloadController {
     final collection = await _store.collection(storeKind, refId);
     if (collection == null) return;
     final status = DownloadStore.statusOf(collection);
-    if (status == DownloadCollectionStatus.blocked ||
-        status == DownloadCollectionStatus.pendingNetwork) {
+    if (kind != CollectionKind.episode &&
+        (status == DownloadCollectionStatus.blocked ||
+            status == DownloadCollectionStatus.pendingNetwork)) {
       await pin(kind, refId);
       return;
     }
@@ -478,7 +593,7 @@ class DownloadController {
       DownloadCollectionStatus.pendingNetwork,
     );
     for (final row in pending) {
-      final kind = _collectionKindOf(row.kind);
+      final kind = _resolvableKindOf(row.kind);
       if (kind == null) continue;
       await _guard('retry ${row.kind}', () => _pin(kind, row.refId));
     }
@@ -486,7 +601,7 @@ class DownloadController {
 
   Future<void> _reResolve(DownloadItemKey key) => _serial(() async {
     for (final row in await _store.collectionsOf(key)) {
-      final kind = _collectionKindOf(row.kind);
+      final kind = _resolvableKindOf(row.kind);
       if (kind == null) continue;
       await _guard('re-resolve ${row.kind}', () => _pin(kind, row.refId));
     }
@@ -623,6 +738,8 @@ class DownloadController {
     final storeKind = _kindOf(kind);
     final existing = await _store.collection(storeKind, refId);
     if (existing == null) return UpkeepResult.notPinned;
+    // An episode has nothing to resolve: it is downloaded as pinned.
+    if (kind == CollectionKind.episode) return UpkeepResult.unchanged;
     if (!_reachability.isOnline) return UpkeepResult.unchanged;
     final quality = await _downloadQuality();
 
@@ -1263,7 +1380,16 @@ class DownloadController {
     CollectionKind.track => DownloadCollectionKind.track,
     CollectionKind.album => DownloadCollectionKind.album,
     CollectionKind.playlist => DownloadCollectionKind.playlist,
+    CollectionKind.episode => DownloadCollectionKind.episode,
   };
+
+  /// The kind the server resolves for the stored [kind]; null for an
+  /// episode, which has no server-side accounting, and unknown kinds.
+  static CollectionKind? _resolvableKindOf(String kind) =>
+      switch (_collectionKindOf(kind)) {
+        CollectionKind.episode || null => null,
+        final known => known,
+      };
 
   static CollectionKind? _collectionKindOf(String kind) {
     for (final value in CollectionKind.values) {

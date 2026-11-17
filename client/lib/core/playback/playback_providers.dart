@@ -6,6 +6,7 @@ import 'package:flutter/widgets.dart'
     show AppLifecycleListener, AppLifecycleState, WidgetsBinding;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:soundspan/core/connectivity/reachability.dart';
+import 'package:soundspan/core/downloads/download_controller.dart';
 import 'package:soundspan/core/downloads/download_scheduler.dart';
 import 'package:soundspan/core/downloads/download_store.dart';
 import 'package:soundspan/core/logging/app_logger.dart';
@@ -32,6 +33,7 @@ import 'package:soundspan/core/profile/settings/user_settings.dart';
 import 'package:soundspan/core/storage/state/queue_dao.dart';
 import 'package:soundspan/core/sync/episode_progress_reporter.dart';
 import 'package:soundspan/core/sync/outbox/outbox.dart';
+import 'package:soundspan/core/sync/outbox/outbox_op.dart';
 import 'package:soundspan/core/sync/play_reporter.dart';
 import 'package:soundspan/core/sync/play_session_store.dart';
 import 'package:soundspan/core/sync/playback_state_sync.dart';
@@ -211,9 +213,35 @@ final Provider<PlaybackController> playbackControllerProvider =
           ref.watch(clockProvider),
           lifecycleStates.stream,
         );
+        final outbox = ref.watch(outboxProvider);
+        final keepsEpisodePosition = ref
+            .watch(platformCapabilitiesProvider)
+            .canDownload;
         final episodeProgress = EpisodeProgressReporter(
           ControllerListeningSource(controller),
-          ref.watch(outboxProvider).enqueue,
+          (op) async {
+            // A downloaded episode keeps its latest position, so it resumes
+            // there offline after a restart (doc 06, Podcasts).
+            if (keepsEpisodePosition && op is EpisodeProgressOp) {
+              try {
+                await ref
+                    .read(downloadControllerProvider)
+                    .recordEpisodePosition(
+                      op.podcastId,
+                      op.episodeId,
+                      op.isFinished ? 0 : op.currentTime.toDouble(),
+                    );
+              } on Object catch (error, stackTrace) {
+                _log.warning(
+                  'Could not keep an episode position',
+                  const {},
+                  error,
+                  stackTrace,
+                );
+              }
+            }
+            return await outbox.enqueue(op);
+          },
           ref.watch(clockProvider),
         );
         final lifecycle = AppLifecycleListener(
@@ -253,6 +281,7 @@ final Provider<PlaybackController> playbackControllerProvider =
         stateDatabaseProvider,
         outboxProvider,
         playbackStateRepositoryProvider,
+        downloadControllerProvider,
       ],
     );
 

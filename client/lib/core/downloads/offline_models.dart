@@ -5,8 +5,9 @@ import 'package:soundspan/shared/domain/playback_id.dart';
 
 part 'offline_models.freezed.dart';
 
-/// What an offline request names on the server (`POST /offline/items`,
-/// doc 03): one track, or every visible track of an album or playlist.
+/// What a download collection names: on the server (`POST /offline/items`,
+/// doc 03) one track, or every visible track of an album or playlist; or,
+/// on this device only, one podcast episode.
 enum CollectionKind {
   /// One track; the id is its `playbackId`.
   track,
@@ -16,6 +17,10 @@ enum CollectionKind {
 
   /// A playlist; the id is the playlist id.
   playlist,
+
+  /// A podcast episode; the id is `<podcastId>:<episodeId>`. Local only:
+  /// it is never sent to the server's offline API.
+  episode,
 }
 
 /// Why the server will not let a device download an item (doc 07,

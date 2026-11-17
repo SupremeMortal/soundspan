@@ -14,13 +14,17 @@ import 'package:soundspan/app/theme/dimens.dart';
 import 'package:soundspan/app/theme/extensions.dart';
 import 'package:soundspan/app/theme/typography.dart';
 import 'package:soundspan/core/connectivity/reachability.dart';
+import 'package:soundspan/core/downloads/download_controller.dart';
+import 'package:soundspan/features/downloads/downloads.dart';
 import 'package:soundspan/features/podcasts/domain/podcast_detail.dart';
 import 'package:soundspan/features/podcasts/ui/episode_row.dart';
 import 'package:soundspan/features/podcasts/ui/podcasts_view_model.dart';
 import 'package:soundspan/shared/domain/domain.dart';
 import 'package:soundspan/shared/providers/play_actions.dart';
+import 'package:soundspan/shared/widgets/context_menu.dart';
 import 'package:soundspan/shared/widgets/detail_header.dart';
 import 'package:soundspan/shared/widgets/detail_page.dart';
+import 'package:soundspan/shared/widgets/download_glyph.dart';
 
 /// The podcast page (`/podcasts/:podcastId`; doc 09, Podcasts).
 ///
@@ -31,7 +35,14 @@ import 'package:soundspan/shared/widgets/detail_page.dart';
 /// then returns to `/podcasts`. Both buttons are disabled, with a tooltip,
 /// while the server is not reachable, and a failure shows a snackbar and
 /// changes nothing. Tapping an episode row replaces the queue with that
-/// episode and plays it from its saved progress.
+/// episode and plays it from its saved progress, or, when that is unknown,
+/// from the position its download last reached.
+///
+/// Where the platform downloads, each row shows its download glyph and a
+/// menu with Download, Remove download, and Retry download for a failed
+/// one; while offline an episode without a file is disabled with "Not
+/// available offline", and with nothing cached the page lists the
+/// downloaded episodes of the podcast.
 class PodcastDetailScreen extends ConsumerWidget {
   /// Creates the page of podcast [podcastId].
   const new({required this.podcastId, super.key});
@@ -54,12 +65,16 @@ class PodcastDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final detail = ref.watch(podcastDetailProvider(podcastId));
+    final downloaded = _downloadedDetail(ref);
+    final value = detail.value == null && detail.hasError && downloaded != null
+        ? AsyncValue<PodcastDetail>.data(downloaded)
+        : detail.whenData((cached) => cached.value);
     return RouteTitle(
       screen: l10n.screenPodcast,
       child: Scaffold(
         backgroundColor: context.colors.surface,
         body: DetailPage<PodcastDetail>(
-          value: detail.whenData((cached) => cached.value),
+          value: value,
           refreshError: detail.value?.refreshError,
           onRefresh: () =>
               ref.read(podcastDetailProvider(podcastId).notifier).refresh(),
@@ -67,6 +82,27 @@ class PodcastDetailScreen extends ConsumerWidget {
           builder: (context, detail) => _slivers(context, ref, detail),
         ),
       ),
+    );
+  }
+
+  /// The podcast as its downloaded episodes describe it; null when none of
+  /// its episodes is downloaded.
+  PodcastDetail? _downloadedDetail(WidgetRef ref) {
+    final episodes = [
+      for (final meta
+          in ref.watch(downloadedEpisodesProvider).value ??
+              const <EpisodeDownloadMeta>[])
+        if (meta.podcastId == podcastId) meta,
+    ];
+    if (episodes.isEmpty) return null;
+    episodes.sort(
+      (a, b) => (b.publishedAt ?? DateTime(0)).compareTo(
+        a.publishedAt ?? DateTime(0),
+      ),
+    );
+    return PodcastDetail(
+      podcast: episodes.first.toPodcast(),
+      episodes: [for (final meta in episodes) meta.toEpisode()],
     );
   }
 
@@ -105,33 +141,107 @@ class PodcastDetailScreen extends ConsumerWidget {
             sliver: SliverFixedExtentList.builder(
               itemExtent: EpisodeRow.extentFor(context),
               itemCount: episodes.length,
-              itemBuilder: (context, index) {
-                final episode = episodes[index];
-                final progress = episode.progress;
-                final durationSec = episode.durationSec;
-                return EpisodeRow(
-                  title: episode.title,
-                  publishedAt: episode.publishedAt,
-                  duration: durationSec == null
-                      ? null
-                      : Duration(seconds: durationSec),
-                  position: progress == null
-                      ? null
-                      : Duration(
-                          milliseconds: (progress.currentTimeSec * 1000)
-                              .round(),
-                        ),
-                  isFinished: progress?.isFinished ?? false,
-                  onTap: () => unawaited(
-                    ref.read(playActionsProvider).playEpisode(podcast, episode),
-                  ),
-                );
-              },
+              itemBuilder: (context, index) =>
+                  _EpisodeTile(podcast: podcast, episode: episodes[index]),
             ),
           ),
         ],
       ),
     ];
+  }
+}
+
+/// One [EpisodeRow] of the page with its download glyph, menu and offline
+/// state.
+class _EpisodeTile extends ConsumerWidget {
+  const new({required this.podcast, required this.episode});
+
+  final Podcast podcast;
+  final Episode episode;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final downloads = ref.watch(downloadsAvailableProvider);
+    final glyph = downloads
+        ? watchEpisodeGlyph(ref, podcast.id, episode.id)
+        : null;
+    final offline = downloads && ref.watch(isOfflineProvider);
+    final unavailableOffline = offline && glyph != DownloadGlyphState.completed;
+    final key = EpisodeItemKey(podcastId: podcast.id, episodeId: episode.id);
+    final played = _withDownloadedProgress(ref, downloads);
+    final progress = played.progress;
+    final durationSec = episode.durationSec;
+    void retry() => unawaited(ref.read(downloadControllerProvider).retry(key));
+    return EpisodeRow(
+      title: episode.title,
+      publishedAt: episode.publishedAt,
+      duration: durationSec == null ? null : Duration(seconds: durationSec),
+      position: progress == null
+          ? null
+          : Duration(milliseconds: (progress.currentTimeSec * 1000).round()),
+      isFinished: progress?.isFinished ?? false,
+      download: glyph,
+      onDownloadTap: glyph == DownloadGlyphState.failed ? retry : null,
+      disabledReason: unavailableOffline ? l10n.trackNotAvailableOffline : null,
+      menu: glyph == null
+          ? null
+          : [
+              if (glyph == DownloadGlyphState.failed)
+                MenuEntry(
+                  id: 'retryDownload',
+                  label: l10n.menuRetryDownload,
+                  icon: Icons.refresh_rounded,
+                  onSelected: retry,
+                ),
+              if (glyph == DownloadGlyphState.none ||
+                  glyph == DownloadGlyphState.unavailable)
+                MenuEntry(
+                  id: 'download',
+                  label: l10n.menuDownload,
+                  icon: Icons.download_rounded,
+                  onSelected: () => unawaited(
+                    ref
+                        .read(downloadControllerProvider)
+                        .pinEpisode(podcast, episode),
+                  ),
+                )
+              else
+                MenuEntry(
+                  id: 'removeDownload',
+                  label: l10n.menuRemoveDownload,
+                  icon: Icons.delete_outline_rounded,
+                  destructive: true,
+                  onSelected: () => unawaited(
+                    confirmAndUnpin(
+                      context,
+                      ref,
+                      CollectionKind.episode,
+                      '${podcast.id}:${episode.id}',
+                    ),
+                  ),
+                ),
+            ],
+      onTap: () =>
+          unawaited(ref.read(playActionsProvider).playEpisode(podcast, played)),
+    );
+  }
+
+  /// The episode, with the position its download last reached as its
+  /// progress when the server's progress is unknown.
+  Episode _withDownloadedProgress(WidgetRef ref, bool downloads) {
+    if (episode.progress != null || !downloads) return episode;
+    final progress = ref.watch(
+      downloadedEpisodesProvider.select((value) {
+        for (final meta in value.value ?? const <EpisodeDownloadMeta>[]) {
+          if (meta.podcastId == podcast.id && meta.episodeId == episode.id) {
+            return meta.toEpisode().progress;
+          }
+        }
+        return null;
+      }),
+    );
+    return progress == null ? episode : episode.copyWith(progress: progress);
   }
 }
 

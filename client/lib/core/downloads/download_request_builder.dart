@@ -40,29 +40,39 @@ class DownloadRequestBuilder {
   ///
   /// A JWT session is renewed first when it has less than
   /// [downloadCredentialMinRemaining] left; an API key is used as is. The
-  /// server-built `downloadUrl` is resolved against the base URL and its
-  /// query string is kept unchanged.
+  /// server-built `downloadUrl` of a track is resolved against the base URL
+  /// and its query string is kept unchanged; a podcast episode downloads
+  /// its stream URL (`StreamUrls.episode`).
   ///
-  /// Throws [StateError] when [item] has no `downloadUrl`, and what
+  /// Throws [StateError] when a track [item] has no `downloadUrl`, and what
   /// `ensureFresh` throws when no usable credential can be had.
   Future<DownloadRequest> build(
     DownloadItem item, {
     required bool wifiOnly,
     required bool userInitiated,
   }) async {
-    final downloadUrl = item.downloadUrl;
-    if (downloadUrl == null) {
-      throw StateError('download item ${item.itemKey} has no downloadUrl');
-    }
+    final key = DownloadItemKey.decode(item.itemKey);
+    final url = switch (key) {
+      EpisodeItemKey(:final podcastId, :final episodeId) => _urls.episode(
+        podcastId,
+        episodeId,
+      ),
+      TrackItemKey() => switch (item.downloadUrl) {
+        final downloadUrl? => _urls.resolve(downloadUrl),
+        null => throw StateError(
+          'download item ${item.itemKey} has no downloadUrl',
+        ),
+      },
+    };
     final credentials = switch (_currentCredentials()) {
       final ApiKeyCredentials key => key,
       _ => await _ensureFresh(minRemaining: downloadCredentialMinRemaining),
     };
-    final hash = itemKeyHash(DownloadItemKey.decode(item.itemKey));
+    final hash = itemKeyHash(key);
     final part = _paths.relativePartFile(hash);
     return DownloadRequest(
       taskId: hash,
-      url: _urls.resolve(downloadUrl),
+      url: url,
       headers: _urls.authHeaders(credentials),
       profileId: _paths.profile.profileId,
       relativeDirectory: p.dirname(part),

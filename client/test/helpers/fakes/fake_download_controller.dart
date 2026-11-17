@@ -9,6 +9,7 @@ import 'package:soundspan/core/downloads/download_store.dart';
 import 'package:soundspan/core/storage/state/enums.dart';
 import 'package:soundspan/features/downloads/downloads.dart';
 import 'package:soundspan/platform/capabilities/capabilities.dart';
+import 'package:soundspan/shared/domain/podcast.dart';
 
 /// A [DownloadController] whose states the test sets and whose calls it
 /// records as strings, such as `pin album al-1` or `pauseAll`.
@@ -71,6 +72,16 @@ final class FakeDownloadController implements DownloadController {
     _changes.add(null);
   }
 
+  /// The downloaded episodes; change them through
+  /// [setDownloadedEpisodes].
+  List<EpisodeDownloadMeta> downloadedEpisodes = const [];
+
+  /// Sets the downloaded episodes.
+  void setDownloadedEpisodes(List<EpisodeDownloadMeta> value) {
+    downloadedEpisodes = value;
+    _changes.add(null);
+  }
+
   /// Sets the Downloads tab's list.
   void setEntries(List<DownloadCollectionEntry> value) {
     entries = value;
@@ -110,6 +121,14 @@ final class FakeDownloadController implements DownloadController {
     snapshots['${kind.name} $refId'] = snapshot;
     setCollection(kind, refId, pinResult);
   }
+
+  @override
+  Stream<List<EpisodeDownloadMeta>> watchDownloadedEpisodes() =>
+      _watch(() => downloadedEpisodes);
+
+  @override
+  Future<void> pinEpisode(Podcast podcast, Episode episode) async =>
+      calls.add('pinEpisode ${podcast.id} ${episode.id}');
 
   @override
   Future<void> unpin(CollectionKind kind, String refId) async {

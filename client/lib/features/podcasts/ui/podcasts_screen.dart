@@ -13,6 +13,7 @@ import 'package:soundspan/app/theme/dimens.dart';
 import 'package:soundspan/app/theme/extensions.dart';
 import 'package:soundspan/app/theme/typography.dart';
 import 'package:soundspan/core/connectivity/reachability.dart';
+import 'package:soundspan/features/downloads/downloads.dart';
 import 'package:soundspan/features/podcasts/domain/podcast_ref.dart';
 import 'package:soundspan/features/podcasts/ui/podcasts_view_model.dart';
 import 'package:soundspan/shared/domain/domain.dart';
@@ -34,7 +35,8 @@ import 'package:soundspan/shared/widgets/shelf.dart';
 /// stand for the grid while it first loads; with nothing cached a failed
 /// load shows an [ErrorView], and an empty list an [EmptyState] above the
 /// shelf. The shelf is hidden when it is empty or fails. Pull to refresh
-/// fetches both again.
+/// fetches both again. With nothing cached and the server unreachable, the
+/// grid shows the podcasts of the downloaded episodes instead of the error.
 ///
 /// In a two-pane window the screen is a [TwoPaneList]: it takes the list
 /// pane, the podcast page opens beside it, and the open podcast's card,
@@ -62,7 +64,12 @@ class PodcastsScreen extends ConsumerWidget {
     final windowClass = WindowClass.of(context);
     final gutter = pageGutter(windowClass);
     final subscribed = ref.watch(subscribedPodcastsProvider);
-    final podcasts = subscribed.value?.value;
+    var podcasts = subscribed.value?.value;
+    // With nothing cached and no server, the podcasts of the downloaded
+    // episodes stand in for the list (doc 07, Podcasts).
+    if (podcasts == null && subscribed.hasError) {
+      podcasts = _downloadedPodcasts(ref);
+    }
 
     final List<Widget> body;
     if (podcasts == null && subscribed.hasError) {
@@ -134,6 +141,18 @@ class PodcastsScreen extends ConsumerWidget {
   }
 
   Future<void> _refresh(WidgetRef ref) => refreshPodcasts(ref);
+
+  /// The podcasts of the downloaded episodes, from their metadata, in the
+  /// order they were first found; null when no episode is downloaded.
+  static List<Podcast>? _downloadedPodcasts(WidgetRef ref) {
+    final byId = <String, Podcast>{
+      for (final meta
+          in ref.watch(downloadedEpisodesProvider).value ??
+              const <EpisodeDownloadMeta>[])
+        meta.podcastId: meta.toPodcast(),
+    };
+    return byId.isEmpty ? null : byId.values.toList();
+  }
 }
 
 void _open(BuildContext context, String podcastId) =>
