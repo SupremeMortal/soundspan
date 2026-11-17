@@ -12,6 +12,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart' show FlutterError, debugPrint;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart' as shelf_io;
@@ -200,11 +201,12 @@ final class DesktopApp {
 /// Starts the real app through `bootstrap` with a signed-in profile of
 /// [server], its files in a new temporary directory, an in-memory secret
 /// store and mpv's audio output of the device harness (doc 06), and pumps
-/// until the shell shows.
+/// until the shell shows. [overrides] are added to `bootstrap`'s.
 Future<DesktopApp> startDesktopApp(
   WidgetTester tester,
-  DesktopApiServer server,
-) async {
+  DesktopApiServer server, {
+  List<Override> overrides = const [],
+}) async {
   final directory = (await tester.runAsync(
     () => Directory.systemTemp.createTemp('soundspan-desktop-'),
   ))!;
@@ -233,6 +235,7 @@ Future<DesktopApp> startDesktopApp(
               audioOutputOverride: ao,
             );
           }),
+        ...overrides,
       ],
     ),
   );

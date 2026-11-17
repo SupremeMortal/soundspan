@@ -17,7 +17,8 @@ name: Client Device Tests
 #
 # The desktop suite: every desktop-integration job runs the real app from
 # integration_test/desktop/ against an in-process API server (shell,
-# playback with the real engine, media controls) on Linux, Windows and macOS.
+# playback with the real engine and the shortcuts, media controls, tray) on
+# Linux, Windows and macOS.
 #
 # The patrol suite: patrol-android runs the real app with Patrol on an
 # Android emulator against the contract server: sign in, play, background,
@@ -411,6 +412,16 @@ jobs:
           set -o pipefail
           tool/ci/mpris_smoke_linux.sh 2>&1 | tee "$LOG_DIR/media_controls_smoke.log"
 
+      # The runner's session bus has no StatusNotifier host, so initTray()
+      # is false and closing the idle window quits. tray_manager exports
+      # its StatusNotifierItem over D-Bus itself: no AppIndicator package.
+      - name: Tray smoke
+        working-directory: client
+        timeout-minutes: 15
+        run: |
+          set -o pipefail
+          flutter test integration_test/desktop/tray_smoke_test.dart -d linux 2>&1 | tee "$LOG_DIR/tray_smoke.log"
+
       - name: Screenshot
         if: failure()
         run: import -window root -display :99 "$LOG_DIR/screenshot.png" || true
@@ -464,6 +475,13 @@ jobs:
         run: |
           set -o pipefail
           flutter test integration_test/desktop/media_controls_smoke_test.dart -d windows 2>&1 | tee "$LOG_DIR/media_controls_smoke.log"
+
+      - name: Tray smoke
+        working-directory: client
+        timeout-minutes: 15
+        run: |
+          set -o pipefail
+          flutter test integration_test/desktop/tray_smoke_test.dart -d windows 2>&1 | tee "$LOG_DIR/tray_smoke.log"
 
       - name: Screenshot
         if: failure()
@@ -531,6 +549,13 @@ jobs:
         run: |
           set -o pipefail
           flutter test integration_test/desktop/media_controls_smoke_test.dart -d macos 2>&1 | tee "$LOG_DIR/media_controls_smoke.log"
+
+      - name: Tray smoke
+        working-directory: client
+        timeout-minutes: 15
+        run: |
+          set -o pipefail
+          flutter test integration_test/desktop/tray_smoke_test.dart -d macos 2>&1 | tee "$LOG_DIR/tray_smoke.log"
 
       - name: Screenshot
         if: failure()
