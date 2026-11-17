@@ -12,6 +12,7 @@ import 'package:soundspan/app/shell/window_class.dart';
 import 'package:soundspan/app/theme/dimens.dart';
 import 'package:soundspan/app/theme/extensions.dart';
 import 'package:soundspan/app/theme/typography.dart';
+import 'package:soundspan/core/downloads/downloaded_library.dart';
 import 'package:soundspan/features/downloads/downloads.dart';
 import 'package:soundspan/features/playlist/playlist.dart';
 import 'package:soundspan/shared/actions/app_menu_commands.dart';
@@ -34,10 +35,18 @@ final StreamProviderFamily<Cached<AlbumDetail>, String> albumDetailProvider =
     StreamProvider.autoDispose.family<Cached<AlbumDetail>, String>(
       (ref, id) async* {
         final repository = await ref.watch(libraryRepositoryProvider.future);
-        yield* repository.album(id);
+        yield* withDownloadedFallback(
+          ref,
+          repository.album(id),
+          (library) => library.albumDetail(id),
+        );
       },
       retry: _noRetry,
-      dependencies: [libraryRepositoryProvider],
+      dependencies: [
+        libraryRepositoryProvider,
+        showDownloadedOnlyProvider,
+        downloadedLibraryProvider,
+      ],
     );
 
 /// The loaded albums of the artist named by the argument, in list order.

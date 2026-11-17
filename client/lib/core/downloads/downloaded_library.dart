@@ -109,6 +109,85 @@ class DownloadedLibrary {
     return row != null;
   }).distinct();
 
+  /// Completed track items, each once, ordered by title.
+  Future<List<Track>> tracks() => _tracks();
+
+  /// The album [albumId] built from this device: its downloaded tracks in
+  /// disc and track order, under the album collection's title when it is
+  /// pinned; null when no track of it is downloaded and it is not pinned.
+  Future<AlbumDetail?> albumDetail(String albumId) async {
+    final album = (await watchAlbums().first)
+        .where((a) => a.id == albumId)
+        .firstOrNull;
+    if (album == null) return null;
+    final tracks = [
+      for (final track in await _tracks())
+        if (track.albumId == albumId) track,
+    ]..sort(_byPosition);
+    return AlbumDetail(album: album, tracks: tracks, owned: true);
+  }
+
+  /// The artist [artistId] built from this device: its downloaded tracks
+  /// by title and the albums they belong to; null when none is downloaded.
+  Future<ArtistDetail?> artistDetail(String artistId) async {
+    final tracks = [
+      for (final track in await _tracks())
+        if (track.artistId == artistId) track,
+    ];
+    if (tracks.isEmpty) return null;
+    final albumIds = {for (final track in tracks) ?track.albumId};
+    return ArtistDetail(
+      artist: Artist(id: artistId, name: tracks.first.meta.artist),
+      topTracks: tracks,
+      albums: [
+        for (final album in await watchAlbums().first)
+          if (albumIds.contains(album.id)) album,
+      ],
+    );
+  }
+
+  /// The pinned playlist [playlistId] built from this device: its
+  /// downloaded items in playlist order; null when it is not pinned.
+  Future<PlaylistDetail?> playlistDetail(String playlistId) async {
+    final summary = (await watchPlaylists().first)
+        .where((p) => p.id == playlistId)
+        .firstOrNull;
+    if (summary == null) return null;
+    final m = _db.downloadMembership;
+    final i = _db.downloadItems;
+    final rows =
+        await (_db.select(m).join([
+                innerJoin(i, i.itemKey.equalsExp(m.itemKey)),
+              ])
+              ..where(
+                m.kind.equals(DownloadCollectionKind.playlist.name) &
+                    m.refId.equals(playlistId) &
+                    i.status.equals(DownloadStatus.completed.name),
+              )
+              ..orderBy([OrderingTerm.asc(m.position)]))
+            .get();
+    final items = <PlaylistItem>[];
+    for (final row in rows) {
+      final item = row.readTable(i);
+      final DownloadItemKey key;
+      try {
+        key = DownloadItemKey.decode(item.itemKey);
+      } on FormatException {
+        continue;
+      }
+      if (key is! TrackItemKey) continue;
+      items.add(
+        PlaylistItem(
+          id: item.itemKey,
+          sort: row.readTable(m).position,
+          track: trackOfDownload(key, item.metaJson),
+          isPlayable: true,
+        ),
+      );
+    }
+    return PlaylistDetail(summary: summary, items: items);
+  }
+
   /// The playback ids of every completed track item.
   Future<Set<PlaybackId>> downloadedPlaybackIds() async => {
     for (final track in await _tracks()) ?track.playbackId,
@@ -153,6 +232,12 @@ class DownloadedLibrary {
     )) {
       yield await read();
     }
+  }
+
+  static int _byPosition(Track a, Track b) {
+    final disc = (a.discNumber ?? 1).compareTo(b.discNumber ?? 1);
+    if (disc != 0) return disc;
+    return (a.trackNumber ?? 0).compareTo(b.trackNumber ?? 0);
   }
 
   static int _byText(String a, String b) {

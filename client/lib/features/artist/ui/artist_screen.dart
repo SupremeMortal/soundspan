@@ -13,6 +13,8 @@ import 'package:soundspan/app/shell/window_class.dart';
 import 'package:soundspan/app/theme/dimens.dart';
 import 'package:soundspan/app/theme/extensions.dart';
 import 'package:soundspan/app/theme/typography.dart';
+import 'package:soundspan/core/downloads/downloaded_library.dart';
+import 'package:soundspan/features/downloads/downloads.dart';
 import 'package:soundspan/shared/actions/app_menu_commands.dart';
 import 'package:soundspan/shared/actions/track_actions.dart';
 import 'package:soundspan/shared/domain/domain.dart';
@@ -34,10 +36,18 @@ final StreamProviderFamily<Cached<ArtistDetail>, String> artistDetailProvider =
     StreamProvider.autoDispose.family<Cached<ArtistDetail>, String>(
       (ref, id) async* {
         final repository = await ref.watch(libraryRepositoryProvider.future);
-        yield* repository.artist(id);
+        yield* withDownloadedFallback(
+          ref,
+          repository.artist(id),
+          (library) => library.artistDetail(id),
+        );
       },
       retry: _noRetry,
-      dependencies: [libraryRepositoryProvider],
+      dependencies: [
+        libraryRepositoryProvider,
+        showDownloadedOnlyProvider,
+        downloadedLibraryProvider,
+      ],
     );
 
 /// The artist page (`/artist/:artistId`; doc 09, Album, Artist, Playlist).

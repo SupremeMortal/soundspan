@@ -8,10 +8,14 @@ library;
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/misc.dart' show StreamProviderFamily;
+import 'package:flutter_riverpod/misc.dart'
+    show FutureProviderFamily, StreamProviderFamily;
+import 'package:soundspan/core/downloads/downloaded_library.dart';
+import 'package:soundspan/features/downloads/downloads.dart';
 import 'package:soundspan/features/search/domain/search_sections.dart';
 import 'package:soundspan/features/search/search_providers.dart';
 import 'package:soundspan/shared/domain/domain.dart';
+import 'package:soundspan/shared/providers/cache.dart';
 import 'package:soundspan/shared/providers/repositories.dart';
 import 'package:soundspan_api/soundspan_api.dart'
     show FeatureDisabled, Upstream;
@@ -83,6 +87,55 @@ List<SearchRequest> searchRequests(String query, SearchScope scope) =>
       SearchScope.discover => [(query: query, scope: SearchScope.discover)],
       SearchScope.podcasts => [(query: query, scope: SearchScope.podcasts)],
     };
+
+/// What search finds on this device while offline (doc 07, Reachability
+/// and Offline Mode): the library results and playlists.
+typedef LocalSearchResults = ({
+  LibrarySearchResults library,
+  List<PlaylistSummary> playlists,
+});
+
+/// The results of a query from this device only, without the server: the
+/// cache's tracks, albums, artists and playlists whose title or name
+/// contains it, and the downloaded tracks whose title, artist or album
+/// does. Downloads come first; a track is listed once by its playback id.
+/// Where the platform does not download, only the cache is searched.
+final FutureProviderFamily<LocalSearchResults, String> localSearchProvider =
+    FutureProvider.autoDispose.family<LocalSearchResults, String>(
+      (ref, query) async {
+        final cache = await ref.watch(cacheStoreProvider.future);
+        final matches = await cache.searchLocal(query);
+        final downloaded = ref.watch(downloadsAvailableProvider)
+            ? await ref.watch(downloadedLibraryProvider).tracks()
+            : const <Track>[];
+        final needle = query.toLowerCase();
+        bool matchesText(Track track) => [
+          track.meta.title,
+          track.meta.artist,
+          track.meta.album,
+        ].any((text) => text.toLowerCase().contains(needle));
+        final seen = <PlaybackId>{};
+        final tracks = <Track>[];
+        for (final track in [
+          ...downloaded.where(matchesText),
+          ...matches.tracks,
+        ]) {
+          final id = track.playbackId;
+          if (id != null && !seen.add(id)) continue;
+          tracks.add(track);
+        }
+        return (
+          library: LibrarySearchResults(
+            tracks: tracks,
+            albums: matches.albums,
+            artists: matches.artists,
+          ),
+          playlists: matches.playlists,
+        );
+      },
+      retry: _noRetry,
+      dependencies: [cacheStoreProvider, downloadedLibraryProvider],
+    );
 
 /// The loaded first page of the user's playlists; empty while it loads or
 /// when it failed, because the playlists only add to the results.

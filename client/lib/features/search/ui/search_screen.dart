@@ -14,6 +14,7 @@ import 'package:soundspan/app/shell/window_class.dart';
 import 'package:soundspan/app/theme/dimens.dart';
 import 'package:soundspan/app/theme/extensions.dart';
 import 'package:soundspan/app/theme/typography.dart';
+import 'package:soundspan/features/downloads/downloads.dart';
 import 'package:soundspan/features/search/domain/search_sections.dart';
 import 'package:soundspan/features/search/ui/search_view_model.dart';
 import 'package:soundspan/shared/actions/app_menu_commands.dart';
@@ -43,6 +44,9 @@ class SearchScreen extends ConsumerStatefulWidget {
 
   /// The key of the screen's search field.
   static const Key fieldKey = Key('search.field');
+
+  /// The key of the "Results from this device" label shown while offline.
+  static const Key deviceResultsKey = Key('search.deviceResults');
 
   /// The query from the route, if any.
   final String? query;
@@ -230,17 +234,19 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       SearchScope.discover => l10n.searchScopeDiscover,
       SearchScope.podcasts => l10n.searchScopePodcasts,
     };
+    final scopes = _scopes(ref.watch(isOfflineProvider));
+    final current = _effectiveScope(scopes);
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       padding: EdgeInsets.symmetric(horizontal: gutter, vertical: Spacing.x4),
       child: Row(
         children: [
-          for (final scope in SearchScope.values)
+          for (final scope in scopes)
             Padding(
               padding: const EdgeInsetsDirectional.only(end: Spacing.x8),
               child: ChoiceChip(
                 label: Text(label(scope)),
-                selected: _scope == scope,
+                selected: current == scope,
                 onSelected: (_) => setState(() {
                   _scope = scope;
                   _expanded.clear();
@@ -252,7 +258,20 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     );
   }
 
+  /// The scopes offered: while offline only those this device can answer
+  /// (the Discover and Podcasts chips are hidden).
+  static List<SearchScope> _scopes(bool offline) => [
+    for (final scope in SearchScope.values)
+      if (!offline || scope == SearchScope.all || scope == SearchScope.library)
+        scope,
+  ];
+
+  /// The chosen scope, or All when it is not offered now.
+  SearchScope _effectiveScope(List<SearchScope> offered) =>
+      offered.contains(_scope) ? _scope : SearchScope.all;
+
   Widget _results(BuildContext context, double gutter) {
+    if (ref.watch(isOfflineProvider)) return _localResults(context, gutter);
     final l10n = AppLocalizations.of(context);
     final requests = searchRequests(_query, _scope);
     final parts = {
@@ -280,42 +299,97 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         error: error,
         onRetry: () => retrySearch(ref, _query, _scope),
       ),
-      SearchFound(:final sections) => ListView(
-        padding: const EdgeInsets.only(bottom: Spacing.x24),
-        children: [
-          if (sections.topResult case final top?)
-            _Section(
-              title: l10n.searchTopResult,
-              gutter: gutter,
-              child: Align(
-                alignment: AlignmentDirectional.centerStart,
-                child: _TopResult(item: top, onOpened: _opened),
-              ),
-            ),
-          for (final section in sections.sections)
-            _Section(
-              title: _sectionTitle(l10n, section.kind),
-              gutter: gutter,
-              expanded: section.hasMore
-                  ? _expanded.contains(section.kind)
-                  : null,
-              onToggle: () => setState(() {
-                if (!_expanded.remove(section.kind)) {
-                  _expanded.add(section.kind);
-                }
-              }),
-              child: _SectionItems(
-                kind: section.kind,
-                items: _expanded.contains(section.kind)
-                    ? section.items
-                    : section.preview,
-                gutter: gutter,
-                onOpened: _opened,
-              ),
-            ),
-        ],
-      ),
+      SearchFound(:final sections) => _found(context, sections, gutter),
     };
+  }
+
+  /// The results of the query from this device only, labelled "Results
+  /// from this device"; no request reaches the server.
+  Widget _localResults(BuildContext context, double gutter) {
+    final l10n = AppLocalizations.of(context);
+    final local = ref.watch(localSearchProvider(_query));
+    final found = local.value;
+    if (found == null) {
+      if (local.error case final error?) {
+        return ErrorView(
+          error: error,
+          onRetry: () => ref.invalidate(localSearchProvider(_query)),
+        );
+      }
+      return _Skeletons(gutter: gutter);
+    }
+    final sections = buildSearchSections(
+      found.library,
+      null,
+      found.playlists,
+      _query,
+      _effectiveScope(_scopes(true)),
+    );
+    if (sections.isEmpty) {
+      return EmptyState(
+        icon: Icons.search_off_rounded,
+        message: l10n.searchNoResults(_query),
+      );
+    }
+    return _found(
+      context,
+      sections,
+      gutter,
+      label: l10n.searchResultsFromDevice,
+    );
+  }
+
+  Widget _found(
+    BuildContext context,
+    SearchSections sections,
+    double gutter, {
+    String? label,
+  }) {
+    final l10n = AppLocalizations.of(context);
+    return ListView(
+      padding: const EdgeInsets.only(bottom: Spacing.x24),
+      children: [
+        if (label != null)
+          Padding(
+            key: SearchScreen.deviceResultsKey,
+            padding: EdgeInsets.fromLTRB(gutter, Spacing.x8, gutter, 0),
+            child: Text(
+              label,
+              style: context.typography.body.copyWith(
+                color: context.colors.contentSecondary,
+              ),
+            ),
+          ),
+        if (sections.topResult case final top?)
+          _Section(
+            title: l10n.searchTopResult,
+            gutter: gutter,
+            child: Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: _TopResult(item: top, onOpened: _opened),
+            ),
+          ),
+        for (final section in sections.sections)
+          _Section(
+            title: _sectionTitle(l10n, section.kind),
+            gutter: gutter,
+            expanded: section.hasMore ? _expanded.contains(section.kind) : null,
+            onToggle: () => setState(() {
+              if (!_expanded.remove(section.kind)) {
+                _expanded.add(section.kind);
+              }
+            }),
+            child: _SectionItems(
+              kind: section.kind,
+              items: _expanded.contains(section.kind)
+                  ? section.items
+                  : section.preview,
+              gutter: gutter,
+              onOpened: _opened,
+            ),
+          ),
+      ],
+    );
   }
 }
 

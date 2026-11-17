@@ -14,6 +14,7 @@ import 'package:soundspan/shared/domain/domain.dart';
 import '../../../helpers/fake_reachability.dart';
 import '../../../helpers/fake_repositories.dart';
 import '../../../helpers/fakes/fake_download_controller.dart';
+import '../../../helpers/guidelines.dart';
 import '../../library/library_harness.dart';
 
 /// What the downloaded library lists in these tests.
@@ -204,6 +205,25 @@ void main() {
       expect(find.text('Song 0'), findsOneWidget);
       expect(find.text('Kept song'), findsNothing);
     });
+  });
+
+  testWidgets('the Library meets the accessibility guidelines offline', (
+    tester,
+  ) async {
+    downloads.setItem(
+      const TrackItemKey('p1'),
+      itemState(DownloadStatus.completed),
+    );
+    await tester.pumpLibrary(
+      tab: LibraryTab.songs,
+      library: server(),
+      reachability: FakeReachability(initial: Reachability.noNetwork),
+      overrides: overrides(),
+    );
+    await expectMeetsGuidelines(tester);
+    await tester.tap(find.byKey(DownloadedOnlyChip.chipKey));
+    await tester.pumpAndSettle();
+    await expectMeetsGuidelines(tester);
   });
 
   group('rows without a local file while offline', () {

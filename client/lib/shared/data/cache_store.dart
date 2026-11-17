@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'package:collection/collection.dart';
 import 'package:crypto/crypto.dart';
 import 'package:drift/drift.dart';
+import 'package:flutter/foundation.dart' show immutable;
 import 'package:soundspan/core/storage/cache/cache_database.dart';
 import 'package:soundspan/core/storage/cache/cache_pruner.dart';
 import 'package:soundspan/shared/clock.dart';
@@ -55,6 +56,43 @@ class CacheStore {
       ),
     );
     return 'x:$digest';
+  }
+
+  /// The cached tracks, albums, artists and playlists whose title or name
+  /// contains [text], ignoring case, up to [limit] of each, ordered by
+  /// title or name: the device's half of search while offline (doc 05,
+  /// Read Policy). `%` and `_` in [text] match literally.
+  Future<LocalSearchMatches> searchLocal(String text, {int limit = 50}) async {
+    final escaped = text
+        .replaceAll(r'\', r'\\')
+        .replaceAll('%', r'\%')
+        .replaceAll('_', r'\_');
+    final pattern = '%$escaped%';
+    Future<List<T>> find<T>(
+      String table,
+      String column,
+      T Function(Map<String, Object?> json) decode,
+    ) async {
+      final rows = await _db
+          .customSelect(
+            'SELECT json FROM $table '
+            "WHERE $column LIKE ?1 ESCAPE '\\' "
+            'ORDER BY $column COLLATE NOCASE LIMIT ?2',
+            variables: [Variable.withString(pattern), Variable.withInt(limit)],
+            readsFrom: {},
+          )
+          .get();
+      return [
+        for (final row in rows) ?_decode(row.read<String>('json'), decode),
+      ];
+    }
+
+    return LocalSearchMatches(
+      tracks: await find('tracks', 'title', Track.fromJson),
+      albums: await find('albums', 'title', Album.fromJson),
+      artists: await find('artists', 'name', Artist.fromJson),
+      playlists: await find('playlists', 'name', PlaylistSummary.fromJson),
+    );
   }
 
   /// Runs [action] in one transaction.
@@ -775,4 +813,28 @@ class CacheStore {
       return null;
     }
   }
+}
+
+/// What [CacheStore.searchLocal] found.
+@immutable
+final class LocalSearchMatches {
+  /// The matches of each kind.
+  const new({
+    required this.tracks,
+    required this.albums,
+    required this.artists,
+    required this.playlists,
+  });
+
+  /// Tracks by title.
+  final List<Track> tracks;
+
+  /// Albums by title.
+  final List<Album> albums;
+
+  /// Artists by name.
+  final List<Artist> artists;
+
+  /// Playlists by name.
+  final List<PlaylistSummary> playlists;
 }

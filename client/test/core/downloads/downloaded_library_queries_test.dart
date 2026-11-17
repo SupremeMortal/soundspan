@@ -173,6 +173,46 @@ void main() {
     expect(playlists.single.trackCount, 2);
   });
 
+  test('album detail: the downloaded tracks of the album only', () async {
+    await seed();
+    final detail = (await library.albumDetail('al1'))!;
+    expect(detail.album.title, 'Album A');
+    expect(detail.album.artistName, 'Artist A');
+    expect([
+      for (final t in detail.tracks) t.playbackId?.value,
+    ], unorderedEquals(['p1', 'p2']));
+    expect(await library.albumDetail('al4'), isNull);
+    // An album with a completed item but no collection.
+    expect(
+      (await library.albumDetail('al2'))!.tracks.single.meta.title,
+      'Gamma',
+    );
+  });
+
+  test(
+    'artist detail: the artist with its downloaded tracks and albums',
+    () async {
+      await seed();
+      final detail = (await library.artistDetail('ar1'))!;
+      expect(detail.artist.name, 'Artist A');
+      expect(
+        [for (final t in detail.topTracks) t.meta.title],
+        ['Alpha', 'beta'],
+      );
+      expect([for (final a in detail.albums) a.id], ['al1']);
+      expect(await library.artistDetail('ar4'), isNull);
+    },
+  );
+
+  test('playlist detail: completed members in membership order', () async {
+    await seed();
+    final detail = (await library.playlistDetail('pl1'))!;
+    expect(detail.summary.name, 'Road trip');
+    expect([for (final i in detail.items) i.track.meta.title], ['beta']);
+    expect(detail.items.single.isPlayable, isTrue);
+    expect(await library.playlistDetail('nope'), isNull);
+  });
+
   test('downloaded playback ids, and the lists follow changes', () async {
     await seed();
     expect(await library.downloadedPlaybackIds(), {

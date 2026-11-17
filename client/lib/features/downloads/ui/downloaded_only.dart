@@ -19,6 +19,7 @@ import 'package:soundspan/core/profile/profile_providers.dart';
 import 'package:soundspan/core/profile/reachability_binding.dart';
 import 'package:soundspan/core/storage/state/enums.dart';
 import 'package:soundspan/features/downloads/ui/download_providers.dart';
+import 'package:soundspan/shared/clock.dart';
 import 'package:soundspan/shared/domain/domain.dart';
 
 /// Whether the Library's "Downloaded only" filter is on: true whenever the
@@ -119,6 +120,29 @@ Future<void> setOfflineForced(
   ProviderContainer container, {
   required bool on,
 }) => container.read(deviceSettingsDaoProvider).write(offlineForcedKey, on);
+
+/// [reads], the cache-first reads of a detail page; when they fail while
+/// the "Downloaded only" filter is on (offline with nothing cached), the
+/// detail [build] makes from this device instead, when it has one (doc 07,
+/// Reachability and Offline Mode).
+Stream<Cached<T>> withDownloadedFallback<T>(
+  Ref ref,
+  Stream<Cached<T>> reads,
+  Future<T?> Function(DownloadedLibrary library) build,
+) async* {
+  try {
+    await for (final read in reads) {
+      yield read;
+    }
+  } on Object {
+    // A page closed meanwhile shows nothing more.
+    if (!ref.mounted) return;
+    if (!ref.read(showDownloadedOnlyProvider)) rethrow;
+    final built = await build(ref.read(downloadedLibraryProvider));
+    if (built == null || !ref.mounted) rethrow;
+    yield Cached(value: built, fetchedAt: ref.read(clockProvider).now());
+  }
+}
 
 Duration? _noRetry(int _, Object _) => null;
 

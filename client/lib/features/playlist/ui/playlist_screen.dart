@@ -13,6 +13,7 @@ import 'package:soundspan/app/router/routes.dart';
 import 'package:soundspan/app/shell/window_class.dart';
 import 'package:soundspan/app/theme/dimens.dart';
 import 'package:soundspan/app/theme/extensions.dart';
+import 'package:soundspan/core/downloads/downloaded_library.dart';
 import 'package:soundspan/features/downloads/downloads.dart';
 import 'package:soundspan/features/playlist/ui/playlist_dialogs.dart';
 import 'package:soundspan/features/playlist/ui/playlist_view_model.dart';
@@ -40,10 +41,18 @@ playlistDetailProvider = StreamProvider.autoDispose
     .family<Cached<PlaylistDetail>, String>(
       (ref, id) async* {
         final repository = await ref.watch(playlistRepositoryProvider.future);
-        yield* repository.playlist(id);
+        yield* withDownloadedFallback(
+          ref,
+          repository.playlist(id),
+          (library) => library.playlistDetail(id),
+        );
       },
       retry: _noRetry,
-      dependencies: [playlistRepositoryProvider],
+      dependencies: [
+        playlistRepositoryProvider,
+        showDownloadedOnlyProvider,
+        downloadedLibraryProvider,
+      ],
     );
 
 /// The paged source of the liked tracks, disposed with the page.
