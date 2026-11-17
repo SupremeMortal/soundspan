@@ -2802,5 +2802,25 @@
   "mixSavedOpen": "Open",
   "@mixSavedOpen": {
     "description": "Snackbar action opening the playlist a generated mix was just saved as."
+  },
+  "libraryDownloadedOnly": "Downloaded only",
+  "@libraryDownloadedOnly": {
+    "description": "Filter chip above a library list: shows only what is downloaded to this device."
+  },
+  "trackNotAvailableOffline": "Not available offline",
+  "@trackNotAvailableOffline": {
+    "description": "Tooltip and accessibility reason of a track row that has no downloaded file while the app is offline."
+  },
+  "offlineBannerGoOnline": "Go online",
+  "@offlineBannerGoOnline": {
+    "description": "Action of the offline notice in the Library while offline mode is on: turns offline mode off."
+  },
+  "shellMenuOfflineMode": "Offline mode",
+  "@shellMenuOfflineMode": {
+    "description": "Switch in the account menu: when on, the app does not contact the server and shows only what is on this device."
+  },
+  "searchResultsFromDevice": "Results from this device",
+  "@searchResultsFromDevice": {
+    "description": "Label above search results while offline: the results come from what is saved on this device."
   }
 }

@@ -11,8 +11,10 @@ import 'package:soundspan/app/shell/window_class.dart';
 import 'package:soundspan/app/theme/dimens.dart';
 import 'package:soundspan/app/theme/extensions.dart';
 import 'package:soundspan/app/theme/typography.dart';
+import 'package:soundspan/features/downloads/downloads.dart';
 import 'package:soundspan/features/library/ui/paged_library_view.dart';
 import 'package:soundspan/features/playlist/playlist.dart';
+import 'package:soundspan/shared/domain/domain.dart';
 import 'package:soundspan/shared/providers/playlist_list.dart';
 import 'package:soundspan/shared/widgets/built_range_reporter.dart';
 import 'package:soundspan/shared/widgets/error_view.dart';
@@ -79,14 +81,40 @@ class _PlaylistsTabState extends ConsumerState<PlaylistsTab> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final gutter = gutterOf(WindowClass.of(context));
-    final list = ref.watch(playlistListProvider);
+    final extent = PlaylistsTab.extentFor(context);
+    final downloaded = ref.watch(showDownloadedOnlyProvider)
+        ? [
+            for (final playlist
+                in ref
+                        .watch(downloadedListProvider(DownloadedList.playlists))
+                        .value ??
+                    const <Object>[])
+              playlist as PlaylistSummary,
+          ]
+        : null;
+    // With the filter on, Liked Songs is listed only when it is pinned.
+    final showLiked =
+        downloaded == null || downloaded.any((p) => p.id == likedPlaylistId);
+    // With the filter on, the server's list is not read.
+    final list = downloaded == null
+        ? ref.watch(playlistListProvider)
+        : const AsyncLoading<PagedSnapshot<PlaylistSummary>>();
     final snapshot = list.value;
     final total = snapshot?.total;
     final error = list.error ?? snapshot?.refreshError;
-    final extent = PlaylistsTab.extentFor(context);
 
     final Widget body;
-    if (total == 0) {
+    if (downloaded != null) {
+      final rows = [
+        for (final playlist in downloaded)
+          if (playlist.id != likedPlaylistId) playlist,
+      ];
+      body = SliverFixedExtentList.builder(
+        itemExtent: extent,
+        itemCount: rows.length,
+        itemBuilder: (context, index) => _row(context, rows[index]),
+      );
+    } else if (total == 0) {
       body = SliverToBoxAdapter(
         child: Padding(
           key: PlaylistsTab.hintKey,
@@ -123,20 +151,7 @@ class _PlaylistsTabState extends ConsumerState<PlaylistsTab> {
           _reporter.built(index);
           final playlist = snapshot?.itemAt(index);
           if (playlist == null) return const _PlaylistRowSkeleton();
-          return PlaylistRow(
-            selected: TwoPaneSelection.isSelected(
-              context,
-              DetailKind.playlist.name,
-              playlist.id,
-            ),
-            name: playlist.name,
-            subtitle: l10n.libraryPlaylistTrackCount(playlist.trackCount),
-            artwork: MosaicArtwork(
-              refs: playlist.coverRefs,
-              size: PlaylistsTab.artworkSize,
-            ),
-            onTap: () => DetailNavigation.openPlaylist(context, playlist.id),
-          );
+          return _row(context, playlist);
         },
       );
     }
@@ -155,24 +170,35 @@ class _PlaylistsTabState extends ConsumerState<PlaylistsTab> {
             ),
             sliver: SliverMainAxisGroup(
               slivers: [
-                SliverToBoxAdapter(
-                  child: SizedBox(
-                    height: extent,
-                    child: PlaylistRow(
-                      selected: TwoPaneSelection.isSelected(
-                        context,
-                        DetailKind.playlist.name,
-                        'liked',
+                if (ref.watch(downloadedOnlyChipVisibleProvider))
+                  const SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: Spacing.x8),
+                      child: Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: DownloadedOnlyChip(),
                       ),
-                      name: l10n.libraryLikedSongs,
-                      artwork: const LikedSongsArtwork(
-                        size: PlaylistsTab.artworkSize,
-                      ),
-                      onTap: () =>
-                          DetailNavigation.openPlaylist(context, 'liked'),
                     ),
                   ),
-                ),
+                if (showLiked)
+                  SliverToBoxAdapter(
+                    child: SizedBox(
+                      height: extent,
+                      child: PlaylistRow(
+                        selected: TwoPaneSelection.isSelected(
+                          context,
+                          DetailKind.playlist.name,
+                          'liked',
+                        ),
+                        name: l10n.libraryLikedSongs,
+                        artwork: const LikedSongsArtwork(
+                          size: PlaylistsTab.artworkSize,
+                        ),
+                        onTap: () =>
+                            DetailNavigation.openPlaylist(context, 'liked'),
+                      ),
+                    ),
+                  ),
                 SliverToBoxAdapter(
                   child: SizedBox(
                     height: extent,
@@ -193,6 +219,22 @@ class _PlaylistsTabState extends ConsumerState<PlaylistsTab> {
       ),
     );
   }
+
+  Widget _row(BuildContext context, PlaylistSummary playlist) => PlaylistRow(
+    selected: TwoPaneSelection.isSelected(
+      context,
+      DetailKind.playlist.name,
+      playlist.id,
+    ),
+    name: playlist.name,
+    subtitle: AppLocalizations.of(context)
+        .libraryPlaylistTrackCount(playlist.trackCount),
+    artwork: MosaicArtwork(
+      refs: playlist.coverRefs,
+      size: PlaylistsTab.artworkSize,
+    ),
+    onTap: () => DetailNavigation.openPlaylist(context, playlist.id),
+  );
 }
 
 /// The square that stands for Liked Songs where a playlist shows its

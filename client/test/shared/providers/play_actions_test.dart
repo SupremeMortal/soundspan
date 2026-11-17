@@ -197,6 +197,75 @@ void main() {
     });
   }
 
+  group('offline: only tracks with a file on this device', () {
+    late Set<PlaybackId>? onDevice;
+
+    setUp(() {
+      onDevice = {const PlaybackId('pb-a'), const PlaybackId('pb-c')};
+      actions = PlayActions(
+        controller: harness.controller,
+        library: () async => library,
+        playlists: () async => playlists,
+        notify: notices.add,
+        random: Random(1),
+        availableOffline: () async => onDevice,
+      );
+      library.albumDetails['al-1'] = AlbumDetail(
+        album: const Album(
+          id: 'al-1',
+          title: 'Record',
+          artistName: 'Band',
+          artistId: 'ar-1',
+        ),
+        tracks: [_track('a'), _track('b'), _track('c')],
+        owned: true,
+      );
+    });
+
+    test('Play on a collection queues only the downloaded items', () async {
+      await actions.playAlbum('al-1');
+      await harness.settle();
+      expect(played(), ['pb-a', 'pb-c']);
+    });
+
+    test('Shuffle on a collection queues only the downloaded items', () async {
+      await actions.playAlbum('al-1', shuffle: true);
+      await harness.settle();
+      expect(played().toSet(), {'pb-a', 'pb-c'});
+    });
+
+    test('Play next queues only the downloaded items', () async {
+      await actions.playNext([_track('a'), _track('b'), _track('c')]);
+      await harness.settle();
+      expect(played(), ['pb-a', 'pb-c']);
+    });
+
+    test('a row list starts at its downloaded row', () async {
+      await actions.playTracks(
+        [_track('a'), _track('b'), _track('c')],
+        startIndex: 2,
+        context: _context,
+      );
+      await harness.settle();
+      expect(played(), ['pb-a', 'pb-c']);
+      expect(current(), 'pb-c');
+    });
+
+    test('nothing downloaded queues nothing', () async {
+      onDevice = {};
+      await actions.playAlbum('al-1');
+      await harness.settle();
+      expect(played(), isEmpty);
+    });
+
+    test('online (null) queues everything', () async {
+      onDevice = null;
+      await actions.playAlbum('al-1');
+      await harness.settle();
+      expect(played(), ['pb-a', 'pb-b', 'pb-c']);
+    });
+  });
+
   group('collections', () {
     test('playAlbum queues the album with an album context', () async {
       library.albumDetails['al-1'] = AlbumDetail(

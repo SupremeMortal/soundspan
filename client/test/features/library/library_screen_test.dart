@@ -7,6 +7,7 @@ import 'package:soundspan/core/connectivity/reachability.dart';
 import 'package:soundspan/features/library/library.dart';
 import 'package:soundspan/features/library/ui/playlists_tab.dart';
 import 'package:soundspan/features/library/ui/songs_tab.dart';
+import 'package:soundspan/platform/capabilities/capabilities.dart';
 import 'package:soundspan/shared/domain/domain.dart';
 import 'package:soundspan/shared/widgets/app_banner.dart';
 import 'package:soundspan/shared/widgets/offline_banner.dart';
@@ -110,9 +111,16 @@ void main() {
   ]) {
     testWidgets('${state.name} shows its offline banner at the top over the '
         'cached list, requesting no refresh', (tester) async {
+      // Where the platform downloads, the "Downloaded only" filter would
+      // replace the cached list.
       final harness = await tester.pumpLibrary(
         library: seeded(),
         reachability: FakeReachability(initial: state),
+        overrides: [
+          platformCapabilitiesProvider.overrideWithValue(
+            PlatformCapabilities.web,
+          ),
+        ],
       );
 
       expect(find.text(text), findsOneWidget);

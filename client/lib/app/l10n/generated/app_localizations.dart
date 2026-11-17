@@ -3692,6 +3692,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Open'**
   String get mixSavedOpen;
+
+  /// Filter chip above a library list: shows only what is downloaded to this device.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloaded only'**
+  String get libraryDownloadedOnly;
+
+  /// Tooltip and accessibility reason of a track row that has no downloaded file while the app is offline.
+  ///
+  /// In en, this message translates to:
+  /// **'Not available offline'**
+  String get trackNotAvailableOffline;
+
+  /// Action of the offline notice in the Library while offline mode is on: turns offline mode off.
+  ///
+  /// In en, this message translates to:
+  /// **'Go online'**
+  String get offlineBannerGoOnline;
+
+  /// Switch in the account menu: when on, the app does not contact the server and shows only what is on this device.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline mode'**
+  String get shellMenuOfflineMode;
+
+  /// Label above search results while offline: the results come from what is saved on this device.
+  ///
+  /// In en, this message translates to:
+  /// **'Results from this device'**
+  String get searchResultsFromDevice;
 }
 
 class _AppLocalizationsDelegate

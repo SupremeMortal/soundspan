@@ -9,6 +9,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:soundspan/app/l10n/generated/app_localizations.dart';
 import 'package:soundspan/app/shell/window_class.dart';
 import 'package:soundspan/app/theme/dimens.dart';
+import 'package:soundspan/features/downloads/downloads.dart';
 import 'package:soundspan/features/library/ui/library_controls.dart';
 import 'package:soundspan/features/library/ui/library_queries.dart';
 import 'package:soundspan/features/library/ui/paged_library_view.dart';
@@ -50,9 +51,12 @@ class SongsTab extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final query = ref.watch(trackQueryProvider);
     final notifier = ref.read(trackQueryProvider.notifier);
+    final downloadedOnly = ref.watch(showDownloadedOnlyProvider);
     return PagedLibraryView<Track>(
-      sourceKey: query,
-      open: (repository) => repository.tracks(query),
+      sourceKey: (query, downloadedOnly),
+      open: (repository) => downloadedOnly
+          ? downloadedSource<Track>(ref, DownloadedList.tracks)
+          : repository.tracks(query),
       emptyIcon: Icons.music_note_outlined,
       emptyMessage: l10n.librarySongsEmpty,
       controls: [
@@ -74,6 +78,7 @@ class SongsTab extends ConsumerWidget {
           onSelected: (origin) =>
               notifier.query = query.copyWith(origin: origin),
         ),
+        const DownloadedOnlyChip(),
       ],
       fastScroll: true,
       // Every order of the list is by name.

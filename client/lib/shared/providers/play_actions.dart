@@ -4,11 +4,13 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:soundspan/core/downloads/downloaded_library.dart';
 import 'package:soundspan/core/logging/app_logger.dart';
 import 'package:soundspan/core/playback/playback_controller.dart';
 import 'package:soundspan/core/playback/playback_providers.dart';
 import 'package:soundspan/core/playback/queue/queue_reducer.dart';
 import 'package:soundspan/core/profile/profile_context.dart';
+import 'package:soundspan/features/downloads/downloads.dart';
 import 'package:soundspan/shared/domain/domain.dart';
 import 'package:soundspan/shared/providers/repositories.dart';
 import 'package:soundspan/shared/util/uuid.dart';
@@ -49,6 +51,10 @@ final class PlayLoadFailed extends PlayNotice {
 /// through the library and playlist repositories, from the cache first; a
 /// failed load is reported to [_notify] and queues nothing, as is a queue
 /// cut at [QueueReducer.maxItems].
+///
+/// While offline only tracks with a file on this device are queued (doc 07,
+/// Reachability and Offline Mode): [availableOffline] answers their
+/// playback ids then, and null while online.
 class PlayActions {
   /// Creates the actions over [_controller] and the repositories the two
   /// functions open, reporting to [_notify]; shuffled starts are drawn from
@@ -59,13 +65,18 @@ class PlayActions {
     required this._playlists,
     required this._notify,
     Random? random,
-  }) : _random = random ?? Random();
+    Future<Set<PlaybackId>?> Function()? availableOffline,
+  }) : _random = random ?? Random(),
+       _availableOffline = availableOffline ?? _alwaysOnline;
 
   final PlaybackController _controller;
   final Future<LibraryRepository> Function() _library;
   final Future<PlaylistRepository> Function() _playlists;
   final void Function(PlayNotice notice) _notify;
   final Random _random;
+  final Future<Set<PlaybackId>?> Function() _availableOffline;
+
+  static Future<Set<PlaybackId>?> _alwaysOnline() async => null;
 
   /// How long loading a paged collection waits for its next page before it
   /// plays what it has.
@@ -82,11 +93,12 @@ class PlayActions {
     required QueueContext context,
   }) async {
     if (startIndex < 0 || startIndex >= tracks.length) return;
-    if (!_isPlayable(tracks[startIndex])) return;
+    final isPlayable = await _playableNow();
+    if (!isPlayable(tracks[startIndex])) return;
     final playable = <Track>[];
     var start = 0;
     for (var index = 0; index < tracks.length; index++) {
-      if (!_isPlayable(tracks[index])) continue;
+      if (!isPlayable(tracks[index])) continue;
       if (index == startIndex) start = playable.length;
       playable.add(tracks[index]);
     }
@@ -241,7 +253,7 @@ class PlayActions {
       _failed(error, stackTrace);
       return;
     }
-    final playable = tracks.where(_isPlayable).toList();
+    final playable = tracks.where(await _playableNow()).toList();
     if (playable.isEmpty) return;
     if (shuffle) await _controller.setShuffle(true);
     await _replace(
@@ -267,7 +279,7 @@ class PlayActions {
   }
 
   Future<void> _add(List<Track> tracks, {required bool next}) async {
-    final playable = tracks.where(_isPlayable).toList();
+    final playable = tracks.where(await _playableNow()).toList();
     if (playable.isEmpty) return;
     final queued = _controller.snapshot.queue.items.length;
     if (queued + playable.length > QueueReducer.maxItems) _truncated();
@@ -296,6 +308,29 @@ class PlayActions {
   }
 
   static bool _isPlayable(Track track) => track.playbackId != null;
+
+  /// Whether a track can be queued now: it has a playback id and, while
+  /// offline, a file on this device.
+  Future<bool Function(Track)> _playableNow() async {
+    final Set<PlaybackId>? onDevice;
+    try {
+      onDevice = await _availableOffline();
+    } on Object catch (error, stackTrace) {
+      _log.warning(
+        'Reading the downloaded tracks failed',
+        const {},
+        error,
+        stackTrace,
+      );
+      return _isPlayable;
+    }
+    if (onDevice == null) return _isPlayable;
+    bool onThisDevice(Track track) => switch (track.playbackId) {
+      final id? => onDevice!.contains(id),
+      null => false,
+    };
+    return onThisDevice;
+  }
 
   /// The first value of a cache-first read.
   static Future<T> _first<T>(Stream<Cached<T>> reads) async =>
@@ -370,9 +405,11 @@ final Provider<PlayActions> playActionsProvider = Provider<PlayActions>(
       notify: (notice) {
         if (!notices.isClosed) notices.add(notice);
       },
+      availableOffline: () => availableOffline(ref),
     );
   },
   dependencies: [
+    downloadedLibraryProvider,
     playbackControllerProvider,
     libraryRepositoryProvider,
     playlistRepositoryProvider,

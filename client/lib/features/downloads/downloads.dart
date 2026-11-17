@@ -15,4 +15,5 @@ export 'ui/download_actions.dart';
 export 'ui/download_glyph_mapper.dart';
 export 'ui/download_providers.dart';
 export 'ui/download_sheets.dart';
+export 'ui/downloaded_only.dart';
 export 'ui/downloads_tab.dart';

@@ -2197,6 +2197,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mixSavedOpen => 'Open';
+
+  @override
+  String get libraryDownloadedOnly => 'Downloaded only';
+
+  @override
+  String get trackNotAvailableOffline => 'Not available offline';
+
+  @override
+  String get offlineBannerGoOnline => 'Go online';
+
+  @override
+  String get shellMenuOfflineMode => 'Offline mode';
+
+  @override
+  String get searchResultsFromDevice => 'Results from this device';
 }
 
 /// The translations for English (`en_XA`).
@@ -4447,4 +4462,21 @@ class AppLocalizationsEnXa extends AppLocalizationsEn {
 
   @override
   String get mixSavedOpen => '[Öþéñ one]';
+
+  @override
+  String get libraryDownloadedOnly => '[Ðöŵñļöåðéð öñļý one two]';
+
+  @override
+  String get trackNotAvailableOffline =>
+      '[Ñöţ åvåîļåbļé öffļîñé one two three]';
+
+  @override
+  String get offlineBannerGoOnline => '[Ĝö öñļîñé one]';
+
+  @override
+  String get shellMenuOfflineMode => '[Öffļîñé möðé one two]';
+
+  @override
+  String get searchResultsFromDevice =>
+      '[Ŕéšûļţš fŕöm ţĥîš ðévîçé one two three]';
 }

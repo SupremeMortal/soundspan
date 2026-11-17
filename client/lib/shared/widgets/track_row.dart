@@ -67,6 +67,11 @@ final class TrackRowThumbnail extends TrackRowLeading {
 /// "title, artist, spoken duration[, reason]", which is a button with the
 /// hint "Play" only when [onTap] is set and the row is enabled.
 ///
+/// While the app is offline, on a platform that downloads, a row with a
+/// [playbackId] whose track has no completed file on this device is
+/// disabled too, with the reason "Not available offline"; online nothing is
+/// disabled by that rule.
+///
 /// With a [playbackId], the row marks itself while that track is the
 /// queue's current item ([nowPlayingProvider]): [EqualiserBars] in `brand`
 /// in place of the index or over the thumbnail, moving only while it plays
@@ -93,7 +98,7 @@ final class TrackRowThumbnail extends TrackRowLeading {
 /// as selected. Enter ([PlayRowIntent]) calls [onTap] unless [rowActions]
 /// handles it; [rowActions] also handles [PlayRowNextIntent] and
 /// [RemoveRowIntent] while the row has focus.
-class TrackRow extends StatefulWidget {
+class TrackRow extends ConsumerStatefulWidget {
   /// Creates a row for the track [title] by [artist].
   const new({
     required this.title,
@@ -225,10 +230,10 @@ class TrackRow extends StatefulWidget {
   }
 
   @override
-  State<TrackRow> createState() => _TrackRowState();
+  ConsumerState<TrackRow> createState() => _TrackRowState();
 }
 
-class _TrackRowState extends State<TrackRow> {
+class _TrackRowState extends ConsumerState<TrackRow> {
   bool _hovered = false;
   bool _focused = false;
   PointerDeviceKind? _tapKind;
@@ -275,11 +280,20 @@ class _TrackRowState extends State<TrackRow> {
     final colors = context.colors;
     final typography = context.typography;
     final l10n = AppLocalizations.of(context);
-    final onTap = widget.enabled ? widget.onTap : null;
+    // While offline a track without a file on this device is disabled too
+    // (doc 07, Reachability and Offline Mode).
+    final unavailableOffline =
+        widget.enabled && watchUnavailableOffline(ref, widget.playbackId);
+    final enabled = widget.enabled && !unavailableOffline;
+    final onTap = enabled ? widget.onTap : null;
     final onToggleLike = widget.onToggleLike;
     final onMenu = widget.onMenu;
     final onAddToQueue = widget.onAddToQueue;
-    final reason = widget.enabled ? null : widget.disabledReason;
+    final reason = enabled
+        ? null
+        : unavailableOffline
+        ? l10n.trackNotAvailableOffline
+        : widget.disabledReason;
     final withThumbnail = widget.leading is TrackRowThumbnail;
 
     final label = [
@@ -400,7 +414,7 @@ class _TrackRowState extends State<TrackRow> {
       ],
     );
 
-    if (!widget.enabled) {
+    if (!enabled) {
       content = Opacity(opacity: TrackRow.disabledOpacity, child: content);
       if (reason != null) {
         content = Tooltip(message: reason, child: content);
