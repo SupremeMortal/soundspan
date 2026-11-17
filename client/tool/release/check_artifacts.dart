@@ -21,6 +21,8 @@ const List<String> macosArtifactNameTemplates = [
 const List<String> artifactNameTemplates = [
   'soundspan-{version}-android-unsigned.apk',
   'soundspan-{version}-linux-x64-unsigned.tar.gz',
+  'soundspan-{version}-linux-amd64.deb',
+  'soundspan-{version}-linux-x64.AppImage',
   'soundspan-{version}-windows-x64-unsigned.zip',
   'soundspan-{version}-windows-x64-unsigned.msix',
   'soundspan-{version}-windows-x64-unsigned-setup.exe',

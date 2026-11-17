@@ -12,7 +12,9 @@ const _version = '0.1.0';
 
 const _expected = [
   'soundspan-0.1.0-android-unsigned.apk',
+  'soundspan-0.1.0-linux-amd64.deb',
   'soundspan-0.1.0-linux-x64-unsigned.tar.gz',
+  'soundspan-0.1.0-linux-x64.AppImage',
   'soundspan-0.1.0-macos-universal-unsigned.dmg',
   'soundspan-0.1.0-macos-universal-unsigned.zip',
   'soundspan-0.1.0-web-image.tar.gz',
@@ -130,6 +132,32 @@ void main() {
     expect(result.lines, contains('missing: $msix'));
     expect(sums().existsSync(), isFalse);
   });
+
+  test('the set includes the Linux .deb and AppImage', () {
+    expect(
+      expectedArtifactNames(_version),
+      containsAll(<String>[
+        'soundspan-0.1.0-linux-amd64.deb',
+        'soundspan-0.1.0-linux-x64.AppImage',
+      ]),
+    );
+  });
+
+  for (final package in const [
+    'soundspan-0.1.0-linux-amd64.deb',
+    'soundspan-0.1.0-linux-x64.AppImage',
+  ]) {
+    test('a set without $package fails and names it', () {
+      writeFullSet();
+      File(p.join(dir.path, package)).deleteSync();
+
+      final result = run(writeSums: true);
+
+      expect(result.ok, isFalse);
+      expect(result.lines, contains('missing: $package'));
+      expect(sums().existsSync(), isFalse);
+    });
+  }
 
   test('an extra file fails and names it', () {
     writeFullSet();

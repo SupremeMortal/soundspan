@@ -148,8 +148,15 @@ Packaging, both unsigned and built by `build-windows` in `client-build.yml` ([11
 | Format | libmpv |
 |---|---|
 | Flatpak | Built as a module in the manifest (mpv with its ffmpeg dependency from the runtime's codecs extension), or the `org.freedesktop.Platform.ffmpeg-full` extension plus an mpv module. Finish-args: `--share=network`, `--socket=wayland`, `--socket=fallback-x11`, `--socket=pulseaudio`, `--device=dri`, `--talk-name=org.freedesktop.secrets`, `--own-name=org.mpris.MediaPlayer2.soundspan.*` (the MPRIS name carries an `.instance<pid>` suffix), `--talk-name=org.kde.StatusNotifierWatcher` |
-| AppImage | `libmpv.so.2` and its non-base dependencies copied into the AppDir by `linuxdeploy`; checked with `ldd` in CI on a clean container |
-| `.deb` | `Depends: libmpv2 | libmpv1, libgtk-3-0, libsecret-1-0` |
+| AppImage | The `libmpv.so.2` or `libmpv.so.1` of the build system and its non-base dependencies copied into the AppDir by `linuxdeploy`, together with the dependencies of libmpv that linuxdeploy's excludelist leaves to the host but a system without audio or GL packages lacks (`libasound.so.2`, `libEGL.so.1`, `libgbm.so.1`, `libjack.so.0`, `libusb-1.0.so.0`); media_kit opens libmpv by name with `dlopen`, so `AppRun` points it at the bundled file through `LIBMPV_LIBRARY_PATH`. Checked with `ldd` in CI on a clean container |
+| `.deb` | `Depends: libmpv2 | libmpv1, libgtk-3-0, libsecret-1-0`; media_kit tries `libmpv.so`, `libmpv.so.2`, then `libmpv.so.1`, so one package serves Ubuntu 22.04 (libmpv1) and 24.04 (libmpv2) |
+
+**Packages** (`client/linux/packaging/`). Each installs the desktop file `io.soundspan.app.desktop`, the hicolor icons (PNG sizes and the scalable SVG) and the AppStream metainfo `io.soundspan.app.metainfo.xml` (id, name, summary, `GPL-3.0-or-later` project licence, `CC0-1.0` metadata licence, the repository as homepage, a `<launchable>` for the desktop file, and a `<releases>` entry the scripts fill with the build version and date), all under the id `io.soundspan.app`, through `common.sh`; the binary is started as `soundspan`.
+
+| Package | Script | Layout |
+|---|---|---|
+| `soundspan-<version>-linux-amd64.deb` | `deb/build_deb.sh <bundle dir> <version> <out dir>`, `dpkg-deb --build --root-owner-group` | The Flutter bundle under `/usr/lib/soundspan/`, a symlink `/usr/bin/soundspan`, the desktop file under `/usr/share/applications/`, icons under `/usr/share/icons/hicolor/`, metainfo under `/usr/share/metainfo/`, the client licence as `/usr/share/doc/soundspan/copyright`. `control`: `Package: soundspan`, `Architecture: amd64`, `Section: sound`, the soundspan project as maintainer, the `Depends` above |
+| `soundspan-<version>-linux-x64.AppImage` | `appimage/build_appimage.sh <bundle dir> <version> <out dir>`, with linuxdeploy `1-alpha-20251107-1`, linuxdeploy-plugin-gtk at commit `3b67a1d` and the AppImage type 2 runtime `20251108`, each downloaded and checked against a pinned SHA-256 | The Flutter bundle under `usr/bin/` (the executable finds `lib/libapp.so` and `data/` beside itself), its shared libraries, libmpv and GTK under `usr/lib/`, a custom `AppRun` behind the GTK plugin's hook |
 
 Flathub builds must work offline from declared sources. The manifest takes the prebuilt Flutter bundle from the tagged GitHub release (the common pattern for Flutter apps on Flathub) plus source modules for mpv.
 
