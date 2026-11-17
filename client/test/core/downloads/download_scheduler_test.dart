@@ -757,6 +757,34 @@ void main() {
     },
   );
 
+  test('start-up: a verifying row is handed to the controller once, with no '
+      'content type, after the running rows are reconciled', () async {
+    final effects = <DownloadItemEffect>[];
+    rig.scheduler.effects.listen(effects.add);
+    final at = rig.clock.now();
+    const verifying = TrackItemKey('verifying');
+    const lost = TrackItemKey('lost');
+    await rig.item(
+      verifying,
+      at: at,
+      status: DownloadStatus.verifying,
+      taskId: _task(verifying),
+    );
+    await rig.item(
+      lost,
+      at: at,
+      status: DownloadStatus.running,
+      taskId: _task(lost),
+    );
+
+    await rig.start();
+    await pumpEventQueue();
+
+    expect(await rig.status(lost), DownloadStatus.running);
+    expect(await rig.status(verifying), DownloadStatus.verifying);
+    expect(effects, [const DownloadItemEffect(verifying, VerifyFile())]);
+  });
+
   test('pauseAll then resumeAll restores two running items', () async {
     await rig.album('a', 4);
     await rig.start();

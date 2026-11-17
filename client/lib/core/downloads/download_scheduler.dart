@@ -158,8 +158,9 @@ class DownloadScheduler {
   bool get isAvailable => _available;
 
   /// Re-attaches to the operating system's tasks, reconciles `running`
-  /// rows with them, re-arms the retries of `failedRetryable` rows, and
-  /// pumps. Events the downloader delivers while starting are processed
+  /// rows with them, hands every `verifying` row to the controller with a
+  /// `VerifyFile` effect, re-arms the retries of `failedRetryable` rows,
+  /// and pumps. Events the downloader delivers while starting are processed
   /// like live ones. When the downloader cannot initialise, that is logged
   /// once and [isAvailable] turns false instead of an error. Later calls
   /// do nothing.
@@ -388,6 +389,12 @@ class DownloadScheduler {
       if (taskId == null || !live.contains(taskId)) {
         await _apply(_keyOf(row), const TaskLost());
       }
+    }
+    // A transfer that finished before the app was killed, and was never
+    // checked: verify it now. The response's Content-Type is gone, so the
+    // final file gets the `bin` extension.
+    for (final row in await _store.itemsByStatus(DownloadStatus.verifying)) {
+      _effects.add(DownloadItemEffect(_keyOf(row), const VerifyFile()));
     }
     final now = _clock.now();
     for (final row in await _store.itemsByStatus(

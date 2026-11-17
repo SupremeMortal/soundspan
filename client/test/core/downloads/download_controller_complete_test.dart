@@ -413,4 +413,78 @@ void main() {
       expect((await rig.item('t2'))!.waitingFor, isNull);
     },
   );
+
+  group('start-up with an item left verifying', () {
+    late DownloadControllerRig restarted;
+
+    setUp(() {
+      // A rig that has not started yet, as the app finds it after being
+      // killed between the transfer's completion and its verification.
+      restarted = DownloadControllerRig(
+        Directory('${dir.path}/restarted')..createSync(),
+      );
+    });
+    tearDown(() => restarted.dispose());
+
+    Future<void> leaveVerifying(String playbackId) =>
+        restarted.store.upsertItem(
+          TrackItemKey(playbackId),
+          DownloadItemsCompanion(
+            metaJson: const Value('{}'),
+            status: const Value(DownloadStatus.verifying),
+            downloadUrl: Value('/api/offline/download/$playbackId'),
+            expectedBytes: const Value(1000),
+            requestedAt: Value(restarted.clock.now()),
+            taskId: Value(_task(playbackId)),
+          ),
+        );
+
+    // The order of startDownloads: the controller listens before the
+    // scheduler starts.
+    Future<void> startLikeTheApp() async {
+      restarted.controller.start();
+      await restarted.scheduler.start();
+      await restarted.worker.start();
+      await restarted.settle();
+    }
+
+    test('a .part of the expected size is completed and confirmed', () async {
+      await leaveVerifying('t1');
+      final part = restarted.paths.partFile(
+        itemKeyHash(const TrackItemKey('t1')),
+      );
+      File(part)
+        ..createSync(recursive: true)
+        ..writeAsBytesSync(List.filled(1000, 1));
+
+      await startLikeTheApp();
+
+      final row = (await restarted.item('t1'))!;
+      expect(row.status, DownloadStatus.completed);
+      expect(row.sizeBytes, 1000);
+      expect(row.relativePath, endsWith('.bin'));
+      expect(
+        File(restarted.paths.resolve(row.relativePath!)).existsSync(),
+        isTrue,
+      );
+      expect(File(part).existsSync(), isFalse);
+      expect(row.serverConfirmed, isTrue);
+      expect(
+        restarted.server.offline.requests
+            .whereType<api.CompleteOfflineItemRequest>()
+            .map((request) => request.sizeBytes),
+        [1000],
+      );
+    });
+
+    test('with no .part it fails retryably', () async {
+      await leaveVerifying('t1');
+
+      await startLikeTheApp();
+
+      final row = (await restarted.item('t1'))!;
+      expect(row.status, DownloadStatus.failedRetryable);
+      expect(row.failureCode, DownloadFailureCodes.verificationFailed);
+    });
+  });
 }
