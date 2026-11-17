@@ -2363,17 +2363,77 @@ abstract class AppLocalizations {
   /// **'Nothing to explore yet'**
   String get exploreEmpty;
 
-  /// Shown on Explore when the server has discovery turned off.
-  ///
-  /// In en, this message translates to:
-  /// **'Not available on this server'**
-  String get exploreNotAvailable;
-
   /// Second line of the Explore card at the end of Home on phones and tablets.
   ///
   /// In en, this message translates to:
   /// **'Find new artists and music'**
   String get homeExploreCard;
+
+  /// Title of the Explore section of radio stations, one per genre of the user's library.
+  ///
+  /// In en, this message translates to:
+  /// **'Radio by genre'**
+  String get exploreRadioByGenre;
+
+  /// Title of the Explore section of radio stations, one per decade of the user's library.
+  ///
+  /// In en, this message translates to:
+  /// **'Radio by decade'**
+  String get exploreRadioByDecade;
+
+  /// Button under the first genre stations of Explore that shows every genre station.
+  ///
+  /// In en, this message translates to:
+  /// **'Show all'**
+  String get exploreRadioShowAll;
+
+  /// Name of a decade radio station, from the decade's first year, such as 1990s.
+  ///
+  /// In en, this message translates to:
+  /// **'{decade}s'**
+  String exploreRadioDecade(String decade);
+
+  /// Caption of a radio station tile: how many library tracks the station draws from.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 track} other{{count} tracks}}'**
+  String exploreRadioTrackCount(int count);
+
+  /// Screen-reader label of a radio station tile on Explore.
+  ///
+  /// In en, this message translates to:
+  /// **'{station}, {tracks}, radio station'**
+  String exploreRadioStationSemantics(String station, String tracks);
+
+  /// Snackbar when a radio station returned no playable tracks.
+  ///
+  /// In en, this message translates to:
+  /// **'No tracks for this station'**
+  String get exploreRadioNoTracks;
+
+  /// Snackbar when starting a radio station failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t start the station'**
+  String get exploreRadioFailed;
+
+  /// Action of the snackbar shown when starting a radio station failed; starts it again.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get exploreRadioRetry;
+
+  /// Tooltip and screen-reader reason of a radio station tile that cannot start because the server is not reachable.
+  ///
+  /// In en, this message translates to:
+  /// **'Not available offline'**
+  String get exploreRadioOffline;
+
+  /// Queue header and now-playing overline while the queue plays a radio station.
+  ///
+  /// In en, this message translates to:
+  /// **'Radio · {station}'**
+  String queueContextRadio(String station);
 
   /// Secondary action on the sign-in screen that shows the form for signing in with an API key copied from the web UI.
   ///

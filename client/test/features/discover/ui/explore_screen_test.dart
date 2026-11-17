@@ -24,6 +24,7 @@ import 'package:soundspan_api/soundspan_api.dart'
     show FeatureDisabled, ServerError;
 
 import '../../../helpers/fake_discovery_repository.dart';
+import '../../../helpers/fake_radio_repository.dart';
 import '../../../helpers/fake_reachability.dart';
 import '../../../helpers/guidelines.dart';
 import '../../../helpers/pump_app.dart';
@@ -114,6 +115,7 @@ void main() {
     addTearDown(router.dispose);
     final overrides = <Override>[
       discovery.providerOverride,
+      FakeRadioRepository().providerOverride,
       serverCapabilitiesProvider.overrideWith(
         () => _FixedCapabilities(
           ServerCapabilities(
@@ -337,13 +339,13 @@ void main() {
   });
 
   group('disabled', () {
-    testWidgets('says it is not available and requests nothing', (
+    testWidgets('leaves the discovery sections out and requests nothing', (
       tester,
     ) async {
       await pump(tester, discoveryOn: false);
 
-      expect(find.text('Not available on this server'), findsOneWidget);
       expect(find.text(_thisWeek), findsNothing);
+      expect(find.text(_recommended), findsNothing);
       expect(discovery.reads, 0);
     });
   });

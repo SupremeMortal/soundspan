@@ -247,13 +247,13 @@ void main() {
   });
 
   group('disabled', () {
-    testWidgets('neither shelf nor the Explore card is present and no '
-        'discovery request is made', (tester) async {
+    testWidgets('neither shelf is present and no discovery request is '
+        'made, but the Explore card is, for radio', (tester) async {
       await pump(tester, discoveryOn: false, size: const Size(390, 2400));
 
       expect(find.text(_recommended), findsNothing);
       expect(find.text(_popular), findsNothing);
-      expect(find.text('Explore'), findsNothing);
+      expect(find.text('Explore'), findsOneWidget);
       expect(find.text(_madeForYou), findsOneWidget);
       expect(discovery.reads, 0);
     });

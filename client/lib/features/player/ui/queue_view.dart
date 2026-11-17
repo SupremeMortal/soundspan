@@ -15,6 +15,7 @@ import 'package:soundspan/core/playback/playback_providers.dart';
 import 'package:soundspan/core/playback/queue/queue_state.dart';
 import 'package:soundspan/features/listen_together/listen_together.dart';
 import 'package:soundspan/features/player/ui/player_item.dart';
+import 'package:soundspan/features/player/ui/queue_context_label.dart';
 import 'package:soundspan/shared/actions/app_menu_commands.dart';
 import 'package:soundspan/shared/actions/track_actions.dart';
 import 'package:soundspan/shared/domain/domain.dart';
@@ -72,6 +73,8 @@ class QueueView extends ConsumerWidget {
       controller: scrollController,
       slivers: [
         const SliverToBoxAdapter(child: ListenTogetherQueueHeader()),
+        if (queueContextLabel(l10n, queue.context) case final label?)
+          SliverToBoxAdapter(child: _ContextLine(label)),
         SliverToBoxAdapter(
           child: _SectionHeader(
             title: l10n.queueNowPlaying,
@@ -277,6 +280,31 @@ class _QueueRow extends StatelessWidget {
     onMenu: onMenu,
     onAddToQueue: onAddToQueue,
     semanticActions: semanticActions,
+  );
+}
+
+/// What the queue plays from, above the sections.
+class _ContextLine extends StatelessWidget {
+  const new(this.label);
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsetsDirectional.fromSTEB(
+      Spacing.x16,
+      Spacing.x16,
+      Spacing.x16,
+      0,
+    ),
+    child: Text(
+      label,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: context.typography.caption.copyWith(
+        color: context.colors.contentSecondary,
+      ),
+    ),
   );
 }
 

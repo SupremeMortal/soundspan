@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:soundspan/app/l10n/generated/app_localizations.dart';
 import 'package:soundspan/app/router/routes.dart';
@@ -8,21 +7,20 @@ import 'package:soundspan/app/shell/window_class.dart';
 import 'package:soundspan/app/theme/dimens.dart';
 import 'package:soundspan/app/theme/extensions.dart';
 import 'package:soundspan/app/theme/typography.dart';
-import 'package:soundspan/features/discover/ui/discovery_view_model.dart';
 import 'package:soundspan/shared/widgets/detail_header.dart';
 
 /// The "Explore" card at the end of Home on compact and medium windows,
 /// which opens Explore. It is empty on expanded windows, where the sidebar
-/// has the entry, and while the server has `discovery` off.
-class ExploreCard extends ConsumerWidget {
+/// has the entry. Explore has radio on every server, so the card does not
+/// depend on `discovery`.
+class ExploreCard extends StatelessWidget {
   /// Creates the card.
   const new({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final windowClass = WindowClass.of(context);
-    if (windowClass == WindowClass.expanded ||
-        !ref.watch(discoveryEnabledProvider)) {
+    if (windowClass == WindowClass.expanded) {
       return const SizedBox.shrink();
     }
     final l10n = AppLocalizations.of(context);

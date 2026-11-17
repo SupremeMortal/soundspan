@@ -1888,13 +1888,81 @@
   "@exploreEmpty": {
     "description": "Shown on Explore when every section is empty."
   },
-  "exploreNotAvailable": "[Ñöţ åvåîļåbļé öñ ţĥîš šéŕvéŕ one two three]",
-  "@exploreNotAvailable": {
-    "description": "Shown on Explore when the server has discovery turned off."
-  },
   "homeExploreCard": "[Fîñð ñéŵ åŕţîšţš åñð mûšîç one two three]",
   "@homeExploreCard": {
     "description": "Second line of the Explore card at the end of Home on phones and tablets."
+  },
+  "exploreRadioByGenre": "[Ŕåðîö bý ĝéñŕé one two]",
+  "@exploreRadioByGenre": {
+    "description": "Title of the Explore section of radio stations, one per genre of the user's library."
+  },
+  "exploreRadioByDecade": "[Ŕåðîö bý ðéçåðé one two]",
+  "@exploreRadioByDecade": {
+    "description": "Title of the Explore section of radio stations, one per decade of the user's library."
+  },
+  "exploreRadioShowAll": "[Šĥöŵ åļļ one]",
+  "@exploreRadioShowAll": {
+    "description": "Button under the first genre stations of Explore that shows every genre station."
+  },
+  "exploreRadioDecade": "[{decade}š one]",
+  "@exploreRadioDecade": {
+    "description": "Name of a decade radio station, from the decade's first year, such as 1990s.",
+    "placeholders": {
+      "decade": {
+        "type": "String",
+        "example": "1990"
+      }
+    }
+  },
+  "exploreRadioTrackCount": "[{count, plural, =1{1 ţŕåçķ one} other{{count} ţŕåçķš one}}]",
+  "@exploreRadioTrackCount": {
+    "description": "Caption of a radio station tile: how many library tracks the station draws from.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "42"
+      }
+    }
+  },
+  "exploreRadioStationSemantics": "[{station}, {tracks}, ŕåðîö šţåţîöñ one two]",
+  "@exploreRadioStationSemantics": {
+    "description": "Screen-reader label of a radio station tile on Explore.",
+    "placeholders": {
+      "station": {
+        "type": "String",
+        "example": "Rock"
+      },
+      "tracks": {
+        "type": "String",
+        "example": "42 tracks"
+      }
+    }
+  },
+  "exploreRadioNoTracks": "[Ñö ţŕåçķš föŕ ţĥîš šţåţîöñ one two three]",
+  "@exploreRadioNoTracks": {
+    "description": "Snackbar when a radio station returned no playable tracks."
+  },
+  "exploreRadioFailed": "[Çöûļðñ’ţ šţåŕţ ţĥé šţåţîöñ one two three]",
+  "@exploreRadioFailed": {
+    "description": "Snackbar when starting a radio station failed."
+  },
+  "exploreRadioRetry": "[Ŕéţŕý one]",
+  "@exploreRadioRetry": {
+    "description": "Action of the snackbar shown when starting a radio station failed; starts it again."
+  },
+  "exploreRadioOffline": "[Ñöţ åvåîļåbļé öffļîñé one two three]",
+  "@exploreRadioOffline": {
+    "description": "Tooltip and screen-reader reason of a radio station tile that cannot start because the server is not reachable."
+  },
+  "queueContextRadio": "[Ŕåðîö · {station} one]",
+  "@queueContextRadio": {
+    "description": "Queue header and now-playing overline while the queue plays a radio station.",
+    "placeholders": {
+      "station": {
+        "type": "String",
+        "example": "Rock"
+      }
+    }
   },
   "connectSignInUseApiKey": "[Ûšé åñ ÅÞÎ ķéý one two]",
   "@connectSignInUseApiKey": {

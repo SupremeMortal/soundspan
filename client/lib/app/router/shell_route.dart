@@ -182,12 +182,8 @@ StatefulShellRoute buildShellRoute(
                         }
                       : null,
                   openPlaylistId: openPlaylistIdOf(state.uri),
-                  onExplore: ref.watch(discoveryEnabledProvider)
-                      ? () => DetailNavigation.openLocation(
-                          router,
-                          RoutePaths.explore,
-                        )
-                      : null,
+                  onExplore: () =>
+                      DetailNavigation.openLocation(router, RoutePaths.explore),
                   onListenTogether: () => DetailNavigation.openLocation(
                     router,
                     RoutePaths.listenTogether,

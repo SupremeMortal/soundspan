@@ -1881,13 +1881,66 @@
   "@exploreEmpty": {
     "description": "Shown on Explore when every section is empty."
   },
-  "exploreNotAvailable": "Not available on this server",
-  "@exploreNotAvailable": {
-    "description": "Shown on Explore when the server has discovery turned off."
-  },
   "homeExploreCard": "Find new artists and music",
   "@homeExploreCard": {
     "description": "Second line of the Explore card at the end of Home on phones and tablets."
+  },
+  "exploreRadioByGenre": "Radio by genre",
+  "@exploreRadioByGenre": {
+    "description": "Title of the Explore section of radio stations, one per genre of the user's library."
+  },
+  "exploreRadioByDecade": "Radio by decade",
+  "@exploreRadioByDecade": {
+    "description": "Title of the Explore section of radio stations, one per decade of the user's library."
+  },
+  "exploreRadioShowAll": "Show all",
+  "@exploreRadioShowAll": {
+    "description": "Button under the first genre stations of Explore that shows every genre station."
+  },
+  "exploreRadioDecade": "{decade}s",
+  "@exploreRadioDecade": {
+    "description": "Name of a decade radio station, from the decade's first year, such as 1990s.",
+    "placeholders": {
+      "decade": {"type": "String", "example": "1990"}
+    }
+  },
+  "exploreRadioTrackCount": "{count, plural, =1{1 track} other{{count} tracks}}",
+  "@exploreRadioTrackCount": {
+    "description": "Caption of a radio station tile: how many library tracks the station draws from.",
+    "placeholders": {
+      "count": {"type": "int", "example": "42"}
+    }
+  },
+  "exploreRadioStationSemantics": "{station}, {tracks}, radio station",
+  "@exploreRadioStationSemantics": {
+    "description": "Screen-reader label of a radio station tile on Explore.",
+    "placeholders": {
+      "station": {"type": "String", "example": "Rock"},
+      "tracks": {"type": "String", "example": "42 tracks"}
+    }
+  },
+  "exploreRadioNoTracks": "No tracks for this station",
+  "@exploreRadioNoTracks": {
+    "description": "Snackbar when a radio station returned no playable tracks."
+  },
+  "exploreRadioFailed": "Couldn’t start the station",
+  "@exploreRadioFailed": {
+    "description": "Snackbar when starting a radio station failed."
+  },
+  "exploreRadioRetry": "Retry",
+  "@exploreRadioRetry": {
+    "description": "Action of the snackbar shown when starting a radio station failed; starts it again."
+  },
+  "exploreRadioOffline": "Not available offline",
+  "@exploreRadioOffline": {
+    "description": "Tooltip and screen-reader reason of a radio station tile that cannot start because the server is not reachable."
+  },
+  "queueContextRadio": "Radio · {station}",
+  "@queueContextRadio": {
+    "description": "Queue header and now-playing overline while the queue plays a radio station.",
+    "placeholders": {
+      "station": {"type": "String", "example": "Rock"}
+    }
   },
   "connectSignInUseApiKey": "Use an API key",
   "@connectSignInUseApiKey": {

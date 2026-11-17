@@ -1425,10 +1425,54 @@ class AppLocalizationsEn extends AppLocalizations {
   String get exploreEmpty => 'Nothing to explore yet';
 
   @override
-  String get exploreNotAvailable => 'Not available on this server';
+  String get homeExploreCard => 'Find new artists and music';
 
   @override
-  String get homeExploreCard => 'Find new artists and music';
+  String get exploreRadioByGenre => 'Radio by genre';
+
+  @override
+  String get exploreRadioByDecade => 'Radio by decade';
+
+  @override
+  String get exploreRadioShowAll => 'Show all';
+
+  @override
+  String exploreRadioDecade(String decade) {
+    return '${decade}s';
+  }
+
+  @override
+  String exploreRadioTrackCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count tracks',
+      one: '1 track',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String exploreRadioStationSemantics(String station, String tracks) {
+    return '$station, $tracks, radio station';
+  }
+
+  @override
+  String get exploreRadioNoTracks => 'No tracks for this station';
+
+  @override
+  String get exploreRadioFailed => 'Couldn’t start the station';
+
+  @override
+  String get exploreRadioRetry => 'Retry';
+
+  @override
+  String get exploreRadioOffline => 'Not available offline';
+
+  @override
+  String queueContextRadio(String station) {
+    return 'Radio · $station';
+  }
 
   @override
   String get connectSignInUseApiKey => 'Use an API key';
@@ -3678,11 +3722,55 @@ class AppLocalizationsEnXa extends AppLocalizationsEn {
   String get exploreEmpty => '[Ñöţĥîñĝ ţö éxþļöŕé ýéţ one two three]';
 
   @override
-  String get exploreNotAvailable =>
-      '[Ñöţ åvåîļåbļé öñ ţĥîš šéŕvéŕ one two three]';
+  String get homeExploreCard => '[Fîñð ñéŵ åŕţîšţš åñð mûšîç one two three]';
 
   @override
-  String get homeExploreCard => '[Fîñð ñéŵ åŕţîšţš åñð mûšîç one two three]';
+  String get exploreRadioByGenre => '[Ŕåðîö bý ĝéñŕé one two]';
+
+  @override
+  String get exploreRadioByDecade => '[Ŕåðîö bý ðéçåðé one two]';
+
+  @override
+  String get exploreRadioShowAll => '[Šĥöŵ åļļ one]';
+
+  @override
+  String exploreRadioDecade(String decade) {
+    return '[$decadeš one]';
+  }
+
+  @override
+  String exploreRadioTrackCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ţŕåçķš one',
+      one: '1 ţŕåçķ one',
+    );
+    return '[$_temp0]';
+  }
+
+  @override
+  String exploreRadioStationSemantics(String station, String tracks) {
+    return '[$station, $tracks, ŕåðîö šţåţîöñ one two]';
+  }
+
+  @override
+  String get exploreRadioNoTracks =>
+      '[Ñö ţŕåçķš föŕ ţĥîš šţåţîöñ one two three]';
+
+  @override
+  String get exploreRadioFailed => '[Çöûļðñ’ţ šţåŕţ ţĥé šţåţîöñ one two three]';
+
+  @override
+  String get exploreRadioRetry => '[Ŕéţŕý one]';
+
+  @override
+  String get exploreRadioOffline => '[Ñöţ åvåîļåbļé öffļîñé one two three]';
+
+  @override
+  String queueContextRadio(String station) {
+    return '[Ŕåðîö · $station one]';
+  }
 
   @override
   String get connectSignInUseApiKey => '[Ûšé åñ ÅÞÎ ķéý one two]';

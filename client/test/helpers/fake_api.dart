@@ -1018,6 +1018,18 @@ final class FakeDiscoveryClient implements api.DiscoveryClient {
   /// The ids of every `GET /mixes/:id`, in order.
   final List<String> mixIds = [];
 
+  /// The answer of `GET /library/genres`.
+  List<api.RadioGenre> radioGenres = [];
+
+  /// The answer of `GET /library/decades`.
+  List<api.RadioDecade> radioDecades = [];
+
+  /// The tracks of every `GET /library/radio`.
+  List<api.RadioTrack> radioTracks = [];
+
+  /// The `(type, value, limit)` of every `GET /library/radio`, in order.
+  final List<(String, String?, int?)> radioRequests = [];
+
   /// Calls by operation name.
   final Map<String, int> calls = {};
 
@@ -1070,6 +1082,40 @@ final class FakeDiscoveryClient implements api.DiscoveryClient {
       weekStart: DateTime.utc(2026, 11, 9),
       weekEnd: DateTime.utc(2026, 11, 15, 23, 59, 59),
     );
+  }
+
+  @override
+  Future<api.RadioGenresResponse> listRadioGenres({
+    Map<String, Object?> extra = const {},
+    CancelToken? cancelToken,
+    Options? options,
+  }) async {
+    _call('listRadioGenres');
+    return api.RadioGenresResponse(genres: List.of(radioGenres));
+  }
+
+  @override
+  Future<api.RadioDecadesResponse> listRadioDecades({
+    Map<String, Object?> extra = const {},
+    CancelToken? cancelToken,
+    Options? options,
+  }) async {
+    _call('listRadioDecades');
+    return api.RadioDecadesResponse(decades: List.of(radioDecades));
+  }
+
+  @override
+  Future<api.RadioResponse> getRadio({
+    required api.RadioType type,
+    Map<String, Object?> extra = const {},
+    CancelToken? cancelToken,
+    Options? options,
+    String? value,
+    int? limit,
+  }) async {
+    _call('getRadio');
+    radioRequests.add((type.toJson(), value, limit));
+    return api.RadioResponse(tracks: List.of(radioTracks));
   }
 
   @override

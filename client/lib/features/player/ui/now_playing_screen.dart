@@ -19,6 +19,7 @@ import 'package:soundspan/core/playback/playback_snapshot.dart';
 import 'package:soundspan/features/player/ui/lyrics_view.dart';
 import 'package:soundspan/features/player/ui/player_bar.dart';
 import 'package:soundspan/features/player/ui/player_item.dart';
+import 'package:soundspan/features/player/ui/queue_context_label.dart';
 import 'package:soundspan/features/player/ui/queue_sheet.dart';
 import 'package:soundspan/features/player/ui/queue_view.dart';
 import 'package:soundspan/features/player/ui/seek_bar.dart';
@@ -150,7 +151,12 @@ class NowPlayingScreen extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        const _Header(),
+                        _Header(
+                          overline: queueContextLabel(
+                            l10n,
+                            snapshot?.queue.context,
+                          ),
+                        ),
                         Expanded(child: body),
                       ],
                     ),
@@ -314,9 +320,11 @@ class _DismissDragArea extends StatelessWidget {
   }
 }
 
-/// The close button and the overline.
+/// The close button and the overline: [overline], else "Now playing".
 class _Header extends StatelessWidget {
-  const new();
+  const new({this.overline});
+
+  final String? overline;
 
   @override
   Widget build(BuildContext context) {
@@ -350,7 +358,7 @@ class _Header extends StatelessWidget {
               ),
               Expanded(
                 child: Text(
-                  l10n.nowPlayingOverline.toUpperCase(),
+                  (overline ?? l10n.nowPlayingOverline).toUpperCase(),
                   textAlign: TextAlign.center,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,

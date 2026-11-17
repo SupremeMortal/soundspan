@@ -12,6 +12,7 @@ import 'package:soundspan/app/theme/typography.dart';
 import 'package:soundspan/core/playback/playback_providers.dart';
 import 'package:soundspan/features/player/ui/now_playing_screen.dart';
 import 'package:soundspan/features/player/ui/player_item.dart';
+import 'package:soundspan/features/player/ui/queue_context_label.dart';
 import 'package:soundspan/features/player/ui/queue_view.dart';
 import 'package:soundspan/features/player/ui/right_panel.dart';
 import 'package:soundspan/shared/widgets/artwork.dart';
@@ -34,9 +35,13 @@ class NowPlayingOverlay extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final current = ref.watch(playbackControllerProvider.exists)
-        ? ref.watch(playbackStateProvider).value?.current
+    final state = ref.watch(playbackControllerProvider.exists)
+        ? ref.watch(playbackStateProvider).value
         : null;
+    final current = state?.current;
+    final overline =
+        queueContextLabel(l10n, state?.queue.context) ??
+        l10n.nowPlayingOverline;
     void close() => ref.read(nowPlayingOverlayProvider.notifier).close();
     return CallbackShortcuts(
       bindings: {const SingleActivator(LogicalKeyboardKey.escape): close},
@@ -59,7 +64,7 @@ class NowPlayingOverlay extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          l10n.nowPlayingOverline.toUpperCase(),
+                          overline.toUpperCase(),
                           style: context.typography.overline.copyWith(
                             color: context.colors.contentSecondary,
                           ),

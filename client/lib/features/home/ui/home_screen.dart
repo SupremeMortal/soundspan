@@ -38,8 +38,7 @@ import 'package:soundspan/shared/widgets/shelf.dart';
 /// hidden. When every shelf failed with nothing cached one [ErrorView]
 /// takes their place; when every shelf is empty an [EmptyState] does.
 /// Pull to refresh on touch and F5 on desktop fetch the shelves again.
-/// While the server has `discovery` on, compact and medium windows end with
-/// the [ExploreCard].
+/// Compact and medium windows end with the [ExploreCard].
 class HomeScreen extends ConsumerWidget {
   /// Creates the screen.
   const new({super.key});

@@ -13,10 +13,12 @@ import 'package:soundspan/core/profile/capabilities.dart';
 import 'package:soundspan/core/profile/version.dart';
 import 'package:soundspan/core/profile/version_notice.dart';
 import 'package:soundspan/features/discover/discover.dart';
+import 'package:soundspan/features/explore/explore.dart';
 import 'package:soundspan/features/home/home.dart';
 import 'package:soundspan/shared/domain/domain.dart';
 
 import '../../helpers/fake_discovery_repository.dart';
+import '../../helpers/fake_radio_repository.dart';
 import '../../helpers/fake_repositories.dart';
 import '../../helpers/golden.dart';
 
@@ -29,6 +31,16 @@ class _DiscoveryOn extends ServerCapabilitiesNotifier {
     hasP8PlayedAt: true,
     autoPlaylists: true,
     discovery: true,
+  );
+}
+
+class _DiscoveryOff extends ServerCapabilitiesNotifier {
+  @override
+  ServerCapabilities build() => ServerCapabilities(
+    serverVersion: Version.tryParse('2.7.0'),
+    hasP6SelfRevoke: true,
+    hasP7PlayMarker: true,
+    hasP8PlayedAt: true,
   );
 }
 
@@ -84,7 +96,36 @@ List<Override> _overrides() {
   return [
     ...repositories.overrides,
     discovery.providerOverride,
+    FakeRadioRepository().providerOverride,
     serverCapabilitiesProvider.overrideWith(_DiscoveryOn.new),
+    versionNoticeProvider.overrideWith(_NoNotice.new),
+    profilesProvider.overrideWith((ref) => Stream.value(const <Profile>[])),
+    initialActiveProfileIdProvider.overrideWithValue(null),
+  ];
+}
+
+/// Explore on a server with discovery off: only the radio sections.
+List<Override> _radioOverrides() {
+  final radio = FakeRadioRepository()
+    ..genreList = const [
+      RadioGenre(name: 'rock', trackCount: 412),
+      RadioGenre(name: 'electronic', trackCount: 268),
+      RadioGenre(name: 'jazz', trackCount: 131),
+      RadioGenre(name: 'hip hop', trackCount: 97),
+      RadioGenre(name: 'folk', trackCount: 54),
+      RadioGenre(name: 'ambient', trackCount: 23),
+    ]
+    ..decadeList = const [
+      RadioDecade(decade: 1970, trackCount: 64),
+      RadioDecade(decade: 1980, trackCount: 120),
+      RadioDecade(decade: 1990, trackCount: 233),
+      RadioDecade(decade: 2000, trackCount: 301),
+      RadioDecade(decade: 2010, trackCount: 188),
+    ];
+  return [
+    FakeDiscoveryRepository().providerOverride,
+    radio.providerOverride,
+    serverCapabilitiesProvider.overrideWith(_DiscoveryOff.new),
     versionNoticeProvider.overrideWith(_NoNotice.new),
     profilesProvider.overrideWith((ref) => Stream.value(const <Profile>[])),
     initialActiveProfileIdProvider.overrideWithValue(null),
@@ -101,6 +142,12 @@ void main() {
     'explore',
     builder: (context) => _scoped(context, const ExploreScreen()),
     overrides: _overrides(),
+  );
+
+  goldenMatrix(
+    'explore_radio',
+    builder: (context) => _scoped(context, const ExploreScreen()),
+    overrides: _radioOverrides(),
   );
 
   goldenMatrix(

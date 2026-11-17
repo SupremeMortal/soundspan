@@ -18,6 +18,7 @@ import 'package:soundspan/features/discover/domain/discovery_artist.dart';
 import 'package:soundspan/features/discover/domain/discovery_playlist.dart';
 import 'package:soundspan/features/discover/ui/discovery_artist_card.dart';
 import 'package:soundspan/features/discover/ui/discovery_view_model.dart';
+import 'package:soundspan/features/explore/explore.dart';
 import 'package:soundspan/shared/domain/domain.dart';
 import 'package:soundspan/shared/util/uuid.dart';
 import 'package:soundspan/shared/widgets/detail_header.dart';
@@ -30,12 +31,15 @@ import 'package:soundspan/shared/widgets/track_row.dart';
 
 /// Explore (`/explore`, pushed inside the current branch; doc 09, Shell by
 /// Window Class): this week's discovery playlist, then the recommended and
-/// the popular artists, each section hidden when it is empty or failed.
+/// the popular artists, then the radio stations by genre and by decade,
+/// each section hidden when it is empty or failed.
 ///
-/// Each section shows skeletons until it has a value; when every section
-/// is empty one [EmptyState] takes their place. While the server has
-/// `discovery` off the screen says so and requests nothing. Pull to
-/// refresh on touch and F5 on desktop fetch every section again.
+/// Each discovery section shows skeletons until it has a value; when every
+/// section is empty one [EmptyState] takes their place. While the server
+/// has `discovery` off the discovery sections are left out without a
+/// request, and only the radio sections, which need no server feature,
+/// show. Pull to refresh on touch and F5 on desktop fetch every section
+/// again.
 class ExploreScreen extends ConsumerWidget {
   /// Creates the screen.
   const new({super.key});
@@ -53,17 +57,8 @@ class ExploreScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final windowClass = WindowClass.of(context);
-    final enabled = ref.watch(discoveryEnabledProvider);
-
-    final Widget content;
-    if (!enabled) {
-      content = EmptyState(
-        icon: Icons.explore_off_outlined,
-        message: l10n.exploreNotAvailable,
-      );
-    } else {
-      content = _ExploreBody(onRefresh: () => refreshDiscovery(ref));
-    }
+    Future<void> refresh() =>
+        Future.wait([refreshDiscovery(ref), refreshRadio(ref)]);
 
     return RouteTitle(
       screen: l10n.navExplore,
@@ -81,7 +76,7 @@ class ExploreScreen extends ConsumerWidget {
           child: Actions(
             actions: {
               _RefreshIntent: CallbackAction<_RefreshIntent>(
-                onInvoke: (_) => enabled ? refreshDiscovery(ref) : null,
+                onInvoke: (_) => refresh(),
               ),
             },
             child: Focus(
@@ -89,7 +84,7 @@ class ExploreScreen extends ConsumerWidget {
               child: Column(
                 children: [
                   const OfflineBanner(),
-                  Expanded(child: content),
+                  Expanded(child: _ExploreBody(onRefresh: refresh)),
                 ],
               ),
             ),
@@ -118,19 +113,17 @@ class _ExploreBody extends ConsumerWidget {
     final playlist = ref.watch(currentDiscoveryProvider);
     final recommended = ref.watch(recommendedForYouProvider);
     final popular = ref.watch(popularArtistsProvider);
+    final genres = ref.watch(radioGenresProvider);
+    final decades = ref.watch(radioDecadesProvider);
 
     bool shown(AsyncValue<Object?> value) => switch (value.value) {
       null => false,
       final List<Object?> list => list.isNotEmpty,
       _ => true,
     };
-    final settled = [
-      playlist,
-      recommended,
-      popular,
-    ].every((value) => value.hasValue || value.hasError);
-    final allEmpty =
-        settled && !shown(playlist) && !shown(recommended) && !shown(popular);
+    final sections = [playlist, recommended, popular, genres, decades];
+    final settled = sections.every((value) => value.hasValue || value.hasError);
+    final allEmpty = settled && !sections.any(shown);
 
     return AppRefreshIndicator(
       onRefresh: onRefresh,
@@ -175,6 +168,7 @@ class _ExploreBody extends ConsumerWidget {
               recommended,
             ),
             ..._artistSection(context, l10n.discoverPopularArtists, popular),
+            const RadioSections(),
             const SliverToBoxAdapter(child: SizedBox(height: Spacing.x32)),
           ],
         ],
