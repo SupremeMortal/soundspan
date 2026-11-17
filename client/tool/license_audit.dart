@@ -72,13 +72,14 @@ const _sdkPackages = {
   'sky_engine',
 };
 
-/// Audits the shipped dependencies of the app and of `packages/soundspan_api`,
+/// Audits the shipped dependencies of the app, `packages/soundspan_api` and
+/// `packages/soundspan_smtc`,
 /// the bundled fonts, and the notice manifest `assets/licenses/index.json`.
 ///
 /// The audited set is the transitive closure of the non-dev `dependencies` of
-/// `pubspec.yaml` and `packages/soundspan_api/pubspec.yaml` under
+/// `pubspec.yaml` and of the two in-repo packages' pubspecs under
 /// [clientRoot], resolved through `.dart_tool/package_config.json`; Flutter
-/// SDK packages and the two root packages are skipped. [onAudited] receives
+/// SDK packages and the in-repo packages themselves are skipped. [onAudited] receives
 /// each audited package with its detected licence ids (`unknown` when none
 /// was recognised, empty when there is no licence file).
 Future<List<LicenseFinding>> auditLicenses(
@@ -171,10 +172,11 @@ List<LicenseFinding> _auditDependencies(
   findings.addAll(overridesResult.findings);
   final overrides = overridesResult.overrides;
 
-  const roots = {'soundspan', 'soundspan_api'};
+  const roots = {'soundspan', 'soundspan_api', 'soundspan_smtc'};
   final rootPubspecs = [
     p.join(clientRoot.path, 'pubspec.yaml'),
     p.join(clientRoot.path, 'packages', 'soundspan_api', 'pubspec.yaml'),
+    p.join(clientRoot.path, 'packages', 'soundspan_smtc', 'pubspec.yaml'),
   ];
   final audited = <String>{};
   final queue = <String>[];

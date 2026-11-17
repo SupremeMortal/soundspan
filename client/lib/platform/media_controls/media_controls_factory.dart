@@ -5,12 +5,14 @@
 /// running platform.
 ///
 /// `AudioServiceControls` on Android, iOS, macOS, Linux (MPRIS) and the web;
-/// `NoopMediaControls` on Windows until its SMTC adapter exists.
+/// `SmtcControls` over the in-repo `soundspan_smtc` plugin on Windows.
 library;
 
 import 'package:soundspan/core/playback/media_controls/audio_service_controls.dart';
 import 'package:soundspan/core/playback/media_controls/audio_service_plugin.dart';
 import 'package:soundspan/core/playback/media_controls/media_controls.dart';
+import 'package:soundspan/core/playback/media_controls/smtc_controls.dart';
+import 'package:soundspan/core/playback/media_controls/smtc_gateway_windows.dart';
 import 'package:soundspan/shared/clock.dart';
 
 export 'media_controls_factory_web.dart'
@@ -21,6 +23,9 @@ export 'media_controls_factory_web.dart'
 enum MediaControlsKind {
   /// [AudioServiceControls].
   audioService,
+
+  /// [SmtcControls].
+  smtc,
 
   /// [NoopMediaControls].
   none,
@@ -38,6 +43,7 @@ MediaControlsKind mediaControlsKindFor({
         'ios' ||
         'macos' ||
         'linux' => MediaControlsKind.audioService,
+        'windows' => MediaControlsKind.smtc,
         _ => MediaControlsKind.none,
       };
 
@@ -56,6 +62,10 @@ MediaControls mediaControlsFor({
           channelName: channelName(),
         ),
         start: startAudioService,
+        clock: clock,
+      ),
+      MediaControlsKind.smtc => SmtcControls(
+        gateway: WindowsSmtcGateway(),
         clock: clock,
       ),
       MediaControlsKind.none => const NoopMediaControls(),

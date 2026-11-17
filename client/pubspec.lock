@@ -1328,6 +1328,13 @@ packages:
       relative: true
     source: path
     version: "0.1.0"
+  soundspan_smtc:
+    dependency: "direct main"
+    description:
+      path: "packages/soundspan_smtc"
+      relative: true
+    source: path
+    version: "0.1.0"
   source_gen:
     dependency: transitive
     description:

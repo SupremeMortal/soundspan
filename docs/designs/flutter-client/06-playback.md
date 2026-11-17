@@ -284,11 +284,19 @@ Artwork must be a file because OS media surfaces cannot send auth headers: when 
 
 The handler holds no state of its own; it renders the controller's snapshot. This keeps one source of truth on every platform, including Windows where `audio_service` is absent.
 
-`AudioServiceControls` (`audio_service_controls.dart`) is the `audio_service` adapter. `createMediaControls()` (`lib/platform/media_controls/`) builds it on Android, iOS, macOS, Linux and the web, and `NoopMediaControls` on Windows until the SMTC adapter exists. `init` starts the plugin through `AudioService.init` (kept alone in `audio_service_plugin.dart`) with a `SoundspanAudioHandler` whose `play`, `pause`, `stop`, `seek`, `skipToNext`, `skipToPrevious`, `fastForward` and `rewind` forward to the `MediaCommandHandler` (fast-forward and rewind to skip ±N); `click` keeps its default, which pauses or plays from the last published playing flag. The config is that of [10](10-platform-integration.md) (Playback service), with a fast-forward and rewind interval of 15 s and the channel name localized. `update` publishes the translation of `audioServiceStateOf`:
+`AudioServiceControls` (`audio_service_controls.dart`) is the `audio_service` adapter. `createMediaControls()` (`lib/platform/media_controls/`) builds it on Android, iOS, macOS, Linux and the web, and `SmtcControls` on Windows. `init` starts the plugin through `AudioService.init` (kept alone in `audio_service_plugin.dart`) with a `SoundspanAudioHandler` whose `play`, `pause`, `stop`, `seek`, `skipToNext`, `skipToPrevious`, `fastForward` and `rewind` forward to the `MediaCommandHandler` (fast-forward and rewind to skip ±N); `click` keeps its default, which pauses or plays from the last published playing flag. The config is that of [10](10-platform-integration.md) (Playback service), with a fast-forward and rewind interval of 15 s and the channel name localized. `update` publishes the translation of `audioServiceStateOf`:
 
 - The media item: id the queue item id, title, artist, album (none for an episode), duration and the artwork URI. The empty state publishes no item.
 - Buttons: previous, play or pause, next, all three compact. A state with skip actions and no next (a single episode) shows rewind, play/pause and fast-forward instead; one with both shows previous, rewind, play/pause, fast-forward and next, with previous, play/pause and next compact.
 - System actions `seek` and `stop` when offered; processing state `buffering` while buffering, `ready` otherwise and `idle` for the empty state; the playing flag, position, speed, and the `Clock` time of the update as the position's time.
+
+`SmtcControls` (`smtc_controls.dart`) is the Windows adapter. It talks to an `SmtcGateway` (`smtc_gateway.dart`: init, button presses, seek requests, enabled buttons, metadata, status, timeline, clear, dispose), implemented by `WindowsSmtcGateway` over the in-repo plugin `soundspan_smtc`, whose session comes from a `MediaPlayer` with its command manager disabled. `init` maps play, pause, next, previous and stop to the handler directly, fast-forward and rewind to skip ±N, and seek requests to `seek`. `update`:
+
+- The empty state clears the display and sets status closed.
+- Enabled buttons: play and pause together when either action is offered (the media key toggles between them), next, previous, stop, and fast-forward and rewind for the skip actions.
+- Metadata (title, artist, album, thumbnail) is sent only when one of them changed since the last item shown; the thumbnail is the `ArtworkPinner` file, opened by the plugin as a `StorageFile`.
+- Status `changing` while buffering, otherwise `playing` or `paused`.
+- The timeline with every update, and every 5 s while playing, extrapolated from the update by the `Clock`.
 
 ## Audio Focus and Interruptions
 

@@ -6,3 +6,4 @@ lib/core/playback/engines/just_audio_engine.dart # just_audio adapter; needs a d
 lib/core/playback/engines/media_kit_engine.dart # media_kit adapter; needs libmpv and an audio device, proven by integration_test/engine_conformance_test.dart
 lib/platform/audio_session/audio_session_gateway_io.dart # audio_session binding; needs the platform plugin, its event mapping is tested in test/platform/audio_session_mapping_test.dart
 lib/core/playback/media_controls/audio_service_plugin.dart # audio_service binding; needs the platform plugin, proven by integration_test/media_controls_smoke_test.dart
+lib/core/playback/media_controls/smtc_gateway_windows.dart # soundspan_smtc binding; needs the Windows plugin, proven by integration_test/media_controls_smoke_test.dart

@@ -6,9 +6,9 @@ name: Client Device Tests
 # integration_test/engine_conformance_test.dart against the real
 # PlayerEngine of one target (an Android emulator, an iOS simulator, macOS,
 # headless Chrome, Linux and Windows) with tones from the in-process (web: a
-# separate process) tone server. The Android, iOS, macOS, web and Linux jobs
-# then run integration_test/media_controls_smoke_test.dart against the
-# platform's OS media controls (audio_service; MPRIS on Linux).
+# separate process) tone server. Every job then runs
+# integration_test/media_controls_smoke_test.dart against the platform's OS
+# media controls (audio_service; MPRIS on Linux; SMTC on Windows).
 
 on:
   workflow_call:
@@ -298,3 +298,11 @@ jobs:
       - name: Engine conformance on Windows
         working-directory: client
         run: flutter test integration_test/engine_conformance_test.dart -d windows
+
+      # SmtcControls over the in-repo C++/WinRT plugin soundspan_smtc: it
+      # initialises, shows a playing state with a thumbnail file, a paused
+      # and the empty state and is disposed, and each plugin call is awaited.
+      - name: Media controls smoke on Windows
+        working-directory: client
+        timeout-minutes: 15
+        run: flutter test integration_test/media_controls_smoke_test.dart -d windows

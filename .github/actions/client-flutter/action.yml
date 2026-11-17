@@ -32,7 +32,7 @@ runs:
         cache: true
         cache-key: flutter-:os:-:channel:-:version:-:arch:-${{ hashFiles('client/.fvmrc') }}
         pub-cache: true
-        pub-cache-key: flutter-pub-:os:-:channel:-:version:-:arch:-${{ hashFiles('client/.fvmrc', 'client/pubspec.lock', 'client/packages/soundspan_api/pubspec.lock', 'client/contract_test/pubspec.lock') }}
+        pub-cache-key: flutter-pub-:os:-:channel:-:version:-:arch:-${{ hashFiles('client/.fvmrc', 'client/pubspec.lock', 'client/packages/soundspan_api/pubspec.lock', 'client/packages/soundspan_smtc/pubspec.lock', 'client/contract_test/pubspec.lock') }}
 
     - name: Resolve client dependencies
       shell: bash
@@ -43,6 +43,11 @@ runs:
       shell: bash
       working-directory: client/packages/soundspan_api
       run: dart pub get
+
+    - name: Resolve soundspan_smtc dependencies
+      shell: bash
+      working-directory: client/packages/soundspan_smtc
+      run: flutter pub get
 
     - name: Resolve contract_test dependencies
       shell: bash

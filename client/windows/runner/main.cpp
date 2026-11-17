@@ -1,5 +1,6 @@
 #include <flutter/dart_project.h>
 #include <flutter/flutter_view_controller.h>
+#include <shobjidl.h>
 #include <windows.h>
 
 #include "flutter_window.h"
@@ -53,6 +54,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
     ::CloseHandle(instance_mutex);
     return EXIT_SUCCESS;
   }
+
+  // The app user model id names the process to the shell, so the media
+  // flyout (System Media Transport Controls) shows soundspan's name and
+  // icon. It must be set before any window is created.
+  ::SetCurrentProcessExplicitAppUserModelID(L"io.soundspan.app");
 
   // Initialize COM, so that it is available for use in the library and/or
   // plugins.
