@@ -5,11 +5,16 @@ import 'dart:ui' show Rect, Size;
 
 import 'package:drift/native.dart';
 import 'package:fake_async/fake_async.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:soundspan/app/shell/window_state_controller.dart';
 import 'package:soundspan/core/logging/app_logger.dart';
 import 'package:soundspan/core/storage/app/app_database.dart';
 import 'package:soundspan/core/storage/app/app_settings_store.dart';
+import 'package:soundspan/core/storage/providers.dart';
+import 'package:soundspan/platform/capabilities/capabilities.dart';
+import 'package:soundspan/platform/desktop_shell/desktop_shell.dart';
 
 import '../../core/logging/recording_sink.dart';
 import '../../helpers/fake_desktop_shell.dart';
@@ -224,6 +229,25 @@ void main() {
       expect(entry.toJson().toString(), isNot(contains('SECRET1')));
       controller.dispose();
     });
+  });
+
+  test('the started controller outlives the tray host answer, so second '
+      'launches still reach it', () {
+    debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    final container = ProviderContainer(
+      overrides: [
+        desktopShellProvider.overrideWithValue(shell),
+        appDatabaseProvider.overrideWithValue(db),
+      ],
+    );
+    addTearDown(container.dispose);
+    final started = container.read(windowStateControllerProvider);
+
+    // The desktop controller records that no tray host answered.
+    container.read(trayHostProvider.notifier).available = false;
+
+    expect(container.read(windowStateControllerProvider), same(started));
   });
 
   test('on a non-desktop platform nothing is called', () {

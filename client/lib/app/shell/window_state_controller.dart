@@ -164,7 +164,11 @@ final Provider<WindowStateController> windowStateControllerProvider =
       final controller = WindowStateController(
         shell: ref.watch(desktopShellProvider),
         settings: AppSettingsStore(ref.watch(appDatabaseProvider)),
-        isDesktop: ref.watch(platformCapabilitiesProvider).isDesktop,
+        // Only isDesktop: the tray host answer changes the capabilities after
+        // start-up, and a rebuild would drop the started controller.
+        isDesktop: ref.watch(
+          platformCapabilitiesProvider.select((c) => c.isDesktop),
+        ),
       );
       ref.onDispose(controller.dispose);
       return controller;
