@@ -12,6 +12,7 @@ import 'package:soundspan/shared/domain/domain.dart';
 import 'package:soundspan/shared/providers/repositories.dart';
 import 'package:soundspan/shared/widgets/empty_state.dart';
 import 'package:soundspan/shared/widgets/error_view.dart';
+import 'package:soundspan/shared/widgets/fast_scroll_thumb.dart';
 import 'package:soundspan/shared/widgets/refresh_target.dart';
 
 /// The page gutter of [windowClass].
@@ -38,6 +39,14 @@ double gutterOf(WindowClass windowClass) => switch (windowClass) {
 /// A new [sourceKey] (another sort or filter) opens a new source and
 /// scrolls to the top. Pull-to-refresh, and on pointer devices a refresh
 /// button after [controls], refetch the visible pages.
+///
+/// With [fastScroll], a list of more than [fastScrollMinItems] items has a
+/// [FastScrollThumb] on touch input (not while a mouse is connected). Its
+/// bubble shows the upper-cased first character of [bubbleTitle] of the
+/// first visible item when that is given (the order is alphabetical) and
+/// the item is loaded, and "n / total" otherwise. While the thumb is
+/// dragged, the visible range reaches the source only once it has rested
+/// for [fastScrollRest].
 class PagedLibraryView<T> extends ConsumerStatefulWidget {
   /// Creates a list of the source [open] makes for [sourceKey].
   const new({
@@ -47,8 +56,16 @@ class PagedLibraryView<T> extends ConsumerStatefulWidget {
     required this.emptyIcon,
     required this.emptyMessage,
     this.controls = const [],
+    this.fastScroll = false,
+    this.bubbleTitle,
     super.key,
   });
+
+  /// The list length above which the fast-scroll thumb is offered.
+  static const int fastScrollMinItems = 200;
+
+  /// How long the dragged thumb must rest before its page is requested.
+  static const Duration fastScrollRest = Duration(milliseconds: 150);
 
   /// Identifies the list; a new value opens a new source.
   final Object sourceKey;
@@ -75,6 +92,13 @@ class PagedLibraryView<T> extends ConsumerStatefulWidget {
   /// The sort and filter controls above the list.
   final List<Widget> controls;
 
+  /// Whether a long list has the fast-scroll thumb.
+  final bool fastScroll;
+
+  /// The title the bubble takes its letter from, when the order is
+  /// alphabetical; null shows the position instead.
+  final String Function(T item)? bubbleTitle;
+
   @override
   ConsumerState<PagedLibraryView<T>> createState() =>
       _PagedLibraryViewState<T>();
@@ -93,6 +117,9 @@ class _PagedLibraryViewState<T> extends ConsumerState<PagedLibraryView<T>> {
   Object? _streamError;
   (int, int)? _requested;
   bool _ensureScheduled = false;
+  final ValueNotifier<int> _firstVisible = ValueNotifier(0);
+  bool _fastDragging = false;
+  Timer? _rest;
 
   @override
   void initState() {
@@ -103,8 +130,10 @@ class _PagedLibraryViewState<T> extends ConsumerState<PagedLibraryView<T>> {
   @override
   void dispose() {
     _mouseTracker.removeListener(_syncMouse);
+    _rest?.cancel();
     _closeSource();
     _scroll.dispose();
+    _firstVisible.dispose();
     super.dispose();
   }
 
@@ -183,10 +212,22 @@ class _PagedLibraryViewState<T> extends ConsumerState<PagedLibraryView<T>> {
   }
 
   /// Passes the visible range to the source after this frame, once per
-  /// change.
+  /// change; while the fast-scroll thumb is dragged, once the range has
+  /// rested for [PagedLibraryView.fastScrollRest] or the thumb is released.
   void _ensureVisible(int first, int last) {
+    if (first != _firstVisible.value) {
+      // Listeners rebuild, so not during this layout.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _firstVisible.value = first;
+      });
+    }
     if (_requested == (first, last)) return;
     _requested = (first, last);
+    if (_fastDragging) {
+      _rest?.cancel();
+      _rest = Timer(PagedLibraryView.fastScrollRest, _forwardRange);
+      return;
+    }
     if (_ensureScheduled) return;
     _ensureScheduled = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -195,6 +236,37 @@ class _PagedLibraryViewState<T> extends ConsumerState<PagedLibraryView<T>> {
       if (!mounted || range == null) return;
       _source?.ensureVisible(range.$1, range.$2);
     });
+  }
+
+  void _forwardRange() {
+    _rest = null;
+    final range = _requested;
+    if (!mounted || range == null) return;
+    _source?.ensureVisible(range.$1, range.$2);
+  }
+
+  /// Records whether the thumb is dragged; a release requests the range it
+  /// rests on at once.
+  void _onFastDragging(bool dragging) {
+    _fastDragging = dragging;
+    if (!dragging && _rest != null) {
+      _rest!.cancel();
+      _forwardRange();
+    }
+  }
+
+  /// The bubble of the fast-scroll thumb.
+  String _bubbleLabel() {
+    final first = _firstVisible.value;
+    final title = widget.bubbleTitle;
+    final item = _snapshot?.itemAt(first);
+    if (title != null && item != null) {
+      final text = title(item).trim();
+      if (text.isNotEmpty) {
+        return String.fromCharCode(text.runes.first).toUpperCase();
+      }
+    }
+    return '${first + 1} / ${_snapshot?.total ?? 0}';
   }
 
   @override
@@ -247,10 +319,20 @@ class _PagedLibraryViewState<T> extends ConsumerState<PagedLibraryView<T>> {
         Expanded(
           child: AppRefreshIndicator(
             onRefresh: _refresh,
-            child: CustomScrollView(
+            child: FastScrollThumb(
               controller: _scroll,
-              physics: const AlwaysScrollableScrollPhysics(),
-              slivers: [body],
+              enabled:
+                  widget.fastScroll &&
+                  !_mouse &&
+                  (total ?? 0) > PagedLibraryView.fastScrollMinItems,
+              bubbleLabel: _bubbleLabel,
+              labelChanges: _firstVisible,
+              onDraggingChanged: _onFastDragging,
+              child: CustomScrollView(
+                controller: _scroll,
+                physics: const AlwaysScrollableScrollPhysics(),
+                slivers: [body],
+              ),
             ),
           ),
         ),

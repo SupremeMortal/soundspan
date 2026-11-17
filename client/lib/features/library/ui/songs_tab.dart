@@ -33,7 +33,8 @@ String trackSortLabel(AppLocalizations l10n, TrackSort sort) => switch (sort) {
 /// loaded so far, in list order, from that row (context `library`); a
 /// track without a playback id is disabled as not playable. "Shuffle all",
 /// beside the sort and filter controls, plays the library in the server's
-/// random order ([PlayActions.shuffleLibrary]).
+/// random order ([PlayActions.shuffleLibrary]). A long list has the
+/// alphabetical fast-scroll thumb on touch input.
 class SongsTab extends ConsumerWidget {
   /// Creates the tab.
   const new({super.key});
@@ -74,6 +75,9 @@ class SongsTab extends ConsumerWidget {
               notifier.query = query.copyWith(origin: origin),
         ),
       ],
+      fastScroll: true,
+      // Every order of the list is by name.
+      bubbleTitle: (track) => track.meta.title,
       itemsBuilder: _rows,
     );
   }

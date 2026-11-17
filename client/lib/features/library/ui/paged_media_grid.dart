@@ -16,7 +16,7 @@ import 'package:soundspan/shared/widgets/media_grid_layout.dart';
 ///
 /// The grid has `total` tiles; a tile whose item is not loaded is a
 /// [MediaCardSkeleton]. Before any total is known it shows one screen of
-/// skeletons.
+/// skeletons. A long grid has the fast-scroll thumb on touch input.
 class PagedMediaGrid<T> extends StatelessWidget {
   /// Creates a grid of the source [open] makes for [sourceKey].
   const new({
@@ -26,6 +26,7 @@ class PagedMediaGrid<T> extends StatelessWidget {
     required this.emptyIcon,
     required this.emptyMessage,
     this.controls = const [],
+    this.bubbleTitle,
     super.key,
   });
 
@@ -47,6 +48,10 @@ class PagedMediaGrid<T> extends StatelessWidget {
   /// The sort and filter controls above the grid.
   final List<Widget> controls;
 
+  /// The title the fast-scroll bubble takes its letter from, when the order
+  /// is alphabetical (see [PagedLibraryView.bubbleTitle]).
+  final String Function(T item)? bubbleTitle;
+
   @override
   Widget build(BuildContext context) => PagedLibraryView<T>(
     sourceKey: sourceKey,
@@ -54,6 +59,8 @@ class PagedMediaGrid<T> extends StatelessWidget {
     emptyIcon: emptyIcon,
     emptyMessage: emptyMessage,
     controls: controls,
+    fastScroll: true,
+    bubbleTitle: bubbleTitle,
     itemsBuilder: _grid,
   );
 

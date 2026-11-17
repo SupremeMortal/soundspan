@@ -51,6 +51,9 @@ class AlbumsTab extends ConsumerWidget {
               notifier.query = query.copyWith(origin: origin),
         ),
       ],
+      bubbleTitle: query.sortBy == AlbumSort.recent
+          ? null
+          : (album) => album.title,
       itemBuilder: (context, album) => MediaCard(
         title: album.title,
         subtitle: album.artistName,

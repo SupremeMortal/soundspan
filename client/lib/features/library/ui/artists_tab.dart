@@ -48,6 +48,9 @@ class ArtistsTab extends ConsumerWidget {
               notifier.query = query.copyWith(origin: origin),
         ),
       ],
+      bubbleTitle: query.sortBy == ArtistSort.tracks
+          ? null
+          : (artist) => artist.name,
       itemBuilder: (context, artist) => MediaCard(
         title: artist.name,
         subtitle: l10n.libraryArtistCardSubtitle,
