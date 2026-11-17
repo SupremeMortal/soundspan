@@ -1,18 +1,24 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 
+import 'dart:async';
 import 'dart:math';
 
+import 'package:flutter/gestures.dart' show PointerDeviceKind, kSecondaryButton;
 import 'package:flutter/semantics.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:soundspan/core/playback/playback_providers.dart';
 import 'package:soundspan/core/playback/queue/queue_reducer.dart';
 import 'package:soundspan/features/player/player.dart';
+import 'package:soundspan/shared/actions/track_actions.dart';
+import 'package:soundspan/shared/providers/play_actions.dart';
 import 'package:soundspan/shared/widgets/empty_state.dart';
 import 'package:soundspan/shared/widgets/track_row.dart';
 
 import '../../../helpers/guidelines.dart';
 import '../../../helpers/pump_app.dart';
+import '../../detail_fixtures.dart';
 import 'player_rig.dart';
 
 void main() {
@@ -209,7 +215,13 @@ void main() {
         .toList();
     expect(
       labels,
-      unorderedEquals(['Remove from queue', 'Move up', 'Move down']),
+      unorderedEquals([
+        'Add to queue',
+        'More options',
+        'Remove from queue',
+        'Move up',
+        'Move down',
+      ]),
     );
 
     node.owner!.performAction(
@@ -223,6 +235,177 @@ void main() {
     expect(playOrderIds(rig), ['a', 'b', 'd', 'c', 'e']);
     await rig.close(tester);
     handle.dispose();
+  });
+
+  group('track menu', () {
+    /// Shows the queue under a router whose album and artist pages are
+    /// placeholders, and creates the controller.
+    Future<PlayerRig> pumpRouted(WidgetTester tester) async {
+      final rig = PlayerRig(ids: ids);
+      final notices = StreamController<PlayNotice>.broadcast();
+      addTearDown(notices.close);
+      await pumpDetail(
+        tester,
+        const Scaffold(body: QueueView()),
+        overrides: [
+          ...rig.overrides,
+          playNoticesProvider.overrideWithValue(notices),
+        ],
+      );
+      ProviderScope.containerOf(tester.element(find.byType(QueueView)))
+          .read(playbackControllerProvider);
+      await rig.start(
+        tester,
+        items: [for (final id in ids) playerItem(id, albumId: 'al-$id')],
+        play: false,
+      );
+      return rig;
+    }
+
+    /// The menu entry ids shown, in order.
+    List<String> entries() => [
+      for (final element
+          in find
+              .byWidgetPredicate(
+                (widget) =>
+                    widget.key is ValueKey<String> &&
+                    (widget.key! as ValueKey<String>).value.startsWith('menu.'),
+              )
+              .evaluate())
+        (element.widget.key! as ValueKey<String>).value.substring(5),
+    ];
+
+    const trackMenu = [
+      MenuIds.playNow,
+      MenuIds.playNext,
+      MenuIds.addToQueue,
+      MenuIds.addToPlaylist,
+      MenuIds.like,
+      MenuIds.goToAlbum,
+      MenuIds.share,
+    ];
+
+    Future<void> dismiss(WidgetTester tester) async {
+      await tester.tapAt(const Offset(5, 5));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('the overflow button, a long press and a secondary click '
+        'open it on a next-up row', (tester) async {
+      final rig = await pumpRouted(tester);
+
+      await tester.tap(inRow('c', find.byKey(TrackRow.overflowKey)));
+      await tester.pumpAndSettle();
+      expect(entries(), trackMenu);
+      await dismiss(tester);
+
+      await tester.longPress(inRow('c', find.text('Song c')));
+      await tester.pumpAndSettle();
+      expect(entries(), trackMenu);
+      await dismiss(tester);
+
+      final mouse = await tester.createGesture(
+        kind: PointerDeviceKind.mouse,
+        buttons: kSecondaryButton,
+      );
+      addTearDown(mouse.removePointer);
+      await mouse.down(tester.getCenter(inRow('c', find.text('Song c'))));
+      await mouse.up();
+      await tester.pumpAndSettle();
+      expect(entries(), trackMenu);
+      await dismiss(tester);
+
+      // None of them played the row.
+      expect(rig.controller.snapshot.current?.queueItemId, 'a');
+      await rig.close(tester);
+    });
+
+    testWidgets('the now-playing row has no menu', (tester) async {
+      final rig = await pumpRouted(tester);
+
+      expect(inRow('a', find.byKey(TrackRow.overflowKey)), findsNothing);
+      await rig.close(tester);
+    });
+
+    testWidgets('Play next queues the track after the current one', (
+      tester,
+    ) async {
+      final rig = await pumpRouted(tester);
+
+      await tester.tap(inRow('e', find.byKey(TrackRow.overflowKey)));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('menu.${MenuIds.playNext}')));
+      await rig.settle(tester);
+      await tester.pumpAndSettle();
+
+      expect(titles(tester), [
+        'Song a',
+        'Song e',
+        'Song b',
+        'Song c',
+        'Song d',
+        'Song e',
+      ]);
+      await rig.close(tester);
+    });
+
+    testWidgets('Go to album opens the album of the row', (tester) async {
+      final rig = await pumpRouted(tester);
+
+      await tester.tap(inRow('d', find.byKey(TrackRow.overflowKey)));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('menu.${MenuIds.goToAlbum}')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('album page al-d'), findsOneWidget);
+      await rig.close(tester);
+    });
+
+    testWidgets('the Add to queue and More options actions work', (
+      tester,
+    ) async {
+      final handle = tester.ensureSemantics();
+      final rig = await pumpRouted(tester);
+
+      void perform(String id, String label) {
+        final node = tester.getSemantics(inRow(id, find.byType(TrackRow)));
+        node.owner!.performAction(
+          node.id,
+          SemanticsAction.customAction,
+          CustomSemanticsAction.getIdentifier(
+            CustomSemanticsAction(label: label),
+          ),
+        );
+      }
+
+      perform('b', 'Add to queue');
+      await rig.settle(tester);
+      await tester.pumpAndSettle();
+      expect(rig.controller.snapshot.queue.items, hasLength(6));
+      expect(titles(tester).last, 'Song b');
+
+      perform('c', 'More options');
+      await tester.pumpAndSettle();
+      expect(entries(), trackMenu);
+      await dismiss(tester);
+      await rig.close(tester);
+      handle.dispose();
+    });
+
+    testWidgets('an episode entry has no track menu', (tester) async {
+      final rig = await pumpQueue(tester, rigIds: ['a', 'x']);
+      await rig.start(
+        tester,
+        items: [playerItem('a'), playerEpisode('x')],
+        play: false,
+      );
+
+      expect(inRow('x', find.byKey(TrackRow.overflowKey)), findsNothing);
+      await tester.longPress(inRow('x', find.text('Episode x')));
+      await tester.pumpAndSettle();
+      expect(entries(), isEmpty);
+      await rig.close(tester);
+    });
   });
 
   for (final theme in [ThemeMode.dark, ThemeMode.light]) {

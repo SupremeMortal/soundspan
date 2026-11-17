@@ -17,24 +17,29 @@ import '../../../core/playback/queue/queue_test_items.dart' show testContext;
 import '../../../helpers/fake_clock.dart';
 
 /// A track entry [id] (or [queueItemId]) titled "Song [id]" by
-/// "The Band [id]" with the cover `cover-[id]`, linking to [artistId] when
-/// given.
-QueueItem playerItem(String id, {String? queueItemId, String? artistId}) =>
-    QueueItem.track(
-      queueItemId: queueItemId ?? id,
-      track: Track(
-        artistId: artistId,
-        meta: TrackMeta(
-          title: 'Song $id',
-          artist: 'The Band $id',
-          album: 'Record',
-          durationSec: 10,
-          artworkRef: 'cover-$id',
-        ),
-        playbackId: PlaybackId('pb-$id'),
-      ),
-      context: testContext,
-    );
+/// "The Band [id]" with the cover `cover-[id]`, linking to [artistId] and
+/// [albumId] when given.
+QueueItem playerItem(
+  String id, {
+  String? queueItemId,
+  String? artistId,
+  String? albumId,
+}) => QueueItem.track(
+  queueItemId: queueItemId ?? id,
+  track: Track(
+    albumId: albumId,
+    artistId: artistId,
+    meta: TrackMeta(
+      title: 'Song $id',
+      artist: 'The Band $id',
+      album: 'Record',
+      durationSec: 10,
+      artworkRef: 'cover-$id',
+    ),
+    playbackId: PlaybackId('pb-$id'),
+  ),
+  context: testContext,
+);
 
 /// An episode entry [id] titled "Episode [id]" of "The Show", 10 seconds
 /// long, with the podcast cover `cover-show`.

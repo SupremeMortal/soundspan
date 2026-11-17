@@ -14,7 +14,9 @@ import 'package:soundspan/core/playback/playback_controller.dart';
 import 'package:soundspan/core/playback/playback_providers.dart';
 import 'package:soundspan/core/playback/queue/queue_state.dart';
 import 'package:soundspan/features/player/ui/player_item.dart';
-import 'package:soundspan/shared/domain/queue_item.dart';
+import 'package:soundspan/shared/actions/app_menu_commands.dart';
+import 'package:soundspan/shared/actions/track_actions.dart';
+import 'package:soundspan/shared/domain/domain.dart';
 import 'package:soundspan/shared/widgets/empty_state.dart';
 import 'package:soundspan/shared/widgets/track_row.dart';
 
@@ -26,7 +28,9 @@ import 'package:soundspan/shared/widgets/track_row.dart';
 /// (by a trailing handle on touch platforms, by the whole row with a
 /// pointer) and removed with their remove button; screen readers get the
 /// same as custom actions. Every edit is a controller command addressing
-/// the entry, not the track. The rows have a fixed extent and are built
+/// the entry, not the track. A track entry of "Next up" also opens the track
+/// menu (doc 09, Track Actions) from its overflow button, a long press or a
+/// secondary click, over the queue's tracks in play order. The rows have a fixed extent and are built
 /// lazily. An empty queue, and a profile whose controller does not exist
 /// yet, shows an [EmptyState].
 class QueueView extends ConsumerWidget {
@@ -112,7 +116,7 @@ class QueueView extends ConsumerWidget {
 }
 
 /// The reorderable "Next up" rows.
-class _NextUpList extends StatelessWidget {
+class _NextUpList extends ConsumerWidget {
   const new({
     required this.queue,
     required this.order,
@@ -136,8 +140,35 @@ class _NextUpList extends StatelessWidget {
     unawaited(controller.move(_itemAt(from).queueItemId, cursor + 1 + to));
   }
 
+  /// Opens the track menu of [item] at [position], over the queue's
+  /// tracks in play order.
+  void _openMenu(
+    BuildContext context,
+    WidgetRef ref,
+    TrackQueueItem item,
+    Offset? position,
+  ) {
+    final entries = [
+      for (final i in order)
+        if (queue.items[i] case final TrackQueueItem entry) entry,
+    ];
+    unawaited(
+      openTrackMenu(
+        context,
+        ref,
+        TrackActionScope(
+          track: item.track,
+          tracks: [for (final entry in entries) entry.track],
+          index: entries.indexWhere((e) => e.queueItemId == item.queueItemId),
+          context: queue.context ?? item.context,
+        ),
+        position: position,
+      ),
+    );
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final colors = context.colors;
     final touch = switch (defaultTargetPlatform) {
@@ -155,6 +186,12 @@ class _NextUpList extends StatelessWidget {
         final row = _QueueRow(
           item: item,
           onTap: () => unawaited(controller.jumpTo(id)),
+          onMenu: item is TrackQueueItem
+              ? (position) => _openMenu(context, ref, item, position)
+              : null,
+          onAddToQueue: item is TrackQueueItem
+              ? addToQueueOf(ref, item.track)
+              : null,
           semanticActions: {
             CustomSemanticsAction(label: l10n.queueRemove): remove,
             if (index > 0)
@@ -207,6 +244,8 @@ class _QueueRow extends StatelessWidget {
     required this.item,
     this.selected = false,
     this.onTap,
+    this.onMenu,
+    this.onAddToQueue,
     this.semanticActions = const {},
     super.key,
   });
@@ -214,6 +253,8 @@ class _QueueRow extends StatelessWidget {
   final QueueItem item;
   final bool selected;
   final VoidCallback? onTap;
+  final void Function(Offset? position)? onMenu;
+  final VoidCallback? onAddToQueue;
   final Map<CustomSemanticsAction, VoidCallback> semanticActions;
 
   @override
@@ -224,6 +265,8 @@ class _QueueRow extends StatelessWidget {
     leading: TrackRowLeading.thumbnail(item.playerArtworkRef),
     selected: selected,
     onTap: onTap,
+    onMenu: onMenu,
+    onAddToQueue: onAddToQueue,
     semanticActions: semanticActions,
   );
 }
