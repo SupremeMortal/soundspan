@@ -16,14 +16,16 @@ import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:material_ui/material_ui.dart' hide RepeatMode;
 import 'package:patrol/patrol.dart';
 import 'package:soundspan/app/app.dart';
 import 'package:soundspan/app/router/routes.dart';
 import 'package:soundspan/app/shell/adaptive_shell.dart';
 import 'package:soundspan/bootstrap.dart';
+import 'package:soundspan/core/playback/playback_controller.dart';
 import 'package:soundspan/core/playback/playback_providers.dart';
 import 'package:soundspan/core/playback/playback_snapshot.dart';
+import 'package:soundspan/core/playback/queue/queue_state.dart';
 import 'package:soundspan/core/profile/profile_runtime.dart';
 import 'package:soundspan/features/connect/ui/address_screen.dart';
 import 'package:soundspan/features/connect/ui/probe_screen.dart';
@@ -87,11 +89,11 @@ void main() {
       final container = ProviderScope.containerOf(
         $.tester.element(find.byType(SoundspanApp)),
       );
-      PlaybackSnapshot snapshot() => container
+      PlaybackController controller() => container
           .read(profileRuntimeProvider)
           .container!
-          .read(playbackControllerProvider)
-          .snapshot;
+          .read(playbackControllerProvider);
+      PlaybackSnapshot snapshot() => controller().snapshot;
 
       // 4. The notification permission, asked on the first play.
       if (await $.platform.mobile.isPermissionDialogVisible(
@@ -101,6 +103,10 @@ void main() {
       }
 
       await _until($, () => snapshot().playing, reason: 'playback starts');
+      // The album plays 48 seconds and the shade can take tens of seconds
+      // to answer, so the queue repeats: it never runs out before the
+      // resume step.
+      await controller().setRepeat(RepeatMode.all);
       await $(MiniPlayer.playPauseKey)
           .$(Icons.pause_rounded)
           .waitUntilVisible();
@@ -157,10 +163,15 @@ void main() {
       await $(MiniPlayer.playPauseKey)
           .$(Icons.pause_rounded)
           .waitUntilVisible();
+      // A later 3-second track may be current: moving on to the next
+      // track counts as advancing too.
+      final resumedItem = snapshot().current?.queueItemId;
       final resumed = snapshot().position;
       await _until(
         $,
-        () => snapshot().position > resumed + const Duration(seconds: 1),
+        () =>
+            snapshot().current?.queueItemId != resumedItem ||
+            snapshot().position > resumed + const Duration(seconds: 1),
         reason: 'the position advances after resuming',
       );
 
