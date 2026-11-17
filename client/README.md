@@ -7,8 +7,9 @@ macOS, Windows and the web. The design documents are under
 ## Toolchain
 
 Use the Flutter release pinned in [`.fvmrc`](.fvmrc), for example with
-[FVM](https://fvm.app/) (`fvm use`). Linux desktop builds also need
-`clang cmake ninja-build pkg-config libgtk-3-dev libmpv-dev libsecret-1-dev libjsoncpp-dev`.
+[FVM](https://fvm.app/) (`fvm use`). Linux desktop builds and `flutter test` on
+Linux also need
+`clang cmake ninja-build pkg-config libgtk-3-dev libx11-dev libxi-dev libmpv-dev libsecret-1-dev libjsoncpp-dev`.
 
 ```bash
 flutter pub get

@@ -12,7 +12,7 @@ Status: design phase.
 | Android | compileSdk 37 (`flutter_local_notifications` and `androidx.core` require it), targetSdk = Flutter default for the pinned SDK, minSdk 26, core library desugaring with `desugar_jdk_libs` 2.1.4 (required by `flutter_local_notifications`) | `client/android/app/build.gradle.kts` |
 | Xcode | Latest stable on the `macos-latest` runner | iOS deployment target 15.0, macOS 12.0 (the pinned SDK's minimum) |
 | Visual Studio | 2022 Build Tools with "Desktop development with C++" | Windows |
-| Linux build deps | `clang cmake ninja-build pkg-config libgtk-3-dev libmpv-dev libsecret-1-dev libjsoncpp-dev` | Linux |
+| Linux build deps | `clang cmake ninja-build pkg-config libgtk-3-dev libx11-dev libxi-dev libmpv-dev libsecret-1-dev libjsoncpp-dev` | Linux |
 
 Flutter is upgraded deliberately: one PR that bumps `.fvmrc`, runs `flutter pub upgrade --major-versions` where wanted, regenerates code, and re-runs the full matrix. No floating `stable`.
 
