@@ -264,6 +264,121 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
+  # The single-file Flatpak bundle from the Linux release tarball, on the VM
+  # because flatpak-builder sandboxes every module with bubblewrap (doc 10,
+  # Linux; doc 11, client-build.yml). libmpv and its modules are built from
+  # the sources the manifest pins; their build cache is kept between runs.
+  package-flatpak:
+    name: package-flatpak
+    needs: build-linux
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      FLATPAK_STATE_DIR: ${{ github.workspace }}/.flatpak-builder-state
+    steps:
+      - name: Install flatpak and flatpak-builder
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends appstream flatpak flatpak-builder
+          # Ubuntu's AppArmor otherwise denies bubblewrap a user namespace.
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Self-test of the manifest rewriting
+        run: bash client/linux/packaging/flatpak/build_flatpak_test.sh
+
+      - name: Lint the manifest and the metainfo
+        run: |
+          flatpak-builder --show-manifest client/linux/packaging/flatpak/io.soundspan.app.yml > /dev/null
+          bash -c '. client/linux/packaging/common.sh && install_desktop_metadata "$RUNNER_TEMP/metadata" "$VERSION"'
+          appstreamcli validate --no-net "$RUNNER_TEMP/metadata/share/metainfo/io.soundspan.app.metainfo.xml"
+
+      - name: Restore the flatpak-builder cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ env.FLATPAK_STATE_DIR }}
+          key: flatpak-builder-${{ hashFiles('client/linux/packaging/flatpak/io.soundspan.app.yml') }}
+          restore-keys: flatpak-builder-
+
+      - name: Download the Linux bundle
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: client-build-linux
+          path: linux-bundle
+
+      - name: Build the Flatpak bundle
+        run: |
+          set -o pipefail
+          bash client/linux/packaging/flatpak/build_flatpak.sh \
+            "linux-bundle/soundspan-$VERSION-linux-x64-unsigned.tar.gz" "$VERSION" dist \
+            2>&1 | tee flatpak-builder.log
+
+      - name: Upload the flatpak-builder log
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: client-flatpak-builder-log
+          path: flatpak-builder.log
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: client-build-linux-flatpak
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 7
+
+  # Installs the Flatpak bundle with its runtime from Flathub, checks its
+  # permissions and libraries, launches and removes it
+  # (client/linux/packaging/smoke.sh flatpak; doc 11, client-build.yml).
+  smoke-flatpak:
+    name: smoke-flatpak
+    needs: package-flatpak
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Install the test environment
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends dbus dbus-x11 flatpak xauth xvfb
+          # Ubuntu's AppArmor otherwise denies bubblewrap a user namespace.
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Download the Flatpak bundle
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: client-build-linux-flatpak
+          path: dist
+
+      - name: Install, check, launch and remove
+        run: bash client/linux/packaging/smoke.sh flatpak dist "$VERSION" smoke-logs
+
+      - name: Upload the app log
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: client-smoke-flatpak-logs
+          path: smoke-logs
+          if-no-files-found: ignore
+          retention-days: 7
+
   build-windows:
     name: build-windows
     runs-on: windows-latest
@@ -620,7 +735,7 @@ jobs:
 
   checksums:
     name: checksums
-    needs: [build-android, build-linux, package-linux, smoke-linux, build-windows, smoke-windows, build-macos, smoke-macos, build-web, image-web, smoke-web]
+    needs: [build-android, build-linux, package-linux, smoke-linux, package-flatpak, smoke-flatpak, build-windows, smoke-windows, build-macos, smoke-macos, build-web, image-web, smoke-web]
     # Runs after a skipped build-macos and smoke-macos too; any failed or cancelled build
     # still skips it.
     if: ${{ !cancelled() && !failure() }}

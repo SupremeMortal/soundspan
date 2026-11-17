@@ -15,6 +15,7 @@ const _expected = [
   'soundspan-0.1.0-linux-amd64.deb',
   'soundspan-0.1.0-linux-x64-unsigned.tar.gz',
   'soundspan-0.1.0-linux-x64.AppImage',
+  'soundspan-0.1.0-linux-x64.flatpak',
   'soundspan-0.1.0-macos-universal-unsigned.dmg',
   'soundspan-0.1.0-macos-universal-unsigned.zip',
   'soundspan-0.1.0-web-image.tar.gz',
@@ -133,12 +134,13 @@ void main() {
     expect(sums().existsSync(), isFalse);
   });
 
-  test('the set includes the Linux .deb and AppImage', () {
+  test('the set includes the Linux .deb, AppImage and Flatpak', () {
     expect(
       expectedArtifactNames(_version),
       containsAll(<String>[
         'soundspan-0.1.0-linux-amd64.deb',
         'soundspan-0.1.0-linux-x64.AppImage',
+        'soundspan-0.1.0-linux-x64.flatpak',
       ]),
     );
   });
@@ -146,6 +148,7 @@ void main() {
   for (final package in const [
     'soundspan-0.1.0-linux-amd64.deb',
     'soundspan-0.1.0-linux-x64.AppImage',
+    'soundspan-0.1.0-linux-x64.flatpak',
   ]) {
     test('a set without $package fails and names it', () {
       writeFullSet();
