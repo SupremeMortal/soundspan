@@ -18,6 +18,7 @@ void main() {
   Future<PlayerRig> pumpShell(
     WidgetTester tester, {
     Size size = TestSizes.expanded,
+    ThemeMode theme = ThemeMode.dark,
   }) async {
     final rig = PlayerRig();
     final container = await tester.pumpApp(
@@ -28,6 +29,7 @@ void main() {
         child: const Center(child: Text('content')),
       ),
       size: size,
+      theme: theme,
       overrides: [
         ...rig.overrides,
         initialActiveProfileIdProvider.overrideWithValue(null),
@@ -122,15 +124,28 @@ void main() {
     await rig.close(tester);
   });
 
-  // Dark only: the player bar's artist line fails the light contrast
-  // check on its own (the queue view's light check is in its own test).
-  testWidgets('panel and overlay meet the guidelines', (tester) async {
-    final rig = await pumpShell(tester);
-    await tester.tap(find.byTooltip('Queue'));
-    await tester.tap(find.byTooltip('Show now playing'));
-    await tester.pumpAndSettle();
+  for (final theme in [ThemeMode.dark, ThemeMode.light]) {
+    testWidgets('panel and overlay meet the guidelines (${theme.name})', (
+      tester,
+    ) async {
+      final rig = await pumpShell(tester, theme: theme);
+      await tester.tap(find.byTooltip('Queue'));
+      await tester.tap(find.byTooltip('Show now playing'));
+      await tester.pumpAndSettle();
 
-    await expectMeetsGuidelines(tester);
-    await rig.close(tester);
-  });
+      // In light the player bar's artist line is exempt from the contrast
+      // sampler only (see player_bar_test.dart and doc 11, Golden Tests).
+      await expectMeetsGuidelines(
+        tester,
+        contrastSamplingExempt: [
+          if (theme == ThemeMode.light)
+            find.descendant(
+              of: find.byType(PlayerBar),
+              matching: find.text('The Band a'),
+            ),
+        ],
+      );
+      await rig.close(tester);
+    });
+  }
 }

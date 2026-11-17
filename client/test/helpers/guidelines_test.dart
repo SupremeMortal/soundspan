@@ -36,4 +36,44 @@ void main() {
     expect(reasons, contains('expected tap target size of at least'));
     expect(reasons, contains('label'));
   });
+
+  group('contrastSamplingExempt', () {
+    // Two lines in light grey on white, far under 4.5:1.
+    Widget faintLines() => const ColoredBox(
+      color: Color(0xFFFFFFFF),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('faint one', style: TextStyle(color: Color(0xFFE0E0E0))),
+            Text('faint two', style: TextStyle(color: Color(0xFFE0E0E0))),
+          ],
+        ),
+      ),
+    );
+
+    String contrastReasons(List<Evaluation> failed) =>
+        failed.map((evaluation) => evaluation.reason).join();
+
+    testWidgets('both faint lines fail without an exemption', (tester) async {
+      await tester.pumpApp(faintLines(), theme: ThemeMode.light);
+      final reasons = contrastReasons(await failedGuidelines(tester));
+      expect(reasons, contains('label: "faint one"'));
+      expect(reasons, contains('label: "faint two"'));
+    });
+
+    testWidgets('an exempt node is skipped and the others are still checked', (
+      tester,
+    ) async {
+      await tester.pumpApp(faintLines(), theme: ThemeMode.light);
+      final reasons = contrastReasons(
+        await failedGuidelines(
+          tester,
+          contrastSamplingExempt: [find.text('faint one')],
+        ),
+      );
+      expect(reasons, isNot(contains('faint one')));
+      expect(reasons, contains('label: "faint two"'));
+    });
+  });
 }

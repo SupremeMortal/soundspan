@@ -3,6 +3,7 @@
 import 'package:flutter/semantics.dart' show SemanticsNode;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart' hide RepeatMode;
+import 'package:soundspan/app/theme/extensions.dart';
 import 'package:soundspan/core/playback/engines/fake_engine.dart';
 import 'package:soundspan/core/playback/engines/player_engine.dart';
 import 'package:soundspan/core/playback/queue/queue_state.dart';
@@ -22,11 +23,13 @@ void main() {
     PlayerRig? rig,
     bool start = true,
     bool play = true,
+    ThemeMode theme = ThemeMode.dark,
   }) async {
     rig ??= PlayerRig();
     await tester.pumpApp(
       const Align(alignment: Alignment.bottomCenter, child: PlayerBar()),
       size: TestSizes.expanded,
+      theme: theme,
       overrides: rig.overrides,
     );
     if (start) await rig.start(tester, play: play);
@@ -262,10 +265,25 @@ void main() {
     });
   });
 
-  testWidgets('meets the guidelines', (tester) async {
-    final rig = await pumpBar(tester, play: false);
+  for (final theme in [ThemeMode.dark, ThemeMode.light]) {
+    testWidgets('meets the guidelines (${theme.name})', (tester) async {
+      final rig = await pumpBar(tester, play: false, theme: theme);
 
-    await expectMeetsGuidelines(tester);
-    await rig.close(tester);
-  });
+      // The artist line is `bodySmall` in `contentSecondary` on
+      // `surfaceRaised`, a pair the token table allows at 4.5:1. In light the
+      // contrast sampler cannot measure its thin glyphs (doc 11, Golden
+      // Tests), so that node alone is exempt there.
+      final artist = find.text('The Band a');
+      final context = tester.element(artist);
+      expect(
+        tester.widget<Text>(artist).style?.color,
+        context.colors.contentSecondary,
+      );
+      await expectMeetsGuidelines(
+        tester,
+        contrastSamplingExempt: [if (theme == ThemeMode.light) artist],
+      );
+      await rig.close(tester);
+    });
+  }
 }
