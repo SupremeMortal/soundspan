@@ -29,6 +29,12 @@ abstract interface class MediaFiles {
   /// error; any other failure (for example a file another process holds
   /// open on Windows) throws.
   Future<void> delete(String path);
+
+  /// Deletes every file under the directory [path], then the directory. A
+  /// file that cannot be deleted is skipped and the others are still
+  /// deleted; the first failure is thrown at the end and the directory is
+  /// left. A missing directory is not an error.
+  Future<void> deleteTree(String path);
 }
 
 /// The process-wide [MediaFiles] of the platform; tests override it.

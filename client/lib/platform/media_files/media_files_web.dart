@@ -19,4 +19,7 @@ final class NoMediaFiles implements MediaFiles {
 
   @override
   Future<void> delete(String path) async {}
+
+  @override
+  Future<void> deleteTree(String path) async {}
 }

@@ -464,11 +464,20 @@ class DownloadController {
   /// Removes every collection, tracks and episodes alike, as [unpin] does
   /// for each, then applies the device limit again.
   Future<void> unpinAll() => _serial(() async {
-    final kinds = DownloadCollectionKind.values.asNameMap();
-    for (final row in await _store.watchCollections().first) {
-      final kind = kinds[row.kind];
-      if (kind != null) await _unpin(kind, row.refId);
-    }
+    await _unpinAll();
+    await _applyDeviceLimit();
+  });
+
+  /// Removes every download of the profile: every collection is unpinned
+  /// as [unpinAll] does, then any item left in no collection is removed
+  /// the same way. Removed tracks are reported to the server through the
+  /// [OfflineDeleteQueue].
+  Future<void> removeAll() => _serial(() async {
+    await _unpinAll();
+    await _removeItems([
+      for (final row in await _store.allItems())
+        DownloadItemKey.decode(row.itemKey),
+    ]);
     await _applyDeviceLimit();
   });
 
@@ -900,6 +909,14 @@ class DownloadController {
         DownloadCollectionStatus.pendingNetwork,
       );
 
+  Future<void> _unpinAll() async {
+    final kinds = DownloadCollectionKind.values.asNameMap();
+    for (final row in await _store.watchCollections().first) {
+      final kind = kinds[row.kind];
+      if (kind != null) await _unpin(kind, row.refId);
+    }
+  }
+
   Future<void> _unpin(DownloadCollectionKind kind, String refId) async {
     if (await _store.collection(kind, refId) == null) return;
     final orphaned = await _store.transaction(() async {
@@ -907,8 +924,15 @@ class DownloadController {
       await _store.deleteCollection(kind, refId);
       return orphaned;
     });
+    await _removeItems(orphaned);
+    _emit(DownloadCollectionRemoved(kind, refId));
+  }
+
+  /// Cancels the transfers of [keys], deletes their files and rows, and
+  /// reports the removed tracks in batches.
+  Future<void> _removeItems(List<DownloadItemKey> keys) async {
     final removedTracks = <PlaybackId>[];
-    for (final key in orphaned) {
+    for (final key in keys) {
       final row = await _store.item(key);
       if (row == null) continue;
       if (row.status != DownloadStatus.unavailable) {
@@ -930,7 +954,6 @@ class DownloadController {
       );
       start = end;
     }
-    _emit(DownloadCollectionRemoved(kind, refId));
   }
 
   Future<void> _deleteFiles(DownloadItemKey key, String? relativePath) async {

@@ -41,4 +41,32 @@ final class IoMediaFiles implements MediaFiles {
       // Already gone.
     }
   }
+
+  @override
+  Future<void> deleteTree(String path) async {
+    final directory = Directory(path);
+    if (!directory.existsSync()) return;
+    (Object, StackTrace)? failure;
+    await for (final entity in directory.list(
+      recursive: true,
+      followLinks: false,
+    )) {
+      if (entity is Directory) continue;
+      try {
+        await entity.delete();
+      } on PathNotFoundException {
+        // Already gone.
+      } on FileSystemException catch (error, stackTrace) {
+        failure ??= (error, stackTrace);
+      }
+    }
+    if (failure case (final error, final stackTrace)) {
+      Error.throwWithStackTrace(error, stackTrace);
+    }
+    try {
+      await directory.delete(recursive: true);
+    } on PathNotFoundException {
+      // Already gone.
+    }
+  }
 }

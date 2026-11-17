@@ -3,6 +3,7 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:soundspan/app/session/downloads_sign_out_participant.dart';
 import 'package:soundspan/app/session/sign_out_participant.dart';
 import 'package:soundspan/core/connectivity/reachability.dart';
 import 'package:soundspan/core/profile/profile_runtime.dart';
@@ -978,6 +979,7 @@ void main() {
       expect(a.read(signOutParticipantsProvider), [
         isA<PlaybackSignOutParticipant>(),
         isA<SocketSignOutParticipant>(),
+        isA<DownloadsSignOutParticipant>(),
       ]);
       expect(client.connectionState, SocketConnectionState.disconnected);
 

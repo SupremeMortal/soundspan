@@ -68,6 +68,28 @@ void main() {
     );
   });
 
+  test('deleteTree removes every file and the directory', () async {
+    final root = Directory('${dir.path}/media');
+    File('${root.path}/ab/a.flac')
+      ..createSync(recursive: true)
+      ..writeAsStringSync('x');
+    File('${root.path}/cd/b.part')
+      ..createSync(recursive: true)
+      ..writeAsStringSync('y');
+
+    await const IoMediaFiles().deleteTree(root.path);
+
+    expect(root.existsSync(), isFalse);
+  });
+
+  test('deleteTree of a missing directory is not an error', () async {
+    await expectLater(
+      const IoMediaFiles().deleteTree('${dir.path}/missing'),
+      completes,
+    );
+    await expectLater(const NoMediaFiles().deleteTree('/any'), completes);
+  });
+
   test('createMediaFiles answers the io seam', () {
     expect(createMediaFiles(), isA<IoMediaFiles>());
   });

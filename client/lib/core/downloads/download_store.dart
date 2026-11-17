@@ -281,6 +281,11 @@ class DownloadStore {
             ..orderBy([(i) => OrderingTerm.asc(i.requestedAt)]))
           .get();
 
+  /// Every item, in request order.
+  Future<List<DownloadItem>> allItems() => (_db.select(
+    _db.downloadItems,
+  )..orderBy([(i) => OrderingTerm.asc(i.requestedAt)])).get();
+
   /// The item whose transfer task is [taskId], or null.
   Future<DownloadItem?> itemByTaskId(String taskId) =>
       (_db.select(_db.downloadItems)

@@ -5,6 +5,7 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:soundspan/app/router/routes.dart';
+import 'package:soundspan/app/session/sign_out_participant.dart';
 import 'package:soundspan/app/session/sign_out_sequence.dart';
 import 'package:soundspan/features/settings/settings.dart';
 
@@ -15,7 +16,10 @@ import '../../../helpers/test_root.dart';
 /// [gate] when it is set.
 class _FakeSequence implements SignOutSequence {
   int pending = 0;
-  bool downloads = false;
+
+  /// The downloads each profile reports; the real sequence reports none
+  /// for an inactive profile.
+  final Map<String, DownloadsSummary> downloads = {};
   Completer<void>? gate;
   Error? failure;
   final List<String> calls = [];
@@ -24,7 +28,8 @@ class _FakeSequence implements SignOutSequence {
   Future<int> pendingChanges(String profileId) async => pending;
 
   @override
-  Future<bool> offersDownloadRemoval(String profileId) async => downloads;
+  Future<DownloadsSummary?> downloadsSummary(String profileId) async =>
+      downloads[profileId];
 
   @override
   Future<void> signOut(String profileId, {bool removeDownloads = false}) async {
@@ -72,7 +77,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Sign out of other.example.com?'), findsOneWidget);
-    expect(find.text('Also remove downloads'), findsNothing);
+    expect(find.textContaining('Also remove downloads'), findsNothing);
     await expectMeetsGuidelines(tester);
 
     await tester.tap(find.widgetWithText(TextButton, 'Sign out').last);
@@ -94,17 +99,25 @@ void main() {
     expect(find.byType(AlertDialog), findsNothing);
   });
 
-  testWidgets('a participant with downloads adds the checkbox, which reaches '
-      'the sequence', (tester) async {
-    sequence.downloads = true;
+  testWidgets('with downloads the checkbox shows their count and size, is '
+      'unticked, and ticking it reaches the sequence', (tester) async {
     final root = await open(tester);
+    sequence.downloads[root.profileId!] = const DownloadsSummary(
+      itemCount: 12,
+      bytes: 340000000,
+    );
 
     await tester.tap(inTile(root.profileId!, find.text('Sign out')));
     await tester.pumpAndSettle();
-    expect(find.text('Also remove downloads'), findsOneWidget);
+    const label = 'Also remove downloads (12 items, 340 MB)';
+    expect(find.text(label), findsOneWidget);
+    expect(
+      tester.widget<CheckboxListTile>(find.byType(CheckboxListTile)).value,
+      isFalse,
+    );
     await expectMeetsGuidelines(tester);
 
-    await tester.tap(find.text('Also remove downloads'));
+    await tester.tap(find.text(label));
     await tester.pump();
     await tester.tap(find.widgetWithText(TextButton, 'Sign out').last);
     await tester.pumpAndSettle();
@@ -112,6 +125,66 @@ void main() {
     expect(sequence.calls, [
       'signOut(${root.profileId}, removeDownloads: true)',
     ]);
+  });
+
+  testWidgets('one download reads "1 item"', (tester) async {
+    final root = await open(tester);
+    sequence.downloads[root.profileId!] = const DownloadsSummary(
+      itemCount: 1,
+      bytes: 1500,
+    );
+
+    await tester.tap(inTile(root.profileId!, find.text('Sign out')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Also remove downloads (1 item, 1.5 KB)'), findsOneWidget);
+  });
+
+  testWidgets('no checkbox without downloads, nor for an inactive profile', (
+    tester,
+  ) async {
+    final root = await open(tester);
+    sequence.downloads[root.profileId!] = const DownloadsSummary(
+      itemCount: 0,
+      bytes: 0,
+    );
+
+    await tester.tap(inTile(root.profileId!, find.text('Sign out')));
+    await tester.pumpAndSettle();
+    expect(find.byType(CheckboxListTile), findsNothing);
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(inTile(root.otherIds['other']!, find.text('Sign out')));
+    await tester.pumpAndSettle();
+    expect(find.byType(CheckboxListTile), findsNothing);
+    await expectMeetsGuidelines(tester);
+  });
+
+  testWidgets('remove says downloads will be deleted when there are any', (
+    tester,
+  ) async {
+    final root = await open(tester);
+    sequence.downloads[root.profileId!] = const DownloadsSummary(
+      itemCount: 3,
+      bytes: 30000000,
+    );
+    const sentence =
+        'Downloads on this device for this server will be deleted.';
+
+    await tester.tap(inTile(root.profileId!, find.text('Remove this server')));
+    await tester.pumpAndSettle();
+    expect(find.text(sentence), findsOneWidget);
+    expect(find.byType(CheckboxListTile), findsNothing);
+    await expectMeetsGuidelines(tester);
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      inTile(root.otherIds['other']!, find.text('Remove this server')),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text(sentence), findsNothing);
   });
 
   testWidgets('remove names the server; with nothing pending it reads '

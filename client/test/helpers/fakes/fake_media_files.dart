@@ -17,6 +17,16 @@ final class FakeMediaFiles implements MediaFiles {
   /// When set, every [replace] throws it.
   Exception? replaceFailsWith;
 
+  /// Paths whose [delete], alone or inside [deleteTree], throws after
+  /// recording the path.
+  final Set<String> failingPaths = {};
+
+  /// When set, [deleteTree] waits for it before deleting anything.
+  Future<void>? treeGate;
+
+  /// Every directory passed to [deleteTree], oldest first.
+  final List<String> deletedTrees = [];
+
   @override
   Future<int?> length(String path) async {
     final file = File(path);
@@ -37,7 +47,30 @@ final class FakeMediaFiles implements MediaFiles {
     deleted.add(path);
     final failure = failWith;
     if (failure != null) throw failure;
+    if (failingPaths.contains(path)) {
+      throw FileSystemException('file is in use', path);
+    }
     final file = File(path);
     if (file.existsSync()) file.deleteSync();
+  }
+
+  @override
+  Future<void> deleteTree(String path) async {
+    deletedTrees.add(path);
+    await treeGate;
+    final directory = Directory(path);
+    if (!directory.existsSync()) return;
+    (Object, StackTrace)? failure;
+    for (final file in directory.listSync(recursive: true).whereType<File>()) {
+      try {
+        await delete(file.path);
+      } on Object catch (error, stackTrace) {
+        failure ??= (error, stackTrace);
+      }
+    }
+    if (failure case (final error, final stackTrace)) {
+      Error.throwWithStackTrace(error, stackTrace);
+    }
+    directory.deleteSync(recursive: true);
   }
 }

@@ -583,6 +583,10 @@ final class FakeOfflineClient implements api.OfflineClient {
   /// instead of answering.
   api.ApiException? completeError;
 
+  /// When set, `DELETE /items` records the request and throws it instead
+  /// of answering.
+  api.ApiException? deleteError;
+
   int get _usedBytes => devices.values
       .expand((items) => items.values)
       .fold(0, (sum, item) => sum + item.sizeBytes);
@@ -693,6 +697,7 @@ final class FakeOfflineClient implements api.OfflineClient {
     Options? options,
   }) async {
     requests.add(body);
+    if (deleteError case final error?) throw error;
     final held = devices[body.deviceId] ?? {};
     var deleted = 0;
     for (final id in body.playbackIds.toSet()) {

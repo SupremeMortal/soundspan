@@ -571,11 +571,11 @@ abstract class AppLocalizations {
   /// **'Downloads, cached data and changes not yet sent stay on this device. Sign in again to use this server.'**
   String get settingsServersSignOutBody;
 
-  /// Sign-out dialog checkbox: delete this server's downloaded music from this device too.
+  /// Sign-out dialog checkbox: delete this server's downloaded music from this device too; with how many items and how much space they take.
   ///
   /// In en, this message translates to:
-  /// **'Also remove downloads'**
-  String get settingsServersSignOutRemoveDownloads;
+  /// **'{count, plural, =1{Also remove downloads (1 item, {size})} other{Also remove downloads ({count} items, {size})}}'**
+  String settingsServersSignOutRemoveDownloads(int count, String size);
 
   /// Title of the dialog that confirms removing a server.
   ///
@@ -594,6 +594,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, =1{1 change has not been sent to the server and will be lost.} other{{count} changes have not been sent to the server and will be lost.}}'**
   String settingsServersRemovePending(int count);
+
+  /// Remove-server dialog: shown when this server has downloaded music on this device.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloads on this device for this server will be deleted.'**
+  String get settingsServersRemoveDownloads;
 
   /// Remove-server dialog button: remove the server.
   ///

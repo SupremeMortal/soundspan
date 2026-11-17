@@ -279,7 +279,15 @@ class AppLocalizationsEn extends AppLocalizations {
       'Downloads, cached data and changes not yet sent stay on this device. Sign in again to use this server.';
 
   @override
-  String get settingsServersSignOutRemoveDownloads => 'Also remove downloads';
+  String settingsServersSignOutRemoveDownloads(int count, String size) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Also remove downloads ($count items, $size)',
+      one: 'Also remove downloads (1 item, $size)',
+    );
+    return '$_temp0';
+  }
 
   @override
   String settingsServersRemoveTitle(String server) {
@@ -302,6 +310,10 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get settingsServersRemoveDownloads =>
+      'Downloads on this device for this server will be deleted.';
 
   @override
   String get settingsServersRemoveConfirm => 'Remove';
@@ -2067,8 +2079,15 @@ class AppLocalizationsEnXa extends AppLocalizationsEn {
       '[Ðöŵñļöåðš, çåçĥéð ðåţå åñð çĥåñĝéš ñöţ ýéţ šéñţ šţåý öñ ţĥîš ðévîçé. Šîĝñ îñ åĝåîñ ţö ûšé ţĥîš šéŕvéŕ. one two three four five six seven eight nine]';
 
   @override
-  String get settingsServersSignOutRemoveDownloads =>
-      '[Åļšö ŕémövé ðöŵñļöåðš one two three]';
+  String settingsServersSignOutRemoveDownloads(int count, String size) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Åļšö ŕémövé ðöŵñļöåðš ($count îţémš, $size) one two three',
+      one: 'Åļšö ŕémövé ðöŵñļöåðš (1 îţém, $size) one two three',
+    );
+    return '[$_temp0]';
+  }
 
   @override
   String settingsServersRemoveTitle(String server) {
@@ -2091,6 +2110,10 @@ class AppLocalizationsEnXa extends AppLocalizationsEn {
     );
     return '[$_temp0]';
   }
+
+  @override
+  String get settingsServersRemoveDownloads =>
+      '[Ðöŵñļöåðš öñ ţĥîš ðévîçé föŕ ţĥîš šéŕvéŕ ŵîļļ bé ðéļéţéð. one two three four five]';
 
   @override
   String get settingsServersRemoveConfirm => '[Ŕémövé one]';

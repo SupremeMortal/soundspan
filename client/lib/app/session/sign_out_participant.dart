@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 
+import 'package:flutter/foundation.dart' show immutable;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:soundspan/app/session/downloads_sign_out_participant.dart';
 import 'package:soundspan/core/playback/playback_controller.dart';
 import 'package:soundspan/core/playback/playback_providers.dart';
 import 'package:soundspan/core/realtime/realtime_providers.dart';
 import 'package:soundspan/core/realtime/socket_client.dart';
+import 'package:soundspan/platform/capabilities/capabilities.dart';
 
 /// Lets a profile-scoped service take part in sign-out (doc 04, Sign-Out).
 /// Registered through `signOutParticipantsProvider`; the order of the list
@@ -17,12 +20,37 @@ abstract interface class SignOutParticipant {
   Future<void> beforeRemove();
 }
 
-/// A [SignOutParticipant] that may hold downloads of the profile; when one
-/// reports downloads, sign-out offers "Also remove downloads".
-abstract interface class DownloadsSignOutParticipant
-    implements SignOutParticipant {
-  /// Whether the profile has downloaded files on this device.
-  Future<bool> hasDownloads();
+/// What a profile holds in downloaded files on this device.
+@immutable
+final class DownloadsSummary {
+  /// Creates the summary of [itemCount] files holding [bytes] bytes.
+  const new({required this.itemCount, required this.bytes});
+
+  /// The number of downloaded items.
+  final int itemCount;
+
+  /// Their size on disk, in bytes.
+  final int bytes;
+
+  @override
+  bool operator ==(Object other) =>
+      other is DownloadsSummary &&
+      other.itemCount == itemCount &&
+      other.bytes == bytes;
+
+  @override
+  int get hashCode => Object.hash(itemCount, bytes);
+
+  @override
+  String toString() => 'DownloadsSummary($itemCount, $bytes)';
+}
+
+/// Implemented by a [SignOutParticipant] that may hold downloads of the
+/// profile; when one reports downloads, sign-out offers "Also remove
+/// downloads" and removal warns that they will be deleted.
+abstract interface class ReportsDownloads {
+  /// The profile's downloads on this device, or null when it cannot tell.
+  Future<DownloadsSummary?> downloadsSummary();
 }
 
 /// Playback's part in sign-out: stop, which ends the open play, and wait
@@ -65,8 +93,8 @@ final class SocketSignOutParticipant implements SignOutParticipant {
 }
 
 /// The [SignOutParticipant]s of the profile scope, in execution order:
-/// playback, then the socket. The playback controller is read when
-/// sign-out runs.
+/// playback, the socket, then downloads where the platform can download.
+/// The playback controller is read when sign-out runs.
 final Provider<List<SignOutParticipant>> signOutParticipantsProvider =
     Provider<List<SignOutParticipant>>(
       (ref) => [
@@ -75,6 +103,12 @@ final Provider<List<SignOutParticipant>> signOutParticipantsProvider =
           () => playsWritten(ref.read(playbackControllerProvider)),
         ),
         SocketSignOutParticipant(ref.watch(socketClientProvider)),
+        if (ref.watch(platformCapabilitiesProvider).canDownload)
+          ref.watch(downloadsSignOutParticipantProvider),
       ],
-      dependencies: [socketClientProvider, playbackControllerProvider],
+      dependencies: [
+        socketClientProvider,
+        playbackControllerProvider,
+        downloadsSignOutParticipantProvider,
+      ],
     );

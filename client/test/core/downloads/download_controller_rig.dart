@@ -116,47 +116,25 @@ final class GatedOfflineClient implements api.OfflineClient {
 /// A profile's downloads over in-memory databases: the controller, a
 /// started scheduler, the outbox and [FakeApi] as the server.
 final class DownloadControllerRig {
-  /// Creates the rig in [dir]; [offlineClient] replaces the fake server's
-  /// offline client when given.
-  new(this.dir, {api.OfflineClient? offlineClient}) {
+  /// Creates the rig in [dir] for profile [profileId]; [offlineClient]
+  /// replaces the fake server's offline client when given.
+  new(this.dir, {api.OfflineClient? offlineClient, this.profileId = 'p1'}) {
     // Each rig has its own in-memory databases.
     driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
     clock = FakeClock(start: DateTime.utc(2026, 3, 1, 12));
     state = StateDatabase(NativeDatabase.memory());
     cacheDb = CacheDatabase(NativeDatabase.memory());
     cache = CacheStore(cacheDb, clock);
-    final profile = ProfilePaths.derive(
+    profilePaths = ProfilePaths.derive(
       appSupport: dir.path,
       appCache: '${dir.path}/cache',
-      profileId: 'p1',
+      profileId: profileId,
     );
-    paths = DownloadPaths(profile);
+    paths = DownloadPaths(profilePaths);
     store = DownloadStore(state, paths: paths);
     settings = DeviceSettingsDao(state);
     downloader = FakeDownloader(appSupport: dir.path);
-    const credentials = api.ApiKeyCredentials(apiKey: 'key-1');
-    scheduler = DownloadScheduler(
-      store: store,
-      downloader: downloader,
-      requestBuilder: DownloadRequestBuilder(
-        paths: paths,
-        urls: api.StreamUrls(Uri.parse('https://music.example.com')),
-        currentCredentials: () => credentials,
-        ensureFresh: ({required minRemaining}) async => credentials,
-      ),
-      reachability: reachability,
-      settings: settings,
-      diskSpace: diskSpace,
-      clock: clock,
-      profileId: 'p1',
-      mediaDirectory: profile.media,
-      refreshCredentials: () async {},
-      createTimer: (delay, callback) {
-        final timer = RigTimer(delay, callback);
-        retryTimers.add(timer);
-        return timer;
-      },
-    );
+    scheduler = buildScheduler();
     offline = OfflineRepository(offlineClient ?? server.offline);
     outboxStore = OutboxStore(state, clock);
     worker = OutboxWorker(
@@ -170,7 +148,7 @@ final class DownloadControllerRig {
       rewriter: TempIdRewriter(state, () async => cacheDb),
       periodicTimer: ManualTimer.new,
     );
-    final outbox = Outbox(outboxStore, worker);
+    outbox = Outbox(outboxStore, worker);
     controller = DownloadController(
       store: store,
       offline: offline,
@@ -192,6 +170,9 @@ final class DownloadControllerRig {
   /// The temporary directory standing in for application support.
   final Directory dir;
 
+  /// The profile the downloads belong to.
+  final String profileId;
+
   /// The server.
   final FakeApi server = FakeApi();
 
@@ -211,6 +192,7 @@ final class DownloadControllerRig {
   late final StateDatabase state;
   late final CacheDatabase cacheDb;
   late final CacheStore cache;
+  late final ProfilePaths profilePaths;
   late final DownloadPaths paths;
   late final DownloadStore store;
   late final DeviceSettingsDao settings;
@@ -219,7 +201,36 @@ final class DownloadControllerRig {
   late final OfflineRepository offline;
   late final OutboxStore outboxStore;
   late final OutboxWorker worker;
+  late final Outbox outbox;
   late final DownloadController controller;
+
+  /// A new scheduler over the rig's store and downloader, as the next
+  /// profile scope creates; the rig's own [scheduler] is one.
+  DownloadScheduler buildScheduler() {
+    const credentials = api.ApiKeyCredentials(apiKey: 'key-1');
+    return DownloadScheduler(
+      store: store,
+      downloader: downloader,
+      requestBuilder: DownloadRequestBuilder(
+        paths: paths,
+        urls: api.StreamUrls(Uri.parse('https://music.example.com')),
+        currentCredentials: () => credentials,
+        ensureFresh: ({required minRemaining}) async => credentials,
+      ),
+      reachability: reachability,
+      settings: settings,
+      diskSpace: diskSpace,
+      clock: clock,
+      profileId: profileId,
+      mediaDirectory: profilePaths.media,
+      refreshCredentials: () async {},
+      createTimer: (delay, callback) {
+        final timer = RigTimer(delay, callback);
+        retryTimers.add(timer);
+        return timer;
+      },
+    );
+  }
 
   /// Starts the scheduler, the outbox worker and the controller.
   Future<void> start() async {

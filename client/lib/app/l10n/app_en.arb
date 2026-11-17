@@ -357,9 +357,19 @@
   "@settingsServersSignOutBody": {
     "description": "Body of the sign-out dialog."
   },
-  "settingsServersSignOutRemoveDownloads": "Also remove downloads",
+  "settingsServersSignOutRemoveDownloads": "{count, plural, =1{Also remove downloads (1 item, {size})} other{Also remove downloads ({count} items, {size})}}",
   "@settingsServersSignOutRemoveDownloads": {
-    "description": "Sign-out dialog checkbox: delete this server's downloaded music from this device too."
+    "description": "Sign-out dialog checkbox: delete this server's downloaded music from this device too; with how many items and how much space they take.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "12"
+      },
+      "size": {
+        "type": "String",
+        "example": "340 MB"
+      }
+    }
   },
   "settingsServersRemoveTitle": "Remove {server}?",
   "@settingsServersRemoveTitle": {
@@ -390,6 +400,10 @@
         "example": "3"
       }
     }
+  },
+  "settingsServersRemoveDownloads": "Downloads on this device for this server will be deleted.",
+  "@settingsServersRemoveDownloads": {
+    "description": "Remove-server dialog: shown when this server has downloaded music on this device."
   },
   "settingsServersRemoveConfirm": "Remove",
   "@settingsServersRemoveConfirm": {

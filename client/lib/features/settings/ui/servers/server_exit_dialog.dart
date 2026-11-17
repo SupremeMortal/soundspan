@@ -5,11 +5,13 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:soundspan/app/l10n/generated/app_localizations.dart';
+import 'package:soundspan/app/session/sign_out_participant.dart';
 import 'package:soundspan/app/session/sign_out_sequence.dart';
 import 'package:soundspan/app/theme/dimens.dart';
 import 'package:soundspan/app/theme/extensions.dart';
 import 'package:soundspan/app/theme/typography.dart';
 import 'package:soundspan/core/auth/profile.dart';
+import 'package:soundspan/shared/util/byte_size.dart';
 
 /// What a [ServerExitDialog] does once confirmed.
 enum ServerExit {
@@ -32,9 +34,10 @@ Future<void> showServerExitDialog(
 
 /// The confirmation of signing out of, or removing, a server.
 ///
-/// Sign-out offers "Also remove downloads" when a participant reports
-/// downloads; removal warns when the outbox holds changes that would be
-/// lost. While the sequence runs the dialog shows progress and cannot be
+/// Sign-out offers "Also remove downloads" with their count and size when a
+/// participant reports downloads; removal says that downloads will be
+/// deleted when there are any, and warns when the outbox holds changes that
+/// would be lost. While the sequence runs the dialog shows progress and cannot be
 /// dismissed; it closes when the sequence completes and shows an error when
 /// it fails.
 class ServerExitDialog extends ConsumerStatefulWidget {
@@ -54,7 +57,7 @@ class ServerExitDialog extends ConsumerStatefulWidget {
 class _ServerExitDialogState extends ConsumerState<ServerExitDialog> {
   late final SignOutSequence _sequence = ref.read(signOutSequenceProvider);
   int _pending = 0;
-  bool _offersDownloads = false;
+  DownloadsSummary? _downloads;
   bool _removeDownloads = false;
   bool _running = false;
   bool _failed = false;
@@ -67,13 +70,11 @@ class _ServerExitDialogState extends ConsumerState<ServerExitDialog> {
 
   Future<void> _load() async {
     final id = widget.profile.id;
-    switch (widget.exit) {
-      case ServerExit.signOut:
-        final offers = await _sequence.offersDownloadRemoval(id);
-        if (mounted) setState(() => _offersDownloads = offers);
-      case ServerExit.remove:
-        final pending = await _sequence.pendingChanges(id);
-        if (mounted) setState(() => _pending = pending);
+    final downloads = await _sequence.downloadsSummary(id);
+    if (mounted) setState(() => _downloads = downloads);
+    if (widget.exit == ServerExit.remove) {
+      final pending = await _sequence.pendingChanges(id);
+      if (mounted) setState(() => _pending = pending);
     }
   }
 
@@ -109,6 +110,8 @@ class _ServerExitDialogState extends ConsumerState<ServerExitDialog> {
     final body = context.typography.body.copyWith(color: colors.contentBody);
     final server = widget.profile.displayName;
     final signOut = widget.exit == ServerExit.signOut;
+    final downloads = _downloads;
+    final hasDownloads = downloads != null && downloads.itemCount > 0;
     return PopScope(
       canPop: !_running,
       child: AlertDialog(
@@ -145,6 +148,10 @@ class _ServerExitDialogState extends ConsumerState<ServerExitDialog> {
                         : l10n.settingsServersRemoveBody(server),
                     style: body,
                   ),
+                  if (!signOut && hasDownloads) ...[
+                    const SizedBox(height: Spacing.x8),
+                    Text(l10n.settingsServersRemoveDownloads, style: body),
+                  ],
                   if (!signOut && _pending > 0) ...[
                     const SizedBox(height: Spacing.x8),
                     Text(
@@ -152,14 +159,17 @@ class _ServerExitDialogState extends ConsumerState<ServerExitDialog> {
                       style: body,
                     ),
                   ],
-                  if (signOut && _offersDownloads)
+                  if (signOut && hasDownloads)
                     CheckboxListTile(
                       contentPadding: EdgeInsets.zero,
                       value: _removeDownloads,
                       onChanged: (value) =>
                           setState(() => _removeDownloads = value ?? false),
                       title: Text(
-                        l10n.settingsServersSignOutRemoveDownloads,
+                        l10n.settingsServersSignOutRemoveDownloads(
+                          downloads.itemCount,
+                          formatByteSize(downloads.bytes),
+                        ),
                         style: body,
                       ),
                     ),

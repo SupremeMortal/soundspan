@@ -3,10 +3,12 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:soundspan/app/session/downloads_sign_out_participant.dart';
 import 'package:soundspan/app/session/sign_out_participant.dart';
 import 'package:soundspan/core/auth/active_profile.dart';
 import 'package:soundspan/core/auth/profile.dart';
 import 'package:soundspan/core/auth/profile_repository.dart';
+import 'package:soundspan/core/downloads/download_scheduler.dart';
 import 'package:soundspan/core/logging/app_logger.dart';
 import 'package:soundspan/core/profile/api_provider.dart';
 import 'package:soundspan/core/profile/profile_providers.dart';
@@ -15,6 +17,7 @@ import 'package:soundspan/core/storage/providers.dart';
 import 'package:soundspan/core/storage/state/state_database.dart';
 import 'package:soundspan/core/sync/outbox/outbox.dart';
 import 'package:soundspan/core/sync/outbox/outbox_store.dart';
+import 'package:soundspan/platform/capabilities/capabilities.dart';
 import 'package:soundspan/platform/database_opener/database_opener.dart';
 import 'package:soundspan/shared/clock.dart';
 import 'package:soundspan_api/soundspan_api.dart';
@@ -132,7 +135,9 @@ final class ContainerSignOutScope implements SignOutScope {
 class SignOutSequence {
   /// Creates the sequence. `scopeOf` reads the active profile's container;
   /// `opener` and `clock` count the pending changes of an inactive profile;
-  /// `timer` (default [Timer.new]) ends the wait for a step after [budget].
+  /// `cancelInactiveDownloads`, where the platform downloads, cancels the
+  /// transfers of an inactive profile; `timer` (default [Timer.new]) ends
+  /// the wait for a step after [budget].
   new({
     required this._runtime,
     required this._profiles,
@@ -140,6 +145,7 @@ class SignOutSequence {
     required this._opener,
     required this._clock,
     this._scopeOf = ContainerSignOutScope.new,
+    this._cancelInactiveDownloads,
     this._timer = Timer.new,
   });
 
@@ -154,6 +160,7 @@ class SignOutSequence {
   final DatabaseOpener _opener;
   final Clock _clock;
   final SignOutScope Function(ProviderContainer container) _scopeOf;
+  final Future<void> Function(String profileId)? _cancelInactiveDownloads;
   final Timer Function(Duration duration, void Function() callback) _timer;
 
   /// Signs [profileId] out. When it is the active profile, its container is
@@ -161,7 +168,12 @@ class SignOutSequence {
   /// server and username. [removeDownloads] is passed to the participants.
   Future<void> signOut(String profileId, {bool removeDownloads = false}) async {
     final scope = _activeScope(profileId);
-    await _stop(scope, removeDownloads: removeDownloads, remove: false);
+    await _stop(
+      profileId,
+      scope,
+      removeDownloads: removeDownloads,
+      remove: false,
+    );
     await _forget(profileId);
     if (scope != null) await _runtime.reload(profileId);
     _log.info('Signed out', {'profileId': profileId});
@@ -174,7 +186,7 @@ class SignOutSequence {
   /// is signed in becomes active, or none.
   Future<void> removeServer(String profileId) async {
     final scope = _activeScope(profileId);
-    await _stop(scope, removeDownloads: false, remove: true);
+    await _stop(profileId, scope, removeDownloads: false, remove: true);
     await _forget(profileId);
     if (_holds(profileId)) {
       final remaining = await _profiles.watchAll().first;
@@ -208,18 +220,26 @@ class SignOutSequence {
     }
   }
 
-  /// Whether sign-out of [profileId] offers "Also remove downloads": a
-  /// participant of the active profile reports downloads.
-  Future<bool> offersDownloadRemoval(String profileId) async {
+  /// The downloads of [profileId] a participant reports, when there are
+  /// any: sign-out then offers "Also remove downloads" and removal warns
+  /// that they will be deleted. Null for an inactive profile, whose
+  /// database is not opened for this.
+  Future<DownloadsSummary?> downloadsSummary(String profileId) async {
     final scope = _activeScope(profileId);
-    if (scope == null) return false;
+    if (scope == null) return null;
     for (final participant in _participants(scope)) {
-      if (participant is DownloadsSignOutParticipant &&
-          await participant.hasDownloads()) {
-        return true;
+      if (participant is! ReportsDownloads) continue;
+      try {
+        final summary = await (participant as ReportsDownloads)
+            .downloadsSummary();
+        if (summary != null && summary.itemCount > 0) return summary;
+      } on Object catch (error) {
+        _log.warning('Downloads not counted', {
+          'error': error.runtimeType.toString(),
+        });
       }
     }
-    return false;
+    return null;
   }
 
   SignOutScope? _activeScope(String profileId) {
@@ -250,13 +270,27 @@ class SignOutSequence {
     }
   }
 
-  /// Steps 1 to 3: the participants, then one outbox pass.
+  /// Steps 1 to 3: the participants, then one outbox pass. For an inactive
+  /// profile only its transfers are cancelled.
   Future<void> _stop(
+    String profileId,
     SignOutScope? scope, {
     required bool removeDownloads,
     required bool remove,
   }) async {
-    if (scope == null) return;
+    if (scope == null) {
+      final cancel = _cancelInactiveDownloads;
+      if (cancel == null) return;
+      await _bestEffort('Download cancellation', () => cancel(profileId));
+      if (remove) {
+        _log.info(
+          'Downloads of an inactive profile are not removed on the '
+          'server',
+          {'profileId': profileId},
+        );
+      }
+      return;
+    }
     final participants = _participants(scope);
     for (final participant in participants) {
       await _guard(
@@ -323,5 +357,10 @@ final Provider<SignOutSequence> signOutSequenceProvider =
         revoker: ApiSessionRevoker(userAgent: ref.watch(userAgentProvider)),
         opener: ref.watch(databaseOpenerProvider),
         clock: ref.watch(clockProvider),
+        cancelInactiveDownloads:
+            ref.watch(platformCapabilitiesProvider).canDownload
+            ? (profileId) =>
+                  cancelDownloadTasks(ref.read(downloaderProvider), profileId)
+            : null,
       ),
     );

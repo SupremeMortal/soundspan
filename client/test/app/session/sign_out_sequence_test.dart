@@ -571,21 +571,38 @@ void main() {
     });
   });
 
-  group('offersDownloadRemoval', () {
-    test('is false with no downloads participant', () async {
+  group('downloadsSummary', () {
+    test('is null with no downloads participant', () async {
       final rig = await _Rig.create();
       await rig.runtime.switchTo(rig.h.a);
 
-      expect(await rig.sequence.offersDownloadRemoval(rig.h.a), isFalse);
+      expect(await rig.sequence.downloadsSummary(rig.h.a), isNull);
     });
 
-    test('is true when a participant reports downloads of the active '
-        'profile', () async {
-      final rig = await _Rig.create(participants: [_Downloads(true)]);
+    test('is what a participant reports for the active profile, and null '
+        'for an inactive one', () async {
+      const summary = DownloadsSummary(itemCount: 3, bytes: 900);
+      final rig = await _Rig.create(participants: [_Downloads(summary)]);
       await rig.runtime.switchTo(rig.h.a);
 
-      expect(await rig.sequence.offersDownloadRemoval(rig.h.a), isTrue);
-      expect(await rig.sequence.offersDownloadRemoval(rig.h.b), isFalse);
+      expect(await rig.sequence.downloadsSummary(rig.h.a), summary);
+      expect(await rig.sequence.downloadsSummary(rig.h.b), isNull);
+    });
+
+    test('is null when the participant reports none or fails', () async {
+      final none = await _Rig.create(
+        participants: [
+          _Downloads(const DownloadsSummary(itemCount: 0, bytes: 0)),
+        ],
+      );
+      await none.runtime.switchTo(none.h.a);
+      expect(await none.sequence.downloadsSummary(none.h.a), isNull);
+
+      final failing = await _Rig.create(
+        participants: [_Downloads(null, failure: StateError('db closed'))],
+      );
+      await failing.runtime.switchTo(failing.h.a);
+      expect(await failing.sequence.downloadsSummary(failing.h.a), isNull);
     });
   });
 
@@ -695,14 +712,19 @@ class _OneShot implements Timer {
   int get tick => 0;
 }
 
-/// A downloads participant that reports [has].
-class _Downloads implements DownloadsSignOutParticipant {
-  new(this.has);
+/// A participant that reports [summary] as its downloads, or throws
+/// [failure].
+class _Downloads implements SignOutParticipant, ReportsDownloads {
+  new(this.summary, {this.failure});
 
-  final bool has;
+  final DownloadsSummary? summary;
+  final Error? failure;
 
   @override
-  Future<bool> hasDownloads() async => has;
+  Future<DownloadsSummary?> downloadsSummary() async {
+    if (failure case final error?) throw error;
+    return summary;
+  }
 
   @override
   Future<void> onSignOut({required bool removeDownloads}) async {}
