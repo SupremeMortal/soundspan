@@ -66,6 +66,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get androidAutoAlbums => 'Albums';
 
   @override
+  String get androidAutoDownloads => 'Downloads';
+
+  @override
+  String androidAutoDownloadsSubtitle(String kind, int completed) {
+    return '$kind · $completed';
+  }
+
+  @override
+  String get androidAutoKindEpisode => 'Podcast episode';
+
+  @override
   String get screenSettingsStorage => 'Storage';
 
   @override
@@ -2273,6 +2284,17 @@ class AppLocalizationsEnXa extends AppLocalizationsEn {
 
   @override
   String get androidAutoAlbums => '[Åļbûmš one]';
+
+  @override
+  String get androidAutoDownloads => '[Ðöŵñļöåðš one]';
+
+  @override
+  String androidAutoDownloadsSubtitle(String kind, int completed) {
+    return '[$kind · $completed one]';
+  }
+
+  @override
+  String get androidAutoKindEpisode => '[Þöðçåšţ éþîšöðé one two]';
 
   @override
   String get screenSettingsStorage => '[Šţöŕåĝé one]';

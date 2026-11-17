@@ -61,6 +61,9 @@ class _Commands implements MediaCommandHandler {
   MediaBrowseSource? get browseSource => null;
 
   @override
+  DownloadsBrowse? get browseDownloads => null;
+
+  @override
   Future<void> playRequest(PlayRequest request) async {}
 }
 

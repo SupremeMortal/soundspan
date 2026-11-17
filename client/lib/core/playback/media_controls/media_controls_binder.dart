@@ -42,7 +42,7 @@ class MediaControlsBinder implements MediaCommandHandler {
   /// Starts rendering [_controller]'s snapshots on [_controls]; artwork is
   /// pinned by [_pin], elapsed time read from [_clock], and likes stored
   /// through `like` (without it, Like does nothing). Android Auto browses
-  /// [browseSource].
+  /// [browseSource] and [browseDownloads].
   new({
     required this._controller,
     required this._controls,
@@ -50,6 +50,7 @@ class MediaControlsBinder implements MediaCommandHandler {
     required this._clock,
     this._like,
     this.browseSource,
+    this.browseDownloads,
   }) {
     _subscription = _controller.snapshots.listen(_onSnapshot);
   }
@@ -68,6 +69,9 @@ class MediaControlsBinder implements MediaCommandHandler {
 
   @override
   final MediaBrowseSource? browseSource;
+
+  @override
+  final DownloadsBrowse? browseDownloads;
 
   late final StreamSubscription<PlaybackSnapshot> _subscription;
   bool _started = false;
@@ -255,6 +259,9 @@ class MediaControlsHost implements MediaCommandHandler {
 
   @override
   MediaBrowseSource? get browseSource => _binder?.browseSource;
+
+  @override
+  DownloadsBrowse? get browseDownloads => _binder?.browseDownloads;
 
   @override
   Future<void> playRequest(PlayRequest request) =>

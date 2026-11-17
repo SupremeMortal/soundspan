@@ -91,8 +91,9 @@ svc.AudioServiceConfig audioServiceConfigFor({
 /// notification; paused states are not shown again until one is playing.
 ///
 /// With [browseTitles] (Android) it serves the Android Auto browse tree
-/// over [MediaCommandHandler.browseSource] (doc 10, Android Auto): browse
-/// items carry no artwork, a playable id or a voice search plays through
+/// over [MediaCommandHandler.browseSource] and, for its Downloads root,
+/// [MediaCommandHandler.browseDownloads] (doc 10, Android Auto): only
+/// downloads carry artwork, a playable id or a voice search plays through
 /// [MediaCommandHandler.playRequest], and an id or search with nothing to
 /// play leaves playback unchanged. Without a source the tree is empty.
 class SoundspanAudioHandler extends svc.BaseAudioHandler
@@ -183,7 +184,11 @@ class SoundspanAudioHandler extends svc.BaseAudioHandler
     final titles = browseTitles;
     final source = commands.browseSource;
     if (titles == null || source == null) return null;
-    return BrowseTree(source: source, titles: titles());
+    return BrowseTree(
+      source: source,
+      titles: titles(),
+      downloads: commands.browseDownloads,
+    );
   }
 
   @override
@@ -221,6 +226,9 @@ class SoundspanAudioHandler extends svc.BaseAudioHandler
         id: node.id,
         title: node.title,
         artist: node.subtitle,
+        album: node.album,
+        duration: node.duration,
+        artUri: node.artUri,
         playable: node.playable,
       ),
   ];

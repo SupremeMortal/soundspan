@@ -6,10 +6,21 @@ import 'package:soundspan/core/playback/media_controls/media_controls.dart';
 
 /// A [MediaCommandHandler] that records the commands it receives, by name
 /// (`seek` with its position in milliseconds, `setLiked` with its value,
-/// `playRequest` with its start index); it has no browse source.
+/// `playRequest` with its start index, the request itself kept in
+/// [requests]); it browses [browseSource] and [browseDownloads], none by
+/// default.
 class RecordingMediaCommandHandler implements MediaCommandHandler {
   /// The commands received, in order.
   final List<String> calls = [];
+
+  /// The play requests received, in order.
+  final List<PlayRequest> requests = [];
+
+  @override
+  MediaBrowseSource? browseSource;
+
+  @override
+  DownloadsBrowse? browseDownloads;
 
   @override
   Future<void> play() async => calls.add('play');
@@ -40,9 +51,8 @@ class RecordingMediaCommandHandler implements MediaCommandHandler {
   Future<void> setLiked(bool liked) async => calls.add('setLiked $liked');
 
   @override
-  MediaBrowseSource? get browseSource => null;
-
-  @override
-  Future<void> playRequest(PlayRequest request) async =>
-      calls.add('playRequest ${request.startIndex}');
+  Future<void> playRequest(PlayRequest request) async {
+    requests.add(request);
+    calls.add('playRequest ${request.startIndex}');
+  }
 }

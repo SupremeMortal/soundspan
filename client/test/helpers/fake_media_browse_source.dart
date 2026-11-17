@@ -41,7 +41,11 @@ class FakeMediaBrowseSource implements MediaBrowseSource {
   /// The `limit` of the last [albums] call.
   int? lastAlbumLimit;
 
+  /// How many calls were made.
+  int calls = 0;
+
   Future<T> _answer<T>(T value) async {
+    calls++;
     if (failing) throw StateError('source failed');
     return value;
   }

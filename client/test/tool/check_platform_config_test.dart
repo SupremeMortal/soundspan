@@ -7,7 +7,7 @@ import 'package:path/path.dart' as p;
 
 import '../../tool/check_platform_config.dart';
 
-const _manifest = '''
+const _manifest = r'''
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
   <uses-permission android:name="android.permission.INTERNET"/>
   <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -49,6 +49,13 @@ const _manifest = '''
     </receiver>
     <meta-data android:name="com.google.android.gms.car.application"
         android:resource="@xml/automotive_app_desc"/>
+    <provider android:name="androidx.core.content.FileProvider"
+        android:authorities="${applicationId}.artwork"
+        android:exported="false"
+        android:grantUriPermissions="true">
+      <meta-data android:name="android.support.FILE_PROVIDER_PATHS"
+          android:resource="@xml/artwork_paths"/>
+    </provider>
   </application>
 </manifest>
 ''';
@@ -143,7 +150,18 @@ const List<(String, String, String)> _manifestRows = [
     '<meta-data android:name="com.google.android.gms.car.application" '
         'android:resource="@xml/automotive_app_desc"/>',
   ),
+  ('android:exported="false"', 'android:exported="true"', _artworkProvider),
+  ('android:grantUriPermissions="true"', '', _artworkProvider),
+  (r'${applicationId}.artwork', r'${applicationId}.files', _artworkProvider),
+  ('@xml/artwork_paths', '@xml/other_paths', _artworkProvider),
+  ('androidx.core.content.FileProvider', 'other.Provider', _artworkProvider),
 ];
+
+const String _artworkProvider =
+    '<provider android:name="androidx.core.content.FileProvider" '
+    r'android:authorities="${applicationId}.artwork" '
+    'android:exported="false" android:grantUriPermissions="true"> '
+    'with @xml/artwork_paths';
 
 const _automotiveAppDesc = '''
 <automotiveApp>
@@ -404,6 +422,14 @@ void main() {
         ]);
       });
     }
+
+    test('a merged manifest with the application id resolved passes', () {
+      final merged = _manifest.replaceFirst(
+        r'${applicationId}.artwork',
+        'io.soundspan.app.artwork',
+      );
+      expect(checkAndroidManifest(_write('m.xml', merged)), isEmpty);
+    });
 
     test('a compiled manifest with numeric launch mode and service type '
         'passes', () {

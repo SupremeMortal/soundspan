@@ -78,6 +78,28 @@
   "@androidAutoAlbums": {
     "description": "Title of the Android Auto browse folder listing the library's albums."
   },
+  "androidAutoDownloads": "[Ðöŵñļöåðš one]",
+  "@androidAutoDownloads": {
+    "description": "Title of the Android Auto browse folder listing what is downloaded to this device; it works with no connection."
+  },
+  "androidAutoDownloadsSubtitle": "[{kind} · {completed} one]",
+  "@androidAutoDownloadsSubtitle": {
+    "description": "Subtitle of a downloaded album, playlist, song or episode in the Android Auto Downloads folder: its kind and how many of its tracks are downloaded.",
+    "placeholders": {
+      "kind": {
+        "type": "String",
+        "example": "Album"
+      },
+      "completed": {
+        "type": "int",
+        "example": "12"
+      }
+    }
+  },
+  "androidAutoKindEpisode": "[Þöðçåšţ éþîšöðé one two]",
+  "@androidAutoKindEpisode": {
+    "description": "Kind of a downloaded podcast episode, in the Android Auto Downloads folder."
+  },
   "screenSettingsStorage": "[Šţöŕåĝé one]",
   "@screenSettingsStorage": {
     "description": "Screen name: the storage settings page."

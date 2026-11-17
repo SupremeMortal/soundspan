@@ -150,6 +150,9 @@ const String audioServiceClass = 'com.ryanheise.audioservice.AudioService';
 /// The `<meta-data>` name that lists the app in Android Auto.
 const String carApplicationMetaData = 'com.google.android.gms.car.application';
 
+/// The `FileProvider` that serves pinned covers to Android Auto.
+const String fileProviderClass = 'androidx.core.content.FileProvider';
+
 /// The `audio_service` media-button receiver.
 const String mediaButtonReceiverClass =
     'com.ryanheise.audioservice.MediaButtonReceiver';
@@ -163,8 +166,10 @@ const String mediaButtonReceiverClass =
 /// `<data android:scheme="soundspan"/>`), the exported `AudioService` with
 /// `foregroundServiceType="mediaPlayback"` and the `MediaBrowserService`
 /// intent filter, the exported `MediaButtonReceiver` with the
-/// `MEDIA_BUTTON` intent filter, and the Android Auto `<meta-data>` naming
-/// `@xml/automotive_app_desc`.
+/// `MEDIA_BUTTON` intent filter, the Android Auto `<meta-data>` naming
+/// `@xml/automotive_app_desc`, and the artwork `FileProvider` (authority
+/// `<applicationId>.artwork`, not exported, granting URI permissions, with
+/// `@xml/artwork_paths`).
 List<ConfigViolation> checkAndroidManifest(String path) {
   final out = <ConfigViolation>[];
   final document = _readXml(path, out);
@@ -272,6 +277,35 @@ List<ConfigViolation> checkAndroidManifest(String path) {
         path,
         '<meta-data android:name="$carApplicationMetaData" '
         'android:resource="@xml/automotive_app_desc"/>',
+      ),
+    );
+  }
+
+  final provider = document
+      .findAllElements('provider')
+      .where((e) => attr(e, 'name') == fileProviderClass)
+      .firstOrNull;
+  final authority = provider == null ? null : attr(provider, 'authorities');
+  if (provider == null ||
+      authority == null ||
+      !(authority == r'${applicationId}.artwork' ||
+          RegExp(r'^[A-Za-z0-9_.]+\.artwork$').hasMatch(authority)) ||
+      attr(provider, 'exported') != 'false' ||
+      attr(provider, 'grantUriPermissions') != 'true' ||
+      !provider
+          .findElements('meta-data')
+          .any(
+            (e) =>
+                attr(e, 'name') == 'android.support.FILE_PROVIDER_PATHS' &&
+                attr(e, 'resource') == '@xml/artwork_paths',
+          )) {
+    out.add(
+      ConfigViolation(
+        path,
+        '<provider android:name="$fileProviderClass" '
+        r'android:authorities="${applicationId}.artwork" '
+        'android:exported="false" android:grantUriPermissions="true"> '
+        'with @xml/artwork_paths',
       ),
     );
   }

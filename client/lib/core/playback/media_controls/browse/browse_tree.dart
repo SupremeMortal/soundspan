@@ -9,7 +9,7 @@
 ///
 /// | Id | Kind | Children or action |
 /// |---|---|---|
-/// | `root` | browsable | `recent`, `playlists`, `albums` |
+/// | `root` | browsable | `recent`, `playlists`, `albums`, `downloads` |
 /// | `recent` | browsable | `recent/tracks/<index>` |
 /// | `playlists` | browsable | `playlist/<id>` |
 /// | `playlist/<id>` | browsable | `playlist/<id>/<index>` |
@@ -17,16 +17,38 @@
 /// | `album/<id>` | browsable | `album/<id>/<index>` |
 /// | `…/<index>` | playable | the whole parent list from `<index>` |
 /// | `search/<query>/<index>` | playable | the same over the search result |
+/// | `downloads` | browsable | `downloads/<kind>/<refId>`, or `…/0` for a song |
+/// | `downloads/<kind>/<refId>` | browsable | `downloads/<kind>/<refId>/<index>` |
 ///
-/// `<id>` and `<query>` are percent-encoded. Unplayable tracks (no
-/// playback id) are left out of every list, and `<index>` counts the list
-/// without them.
+/// `<id>`, `<query>` and `<refId>` are percent-encoded. Unplayable tracks
+/// (no playback id) are left out of every list, and `<index>` counts the
+/// list without them.
+///
+/// `downloads` is served from the [DownloadStore] alone, so it works with
+/// no network: a collection is listed while it has a completed track, and
+/// lists only its completed tracks, in membership order. Its covers are
+/// the pinned files, as content URIs.
 library;
 
+import 'dart:convert';
+
+import 'package:soundspan/core/downloads/download_keys.dart';
+import 'package:soundspan/core/downloads/download_store.dart';
 import 'package:soundspan/core/logging/app_logger.dart';
 import 'package:soundspan/core/playback/media_controls/browse/media_browse_source.dart';
+import 'package:soundspan/core/storage/state/enums.dart';
+import 'package:soundspan/core/storage/state/state_database.dart';
+import 'package:soundspan/platform/artwork_content_uri/artwork_content_uri.dart';
+import 'package:soundspan/shared/domain/playback_id.dart';
 import 'package:soundspan/shared/domain/queue_item.dart';
 import 'package:soundspan/shared/domain/track.dart';
+
+/// The subtitle of a download collection under `downloads`: its [kind] and
+/// how many of its items are downloaded.
+typedef DownloadsSubtitle = String Function(
+  DownloadCollectionKind kind,
+  int completed,
+);
 
 /// The localized titles of the root's children; `core` has no
 /// `BuildContext`, so the handler passes them in.
@@ -36,6 +58,8 @@ final class BrowseRootTitles {
     required this.recent,
     required this.playlists,
     required this.albums,
+    required this.downloads,
+    required this.downloadsSubtitle,
   });
 
   /// The title of `recent`.
@@ -46,6 +70,25 @@ final class BrowseRootTitles {
 
   /// The title of `albums`.
   final String albums;
+
+  /// The title of `downloads`.
+  final String downloads;
+
+  /// The subtitle of each collection under `downloads`.
+  final DownloadsSubtitle downloadsSubtitle;
+}
+
+/// What the `downloads` root reads: the profile's [store] and the content
+/// URIs of its pinned covers.
+final class DownloadsBrowse {
+  /// Creates it.
+  const new({required this.store, required this.artwork});
+
+  /// The profile's downloads.
+  final DownloadStore store;
+
+  /// The content URIs of the pinned covers.
+  final ArtworkContentUri artwork;
 }
 
 /// One entry of a browse list.
@@ -56,6 +99,9 @@ final class BrowseNode {
     required this.title,
     required this.playable,
     this.subtitle,
+    this.album,
+    this.duration,
+    this.artUri,
   });
 
   /// The media id.
@@ -69,6 +115,15 @@ final class BrowseNode {
 
   /// Whether selecting it plays; otherwise it lists children.
   final bool playable;
+
+  /// The album of a downloaded track.
+  final String? album;
+
+  /// The duration of a downloaded track.
+  final Duration? duration;
+
+  /// The cover's content URI; only downloads carry one.
+  final Uri? artUri;
 }
 
 /// What a playable media id plays: [tracks] from [startIndex], queued
@@ -94,10 +149,11 @@ final class PlayRequest {
   QueueContextKind get kind => context.kind;
 }
 
-/// The browse tree over [_source], with the root titles [_titles].
+/// The browse tree over [_source], with the root titles [_titles]; with
+/// [_downloads] the root also lists `downloads`.
 final class BrowseTree {
   /// Creates the tree.
-  new({required this._source, required this._titles});
+  new({required this._source, required this._titles, this._downloads});
 
   /// The id of the tree's root.
   static const String rootId = 'root';
@@ -109,8 +165,12 @@ final class BrowseTree {
   static final RegExp _digits = RegExp(r'^\d+$');
   static final RegExp _badEscape = RegExp('%(?![0-9A-Fa-f]{2})');
 
+  /// The id of the downloads root.
+  static const String downloadsId = 'downloads';
+
   final MediaBrowseSource _source;
   final BrowseRootTitles _titles;
+  final DownloadsBrowse? _downloads;
 
   /// The children of [parentId]; empty for an unknown or malformed id, a
   /// playable id, or a source that fails.
@@ -134,6 +194,12 @@ final class BrowseTree {
             playable: false,
           ),
           BrowseNode(id: 'albums', title: _titles.albums, playable: false),
+          if (_downloads != null)
+            BrowseNode(
+              id: downloadsId,
+              title: _titles.downloads,
+              playable: false,
+            ),
         ];
       case 'recent':
         return _trackNodes('recent/tracks', await _recent());
@@ -159,6 +225,7 @@ final class BrowseTree {
         ];
     }
     final parts = parentId.split('/');
+    if (parts.first == downloadsId) return await _downloadChildren(parts);
     if (parts.length != 2) return const [];
     final id = _decode(parts[1]);
     if (id == null) return const [];
@@ -186,6 +253,7 @@ final class BrowseTree {
 
   Future<PlayRequest?> _resolve(String mediaId) async {
     final parts = mediaId.split('/');
+    if (parts.first == downloadsId) return await _resolveDownload(parts);
     if (parts.length != 3 || !_digits.hasMatch(parts[2])) return null;
     final index = int.parse(parts[2]);
     if (parts[0] == 'recent') {
@@ -250,6 +318,201 @@ final class BrowseTree {
       _log.warning('Search failed', const {}, error, stackTrace);
       return const [];
     }
+  }
+
+  /// The children of a `downloads` id split into [parts].
+  Future<List<BrowseNode>> _downloadChildren(List<String> parts) async {
+    final downloads = _downloads;
+    if (downloads == null) return const [];
+    if (parts.length == 1) return await _downloadCollections(downloads);
+    final collection = parts.length == 3
+        ? await _downloadCollection(downloads, parts[1], parts[2])
+        : null;
+    if (collection == null) {
+      _log.info('Downloads id not understood', {'parts': parts.length});
+      return const [];
+    }
+    final prefix = parts.join('/');
+    return [
+      for (final (index, item) in collection.items.indexed)
+        _downloadTrackNode('$prefix/$index', item, downloads.artwork),
+    ];
+  }
+
+  /// One node per collection with a completed track, in request order; a
+  /// song is playable at once.
+  Future<List<BrowseNode>> _downloadCollections(
+    DownloadsBrowse downloads,
+  ) async {
+    final rows = await downloads.store.watchCollectionsWithItems().first;
+    final nodes = <BrowseNode>[];
+    for (final row in rows) {
+      final kind = _collectionKind(row.collection.kind);
+      final items = _completedTracks(row.items);
+      if (kind == null || items.isEmpty) continue;
+      final id = '$downloadsId/${kind.name}/${_encode(row.collection.refId)}';
+      final subtitle = _titles.downloadsSubtitle(kind, items.length);
+      if (kind == DownloadCollectionKind.track) {
+        final track = _downloadTrackNode(
+          '$id/0',
+          items.first,
+          downloads.artwork,
+        );
+        nodes.add(
+          BrowseNode(
+            id: track.id,
+            title: track.title,
+            subtitle: subtitle,
+            album: track.album,
+            duration: track.duration,
+            artUri: track.artUri,
+            playable: true,
+          ),
+        );
+        continue;
+      }
+      final ref =
+          _artworkRef(row.collection.metaJson) ??
+          _artworkRef(items.first.metaJson);
+      nodes.add(
+        BrowseNode(
+          id: id,
+          title: row.collection.title,
+          subtitle: subtitle,
+          artUri: ref == null ? null : downloads.artwork.forArtRef(ref),
+          playable: false,
+        ),
+      );
+    }
+    return nodes;
+  }
+
+  /// What a `downloads` id split into [parts] plays.
+  Future<PlayRequest?> _resolveDownload(List<String> parts) async {
+    final downloads = _downloads;
+    if (downloads == null) return null;
+    final collection = parts.length == 4 && _digits.hasMatch(parts[3])
+        ? await _downloadCollection(downloads, parts[1], parts[2])
+        : null;
+    final request = collection == null
+        ? null
+        : _request(
+            [for (final item in collection.items) _downloadTrack(item)],
+            int.parse(parts[3]),
+            switch (collection.kind) {
+              DownloadCollectionKind.album => QueueContext(
+                kind: QueueContextKind.album,
+                id: collection.refId,
+              ),
+              DownloadCollectionKind.playlist => QueueContext(
+                kind: QueueContextKind.playlist,
+                id: collection.refId,
+              ),
+              _ => QueueContext(
+                kind: QueueContextKind.single,
+                id: collection.refId,
+              ),
+            },
+          );
+    if (request == null) {
+      _log.info('Downloads id not played', {'parts': parts.length});
+    }
+    return request;
+  }
+
+  /// The collection of the encoded [kindName] and [encodedRefId] with its
+  /// completed tracks; null when the id is malformed or there is no such
+  /// collection.
+  Future<
+    ({DownloadCollectionKind kind, String refId, List<DownloadItem> items})?
+  >
+  _downloadCollection(
+    DownloadsBrowse downloads,
+    String kindName,
+    String encodedRefId,
+  ) async {
+    final kind = _collectionKind(kindName);
+    final refId = _decode(encodedRefId);
+    if (kind == null || refId == null) return null;
+    final row = await downloads.store
+        .watchCollectionWithItems(kind, refId)
+        .first;
+    if (row == null) return null;
+    return (kind: kind, refId: refId, items: _completedTracks(row.items));
+  }
+
+  static DownloadCollectionKind? _collectionKind(String name) {
+    for (final kind in DownloadCollectionKind.values) {
+      if (kind.name == name) return kind;
+    }
+    return null;
+  }
+
+  /// The completed track items of [items], in order. Episodes are not
+  /// played from the car yet.
+  static List<DownloadItem> _completedTracks(List<DownloadItem> items) => [
+    for (final item in items)
+      if (item.status == DownloadStatus.completed &&
+          item.itemKey.startsWith('t:'))
+        item,
+  ];
+
+  static BrowseNode _downloadTrackNode(
+    String id,
+    DownloadItem item,
+    ArtworkContentUri artwork,
+  ) {
+    final meta = _downloadTrack(item).meta;
+    final ref = meta.artworkRef;
+    return BrowseNode(
+      id: id,
+      title: meta.title,
+      subtitle: meta.artist,
+      album: meta.album,
+      duration: Duration(seconds: meta.durationSec),
+      artUri: ref == null || ref.isEmpty ? null : artwork.forArtRef(ref),
+      playable: true,
+    );
+  }
+
+  /// The track of the completed item [item], from its `metaJson` alone.
+  static Track _downloadTrack(DownloadItem item) {
+    final key = DownloadItemKey.decode(item.itemKey) as TrackItemKey;
+    final json = _decodeObject(item.metaJson);
+    TrackMeta meta;
+    try {
+      meta = TrackMeta.fromJson(json);
+    } on Object {
+      meta = const TrackMeta(title: '', artist: '', album: '', durationSec: 0);
+    }
+    final loudness = json['loudness'];
+    return Track(
+      meta: meta,
+      playbackId: PlaybackId(key.playbackId),
+      albumId: json['albumId'] as String?,
+      artistId: json['artistId'] as String?,
+      loudness: loudness is Map<String, Object?>
+          ? Loudness.fromJson(loudness)
+          : null,
+      discNumber: json['discNumber'] as int?,
+      trackNumber: json['trackNumber'] as int?,
+    );
+  }
+
+  static String? _artworkRef(String metaJson) =>
+      switch (_decodeObject(metaJson)['artworkRef']) {
+        final String ref when ref.isNotEmpty => ref,
+        _ => null,
+      };
+
+  static Map<String, Object?> _decodeObject(String json) {
+    try {
+      final decoded = jsonDecode(json);
+      if (decoded is Map<String, Object?>) return decoded;
+    } on FormatException {
+      // Not JSON: no fields.
+    }
+    return const {};
   }
 
   Future<List<Track>> _recent() async => _playable(await _source.recent());

@@ -62,6 +62,10 @@ abstract interface class MediaCommandHandler {
   /// there is none to browse.
   MediaBrowseSource? get browseSource;
 
+  /// The downloads Android Auto browses offline; null when there are none
+  /// to browse.
+  DownloadsBrowse? get browseDownloads;
+
   /// Replaces the queue with the tracks of [request] and plays from its
   /// start index.
   Future<void> playRequest(PlayRequest request);

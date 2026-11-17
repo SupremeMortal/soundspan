@@ -17,6 +17,8 @@ import 'package:soundspan/app/router/notification_taps.dart';
 import 'package:soundspan/app/shell/window_state_controller.dart';
 import 'package:soundspan/core/auth/active_profile.dart';
 import 'package:soundspan/core/downloads/download_scheduler.dart';
+import 'package:soundspan/core/downloads/download_store.dart'
+    show DownloadCollectionKind;
 import 'package:soundspan/core/logging/app_logger.dart';
 import 'package:soundspan/core/logging/console_log_sink.dart';
 import 'package:soundspan/core/playback/media_controls/browse/browse_tree.dart';
@@ -123,6 +125,16 @@ Future<void> bootstrap({
               recent: l10n.androidAutoRecent,
               playlists: l10n.androidAutoPlaylists,
               albums: l10n.androidAutoAlbums,
+              downloads: l10n.androidAutoDownloads,
+              downloadsSubtitle: (kind, completed) =>
+                  l10n.androidAutoDownloadsSubtitle(switch (kind) {
+                    DownloadCollectionKind.album => l10n.downloadsKindAlbum,
+                    DownloadCollectionKind.playlist =>
+                      l10n.downloadsKindPlaylist,
+                    DownloadCollectionKind.track => l10n.downloadsKindTrack,
+                    DownloadCollectionKind.episode =>
+                      l10n.androidAutoKindEpisode,
+                  }, completed),
             );
           }),
           keyExpiryNotificationTextProvider.overrideWith(

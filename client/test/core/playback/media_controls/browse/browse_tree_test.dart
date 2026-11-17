@@ -1,16 +1,23 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:soundspan/core/downloads/download_store.dart'
+    show DownloadCollectionKind;
 import 'package:soundspan/core/playback/media_controls/browse/browse_tree.dart';
 import 'package:soundspan/core/playback/media_controls/browse/media_browse_source.dart';
 import 'package:soundspan/shared/domain/domain.dart';
 
 import '../../../../helpers/fake_media_browse_source.dart';
 
+String _downloadsSubtitle(DownloadCollectionKind kind, int completed) =>
+    '${kind.name} · $completed';
+
 const _titles = BrowseRootTitles(
   recent: 'Recent',
   playlists: 'Playlists',
   albums: 'Albums',
+  downloads: 'Downloads',
+  downloadsSubtitle: _downloadsSubtitle,
 );
 
 const _oddPlaylistId = 'p/1 two';

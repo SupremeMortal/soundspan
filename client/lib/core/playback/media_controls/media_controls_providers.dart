@@ -5,8 +5,10 @@ import 'dart:async';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:soundspan/app/media_browse_source_impl.dart';
+import 'package:soundspan/core/downloads/download_store.dart';
 import 'package:soundspan/core/playback/media_controls/artwork_pinner.dart';
 import 'package:soundspan/core/playback/media_controls/audio_service_controls.dart';
+import 'package:soundspan/core/playback/media_controls/browse/browse_tree.dart';
 import 'package:soundspan/core/playback/media_controls/media_controls.dart';
 import 'package:soundspan/core/playback/media_controls/media_controls_binder.dart';
 import 'package:soundspan/core/playback/playback_providers.dart';
@@ -15,7 +17,9 @@ import 'package:soundspan/core/profile/profile_providers.dart';
 import 'package:soundspan/core/profile/profile_runtime.dart';
 import 'package:soundspan/core/storage/artwork_fetcher.dart';
 import 'package:soundspan/core/sync/sync_providers.dart';
+import 'package:soundspan/platform/artwork_content_uri/artwork_content_uri.dart';
 import 'package:soundspan/platform/artwork_store/artwork_store.dart';
+import 'package:soundspan/platform/capabilities/capabilities.dart';
 import 'package:soundspan/platform/media_controls/media_controls_factory.dart';
 import 'package:soundspan/shared/clock.dart';
 import 'package:soundspan/shared/providers/images.dart';
@@ -91,6 +95,29 @@ final Provider<ArtworkPinner> artworkPinnerProvider = Provider<ArtworkPinner>(
   ],
 );
 
+/// The content URIs of the profile scope's pinned covers, for Android Auto;
+/// none for a profile without files.
+final Provider<ArtworkContentUri> artworkContentUriProvider =
+    Provider<ArtworkContentUri>((ref) {
+      final paths = ref.watch(profileContextProvider).paths;
+      return paths == null
+          ? const NoArtworkContentUri()
+          : createArtworkContentUri(
+              profileId: paths.profileId,
+              artDirectory: paths.art,
+            );
+    }, dependencies: [profileContextProvider]);
+
+/// What the Android Auto Downloads root of the profile scope reads; null
+/// where the platform does not download.
+DownloadsBrowse? _downloadsBrowse(ProviderContainer profile) =>
+    profile.read(platformCapabilitiesProvider).canDownload
+    ? DownloadsBrowse(
+        store: profile.read(downloadStoreProvider),
+        artwork: profile.read(artworkContentUriProvider),
+      )
+    : null;
+
 /// After the first frame (doc 02, Bootstrap Sequence, step 8): initialises
 /// the OS media surface once, then renders the active profile's
 /// playback controller on it, rebinding whenever the active profile
@@ -125,6 +152,7 @@ Future<void> startMediaControls(ProviderContainer root) async {
                     .read(preferenceRepositoryProvider)
                     .setTrackLiked(track, liked: liked),
                 browseSource: active.read(mediaBrowseSourceProvider),
+                browseDownloads: _downloadsBrowse(active),
               ),
       ),
     );

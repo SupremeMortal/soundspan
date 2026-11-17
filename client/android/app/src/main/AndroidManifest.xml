@@ -67,6 +67,17 @@
                 <action android:name="android.intent.action.MEDIA_BUTTON"/>
             </intent-filter>
         </receiver>
+        <!-- Pinned covers as content:// URIs for Android Auto (doc 10,
+             Android Auto); read access is granted per URI. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.artwork"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/artwork_paths" />
+        </provider>
         <!-- Android Auto lists the app as a media app (doc 10, Android Auto). -->
         <meta-data
             android:name="com.google.android.gms.car.application"

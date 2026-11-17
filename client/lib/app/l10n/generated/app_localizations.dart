@@ -205,6 +205,24 @@ abstract class AppLocalizations {
   /// **'Albums'**
   String get androidAutoAlbums;
 
+  /// Title of the Android Auto browse folder listing what is downloaded to this device; it works with no connection.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloads'**
+  String get androidAutoDownloads;
+
+  /// Subtitle of a downloaded album, playlist, song or episode in the Android Auto Downloads folder: its kind and how many of its tracks are downloaded.
+  ///
+  /// In en, this message translates to:
+  /// **'{kind} · {completed}'**
+  String androidAutoDownloadsSubtitle(String kind, int completed);
+
+  /// Kind of a downloaded podcast episode, in the Android Auto Downloads folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Podcast episode'**
+  String get androidAutoKindEpisode;
+
   /// Screen name: the storage settings page.
   ///
   /// In en, this message translates to:
