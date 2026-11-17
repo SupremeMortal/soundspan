@@ -13,6 +13,7 @@ const _version = '0.1.0';
 const _expected = [
   'soundspan-0.1.0-android-unsigned.apk',
   'soundspan-0.1.0-linux-x64-unsigned.tar.gz',
+  'soundspan-0.1.0-macos-universal-unsigned.dmg',
   'soundspan-0.1.0-macos-universal-unsigned.zip',
   'soundspan-0.1.0-web.tar.gz',
   'soundspan-0.1.0-windows-x64-unsigned-setup.exe',
@@ -64,6 +65,18 @@ void main() {
       expect(sums().readAsStringSync(), '${expectedLines.join('\n')}\n');
     },
   );
+
+  test('a set without the macOS disk image fails and names it', () {
+    writeFullSet();
+    const dmg = 'soundspan-0.1.0-macos-universal-unsigned.dmg';
+    File(p.join(dir.path, dmg)).deleteSync();
+
+    final result = run(writeSums: true);
+
+    expect(result.ok, isFalse);
+    expect(result.lines, ['missing: $dmg']);
+    expect(sums().existsSync(), isFalse);
+  });
 
   test('a missing file fails and names it', () {
     writeFullSet();
@@ -170,21 +183,26 @@ void main() {
   });
 
   group('without macOS', () {
-    const macos = 'soundspan-0.1.0-macos-universal-unsigned.zip';
+    const macos = [
+      'soundspan-0.1.0-macos-universal-unsigned.dmg',
+      'soundspan-0.1.0-macos-universal-unsigned.zip',
+    ];
 
     void writeSetWithoutMacos() {
       writeFullSet();
-      File(p.join(dir.path, macos)).deleteSync();
+      for (final name in macos) {
+        File(p.join(dir.path, name)).deleteSync();
+      }
     }
 
-    test('expected names leave out the macOS zip', () {
-      expect(
-        expectedArtifactNames(_version, macos: false)..sort(),
-        [..._expected]..remove(macos),
-      );
+    test('expected names leave out the macOS zip and disk image', () {
+      expect(expectedArtifactNames(_version, macos: false)..sort(), [
+        for (final name in _expected)
+          if (!macos.contains(name)) name,
+      ]);
     });
 
-    test('the set without the macOS zip passes and is summed', () {
+    test('the set without the macOS files passes and is summed', () {
       writeSetWithoutMacos();
 
       final result = checkArtifacts(
@@ -195,10 +213,12 @@ void main() {
       );
 
       expect(result.ok, isTrue, reason: result.lines.join('\n'));
-      expect(sums().readAsStringSync(), isNot(contains(macos)));
+      for (final name in macos) {
+        expect(sums().readAsStringSync(), isNot(contains(name)));
+      }
     });
 
-    test('a macOS zip that is present fails as unexpected', () {
+    test('macOS files that are present fail as unexpected', () {
       writeFullSet();
 
       final result = checkArtifacts(
@@ -209,16 +229,16 @@ void main() {
       );
 
       expect(result.ok, isFalse);
-      expect(result.lines, contains('unexpected: $macos'));
+      expect(result.lines, [for (final name in macos) 'unexpected: $name']);
     });
 
-    test('the default still requires the macOS zip', () {
+    test('the default still requires both macOS files', () {
       writeSetWithoutMacos();
 
       final result = run(writeSums: true);
 
       expect(result.ok, isFalse);
-      expect(result.lines, contains('missing: $macos'));
+      expect(result.lines, [for (final name in macos) 'missing: $name']);
     });
   });
 }

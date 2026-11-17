@@ -136,6 +136,10 @@ void main() {
       expect(notes, contains('unsigned test builds'));
       expect(notes, contains('SmartScreen'));
       expect(notes, contains('macOS'));
+      expect(
+        notes,
+        contains('System Settings → Privacy & Security → Open Anyway'),
+      );
       expect(notes, contains('debug'));
       expect(notes, contains('uninstall'));
       expect(notes, contains('no iOS build'));

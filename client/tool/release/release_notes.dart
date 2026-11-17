@@ -73,11 +73,12 @@ String releaseNotes({
   final unsigned =
       'These are unsigned test builds of the soundspan client $version. '
       'Windows SmartScreen and macOS ask for confirmation before they '
-      'open them. The Android build is debug-signed: uninstall it, which '
-      'removes its data, before installing a later signed build. There is '
-      'no iOS build. The Windows MSIX package is unsigned and installs only '
-      'where unsigned packages are allowed; most users should use the '
-      'Windows setup program.';
+      'open them; on macOS, approve the app in System Settings → Privacy & '
+      'Security → Open Anyway. The Android build is debug-signed: '
+      'uninstall it, which removes its data, before installing a later '
+      'signed build. There is no iOS build. The Windows MSIX package is '
+      'unsigned and installs only where unsigned packages are allowed; most '
+      'users should use the Windows setup program.';
   final verify =
       'Verify downloads against `SHA256SUMS` with '
       '`sha256sum --check SHA256SUMS`, and their build provenance with '

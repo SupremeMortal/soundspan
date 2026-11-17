@@ -104,6 +104,8 @@ Window: closing the window hides it and playback continues (standard macOS behav
 
 Distribution: `.app` in a `.dmg`, Developer ID signed and notarised (`notarytool`), stapled. Homebrew cask after the first signed release.
 
+Unsigned builds: `macos/packaging/make_dmg.sh <app> <version> <output dir>` checks that the executable is universal, re-signs the app ad hoc, inside out (dylibs and frameworks, then helper bundles and the app), with the hardened runtime, and packs it with an `/Applications` symlink into a compressed, read-only image (`hdiutil create -volname soundspan -format UDZO`): `soundspan-<version>-macos-universal-unsigned.dmg`. The app and helpers are signed with the release entitlements, `Release.entitlements` as Xcode expanded it into the built app, `keychain-access-groups` included. An ad-hoc signature has no team identifier, so if an ad-hoc app with that restricted entitlement does not launch, unsigned builds switch to an `AdHoc.entitlements` without it, and credentials may then not persist between launches. macOS opens the image's app only after the user approves it in System Settings → Privacy & Security → Open Anyway.
+
 ## Windows
 
 **Minimum Windows 10 1809. x64; arm64 when the pinned Flutter supports it as a release target.**

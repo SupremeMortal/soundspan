@@ -8,9 +8,12 @@ import 'package:path/path.dart' as p;
 /// The name of the checksum file written beside the release artifacts.
 const sumsFileName = 'SHA256SUMS';
 
-/// The macOS artifact, with `{version}` standing for the version.
-const macosArtifactNameTemplate =
-    'soundspan-{version}-macos-universal-unsigned.zip';
+/// The macOS artifacts, with `{version}` standing for the version: the
+/// zipped app and the disk image holding it.
+const List<String> macosArtifactNameTemplates = [
+  'soundspan-{version}-macos-universal-unsigned.zip',
+  'soundspan-{version}-macos-universal-unsigned.dmg',
+];
 
 /// Every release artifact, with `{version}` standing for the version.
 ///
@@ -21,17 +24,17 @@ const List<String> artifactNameTemplates = [
   'soundspan-{version}-windows-x64-unsigned.zip',
   'soundspan-{version}-windows-x64-unsigned.msix',
   'soundspan-{version}-windows-x64-unsigned-setup.exe',
-  macosArtifactNameTemplate,
+  ...macosArtifactNameTemplates,
   'soundspan-{version}-web.tar.gz',
 ];
 
 /// The expected artifact file names for [version].
 ///
-/// With [macos] false the macOS artifact is left out, for a build that
+/// With [macos] false the macOS artifacts are left out, for a build that
 /// skipped the macOS job.
 List<String> expectedArtifactNames(String version, {bool macos = true}) => [
   for (final template in artifactNameTemplates)
-    if (macos || template != macosArtifactNameTemplate)
+    if (macos || !macosArtifactNameTemplates.contains(template))
       template.replaceAll('{version}', version),
 ];
 
@@ -54,7 +57,7 @@ class ArtifactCheck {
 /// or a file is empty. With [writeSums] it then writes `SHA256SUMS` in
 /// `sha256sum` format, sorted by file name; without it, it verifies an
 /// existing `SHA256SUMS` against the files. With [macos] false the macOS
-/// artifact is not expected (see [expectedArtifactNames]).
+/// artifacts are not expected (see [expectedArtifactNames]).
 ArtifactCheck checkArtifacts({
   required Directory dir,
   required String version,
