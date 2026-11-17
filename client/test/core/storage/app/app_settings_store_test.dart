@@ -25,7 +25,7 @@ void main() {
     expect(await AppSettingsStore(db).read(key), value, reason: key.name);
   }
 
-  test('the six keys are exactly the documented ones', () {
+  test('the keys are exactly the documented ones', () {
     expect(AppSettingKeys.all.map((k) => k.name), [
       'activeProfileId',
       'themeMode',
@@ -33,6 +33,9 @@ void main() {
       'window.bounds',
       'window.maximized',
       'closeToTray',
+      'update.check',
+      'update.lastCheckedAt',
+      'update.dismissedVersion',
     ]);
   });
 
@@ -47,6 +50,16 @@ void main() {
     );
     await roundTrip(AppSettingKeys.windowMaximized, true);
     await roundTrip(AppSettingKeys.closeToTray, false);
+    await roundTrip(AppSettingKeys.updateCheck, false);
+    await roundTrip(
+      AppSettingKeys.updateLastCheckedAt,
+      DateTime.utc(2026, 11, 17, 18, 30),
+    );
+    await roundTrip(AppSettingKeys.updateDismissedVersion, '0.2.0');
+  });
+
+  test('the update check is on when not set', () async {
+    expect(await store.read(AppSettingKeys.updateCheck), isTrue);
   });
 
   test('values are stored JSON-encoded under the key name', () async {

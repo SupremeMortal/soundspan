@@ -32,6 +32,7 @@ final class PlatformCapabilities {
     required this.allowsPublicCleartextHttp,
     required this.hasMobileData,
     required this.hasSystemRoutePicker,
+    required this.hasUpdateNotice,
   });
 
   /// The capabilities of the native app on [platform] (doc 10).
@@ -53,6 +54,7 @@ final class PlatformCapabilities {
     allowsPublicCleartextHttp: true,
     hasMobileData: true,
     hasSystemRoutePicker: false,
+    hasUpdateNotice: false,
   );
 
   /// iOS; App Transport Security blocks public `http://` servers.
@@ -66,6 +68,7 @@ final class PlatformCapabilities {
     allowsPublicCleartextHttp: false,
     hasMobileData: true,
     hasSystemRoutePicker: true,
+    hasUpdateNotice: false,
   );
 
   /// macOS; closing the window keeps the app in the Dock, so there is no
@@ -80,6 +83,7 @@ final class PlatformCapabilities {
     allowsPublicCleartextHttp: false,
     hasMobileData: false,
     hasSystemRoutePicker: false,
+    hasUpdateNotice: true,
   );
 
   /// Windows and Linux; no camera QR scanner.
@@ -93,6 +97,7 @@ final class PlatformCapabilities {
     allowsPublicCleartextHttp: true,
     hasMobileData: false,
     hasSystemRoutePicker: false,
+    hasUpdateNotice: true,
   );
 
   /// The web app: no downloads, and streams carry a JWT in `?token=`, which
@@ -107,6 +112,7 @@ final class PlatformCapabilities {
     allowsPublicCleartextHttp: true,
     hasMobileData: false,
     hasSystemRoutePicker: false,
+    hasUpdateNotice: false,
   );
 
   /// Tracks and episodes can be downloaded for offline use.
@@ -139,6 +145,11 @@ final class PlatformCapabilities {
   /// embeds (`AVRoutePickerView` for AirPlay on iOS, doc 10).
   final bool hasSystemRoutePicker;
 
+  /// The app checks GitHub for a newer client release and tells the user
+  /// (doc 10, Update Notice): on Windows, macOS and Linux. The store or the
+  /// host updates the app elsewhere.
+  final bool hasUpdateNotice;
+
   /// These capabilities with [hasTray] off.
   PlatformCapabilities withoutTray() => PlatformCapabilities(
     canDownload: canDownload,
@@ -150,6 +161,7 @@ final class PlatformCapabilities {
     allowsPublicCleartextHttp: allowsPublicCleartextHttp,
     hasMobileData: hasMobileData,
     hasSystemRoutePicker: hasSystemRoutePicker,
+    hasUpdateNotice: hasUpdateNotice,
   );
 
   @override
@@ -163,7 +175,8 @@ final class PlatformCapabilities {
       other.isDesktop == isDesktop &&
       other.allowsPublicCleartextHttp == allowsPublicCleartextHttp &&
       other.hasMobileData == hasMobileData &&
-      other.hasSystemRoutePicker == hasSystemRoutePicker;
+      other.hasSystemRoutePicker == hasSystemRoutePicker &&
+      other.hasUpdateNotice == hasUpdateNotice;
 
   @override
   int get hashCode => Object.hash(
@@ -176,6 +189,7 @@ final class PlatformCapabilities {
     allowsPublicCleartextHttp,
     hasMobileData,
     hasSystemRoutePicker,
+    hasUpdateNotice,
   );
 
   @override
@@ -187,7 +201,8 @@ final class PlatformCapabilities {
       'isDesktop: $isDesktop, '
       'allowsPublicCleartextHttp: $allowsPublicCleartextHttp, '
       'hasMobileData: $hasMobileData, '
-      'hasSystemRoutePicker: $hasSystemRoutePicker)';
+      'hasSystemRoutePicker: $hasSystemRoutePicker, '
+      'hasUpdateNotice: $hasUpdateNotice)';
 }
 
 /// Whether the tray icon could be created: true until the desktop shell's

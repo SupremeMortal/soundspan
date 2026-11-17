@@ -2341,6 +2341,29 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsCloseToTrayUnavailable => 'No system tray was found';
 
   @override
+  String get settingsUpdateCheck => 'Check for new versions';
+
+  @override
+  String get settingsUpdateCheckCaption =>
+      'Asks GitHub for the list of soundspan releases once a day.';
+
+  @override
+  String updateBannerMessage(String version) {
+    return 'soundspan $version is available';
+  }
+
+  @override
+  String get updateViewRelease => 'View release';
+
+  @override
+  String settingsAboutUpdateAvailable(String version) {
+    return 'Version $version is available';
+  }
+
+  @override
+  String get settingsAboutCheckNow => 'Check now';
+
+  @override
   String get closeKeepPlayingTitle => 'Keep playing in the background?';
 
   @override
@@ -4816,6 +4839,29 @@ class AppLocalizationsEnXa extends AppLocalizationsEn {
   @override
   String get settingsCloseToTrayUnavailable =>
       '[Ñö šýšţém ţŕåý ŵåš föûñð one two three]';
+
+  @override
+  String get settingsUpdateCheck => '[Çĥéçķ föŕ ñéŵ véŕšîöñš one two three]';
+
+  @override
+  String get settingsUpdateCheckCaption =>
+      '[Åšķš ĜîţĤûb föŕ ţĥé ļîšţ öf šöûñðšþåñ ŕéļéåšéš öñçé å ðåý. one two three four five]';
+
+  @override
+  String updateBannerMessage(String version) {
+    return '[šöûñðšþåñ $version îš åvåîļåbļé one two three]';
+  }
+
+  @override
+  String get updateViewRelease => '[Vîéŵ ŕéļéåšé one two]';
+
+  @override
+  String settingsAboutUpdateAvailable(String version) {
+    return '[Véŕšîöñ $version îš åvåîļåbļé one two three]';
+  }
+
+  @override
+  String get settingsAboutCheckNow => '[Çĥéçķ ñöŵ one]';
 
   @override
   String get closeKeepPlayingTitle =>

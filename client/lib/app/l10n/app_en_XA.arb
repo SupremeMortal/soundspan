@@ -3189,6 +3189,42 @@
   "@settingsCloseToTrayUnavailable": {
     "description": "Explanation under the disabled Close to tray switch when the desktop has no system tray."
   },
+  "settingsUpdateCheck": "[Çĥéçķ föŕ ñéŵ véŕšîöñš one two three]",
+  "@settingsUpdateCheck": {
+    "description": "Switch in Settings → Desktop: the desktop app asks GitHub once a day whether a newer soundspan client release exists."
+  },
+  "settingsUpdateCheckCaption": "[Åšķš ĜîţĤûb föŕ ţĥé ļîšţ öf šöûñðšþåñ ŕéļéåšéš öñçé å ðåý. one two three four five]",
+  "@settingsUpdateCheckCaption": {
+    "description": "Caption under the Check for new versions switch in Settings → Desktop."
+  },
+  "updateBannerMessage": "[šöûñðšþåñ {version} îš åvåîļåbļé one two three]",
+  "@updateBannerMessage": {
+    "description": "Notice at the top of the desktop app when a newer client release exists.",
+    "placeholders": {
+      "version": {
+        "type": "String",
+        "example": "0.2.0"
+      }
+    }
+  },
+  "updateViewRelease": "[Vîéŵ ŕéļéåšé one two]",
+  "@updateViewRelease": {
+    "description": "Button of the update notice and of Settings → About that opens the newer release's page on GitHub in the browser."
+  },
+  "settingsAboutUpdateAvailable": "[Véŕšîöñ {version} îš åvåîļåbļé one two three]",
+  "@settingsAboutUpdateAvailable": {
+    "description": "Row in Settings → About when a newer client release exists.",
+    "placeholders": {
+      "version": {
+        "type": "String",
+        "example": "0.2.0"
+      }
+    }
+  },
+  "settingsAboutCheckNow": "[Çĥéçķ ñöŵ one]",
+  "@settingsAboutCheckNow": {
+    "description": "Row in Settings → About that checks at once whether a newer client release exists."
+  },
   "closeKeepPlayingTitle": "[Ķééþ þļåýîñĝ îñ ţĥé båçķĝŕöûñð? one two three]",
   "@closeKeepPlayingTitle": {
     "description": "Question asked when the window is closed while something plays and the desktop has no system tray."

@@ -3897,6 +3897,42 @@ abstract class AppLocalizations {
   /// **'No system tray was found'**
   String get settingsCloseToTrayUnavailable;
 
+  /// Switch in Settings → Desktop: the desktop app asks GitHub once a day whether a newer soundspan client release exists.
+  ///
+  /// In en, this message translates to:
+  /// **'Check for new versions'**
+  String get settingsUpdateCheck;
+
+  /// Caption under the Check for new versions switch in Settings → Desktop.
+  ///
+  /// In en, this message translates to:
+  /// **'Asks GitHub for the list of soundspan releases once a day.'**
+  String get settingsUpdateCheckCaption;
+
+  /// Notice at the top of the desktop app when a newer client release exists.
+  ///
+  /// In en, this message translates to:
+  /// **'soundspan {version} is available'**
+  String updateBannerMessage(String version);
+
+  /// Button of the update notice and of Settings → About that opens the newer release's page on GitHub in the browser.
+  ///
+  /// In en, this message translates to:
+  /// **'View release'**
+  String get updateViewRelease;
+
+  /// Row in Settings → About when a newer client release exists.
+  ///
+  /// In en, this message translates to:
+  /// **'Version {version} is available'**
+  String settingsAboutUpdateAvailable(String version);
+
+  /// Row in Settings → About that checks at once whether a newer client release exists.
+  ///
+  /// In en, this message translates to:
+  /// **'Check now'**
+  String get settingsAboutCheckNow;
+
   /// Question asked when the window is closed while something plays and the desktop has no system tray.
   ///
   /// In en, this message translates to:

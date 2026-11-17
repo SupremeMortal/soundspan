@@ -17,6 +17,9 @@ enum AppBannerKind {
   /// A notice about the server, such as "newer than tested" or "version
   /// unknown"; neutral.
   serverNotice,
+
+  /// A newer client release exists (desktop update notice); neutral.
+  update,
 }
 
 /// An inline, full-width notice at the top of a screen (doc 09, Components;
@@ -60,6 +63,10 @@ class AppBanner extends StatelessWidget {
       AppBannerKind.linkExpiring => (Icons.schedule_rounded, colors.warning),
       AppBannerKind.serverNotice => (
         Icons.info_outline_rounded,
+        colors.contentSecondary,
+      ),
+      AppBannerKind.update => (
+        Icons.new_releases_outlined,
         colors.contentSecondary,
       ),
     };

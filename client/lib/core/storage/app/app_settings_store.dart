@@ -130,6 +130,29 @@ abstract final class AppSettingKeys {
     fromJson: _bool,
   );
 
+  /// Whether the desktop app checks for a newer client release; on when
+  /// not set.
+  static const updateCheck = AppSettingKey<bool>._(
+    'update.check',
+    toJson: _identity,
+    fromJson: _bool,
+    defaultValue: true,
+  );
+
+  /// When the desktop app last checked for a newer client release.
+  static const updateLastCheckedAt = AppSettingKey<DateTime>._(
+    'update.lastCheckedAt',
+    toJson: _timeToJson,
+    fromJson: _timeFromJson,
+  );
+
+  /// The client version whose update notice the user dismissed.
+  static const updateDismissedVersion = AppSettingKey<String>._(
+    'update.dismissedVersion',
+    toJson: _identity,
+    fromJson: _string,
+  );
+
   /// Every key, in the order doc 05 lists them.
   static const List<AppSettingKey<Object>> all = [
     activeProfileId,
@@ -138,12 +161,18 @@ abstract final class AppSettingKeys {
     windowBounds,
     windowMaximized,
     closeToTray,
+    updateCheck,
+    updateLastCheckedAt,
+    updateDismissedVersion,
   ];
 
   static Object? _identity(Object value) => value;
   static String? _string(Object? json) => json is String ? json : null;
   static bool? _bool(Object? json) => json is bool ? json : null;
   static Object? _enumName(Enum value) => value.name;
+  static Object? _timeToJson(DateTime time) => time.toUtc().toIso8601String();
+  static DateTime? _timeFromJson(Object? json) =>
+      json is String ? DateTime.tryParse(json)?.toUtc() : null;
 
   static ThemeModeSetting? _themeMode(Object? json) {
     for (final mode in ThemeModeSetting.values) {

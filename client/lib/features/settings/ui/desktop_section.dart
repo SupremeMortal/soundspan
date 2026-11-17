@@ -13,10 +13,12 @@ import 'package:soundspan/app/theme/extensions.dart';
 import 'package:soundspan/app/theme/typography.dart';
 import 'package:soundspan/core/storage/app/app_settings_store.dart';
 import 'package:soundspan/core/storage/providers.dart';
+import 'package:soundspan/core/update/update_checker.dart';
 import 'package:soundspan/platform/capabilities/capabilities.dart';
 
-/// Settings → Desktop: the Close to tray switch on Windows and Linux, then
-/// the keyboard shortcuts, one line per [ShortcutBinding] with the keys
+/// Settings → Desktop: the Close to tray switch on Windows and Linux, the
+/// Check for new versions switch where the update check runs, then the
+/// keyboard shortcuts, one line per [ShortcutBinding] with the keys
 /// named for this platform (doc 09, Settings).
 ///
 /// Without a system tray the switch is disabled and says so; macOS, where
@@ -28,6 +30,9 @@ class DesktopSection extends ConsumerWidget {
 
   /// The key of the Close to tray switch.
   static const Key closeToTrayKey = ValueKey<String>('settings.closeToTray');
+
+  /// The key of the Check for new versions switch.
+  static const Key updateCheckKey = ValueKey<String>('settings.updateCheck');
 
   /// The key of the line of [binding].
   static Key lineKey(ShortcutBinding binding) => ValueKey<String>(
@@ -64,6 +69,18 @@ class DesktopSection extends ConsumerWidget {
                         .write(AppSettingKeys.closeToTray, value),
                   )
                 : null,
+          ),
+        if (ref.watch(updateCheckSupportedProvider))
+          SwitchListTile(
+            key: updateCheckKey,
+            title: Text(l10n.settingsUpdateCheck),
+            subtitle: Text(l10n.settingsUpdateCheckCaption),
+            value: ref.watch(updateCheckSettingProvider).value ?? true,
+            onChanged: (value) => unawaited(
+              ref
+                  .read(appSettingsProvider)
+                  .write(AppSettingKeys.updateCheck, value),
+            ),
           ),
         Padding(
           padding: const EdgeInsets.fromLTRB(

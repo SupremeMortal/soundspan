@@ -128,6 +128,7 @@ jobs:
           flutter build linux --release
           --build-name "$VERSION" --build-number "$BUILD_NUMBER"
           --dart-define-from-file=config/release.json
+          --dart-define=RELEASE_REPOSITORY="$GITHUB_REPOSITORY"
 
       - name: Every shared library resolves
         working-directory: client
@@ -283,6 +284,7 @@ jobs:
           flutter build windows --release
           --build-name "$VERSION" --build-number "$BUILD_NUMBER"
           --dart-define-from-file=config/release.json
+          --dart-define=RELEASE_REPOSITORY="$GITHUB_REPOSITORY"
 
       - name: Single instance
         working-directory: client
@@ -419,6 +421,7 @@ jobs:
           flutter build macos --release
           --build-name "$VERSION" --build-number "$BUILD_NUMBER"
           --dart-define-from-file=config/release.json
+          --dart-define=RELEASE_REPOSITORY="$GITHUB_REPOSITORY"
 
       # Re-signs the app ad hoc with the hardened runtime and the release
       # entitlements, then packs it with an /Applications symlink; the zip

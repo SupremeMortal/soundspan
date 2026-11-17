@@ -14,6 +14,7 @@ import 'package:soundspan/app/shell/shortcuts/shell_focus_groups.dart';
 import 'package:soundspan/app/shell/shortcuts/shell_shortcuts.dart';
 import 'package:soundspan/app/shell/sidebar_playlists.dart';
 import 'package:soundspan/app/shell/top_bar.dart';
+import 'package:soundspan/app/shell/update_banner.dart';
 import 'package:soundspan/app/shell/window_class.dart';
 import 'package:soundspan/features/listen_together/listen_together.dart';
 import 'package:soundspan/features/player/player.dart';
@@ -24,7 +25,8 @@ import 'package:soundspan/features/social/social.dart';
 /// the [SidebarPlaylists] under the expanded sidebar's destinations, the
 /// player slots, the [QueuePanel], [LyricsPanel] or [ActivityPanel] in the
 /// right panel as [rightPanelProvider] says, and the [NowPlayingOverlay]
-/// over the content while [nowPlayingOverlayProvider] is set.
+/// over the content while [nowPlayingOverlayProvider] is set. The
+/// [UpdateBanner] sits at the top of the content on every window class.
 ///
 /// On compact windows the avatar sits in each branch root's app bar, which
 /// the branch screens build.
@@ -152,7 +154,12 @@ class _AppShellState extends ConsumerState<AppShell> {
       contentOverlay: ref.watch(nowPlayingOverlayProvider)
           ? const NowPlayingOverlay()
           : null,
-      child: widget.child,
+      child: Column(
+        children: [
+          const UpdateBanner(),
+          Expanded(child: widget.child),
+        ],
+      ),
     ),
   );
 }

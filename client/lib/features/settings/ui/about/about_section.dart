@@ -12,13 +12,16 @@ import 'package:soundspan/app/theme/dimens.dart';
 import 'package:soundspan/core/logging/app_logger.dart';
 import 'package:soundspan/core/profile/profile_scope.dart';
 import 'package:soundspan/core/sync/outbox/outbox.dart';
+import 'package:soundspan/core/update/update_checker.dart';
 import 'package:soundspan/platform/log_export/log_export.dart';
+import 'package:soundspan/platform/url_opener/url_opener.dart';
 import 'package:soundspan/shared/providers/package_info.dart';
 
 final AppLogger _log = AppLogger.scope('Settings');
 
-/// Settings → About: the app's version, the active profile's pending
-/// changes, the log export and the row that opens the open-source licences.
+/// Settings → About: the app's version, the update rows of desktop
+/// builds, the active profile's pending changes, the log export and the
+/// row that opens the open-source licences.
 class AboutSection extends StatelessWidget {
   /// Creates the section.
   const new({super.key});
@@ -28,6 +31,7 @@ class AboutSection extends StatelessWidget {
     padding: const EdgeInsets.symmetric(vertical: Spacing.x8),
     children: [
       const VersionTile(),
+      const UpdateTiles(),
       const ProfileScope(child: PendingChangesTile()),
       const ExportLogsTile(),
       ListTile(
@@ -91,6 +95,67 @@ class VersionTile extends ConsumerWidget {
               ),
       ),
       minTileHeight: Sizes.touchTarget,
+    );
+  }
+}
+
+/// The update rows under the version where the update check runs (doc 10,
+/// Update Notice): "Version `<v>` is available" with "View release" when a
+/// newer release is known, whether or not its banner was dismissed, and
+/// "Check now", which checks at once.
+class UpdateTiles extends ConsumerStatefulWidget {
+  /// Creates the rows.
+  const new({super.key});
+
+  @override
+  ConsumerState<UpdateTiles> createState() => _UpdateTilesState();
+}
+
+class _UpdateTilesState extends ConsumerState<UpdateTiles> {
+  bool _checking = false;
+
+  Future<void> _checkNow() async {
+    setState(() => _checking = true);
+    await ref.read(updateCheckerProvider.notifier).check(force: true);
+    if (mounted) setState(() => _checking = false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!ref.watch(updateCheckSupportedProvider) ||
+        ref.watch(updateCheckSettingProvider).value != true) {
+      return const SizedBox.shrink();
+    }
+    final l10n = AppLocalizations.of(context);
+    final update = ref.watch(updateCheckerProvider);
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (update case UpdateAvailable(:final version, :final htmlUrl))
+          ListTile(
+            leading: const Icon(Icons.new_releases_outlined),
+            title: Text(l10n.settingsAboutUpdateAvailable(version)),
+            minTileHeight: Sizes.touchTarget,
+            trailing: TextButton(
+              onPressed: () =>
+                  unawaited(ref.read(urlOpenerProvider).open(htmlUrl)),
+              child: Text(l10n.updateViewRelease),
+            ),
+          ),
+        ListTile(
+          leading: const Icon(Icons.refresh_rounded),
+          title: Text(l10n.settingsAboutCheckNow),
+          minTileHeight: Sizes.touchTarget,
+          enabled: !_checking,
+          trailing: _checking
+              ? const SizedBox.square(
+                  dimension: Spacing.x24,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : null,
+          onTap: _checking ? null : () => unawaited(_checkNow()),
+        ),
+      ],
     );
   }
 }

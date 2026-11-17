@@ -3004,6 +3004,42 @@
   "@settingsCloseToTrayUnavailable": {
     "description": "Explanation under the disabled Close to tray switch when the desktop has no system tray."
   },
+  "settingsUpdateCheck": "Check for new versions",
+  "@settingsUpdateCheck": {
+    "description": "Switch in Settings → Desktop: the desktop app asks GitHub once a day whether a newer soundspan client release exists."
+  },
+  "settingsUpdateCheckCaption": "Asks GitHub for the list of soundspan releases once a day.",
+  "@settingsUpdateCheckCaption": {
+    "description": "Caption under the Check for new versions switch in Settings → Desktop."
+  },
+  "updateBannerMessage": "soundspan {version} is available",
+  "@updateBannerMessage": {
+    "description": "Notice at the top of the desktop app when a newer client release exists.",
+    "placeholders": {
+      "version": {
+        "type": "String",
+        "example": "0.2.0"
+      }
+    }
+  },
+  "updateViewRelease": "View release",
+  "@updateViewRelease": {
+    "description": "Button of the update notice and of Settings → About that opens the newer release's page on GitHub in the browser."
+  },
+  "settingsAboutUpdateAvailable": "Version {version} is available",
+  "@settingsAboutUpdateAvailable": {
+    "description": "Row in Settings → About when a newer client release exists.",
+    "placeholders": {
+      "version": {
+        "type": "String",
+        "example": "0.2.0"
+      }
+    }
+  },
+  "settingsAboutCheckNow": "Check now",
+  "@settingsAboutCheckNow": {
+    "description": "Row in Settings → About that checks at once whether a newer client release exists."
+  },
   "closeKeepPlayingTitle": "Keep playing in the background?",
   "@closeKeepPlayingTitle": {
     "description": "Question asked when the window is closed while something plays and the desktop has no system tray."

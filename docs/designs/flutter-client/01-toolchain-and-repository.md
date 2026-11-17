@@ -140,6 +140,7 @@ dependencies:
   package_info_plus: ^10.2.0
   path: ^1.9.0
   path_provider: ^2.1.6
+  pub_semver: ^2.2.0             # Client release versions (update notice)
   riverpod_annotation: ^4.0.0
   screen_retriever: ^0.4.0       # Displays, for window-bounds restore
   share_plus: ^13.3.1            # Share sheet of the mobile log export
@@ -301,7 +302,7 @@ The client is published by the upstream soundspan project under the soundspan na
 | `client/config/dev.json` | Local runs | `{"CHANNEL":"dev"}` |
 | `client/config/release.json` | Release workflow | `{"CHANNEL":"stable"}` |
 
-`lib/app/build_config.dart` exposes them as typed `const` values (`BuildConfig.channel`, `BuildConfig.minServer`, `BuildConfig.maxTestedServer`). `minServer` and `maxTestedServer` are Dart constants in source, not defines, because they describe what the code was tested against.
+`lib/app/build_config.dart` exposes them as typed `const` values (`BuildConfig.channel`, `BuildConfig.minServer`, `BuildConfig.maxTestedServer`). `BuildConfig.releaseRepository` (`owner/name`, empty by default) comes from `--dart-define=RELEASE_REPOSITORY`, which `client-build.yml` passes to the Windows, macOS and Linux builds from the workflow's `github.repository`; it names the repository whose releases the desktop update notice checks ([10](10-platform-integration.md#update-notice)). `minServer` and `maxTestedServer` are Dart constants in source, not defines, because they describe what the code was tested against.
 
 ## Changes to the Repository Contract
 

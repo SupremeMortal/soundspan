@@ -69,7 +69,7 @@ class AppSettings extends Table {            // key/value
 }
 ```
 
-App settings keys: `activeProfileId`, `themeMode` (`system|dark|light`), `locale`, `window.bounds`, `window.maximized`, `closeToTray`.
+App settings keys: `activeProfileId`, `themeMode` (`system|dark|light`), `locale`, `window.bounds`, `window.maximized`, `closeToTray`, `update.check` (on when not set), `update.lastCheckedAt`, `update.dismissedVersion` (the desktop update notice, [10](10-platform-integration.md#update-notice)).
 
 ## `StateDatabase` (`state.db`)
 
