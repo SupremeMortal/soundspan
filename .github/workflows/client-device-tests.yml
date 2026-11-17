@@ -1,17 +1,30 @@
 name: Client Device Tests
 
 # Device tests of the Flutter client (docs/designs/flutter-client/11-testing-and-ci.md,
-# CI Workflows). Called by client-quality.yml when the engines, the engine
-# factory, integration_test/ or this workflow changed. Every job runs
+# CI Workflows). Called by client-quality.yml for the engine suite when the
+# engines, the engine factory, integration_test/ or this workflow changed,
+# and for the desktop suite when the desktop paths changed; called by
+# client-nightly.yml with both.
+#
+# The engine suite: every engine-conformance job runs
 # integration_test/engine_conformance_test.dart against the real
 # PlayerEngine of one target (an Android emulator, an iOS simulator, macOS,
 # headless Chrome, Linux and Windows) with tones from the in-process (web: a
-# separate process) tone server. Every job then runs
+# separate process) tone server, then
 # integration_test/media_controls_smoke_test.dart against the platform's OS
 # media controls (audio_service; MPRIS on Linux; SMTC on Windows).
+#
+# The desktop suite: every desktop-integration job runs the real app from
+# integration_test/desktop/ against an in-process API server (shell,
+# playback with the real engine, media controls) on Linux, Windows and macOS.
 
 on:
   workflow_call:
+    inputs:
+      suites:
+        description: "The job groups to run: engine, desktop or all."
+        type: string
+        default: all
 
 permissions:
   contents: read
@@ -19,6 +32,7 @@ permissions:
 jobs:
   engine-conformance-android:
     name: engine-conformance-android
+    if: inputs.suites != 'desktop'
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
@@ -83,11 +97,12 @@ jobs:
             flutter test integration_test/engine_conformance_test.dart -d emulator-5554
             flutter test integration_test/media_controls_smoke_test.dart -d emulator-5554
 
-  # The iOS and macOS jobs run only when the repository variable
-  # CLIENT_MACOS_CI is 'true', because macOS runners are slow to start.
+  # The iOS and macOS jobs, and desktop-integration-macos, run only when the
+  # repository variable CLIENT_MACOS_CI is 'true', because macOS runners are
+  # slow to start.
   engine-conformance-ios:
     name: engine-conformance-ios
-    if: vars.CLIENT_MACOS_CI == 'true'
+    if: inputs.suites != 'desktop' && vars.CLIENT_MACOS_CI == 'true'
     runs-on: macos-latest
     timeout-minutes: 60
     steps:
@@ -124,7 +139,7 @@ jobs:
 
   engine-conformance-macos:
     name: engine-conformance-macos
-    if: vars.CLIENT_MACOS_CI == 'true'
+    if: inputs.suites != 'desktop' && vars.CLIENT_MACOS_CI == 'true'
     runs-on: macos-latest
     timeout-minutes: 60
     steps:
@@ -153,6 +168,7 @@ jobs:
 
   engine-conformance-web:
     name: engine-conformance-web
+    if: inputs.suites != 'desktop'
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
@@ -211,6 +227,7 @@ jobs:
 
   engine-conformance-linux:
     name: engine-conformance-linux
+    if: inputs.suites != 'desktop'
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
@@ -282,6 +299,7 @@ jobs:
 
   engine-conformance-windows:
     name: engine-conformance-windows
+    if: inputs.suites != 'desktop'
     runs-on: windows-latest
     timeout-minutes: 45
     steps:
@@ -306,3 +324,208 @@ jobs:
         working-directory: client
         timeout-minutes: 15
         run: flutter test integration_test/media_controls_smoke_test.dart -d windows
+
+  # The real app under Xvfb with openbox, a D-Bus session bus and a
+  # PulseAudio null sink, which the harness gives mpv as its output (doc 06).
+  desktop-integration-linux:
+    name: desktop-integration-linux
+    if: inputs.suites != 'engine'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      LOG_DIR: ${{ github.workspace }}/desktop-integration-logs
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # The composite action apt-installs the Linux build packages of doc 01.
+      - name: Set up Flutter
+        uses: ./.github/actions/client-flutter
+
+      - name: Install the libmpv runtime, the display, the window manager, D-Bus and PulseAudio
+        run: |
+          sudo apt-get install -y --no-install-recommends \
+            libmpv2 mpv xvfb openbox dbus dbus-x11 x11-utils imagemagick pulseaudio
+
+      - name: Start a D-Bus session, Xvfb, openbox and a PulseAudio null sink
+        run: |
+          mkdir -p "$LOG_DIR"
+          eval "$(dbus-launch --sh-syntax)"
+          echo "DBUS_SESSION_BUS_ADDRESS=$DBUS_SESSION_BUS_ADDRESS" >> "$GITHUB_ENV"
+          Xvfb :99 -screen 0 1920x1080x24 > "$LOG_DIR/xvfb.log" 2>&1 &
+          echo "DISPLAY=:99" >> "$GITHUB_ENV"
+          for _ in $(seq 1 30); do
+            xdpyinfo -display :99 > /dev/null 2>&1 && break
+            sleep 1
+          done
+          DISPLAY=:99 openbox > "$LOG_DIR/openbox.log" 2>&1 &
+          pulseaudio -D --exit-idle-time=-1
+          for _ in $(seq 1 30); do
+            pactl info > /dev/null 2>&1 && break
+            sleep 1
+          done
+          pactl unload-module module-suspend-on-idle || true
+          pactl load-module module-null-sink sink_name=null
+          pactl set-default-sink null
+          sleep 2
+
+      - name: Shell smoke
+        working-directory: client
+        timeout-minutes: 20
+        run: |
+          set -o pipefail
+          flutter test integration_test/desktop/shell_smoke_test.dart -d linux 2>&1 | tee "$LOG_DIR/shell_smoke.log"
+
+      # mpv's PipeWire device probe hangs on the runner; SPA_PLUGIN_DIR
+      # pointing nowhere makes it give up first (engine-conformance-linux).
+      - name: Playback smoke
+        working-directory: client
+        timeout-minutes: 15
+        env:
+          SPA_PLUGIN_DIR: /nonexistent
+        run: |
+          set -o pipefail
+          flutter test integration_test/desktop/playback_smoke_test.dart -d linux 2>&1 | tee "$LOG_DIR/playback_smoke.log"
+
+      # While the test holds the controls up, the script checks with
+      # dbus-send that the session bus owns
+      # org.mpris.MediaPlayer2.soundspan.instance<pid> (doc 10).
+      - name: Media controls smoke and the MPRIS bus name
+        working-directory: client
+        timeout-minutes: 15
+        run: |
+          set -o pipefail
+          tool/ci/mpris_smoke_linux.sh 2>&1 | tee "$LOG_DIR/media_controls_smoke.log"
+
+      - name: Screenshot
+        if: failure()
+        run: import -window root -display :99 "$LOG_DIR/screenshot.png" || true
+
+      - name: Upload logs and screenshots
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: desktop-integration-linux
+          path: ${{ env.LOG_DIR }}
+          if-no-files-found: warn
+
+  # The harness gives mpv its null output: a hosted Windows runner has no
+  # audio endpoint (engine-conformance-windows).
+  desktop-integration-windows:
+    name: desktop-integration-windows
+    if: inputs.suites != 'engine'
+    runs-on: windows-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        shell: bash
+    env:
+      LOG_DIR: ${{ github.workspace }}/desktop-integration-logs
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Flutter
+        uses: ./.github/actions/client-flutter
+
+      - name: Shell smoke
+        working-directory: client
+        timeout-minutes: 25
+        run: |
+          set -o pipefail
+          mkdir -p "$LOG_DIR"
+          flutter test integration_test/desktop/shell_smoke_test.dart -d windows 2>&1 | tee "$LOG_DIR/shell_smoke.log"
+
+      - name: Playback smoke
+        working-directory: client
+        timeout-minutes: 15
+        run: |
+          set -o pipefail
+          flutter test integration_test/desktop/playback_smoke_test.dart -d windows 2>&1 | tee "$LOG_DIR/playback_smoke.log"
+
+      # SmtcControls over the soundspan_smtc plugin.
+      - name: Media controls smoke
+        working-directory: client
+        timeout-minutes: 15
+        run: |
+          set -o pipefail
+          flutter test integration_test/desktop/media_controls_smoke_test.dart -d windows 2>&1 | tee "$LOG_DIR/media_controls_smoke.log"
+
+      - name: Screenshot
+        if: failure()
+        shell: pwsh
+        run: |
+          Add-Type -AssemblyName System.Windows.Forms, System.Drawing
+          $bounds = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+          $bitmap = New-Object System.Drawing.Bitmap $bounds.Width, $bounds.Height
+          $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
+          $graphics.CopyFromScreen($bounds.Location, [System.Drawing.Point]::Empty, $bounds.Size)
+          New-Item -ItemType Directory -Force -Path $env:LOG_DIR | Out-Null
+          $bitmap.Save("$env:LOG_DIR\screenshot.png")
+
+      - name: Upload logs and screenshots
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: desktop-integration-windows
+          path: ${{ env.LOG_DIR }}
+          if-no-files-found: warn
+
+  # The production engine plays to the runner's output, or to BlackHole
+  # when it has none (engine-conformance-macos).
+  desktop-integration-macos:
+    name: desktop-integration-macos
+    if: inputs.suites != 'engine' && vars.CLIENT_MACOS_CI == 'true'
+    runs-on: macos-latest
+    timeout-minutes: 60
+    env:
+      LOG_DIR: ${{ github.workspace }}/desktop-integration-logs
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Flutter
+        uses: ./.github/actions/client-flutter
+
+      - name: Install a virtual audio output device when none exists
+        run: |
+          mkdir -p "$LOG_DIR"
+          system_profiler SPAudioDataType || true
+          if ! system_profiler SPAudioDataType | grep -q 'Output Channels'; then
+            brew install --cask blackhole-2ch
+            system_profiler SPAudioDataType || true
+          fi
+
+      - name: Shell smoke
+        working-directory: client
+        timeout-minutes: 25
+        run: |
+          set -o pipefail
+          flutter test integration_test/desktop/shell_smoke_test.dart -d macos 2>&1 | tee "$LOG_DIR/shell_smoke.log"
+
+      - name: Playback smoke
+        working-directory: client
+        timeout-minutes: 15
+        run: |
+          set -o pipefail
+          flutter test integration_test/desktop/playback_smoke_test.dart -d macos 2>&1 | tee "$LOG_DIR/playback_smoke.log"
+
+      # The audio_service adapter.
+      - name: Media controls smoke
+        working-directory: client
+        timeout-minutes: 15
+        run: |
+          set -o pipefail
+          flutter test integration_test/desktop/media_controls_smoke_test.dart -d macos 2>&1 | tee "$LOG_DIR/media_controls_smoke.log"
+
+      - name: Screenshot
+        if: failure()
+        run: screencapture -x "$LOG_DIR/screenshot.png" || true
+
+      - name: Upload logs and screenshots
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: desktop-integration-macos
+          path: ${{ env.LOG_DIR }}
+          if-no-files-found: warn

@@ -68,7 +68,16 @@ final List<PostFirstFrameTask> postFirstFrameTasks = [
 /// logging, `app.db`, the root container and the active profile, the
 /// desktop window, then `runApp` and the [postFirstFrameTasks]. [args] are
 /// the launch arguments; on Windows and Linux they carry a deep link.
-Future<void> bootstrap({List<String> args = const []}) async {
+///
+/// [paths], [secretStore] and [overrides] replace the platform's paths,
+/// the platform's secret store and add provider overrides; the desktop
+/// integration tests start the app with them (doc 11).
+Future<void> bootstrap({
+  List<String> args = const [],
+  AppPaths? paths,
+  SecretStore? secretStore,
+  List<Override> overrides = const [],
+}) async {
   await runZonedGuarded<Future<void>>(
     () async {
       WidgetsFlutterBinding.ensureInitialized();
@@ -78,16 +87,17 @@ Future<void> bootstrap({List<String> args = const []}) async {
       );
       registerBundledLicenses(rootBundle);
       if (kIsWeb) usePathUrlStrategy();
-      final paths = await resolveAppPaths();
+      final appPaths = paths ?? await resolveAppPaths();
       final persistentSink = createPersistentLogSink(
-        directory: kIsWeb ? null : paths.logs,
+        directory: kIsWeb ? null : appPaths.logs,
       );
       AppLogging.configure(
         sinks: [if (kDebugMode) ConsoleLogSink(), persistentSink],
         releaseMode: kReleaseMode,
       );
       final root = await createRootContainer(
-        paths: paths,
+        paths: appPaths,
+        secretStore: secretStore,
         overrides: [
           persistentLogSinkProvider.overrideWithValue(persistentSink),
           launchArgumentsProvider.overrideWithValue(List.unmodifiable(args)),
@@ -103,6 +113,7 @@ Future<void> bootstrap({List<String> args = const []}) async {
               ),
             ),
           ),
+          ...overrides,
         ],
       );
       await restoreWindow(root);

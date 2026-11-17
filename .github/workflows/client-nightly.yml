@@ -1,0 +1,63 @@
+name: Client Nightly
+
+# Every device test and the contract suite of the Flutter client against
+# server main, once a day (docs/designs/flutter-client/11-testing-and-ci.md,
+# client-nightly.yml). A failure opens or updates the one tracking issue
+# "Flutter client nightly failures"; it never closes it.
+
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: client-nightly
+  cancel-in-progress: false
+
+jobs:
+  device-tests:
+    name: device-tests
+    uses: ./.github/workflows/client-device-tests.yml
+    with:
+      suites: all
+
+  # Only main for now; minServer and the latest release join the matrix
+  # once a server release exists.
+  contract-matrix:
+    name: contract-matrix (${{ matrix.server_ref }})
+    strategy:
+      fail-fast: false
+      matrix:
+        server_ref: [main]
+    uses: ./.github/workflows/client-contract.yml
+    with:
+      server_ref: ${{ matrix.server_ref }}
+
+  report:
+    name: report
+    needs: [device-tests, contract-matrix]
+    if: failure()
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+
+      - name: Open or update the tracking issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          NEEDS_JSON: ${{ toJSON(needs) }}
+        run: node scripts/ci/client-nightly-report.mjs

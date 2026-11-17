@@ -101,7 +101,7 @@ Exit: on all six targets, an album plays gaplessly from the server with OS media
 | M1-18 | Reachability controller and offline banner (no downloads yet) | M0-15 | State-transition tests |
 | M1-19 | Desktop interaction: shortcuts, selection, context menus, drag to playlist and queue, tray, macOS menu bar | M1-12, M1-14 | Desktop integration tests for shortcuts; manual drag tests |
 | M1-20 | Playback settings: per-network quality, levelling mode | M1-06 | Widget tests |
-| M1-21 | `client-nightly.yml`: engine conformance on four runners, desktop integration | M1-03, M1-04 | Nightly green three nights running |
+| M1-21 | Desktop integration tests on Linux, Windows and macOS in the reusable `client-device-tests.yml`, the reusable `client-contract.yml`, and `client-nightly.yml` over both | M1-03, M1-04 | The device-test jobs, `client-contract` and `client-workflows` green on the pull request |
 
 ## M2. Mobile Polish
 

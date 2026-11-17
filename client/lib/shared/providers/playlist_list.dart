@@ -10,12 +10,18 @@ import 'package:soundspan/shared/domain/domain.dart';
 import 'package:soundspan/shared/providers/repositories.dart';
 
 /// The paged source of the user's playlists, opened while anything reads
-/// it and disposed after.
+/// it and disposed after, also when its last reader left while the
+/// repository was opening.
 final FutureProvider<PagedSource<PlaylistSummary>> playlistListSourceProvider =
     FutureProvider.autoDispose<PagedSource<PlaylistSummary>>(
       (ref) async {
         final repository = await ref.watch(playlistRepositoryProvider.future);
         final source = repository.playlists();
+        // The last reader may have left while the repository was opening.
+        if (!ref.mounted) {
+          source.dispose();
+          return source;
+        }
         ref.onDispose(source.dispose);
         source.ensureVisible(0, 0);
         return source;

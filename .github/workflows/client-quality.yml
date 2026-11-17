@@ -8,6 +8,8 @@ on:
       - "backend/src/openapi/**"
       - ".github/workflows/client-*.yml"
       - ".github/actions/client-flutter/**"
+      - "scripts/ci/client-nightly-report.mjs"
+      - "scripts/ci/__tests__/client-nightly-report.test.mjs"
       - "CHANGELOG.md"
   push:
     branches: [main]
@@ -30,6 +32,8 @@ jobs:
       web_storage: ${{ steps.diff.outputs.web_storage }}
       desktop: ${{ steps.diff.outputs.desktop }}
       device: ${{ steps.diff.outputs.device }}
+      device_suites: ${{ steps.diff.outputs.device_suites }}
+      workflows: ${{ steps.diff.outputs.workflows }}
       downloads: ${{ steps.diff.outputs.downloads }}
       release_build: ${{ steps.diff.outputs.release_build }}
       release_notes: ${{ steps.diff.outputs.release_notes }}
@@ -57,6 +61,8 @@ jobs:
               echo "web_storage=true"
               echo "desktop=true"
               echo "device=true"
+              echo "device_suites=all"
+              echo "workflows=true"
               echo "downloads=true"
               echo "release_build=true"
               echo "release_notes=true"
@@ -70,6 +76,8 @@ jobs:
           changed="$(git diff --name-only "$base" HEAD)"
           printf 'Changed files:\n%s\n' "$changed"
           has() { grep -Eq "$1" <<< "$changed" && echo true || echo false; }
+          device="$(has '^(client/lib/core/playback/engines/|client/integration_test/|client/lib/platform/player_engine/|client/lib/core/playback/media_controls/|client/lib/platform/media_controls/|client/android/|client/windows/|client/packages/soundspan_smtc/|\.github/workflows/client-device-tests\.yml$)')"
+          desktop_integration="$(has '^(client/integration_test/desktop/|client/lib/app/|client/lib/platform/|client/linux/|client/windows/|client/macos/|client/pubspec\.lock$|\.github/workflows/client-device-tests\.yml$)')"
           {
             echo "client=$(has '^(client/|\.github/workflows/client-[^/]*\.yml$|\.github/actions/client-flutter/)')"
             echo "apple=$(has '^(client/ios/|client/macos/|client/pubspec\.lock$|client/lib/platform/|\.github/workflows/client-quality\.yml$|\.github/actions/client-flutter/)')"
@@ -77,11 +85,22 @@ jobs:
             echo "contract=$(has '^(client/packages/soundspan_api/|client/tool/specs/|client/tool/spec_compat\.dart$|client/contract_test/|client/lib/core/realtime/|backend/src/routes/|backend/src/openapi/|\.github/workflows/client-quality\.yml$)')"
             echo "web_storage=$(has '^(client/lib/platform/|client/web/|client/integration_test/web/|client/pubspec\.lock$|\.github/workflows/client-quality\.yml$)')"
             echo "desktop=$(has '^(client/linux/|client/windows/|client/lib/platform/desktop_shell/|client/lib/app/shell/window_state_controller\.dart$|client/integration_test/desktop/|client/tool/ci/|\.github/workflows/client-quality\.yml$)')"
-            echo "device=$(has '^(client/lib/core/playback/engines/|client/integration_test/|client/lib/platform/player_engine/|client/lib/core/playback/media_controls/|client/lib/platform/media_controls/|client/android/|client/windows/|client/packages/soundspan_smtc/|\.github/workflows/client-device-tests\.yml$)')"
+            echo "device=$device"
+            echo "workflows=$(has '^(\.github/workflows/client-[^/]*\.yml$|scripts/ci/client-nightly-report\.mjs$|scripts/ci/__tests__/client-nightly-report\.test\.mjs$)')"
             echo "downloads=$(has '^(client/lib/platform/downloader/|client/lib/core/downloads/|client/integration_test/downloads/|client/integration_test/support/throttled_file_server\.dart$|\.github/workflows/client-quality\.yml$)')"
             echo "release_build=$(has '^(\.github/workflows/client-(build|release)\.yml$|client/tool/release/|client/pubspec\.(yaml|lock)$|client/config/|client/(android|ios|linux|macos|windows|web)/)')"
             echo "release_notes=$(has '^(\.github/workflows/client-(build|release)\.yml$|client/tool/release/|client/pubspec\.(yaml|lock)$|client/config/|client/(android|ios|linux|macos|windows|web)/|CHANGELOG\.md$)')"
           } | tee -a "$GITHUB_OUTPUT"
+          # The job groups of client-device-tests.yml: the engine suite when
+          # `device` is true, the desktop suite when the desktop app paths
+          # changed.
+          case "$device/$desktop_integration" in
+            true/true) suites=all ;;
+            true/false) suites=engine ;;
+            false/true) suites=desktop ;;
+            *) suites=none ;;
+          esac
+          echo "device_suites=$suites" | tee -a "$GITHUB_OUTPUT"
 
       - name: Read the client version
         id: version
@@ -311,77 +330,14 @@ jobs:
         working-directory: client
         run: dart run tool/spec_compat.dart
 
+  # The contract suite against the backend of this commit
+  # (client-contract.yml); client-nightly.yml calls it over the version
+  # matrix.
   client-contract:
     name: client-contract
     needs: changes
     if: needs.changes.outputs.contract == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 45
-    defaults:
-      run:
-        working-directory: client/contract_test
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-      - name: Set up Flutter
-        uses: ./.github/actions/client-flutter
-
-      - name: Setup Node.js
-        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: "24"
-
-      - name: Install ffmpeg
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends ffmpeg
-
-      - name: Generate the fixture library
-        run: fixtures/generate.sh
-
-      - name: Start the contract server
-        run: docker compose -f compose.yaml up -d --build --wait
-
-      - name: Seed the contract server
-        run: node seed.ts
-
-      - name: Contract tests
-        run: dart test --tags contract
-
-      - name: Capture decode smoke fixtures
-        run: dart run tool/capture_fixtures.dart --out "$RUNNER_TEMP/client-captured-fixtures"
-
-      - name: Upload captured fixtures
-        if: always()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: client-captured-fixtures
-          path: ${{ runner.temp }}/client-captured-fixtures
-          if-no-files-found: warn
-
-      - name: Destructive contract tests
-        # Exit code 79 means no test matched: an empty selection passes.
-        run: |
-          status=0
-          dart test --tags contract-destructive || status=$?
-          if [[ "$status" -ne 0 && "$status" -ne 79 ]]; then exit "$status"; fi
-
-      - name: Collect server logs
-        if: failure()
-        run: docker compose -f compose.yaml logs --no-color > compose-logs.txt 2>&1 || true
-
-      - name: Upload server logs
-        if: failure()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: client-contract-logs
-          path: client/contract_test/compose-logs.txt
-          if-no-files-found: warn
-
-      - name: Tear down the contract server
-        if: always()
-        run: docker compose -f compose.yaml down -v --remove-orphans
+    uses: ./.github/workflows/client-contract.yml
 
   client-downloads-integration:
     name: client-downloads-integration
@@ -713,12 +669,50 @@ jobs:
         run: flutter build ios --release --no-codesign --dart-define-from-file=config/dev.json
 
   # The engine conformance suite on an Android emulator, an iOS simulator,
-  # macOS, headless Chrome, Linux and Windows (client-device-tests.yml).
+  # macOS, headless Chrome, Linux and Windows, and the desktop integration
+  # tests on Linux, Windows and macOS (client-device-tests.yml), each group
+  # when its paths changed.
   client-device-tests:
     name: client-device-tests
     needs: changes
-    if: needs.changes.outputs.device == 'true'
+    if: needs.changes.outputs.device_suites != 'none'
     uses: ./.github/workflows/client-device-tests.yml
+    with:
+      suites: ${{ needs.changes.outputs.device_suites }}
+
+  # Lints the client workflows, client-nightly.yml included, which cannot
+  # run from a pull request, and self-tests its report script.
+  client-workflows:
+    name: client-workflows
+    needs: changes
+    if: needs.changes.outputs.workflows == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      ACTIONLINT_VERSION: "1.7.12"
+      ACTIONLINT_SHA256: 8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+
+      - name: actionlint
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz"
+          curl -sSfL -o "$RUNNER_TEMP/$archive" \
+            "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/$archive"
+          echo "$ACTIONLINT_SHA256  $RUNNER_TEMP/$archive" | sha256sum --check --strict
+          tar -xzf "$RUNNER_TEMP/$archive" -C "$RUNNER_TEMP" actionlint
+          "$RUNNER_TEMP/actionlint" -color .github/workflows/client-*.yml
+
+      - name: Nightly report script self-test
+        run: node --test scripts/ci/__tests__/client-nightly-report.test.mjs
 
   # Dry run of the reusable release build: every target in release mode,
   # unsigned, plus SHA256SUMS. Nothing is published; artifacts expire
