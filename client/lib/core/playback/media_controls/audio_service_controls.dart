@@ -10,6 +10,8 @@
 /// through an [AudioServiceStarter], so everything here runs without it.
 library;
 
+import 'dart:async';
+
 import 'package:audio_service/audio_service.dart' as svc;
 import 'package:soundspan/core/playback/media_controls/media_controls.dart';
 import 'package:soundspan/shared/clock.dart';
@@ -28,6 +30,18 @@ const String _mprisName = 'soundspan';
 
 /// The skip interval the OS controls step by when they skip on their own.
 const Duration _skipInterval = Duration(seconds: 15);
+
+/// The name of the custom Like action of the Android notification.
+const String likeActionName = 'like';
+
+/// How long playback may stay paused before the handler stops it, which
+/// ends the Android playback service and removes its notification (doc
+/// 06, Background Behaviour by Platform).
+const Duration pausedServiceTimeout = Duration(minutes: 10);
+
+/// The label of the Like action: what pressing it does, for an item shown
+/// [liked] or not.
+typedef LikeLabel = String Function(bool liked);
 
 /// Starts `audio_service` with the handler [builder] makes and [config],
 /// returning that handler. Called once per process.
@@ -62,9 +76,14 @@ svc.AudioServiceConfig audioServiceConfigFor({
 
 /// The `audio_service` handler: every button is forwarded to [commands].
 ///
-/// It holds no playback state; what it shows is published to it by
-/// [AudioServiceControls.update]. `click` keeps its default, which pauses
-/// or plays from the last published playing flag.
+/// It holds no playback state; what it shows is published to it through
+/// [show] by [AudioServiceControls.update]. `click` keeps its default,
+/// which pauses or plays from the last published playing flag. The Like
+/// action asks for the opposite of the liked flag last shown.
+///
+/// After [pausedServiceTimeout] continuously paused it calls [stop]. [stop]
+/// shows the idle state, which ends the Android service and removes the
+/// notification; paused states are not shown again until one is playing.
 class SoundspanAudioHandler extends svc.BaseAudioHandler
     with svc.QueueHandler, svc.SeekHandler {
   /// Creates a handler forwarding to [commands].
@@ -73,14 +92,52 @@ class SoundspanAudioHandler extends svc.BaseAudioHandler
   /// Where the buttons go.
   final MediaCommandHandler commands;
 
+  Timer? _pausedTimer;
+  bool _ended = false;
+  bool? _liked;
+
+  /// Shows [item] and [state]; [liked] is the liked flag the Like action,
+  /// if any, shows.
+  void show(svc.MediaItem? item, svc.PlaybackState state, {bool? liked}) {
+    if (_ended && !state.playing) return;
+    _ended = false;
+    _liked = liked;
+    mediaItem.add(item);
+    playbackState.add(state);
+    if (item != null && !state.playing) {
+      _pausedTimer ??= Timer(pausedServiceTimeout, () {
+        _pausedTimer = null;
+        unawaited(stop());
+      });
+    } else {
+      _cancelPausedTimer();
+    }
+  }
+
+  void _cancelPausedTimer() {
+    _pausedTimer?.cancel();
+    _pausedTimer = null;
+  }
+
   @override
-  Future<void> play() => commands.play();
+  Future<void> play() {
+    _cancelPausedTimer();
+    return commands.play();
+  }
 
   @override
   Future<void> pause() => commands.pause();
 
   @override
-  Future<void> stop() => commands.stop();
+  Future<void> stop() async {
+    _cancelPausedTimer();
+    _ended = true;
+    await commands.stop();
+    mediaItem.add(null);
+    playbackState.add(
+      svc.PlaybackState(updateTime: playbackState.value.updateTime),
+    );
+  }
 
   @override
   Future<void> seek(Duration position) => commands.seek(position);
@@ -96,6 +153,16 @@ class SoundspanAudioHandler extends svc.BaseAudioHandler
 
   @override
   Future<void> rewind() => commands.skipBackward();
+
+  @override
+  Future<dynamic> customAction(
+    String name, [
+    Map<String, dynamic>? extras,
+  ]) async {
+    final liked = _liked;
+    if (name != likeActionName || liked == null) return;
+    await commands.setLiked(!liked);
+  }
 }
 
 /// What `audio_service` shows for [state]: the media item (null for
@@ -107,9 +174,14 @@ class SoundspanAudioHandler extends svc.BaseAudioHandler
 /// place of previous and next. With both, the skips sit between them in
 /// the expanded notification and previous, play/pause and next stay
 /// compact.
+///
+/// With a [likeLabel] (Android), an item offering [MediaAction.like] also
+/// gets the custom Like control after the others, outlined or filled by
+/// [MediaSessionState.liked]; it is never compact.
 (svc.MediaItem?, svc.PlaybackState) audioServiceStateOf(
   MediaSessionState state, {
   required DateTime updateTime,
+  LikeLabel? likeLabel,
 }) {
   final id = state.queueItemId;
   if (id == null) {
@@ -141,12 +213,22 @@ class SoundspanAudioHandler extends svc.BaseAudioHandler
     playPause,
     if (skips && next == null) forward else next,
   ];
+  final like = likeLabel != null && actions.contains(MediaAction.like)
+      ? svc.MediaControl.custom(
+          androidIcon: state.liked
+              ? 'drawable/ic_action_liked'
+              : 'drawable/ic_action_like',
+          label: likeLabel(state.liked),
+          name: likeActionName,
+        )
+      : null;
   final controls = <svc.MediaControl>[
     ?compact[0],
     if (skips && next != null) ?rewind,
     ?playPause,
     if (skips && next != null) ?forward,
     ?compact[2],
+    ?like,
   ];
   final item = svc.MediaItem(
     id: id,
@@ -182,12 +264,19 @@ class SoundspanAudioHandler extends svc.BaseAudioHandler
 /// [MediaControls] over `audio_service`.
 final class AudioServiceControls implements MediaControls {
   /// Creates the controls; `start` starts the plugin with `config` at
-  /// [init], and `clock` stamps every published position.
-  new({required this._config, required this._start, required this._clock});
+  /// [init], and `clock` stamps every published position. With a
+  /// `likeLabel` (Android) the Like action is shown.
+  new({
+    required this._config,
+    required this._start,
+    required this._clock,
+    this._likeLabel,
+  });
 
   final svc.AudioServiceConfig Function() _config;
   final AudioServiceStarter _start;
   final Clock _clock;
+  final LikeLabel? _likeLabel;
   SoundspanAudioHandler? _handler;
 
   @override
@@ -213,8 +302,14 @@ final class AudioServiceControls implements MediaControls {
     final (item, playback) = audioServiceStateOf(
       state,
       updateTime: _clock.now(),
+      likeLabel: _likeLabel,
     );
-    handler.mediaItem.add(item);
-    handler.playbackState.add(playback);
+    handler.show(
+      item,
+      playback,
+      liked: playback.controls.any((c) => c.customAction != null)
+          ? state.liked
+          : null,
+    );
   }
 }

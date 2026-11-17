@@ -96,6 +96,7 @@ jobs:
           script: |
             flutter test integration_test/engine_conformance_test.dart -d emulator-5554
             flutter test integration_test/media_controls_smoke_test.dart -d emulator-5554
+            flutter test integration_test/android/playback_service_test.dart -d emulator-5554
 
   # The iOS and macOS jobs, and desktop-integration-macos, run only when the
   # repository variable CLIENT_MACOS_CI is 'true', because macOS runners are

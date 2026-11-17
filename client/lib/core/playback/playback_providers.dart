@@ -11,6 +11,7 @@ import 'package:soundspan/core/playback/audio_focus.dart';
 import 'package:soundspan/core/playback/data/playback_info_repository.dart';
 import 'package:soundspan/core/playback/engines/player_engine_provider.dart';
 import 'package:soundspan/core/playback/loudness_binding.dart';
+import 'package:soundspan/core/playback/notification_permission.dart';
 import 'package:soundspan/core/playback/persistence.dart';
 import 'package:soundspan/core/playback/play_reporter_input.dart';
 import 'package:soundspan/core/playback/playback_controller.dart';
@@ -33,6 +34,8 @@ import 'package:soundspan/core/sync/play_session_store.dart';
 import 'package:soundspan/core/sync/playback_state_sync.dart';
 import 'package:soundspan/core/sync/sync_providers.dart';
 import 'package:soundspan/platform/audio_session/audio_session_gateway.dart';
+import 'package:soundspan/platform/device_info/device_info.dart';
+import 'package:soundspan/platform/notifications/local_notifications.dart';
 import 'package:soundspan/platform/stream_auth/stream_auth.dart';
 import 'package:soundspan/shared/clock.dart';
 import 'package:soundspan_api/soundspan_api.dart' show StreamUrls;
@@ -112,6 +115,9 @@ final Provider<QueuePersistence> queuePersistenceProvider =
 /// Its [AudioFocusController] applies the audio-focus rules over the root
 /// [audioSessionGatewayProvider].
 ///
+/// Its [NotificationPermissionPrompt] asks for the notification permission
+/// at the first playback on Android 13 or later.
+///
 /// Its [PlayReporter] reports every play to the scope's outbox, closing the
 /// plays an earlier process left in `play_sessions` first. Ending the scope
 /// writes the open play before playback stops.
@@ -167,6 +173,12 @@ final Provider<PlaybackController> playbackControllerProvider =
           controller,
           ref.watch(audioSessionGatewayProvider),
         );
+        final permission = NotificationPermissionPrompt(
+          snapshots: controller.snapshots,
+          settings: ref.watch(deviceSettingsDaoProvider),
+          notifications: ref.watch(localNotificationsProvider),
+          androidSdkVersion: ref.watch(androidSdkVersionProvider),
+        );
         unawaited(
           controller.restore().then(
             (_) => stateSync.follow(controller.snapshots.map(syncedPlaybackOf)),
@@ -204,6 +216,7 @@ final Provider<PlaybackController> playbackControllerProvider =
           unawaited(stateSync.dispose());
           unawaited(loudness.dispose());
           focus.dispose();
+          unawaited(permission.dispose());
           unawaited(controller.dispose());
         });
         return controller;

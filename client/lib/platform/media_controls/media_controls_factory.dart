@@ -48,12 +48,15 @@ MediaControlsKind mediaControlsKindFor({
       };
 
 /// Builds the [MediaControls] that [mediaControlsKindFor] selects;
-/// [channelName] is read when the controls are initialised.
+/// [channelName] is read when the controls are initialised. On Android the
+/// notification shows the Like action labelled by [likeLabel] (doc 10,
+/// Playback service); elsewhere it is not shown.
 MediaControls mediaControlsFor({
   required String operatingSystem,
   required bool web,
   required String Function() channelName,
   required Clock clock,
+  LikeLabel? likeLabel,
 }) =>
     switch (mediaControlsKindFor(operatingSystem: operatingSystem, web: web)) {
       MediaControlsKind.audioService => AudioServiceControls(
@@ -63,6 +66,7 @@ MediaControls mediaControlsFor({
         ),
         start: startAudioService,
         clock: clock,
+        likeLabel: !web && operatingSystem == 'android' ? likeLabel : null,
       ),
       MediaControlsKind.smtc => SmtcControls(
         gateway: WindowsSmtcGateway(),

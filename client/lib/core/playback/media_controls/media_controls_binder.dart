@@ -8,9 +8,15 @@ import 'package:soundspan/core/playback/media_controls/media_session_mapper.dart
 import 'package:soundspan/core/playback/playback_controller.dart';
 import 'package:soundspan/core/playback/playback_snapshot.dart';
 import 'package:soundspan/shared/clock.dart';
+import 'package:soundspan/shared/domain/queue_item.dart';
+import 'package:soundspan/shared/domain/track.dart';
 
 /// Gives the OS an artwork URI for a cover value; see `ArtworkPinner.pin`.
 typedef ArtworkPin = Future<Uri?> Function(String? artworkRef);
+
+/// Likes [track] when [liked] is true and removes its like otherwise; see
+/// `PreferenceRepository.setTrackLiked`.
+typedef LikeTrack = Future<void> Function(Track track, {required bool liked});
 
 /// Connects one [PlaybackController] to the OS media surface in both
 /// directions (doc 06, OS Media Controls).
@@ -25,15 +31,18 @@ typedef ArtworkPin = Future<Uri?> Function(String? artworkRef);
 /// once it is ready, unless the current item has changed meanwhile.
 ///
 /// As a [MediaCommandHandler] it dispatches the surface's buttons to the
-/// controller.
+/// controller. Like goes to [_like]: the current item is shown with the
+/// new liked flag at once, until another item becomes current.
 class MediaControlsBinder implements MediaCommandHandler {
   /// Starts rendering [_controller]'s snapshots on [_controls]; artwork is
-  /// pinned by [_pin], elapsed time read from [_clock].
+  /// pinned by [_pin], elapsed time read from [_clock], and likes stored
+  /// through `like` (without it, Like does nothing).
   new({
     required this._controller,
     required this._controls,
     required this._pin,
     required this._clock,
+    this._like,
   }) {
     _subscription = _controller.snapshots.listen(_onSnapshot);
   }
@@ -48,12 +57,14 @@ class MediaControlsBinder implements MediaCommandHandler {
   final MediaControls _controls;
   final ArtworkPin _pin;
   final Clock _clock;
+  final LikeTrack? _like;
 
   late final StreamSubscription<PlaybackSnapshot> _subscription;
   bool _started = false;
   bool _disposed = false;
   String? _currentId;
   Uri? _artworkUri;
+  bool? _liked;
   MediaSessionState? _sent;
   DateTime? _sentAt;
 
@@ -63,6 +74,7 @@ class MediaControlsBinder implements MediaCommandHandler {
       _started = true;
       _currentId = id;
       _artworkUri = null;
+      _liked = null;
       _send(_map(snapshot));
       if (snapshot.current case final item?) {
         if (artworkRefOf(item) case final ref?) {
@@ -76,7 +88,7 @@ class MediaControlsBinder implements MediaCommandHandler {
   }
 
   MediaSessionState _map(PlaybackSnapshot snapshot) =>
-      mapSnapshot(snapshot, artworkUri: _artworkUri);
+      mapSnapshot(snapshot, artworkUri: _artworkUri, liked: _liked);
 
   bool _differs(MediaSessionState state) {
     final sent = _sent;
@@ -139,7 +151,24 @@ class MediaControlsBinder implements MediaCommandHandler {
   Future<void> skipBackward() => _controller.skipBackward();
 
   @override
-  Future<void> setLiked(bool liked) async {}
+  Future<void> setLiked(bool liked) async {
+    final like = _like;
+    final item = _controller.snapshot.current;
+    if (like == null ||
+        _disposed ||
+        item is! TrackQueueItem ||
+        item.track.playbackId == null ||
+        item.queueItemId != _currentId) {
+      return;
+    }
+    _liked = liked;
+    _send(_map(_controller.snapshot));
+    try {
+      await like(item.track, liked: liked);
+    } on Object catch (error, stackTrace) {
+      _log.severe('Like not stored', const {}, error, stackTrace);
+    }
+  }
 }
 
 /// The one [MediaCommandHandler] the OS media surface is initialised with,

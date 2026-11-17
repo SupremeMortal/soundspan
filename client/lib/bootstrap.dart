@@ -107,6 +107,13 @@ Future<void> bootstrap({
               ref.watch(localeSettingProvider).value ?? const Locale('en'),
             ).playbackNotificationChannelName,
           ),
+          mediaControlsLikeLabelProvider.overrideWith((ref) {
+            final l10n = lookupAppLocalizations(
+              ref.watch(localeSettingProvider).value ?? const Locale('en'),
+            );
+            return (liked) =>
+                liked ? l10n.likeButtonRemove : l10n.likeButtonLike;
+          }),
           keyExpiryNotificationTextProvider.overrideWith(
             (ref) => keyExpiryNotificationText(
               lookupAppLocalizations(

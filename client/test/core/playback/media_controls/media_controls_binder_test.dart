@@ -47,7 +47,7 @@ class _Pins {
 
 /// A controller over 60-second sources rendered on [controls].
 class _Rig {
-  new() {
+  new({LikeTrack? like}) {
     for (final id in ['a', 'b', 'c']) {
       h.fake.sources[uriOf(id)] = const FakeSource(
         duration: Duration(seconds: 60),
@@ -58,6 +58,7 @@ class _Rig {
       controls: controls,
       pin: pins.pin,
       clock: h.clock,
+      like: like,
     );
   }
 
@@ -202,6 +203,63 @@ void main() {
     await r.h.settle();
     expect(c.snapshot.playing, isFalse);
     expect(c.snapshot.status, EngineStatus.idle);
+  });
+
+  test('setLiked likes the current track, shows it liked at once, and '
+      'forgets the override when the item changes', () async {
+    final calls = <(String?, bool)>[];
+    final r = _Rig(
+      like: (track, {required liked}) async =>
+          calls.add((track.playbackId?.value, liked)),
+    );
+    addTearDown(r.binder.dispose);
+    await r.start();
+    expect(r.controls.updates.last.liked, isFalse);
+
+    await r.binder.setLiked(true);
+    await r.h.settle();
+
+    expect(calls, [('pb-a', true)]);
+    expect(r.controls.updates.last.liked, isTrue);
+    expect(r.controls.updates.last.queueItemId, 'a');
+
+    await r.binder.next();
+    await r.h.settle();
+    expect(r.controls.updates.last.queueItemId, 'b');
+    expect(r.controls.updates.last.liked, isFalse);
+  });
+
+  test('setLiked on an episode, or with nothing to like through, does '
+      'nothing', () async {
+    final calls = <bool>[];
+    final r = _Rig(like: (_, {required liked}) async => calls.add(liked));
+    addTearDown(r.binder.dispose);
+    const episode = QueueItem.episode(
+      queueItemId: 'e',
+      episode: Episode(id: 'e1', podcastId: 'p', title: 'E'),
+      podcast: Podcast(id: 'p', title: 'P'),
+    );
+    r.h.fake.sources[uriOf('e')] = const FakeSource(
+      duration: Duration(seconds: 60),
+    );
+    await r.h.controller.playItems([episode]);
+    await r.h.settle();
+    final sent = r.controls.updates.length;
+
+    await r.binder.setLiked(true);
+
+    expect(calls, isEmpty);
+    expect(r.controls.updates, hasLength(sent));
+  });
+
+  test('a failing like is logged and keeps the shown state', () async {
+    final r = _Rig(like: (_, {required liked}) async => throw StateError('x'));
+    addTearDown(r.binder.dispose);
+    await r.start();
+
+    await r.binder.setLiked(true);
+
+    expect(r.controls.updates.last.liked, isTrue);
   });
 
   test('skip forward and back move by the interval and clamp at both '

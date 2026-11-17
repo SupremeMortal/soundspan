@@ -46,13 +46,15 @@ void main() {
     expect(MediaSessionState.empty.queueItemId, isNull);
   });
 
-  test('a playing track offers pause, seek, stop, next and previous', () {
+  test('a playing track offers pause, seek, stop, next, previous and '
+      'like', () {
     expect(mapSnapshot(_snapshot([trackItem('a')])).actions, {
       MediaAction.pause,
       MediaAction.seek,
       MediaAction.stop,
       MediaAction.next,
       MediaAction.previous,
+      MediaAction.like,
     });
   });
 
@@ -63,6 +65,7 @@ void main() {
       MediaAction.stop,
       MediaAction.next,
       MediaAction.previous,
+      MediaAction.like,
     });
   });
 
@@ -140,15 +143,41 @@ void main() {
     );
   });
 
-  test('like is never offered', () {
+  test('like is offered for a track with a playback id, never for an '
+      'episode', () {
     for (final snapshot in [
-      _snapshot([trackItem('a')]),
-      _snapshot([trackItem('a')], playing: false),
       _snapshot([_episode('e')]),
       _snapshot([_episode('e'), trackItem('a')]),
     ]) {
       expect(mapSnapshot(snapshot).actions, isNot(contains(MediaAction.like)));
     }
+    const noId = QueueItem.track(
+      queueItemId: 'n',
+      track: Track(
+        meta: TrackMeta(title: 'T', artist: 'A', album: 'R', durationSec: 1),
+      ),
+      context: testContext,
+    );
+    expect(
+      mapSnapshot(_snapshot([noId])).actions,
+      isNot(contains(MediaAction.like)),
+    );
+  });
+
+  test("liked is the current track's preference unless overridden", () {
+    const liked = QueueItem.track(
+      queueItemId: 'l',
+      track: Track(
+        meta: TrackMeta(title: 'T', artist: 'A', album: 'R', durationSec: 1),
+        playbackId: PlaybackId('pb-l'),
+        preference: Preference.liked,
+      ),
+      context: testContext,
+    );
+    expect(mapSnapshot(_snapshot([trackItem('a')])).liked, isFalse);
+    expect(mapSnapshot(_snapshot([liked])).liked, isTrue);
+    expect(mapSnapshot(_snapshot([liked]), liked: false).liked, isFalse);
+    expect(mapSnapshot(_snapshot([_episode('e')]), liked: true).liked, isFalse);
   });
 
   test('buffering reflects the engine status', () {

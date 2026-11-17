@@ -9,10 +9,20 @@ import '../../tool/check_platform_config.dart';
 
 const _manifest = '''
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <uses-permission android:name="android.permission.INTERNET"/>
+  <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"/>
+  <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+  <uses-permission android:name="android.permission.WAKE_LOCK"/>
   <uses-permission android:name="android.permission.CAMERA"/>
   <uses-feature android:name="android.hardware.camera" android:required="false"/>
-  <application>
-    <activity android:name=".MainActivity" android:exported="true">
+  <application
+      android:networkSecurityConfig="@xml/network_security_config"
+      android:dataExtractionRules="@xml/data_extraction_rules"
+      android:fullBackupContent="@xml/backup_rules">
+    <activity android:name=".MainActivity" android:exported="true"
+        android:launchMode="singleTask">
       <intent-filter>
         <action android:name="android.intent.action.MAIN"/>
         <category android:name="android.intent.category.LAUNCHER"/>
@@ -24,8 +34,140 @@ const _manifest = '''
         <data android:scheme="soundspan"/>
       </intent-filter>
     </activity>
+    <service android:name="com.ryanheise.audioservice.AudioService"
+        android:foregroundServiceType="mediaPlayback"
+        android:exported="true">
+      <intent-filter>
+        <action android:name="android.media.browse.MediaBrowserService"/>
+      </intent-filter>
+    </service>
+    <receiver android:name="com.ryanheise.audioservice.MediaButtonReceiver"
+        android:exported="true">
+      <intent-filter>
+        <action android:name="android.intent.action.MEDIA_BUTTON"/>
+      </intent-filter>
+    </receiver>
   </application>
 </manifest>
+''';
+
+/// Each manifest row of doc 10 checked, as (text removed or replaced from
+/// [_manifest], its replacement, the entry the violation names).
+const List<(String, String, String)> _manifestRows = [
+  (
+    '<uses-permission android:name="android.permission.INTERNET"/>',
+    '',
+    '<uses-permission android:name="android.permission.INTERNET"/>',
+  ),
+  (
+    '<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>',
+    '',
+    '<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>',
+  ),
+  (
+    '<uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>',
+    '',
+    '<uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>',
+  ),
+  (
+    '<uses-permission '
+        'android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"/>',
+    '',
+    '<uses-permission '
+        'android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"/>',
+  ),
+  (
+    '<uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>',
+    '',
+    '<uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>',
+  ),
+  (
+    '<uses-permission android:name="android.permission.WAKE_LOCK"/>',
+    '',
+    '<uses-permission android:name="android.permission.WAKE_LOCK"/>',
+  ),
+  (
+    'android:launchMode="singleTask"',
+    'android:launchMode="standard"',
+    'MainActivity android:launchMode="singleTask"',
+  ),
+  (
+    'android:foregroundServiceType="mediaPlayback"',
+    '',
+    '<service android:name="com.ryanheise.audioservice.AudioService" '
+        'android:foregroundServiceType="mediaPlayback" '
+        'android:exported="true"> with the '
+        'android.media.browse.MediaBrowserService intent filter',
+  ),
+  (
+    '<action android:name="android.media.browse.MediaBrowserService"/>',
+    '',
+    '<service android:name="com.ryanheise.audioservice.AudioService" '
+        'android:foregroundServiceType="mediaPlayback" '
+        'android:exported="true"> with the '
+        'android.media.browse.MediaBrowserService intent filter',
+  ),
+  (
+    '<action android:name="android.intent.action.MEDIA_BUTTON"/>',
+    '',
+    '<receiver android:name="com.ryanheise.audioservice.MediaButtonReceiver" '
+        'android:exported="true"> with the '
+        'android.intent.action.MEDIA_BUTTON intent filter',
+  ),
+  (
+    'android:networkSecurityConfig="@xml/network_security_config"',
+    '',
+    'android:networkSecurityConfig="@xml/network_security_config"',
+  ),
+  (
+    'android:dataExtractionRules="@xml/data_extraction_rules"',
+    '',
+    'android:dataExtractionRules="@xml/data_extraction_rules"',
+  ),
+  (
+    'android:fullBackupContent="@xml/backup_rules"',
+    '',
+    'android:fullBackupContent="@xml/backup_rules"',
+  ),
+];
+
+const _networkSecurityConfig = '''
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+  <base-config cleartextTrafficPermitted="true">
+    <trust-anchors>
+      <certificates src="system"/>
+      <certificates src="user"/>
+    </trust-anchors>
+  </base-config>
+</network-security-config>
+''';
+
+const _excludes = '''
+    <exclude domain="file" path="profiles/"/>
+    <exclude domain="file" path="app.db"/>
+    <exclude domain="file" path="app.db-wal"/>
+    <exclude domain="file" path="app.db-shm"/>
+    <exclude domain="file" path="app.db-journal"/>
+    <exclude domain="sharedpref" path="FlutterSecureStorage.xml"/>
+''';
+
+const _dataExtractionRules =
+    '''
+<?xml version="1.0" encoding="utf-8"?>
+<data-extraction-rules>
+  <cloud-backup>
+$_excludes  </cloud-backup>
+  <device-transfer>
+$_excludes  </device-transfer>
+</data-extraction-rules>
+''';
+
+const _backupRules =
+    '''
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+$_excludes</full-backup-content>
 ''';
 
 const _plist = '''
@@ -87,8 +229,21 @@ late Directory _dir;
 
 String _write(String name, String content) {
   final path = p.join(_dir.path, name);
+  File(path).parent.createSync(recursive: true);
   File(path).writeAsStringSync(content);
   return path;
+}
+
+/// A resource directory with the three XML files, each overridable.
+String _res({
+  String networkSecurityConfig = _networkSecurityConfig,
+  String dataExtractionRules = _dataExtractionRules,
+  String backupRules = _backupRules,
+}) {
+  _write('res/xml/network_security_config.xml', networkSecurityConfig);
+  _write('res/xml/data_extraction_rules.xml', dataExtractionRules);
+  _write('res/xml/backup_rules.xml', backupRules);
+  return p.join(_dir.path, 'res');
 }
 
 void main() {
@@ -98,6 +253,42 @@ void main() {
   group('Android manifest', () {
     test('passes with the soundspan intent filter', () {
       expect(checkAndroidManifest(_write('m.xml', _manifest)), isEmpty);
+    });
+
+    test('a merged manifest with fully qualified names passes', () {
+      expect(
+        checkAndroidManifest(
+          _write(
+            'm.xml',
+            _manifest.replaceFirst(
+              'android:name=".MainActivity"',
+              'android:name="io.soundspan.app.MainActivity"',
+            ),
+          ),
+        ),
+        isEmpty,
+      );
+    });
+
+    for (final (from, to, entry) in _manifestRows) {
+      test('fails naming $entry when it is missing', () {
+        expect(_manifest, contains(from));
+        final path = _write('m.xml', _manifest.replaceFirst(from, to));
+        expect(checkAndroidManifest(path).map((v) => v.toString()), [
+          '$path: missing $entry',
+        ]);
+      });
+    }
+
+    test('fails when cleartext traffic is switched off', () {
+      final path = _write(
+        'm.xml',
+        _manifest.replaceFirst(
+          '<application',
+          '<application android:usesCleartextTraffic="false"',
+        ),
+      );
+      expect(checkAndroidManifest(path).single.entry, contains('cleartext'));
     });
 
     test('fails naming the file and entry without the scheme', () {
@@ -152,6 +343,95 @@ void main() {
           '$path: missing $feature',
         ], reason: replacement);
       }
+    });
+  });
+
+  group('Android resources', () {
+    test('pass with cleartext, user CAs and every backup exclusion', () {
+      expect(checkAndroidRes(_res()), isEmpty);
+    });
+
+    test('fail without cleartext or the user trust anchor', () {
+      for (final (from, to, entry) in const [
+        (
+          'cleartextTrafficPermitted="true"',
+          'cleartextTrafficPermitted="false"',
+          '<base-config cleartextTrafficPermitted="true">',
+        ),
+        (
+          '<certificates src="user"/>',
+          '',
+          '<certificates src="user"/> in the base-config trust anchors',
+        ),
+        (
+          '<certificates src="system"/>',
+          '',
+          '<certificates src="system"/> in the base-config trust anchors',
+        ),
+      ]) {
+        final res = _res(
+          networkSecurityConfig: _networkSecurityConfig.replaceFirst(from, to),
+        );
+        final violations = checkAndroidRes(res);
+        expect(violations.map((v) => v.entry), [entry], reason: from);
+        expect(
+          p.basename(violations.single.path),
+          'network_security_config.xml',
+        );
+      }
+    });
+
+    const exclusions = [
+      ('file', 'profiles/'),
+      ('file', 'app.db'),
+      ('file', 'app.db-wal'),
+      ('file', 'app.db-shm'),
+      ('file', 'app.db-journal'),
+      ('sharedpref', 'FlutterSecureStorage.xml'),
+    ];
+
+    for (final (domain, path) in exclusions) {
+      final line = '    <exclude domain="$domain" path="$path"/>\n';
+      final entry = '<exclude domain="$domain" path="$path"/>';
+
+      test('backup rules without $path fail naming it', () {
+        final res = _res(backupRules: _backupRules.replaceFirst(line, ''));
+        final file = p.join(res, 'xml', 'backup_rules.xml');
+        expect(checkAndroidRes(res).map((v) => v.toString()), [
+          '$file: missing $entry in <full-backup-content>',
+        ]);
+      });
+
+      test('data extraction rules without $path in device transfer fail '
+          'naming it', () {
+        final at = _dataExtractionRules.indexOf('<device-transfer>');
+        final dataExtractionRules = _dataExtractionRules.replaceFirst(
+          line,
+          '',
+          at,
+        );
+        expect(dataExtractionRules, isNot(_dataExtractionRules));
+        final res = _res(dataExtractionRules: dataExtractionRules);
+        expect(checkAndroidRes(res).map((v) => v.entry), [
+          '$entry in <device-transfer>',
+        ]);
+      });
+    }
+
+    test('data extraction rules without cloud backup fail', () {
+      final res = _res(
+        dataExtractionRules: _dataExtractionRules.replaceAll(
+          'cloud-backup',
+          'x-backup',
+        ),
+      );
+      expect(checkAndroidRes(res).map((v) => v.entry), ['<cloud-backup>']);
+    });
+
+    test('a missing resource file is reported', () {
+      final res = _res();
+      File(p.join(res, 'xml', 'backup_rules.xml')).deleteSync();
+      expect(checkAndroidRes(res).single.entry, 'the file');
     });
   });
 
@@ -256,6 +536,8 @@ void main() {
       _write('ios.plist', _plist),
       '--macos-plist=${_write('macos.plist', _plist.replaceFirst('<string>soundspan</string>', ''))}',
       '--linux-desktop=${_write('a.desktop', _desktop)}',
+      '--android-res',
+      _res(),
     ]);
     final violations = checkPlatformConfig(paths);
     expect(violations.map((v) => p.basename(v.path)), ['macos.plist']);

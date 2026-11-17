@@ -131,6 +131,9 @@ abstract class MediaSessionState with _$MediaSessionState {
     /// The artwork as a URI the OS can load without credentials: a local
     /// file, or on web a URL carrying the access token.
     Uri? artworkUri,
+
+    /// Whether the current item is liked; what [MediaAction.like] shows.
+    @Default(false) bool liked,
   }) = _MediaSessionState;
 
   /// Nothing is playing and no action is offered.

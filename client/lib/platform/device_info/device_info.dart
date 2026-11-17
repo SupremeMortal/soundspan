@@ -4,7 +4,8 @@
 /// key is named after (doc 04, Device Link).
 ///
 /// `currentDeviceInfo()` reads them on native targets; on web there is no
-/// host name. No hardware identifiers are read.
+/// host name. No hardware identifiers are read. `androidSdkVersion()` reads
+/// the Android API level, for permissions that exist from one level on.
 library;
 
 import 'package:flutter/foundation.dart' show immutable;
@@ -14,7 +15,11 @@ import 'package:soundspan/platform/device_info/device_info_web.dart'
 
 export 'device_info_web.dart'
     if (dart.library.io) 'device_info_io.dart'
-    show currentDeviceInfo;
+    show androidSdkVersion, currentDeviceInfo;
+
+/// The method channel `MainActivity` answers `sdkInt` on with
+/// `Build.VERSION.SDK_INT`.
+const String deviceInfoChannel = 'io.soundspan.app/device_info';
 
 /// What the app knows about the device it runs on, for naming it.
 @immutable
@@ -32,6 +37,14 @@ final class DeviceInfo {
   /// Whether the device is a phone or tablet.
   final bool isMobile;
 }
+
+/// Reads the Android API level of the device, null off Android or when
+/// it cannot be read.
+typedef AndroidSdkVersion = Future<int?> Function();
+
+/// The [AndroidSdkVersion] of the running app; tests override it.
+final Provider<AndroidSdkVersion> androidSdkVersionProvider =
+    Provider<AndroidSdkVersion>((ref) => androidSdkVersion);
 
 /// The [DeviceInfo] of the running app; tests override it.
 final Provider<DeviceInfo> deviceInfoProvider = Provider<DeviceInfo>(

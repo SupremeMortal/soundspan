@@ -29,7 +29,8 @@ mixin _$MediaSessionState {
  String? get queueItemId;/// The item's duration once known.
  Duration? get duration;/// The artwork as a URI the OS can load without credentials: a local
 /// file, or on web a URL carrying the access token.
- Uri? get artworkUri;
+ Uri? get artworkUri;/// Whether the current item is liked; what [MediaAction.like] shows.
+ bool get liked;
 /// Create a copy of MediaSessionState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -41,20 +42,20 @@ $MediaSessionStateCopyWith<MediaSessionState> get copyWith => _$MediaSessionStat
 @override
 bool operator ==(Object other) {
   final _this = this as MediaSessionState;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is MediaSessionState&&(identical(other.title, _this.title) || other.title == _this.title)&&(identical(other.artist, _this.artist) || other.artist == _this.artist)&&(identical(other.album, _this.album) || other.album == _this.album)&&(identical(other.position, _this.position) || other.position == _this.position)&&(identical(other.playing, _this.playing) || other.playing == _this.playing)&&(identical(other.buffering, _this.buffering) || other.buffering == _this.buffering)&&(identical(other.speed, _this.speed) || other.speed == _this.speed)&&(identical(other.skipInterval, _this.skipInterval) || other.skipInterval == _this.skipInterval)&&const DeepCollectionEquality().equals(other.actions, _this.actions)&&(identical(other.queueItemId, _this.queueItemId) || other.queueItemId == _this.queueItemId)&&(identical(other.duration, _this.duration) || other.duration == _this.duration)&&(identical(other.artworkUri, _this.artworkUri) || other.artworkUri == _this.artworkUri));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is MediaSessionState&&(identical(other.title, _this.title) || other.title == _this.title)&&(identical(other.artist, _this.artist) || other.artist == _this.artist)&&(identical(other.album, _this.album) || other.album == _this.album)&&(identical(other.position, _this.position) || other.position == _this.position)&&(identical(other.playing, _this.playing) || other.playing == _this.playing)&&(identical(other.buffering, _this.buffering) || other.buffering == _this.buffering)&&(identical(other.speed, _this.speed) || other.speed == _this.speed)&&(identical(other.skipInterval, _this.skipInterval) || other.skipInterval == _this.skipInterval)&&const DeepCollectionEquality().equals(other.actions, _this.actions)&&(identical(other.queueItemId, _this.queueItemId) || other.queueItemId == _this.queueItemId)&&(identical(other.duration, _this.duration) || other.duration == _this.duration)&&(identical(other.artworkUri, _this.artworkUri) || other.artworkUri == _this.artworkUri)&&(identical(other.liked, _this.liked) || other.liked == _this.liked));
 }
 
 
 @override
 int get hashCode {
   final _this = this as MediaSessionState;
-  return Object.hash(runtimeType,_this.title,_this.artist,_this.album,_this.position,_this.playing,_this.buffering,_this.speed,_this.skipInterval,const DeepCollectionEquality().hash(_this.actions),_this.queueItemId,_this.duration,_this.artworkUri);
+  return Object.hash(runtimeType,_this.title,_this.artist,_this.album,_this.position,_this.playing,_this.buffering,_this.speed,_this.skipInterval,const DeepCollectionEquality().hash(_this.actions),_this.queueItemId,_this.duration,_this.artworkUri,_this.liked);
 }
 
 @override
 String toString() {
   final _this = this as MediaSessionState;
-  return 'MediaSessionState(title: ${_this.title}, artist: ${_this.artist}, album: ${_this.album}, position: ${_this.position}, playing: ${_this.playing}, buffering: ${_this.buffering}, speed: ${_this.speed}, skipInterval: ${_this.skipInterval}, actions: ${_this.actions}, queueItemId: ${_this.queueItemId}, duration: ${_this.duration}, artworkUri: ${_this.artworkUri})';
+  return 'MediaSessionState(title: ${_this.title}, artist: ${_this.artist}, album: ${_this.album}, position: ${_this.position}, playing: ${_this.playing}, buffering: ${_this.buffering}, speed: ${_this.speed}, skipInterval: ${_this.skipInterval}, actions: ${_this.actions}, queueItemId: ${_this.queueItemId}, duration: ${_this.duration}, artworkUri: ${_this.artworkUri}, liked: ${_this.liked})';
 }
 
 
@@ -65,7 +66,7 @@ abstract mixin class $MediaSessionStateCopyWith<$Res>  {
   factory $MediaSessionStateCopyWith(MediaSessionState value, $Res Function(MediaSessionState) _then) = _$MediaSessionStateCopyWithImpl;
 @useResult
 $Res call({
- String title, String artist, String album, Duration position, bool playing, bool buffering, double speed, Duration skipInterval, Set<MediaAction> actions, String? queueItemId, Duration? duration, Uri? artworkUri
+ String title, String artist, String album, Duration position, bool playing, bool buffering, double speed, Duration skipInterval, Set<MediaAction> actions, String? queueItemId, Duration? duration, Uri? artworkUri, bool liked
 });
 
 
@@ -82,7 +83,7 @@ class _$MediaSessionStateCopyWithImpl<$Res>
 
 /// Create a copy of MediaSessionState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? title = null,Object? artist = null,Object? album = null,Object? position = null,Object? playing = null,Object? buffering = null,Object? speed = null,Object? skipInterval = null,Object? actions = null,Object? queueItemId = freezed,Object? duration = freezed,Object? artworkUri = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? title = null,Object? artist = null,Object? album = null,Object? position = null,Object? playing = null,Object? buffering = null,Object? speed = null,Object? skipInterval = null,Object? actions = null,Object? queueItemId = freezed,Object? duration = freezed,Object? artworkUri = freezed,Object? liked = null,}) {
   return _then(MediaSessionState(
 title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
 as String,artist: null == artist ? _self.artist : artist // ignore: cast_nullable_to_non_nullable
@@ -96,7 +97,8 @@ as Duration,actions: null == actions ? _self.actions : actions // ignore: cast_n
 as Set<MediaAction>,queueItemId: freezed == queueItemId ? _self.queueItemId : queueItemId // ignore: cast_nullable_to_non_nullable
 as String?,duration: freezed == duration ? _self.duration : duration // ignore: cast_nullable_to_non_nullable
 as Duration?,artworkUri: freezed == artworkUri ? _self.artworkUri : artworkUri // ignore: cast_nullable_to_non_nullable
-as Uri?,
+as Uri?,liked: null == liked ? _self.liked : liked // ignore: cast_nullable_to_non_nullable
+as bool,
   ));
 }
 
@@ -181,10 +183,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String title,  String artist,  String album,  Duration position,  bool playing,  bool buffering,  double speed,  Duration skipInterval,  Set<MediaAction> actions,  String? queueItemId,  Duration? duration,  Uri? artworkUri)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String title,  String artist,  String album,  Duration position,  bool playing,  bool buffering,  double speed,  Duration skipInterval,  Set<MediaAction> actions,  String? queueItemId,  Duration? duration,  Uri? artworkUri,  bool liked)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _MediaSessionState() when $default != null:
-return $default(_that.title,_that.artist,_that.album,_that.position,_that.playing,_that.buffering,_that.speed,_that.skipInterval,_that.actions,_that.queueItemId,_that.duration,_that.artworkUri);case _:
+return $default(_that.title,_that.artist,_that.album,_that.position,_that.playing,_that.buffering,_that.speed,_that.skipInterval,_that.actions,_that.queueItemId,_that.duration,_that.artworkUri,_that.liked);case _:
   return orElse();
 
 }
@@ -202,10 +204,10 @@ return $default(_that.title,_that.artist,_that.album,_that.position,_that.playin
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String title,  String artist,  String album,  Duration position,  bool playing,  bool buffering,  double speed,  Duration skipInterval,  Set<MediaAction> actions,  String? queueItemId,  Duration? duration,  Uri? artworkUri)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String title,  String artist,  String album,  Duration position,  bool playing,  bool buffering,  double speed,  Duration skipInterval,  Set<MediaAction> actions,  String? queueItemId,  Duration? duration,  Uri? artworkUri,  bool liked)  $default,) {final _that = this;
 switch (_that) {
 case _MediaSessionState():
-return $default(_that.title,_that.artist,_that.album,_that.position,_that.playing,_that.buffering,_that.speed,_that.skipInterval,_that.actions,_that.queueItemId,_that.duration,_that.artworkUri);case _:
+return $default(_that.title,_that.artist,_that.album,_that.position,_that.playing,_that.buffering,_that.speed,_that.skipInterval,_that.actions,_that.queueItemId,_that.duration,_that.artworkUri,_that.liked);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -222,10 +224,10 @@ return $default(_that.title,_that.artist,_that.album,_that.position,_that.playin
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String title,  String artist,  String album,  Duration position,  bool playing,  bool buffering,  double speed,  Duration skipInterval,  Set<MediaAction> actions,  String? queueItemId,  Duration? duration,  Uri? artworkUri)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String title,  String artist,  String album,  Duration position,  bool playing,  bool buffering,  double speed,  Duration skipInterval,  Set<MediaAction> actions,  String? queueItemId,  Duration? duration,  Uri? artworkUri,  bool liked)?  $default,) {final _that = this;
 switch (_that) {
 case _MediaSessionState() when $default != null:
-return $default(_that.title,_that.artist,_that.album,_that.position,_that.playing,_that.buffering,_that.speed,_that.skipInterval,_that.actions,_that.queueItemId,_that.duration,_that.artworkUri);case _:
+return $default(_that.title,_that.artist,_that.album,_that.position,_that.playing,_that.buffering,_that.speed,_that.skipInterval,_that.actions,_that.queueItemId,_that.duration,_that.artworkUri,_that.liked);case _:
   return null;
 
 }
@@ -237,7 +239,7 @@ return $default(_that.title,_that.artist,_that.album,_that.position,_that.playin
 
 
 class _MediaSessionState implements MediaSessionState {
-  const _MediaSessionState({required this.title, required this.artist, required this.album, required this.position, required this.playing, required this.buffering, required this.speed, required this.skipInterval, required  Set<MediaAction> actions, this.queueItemId, this.duration, this.artworkUri}): _actions = actions;
+  const _MediaSessionState({required this.title, required this.artist, required this.album, required this.position, required this.playing, required this.buffering, required this.speed, required this.skipInterval, required  Set<MediaAction> actions, this.queueItemId, this.duration, this.artworkUri, this.liked = false}): _actions = actions;
   
 
 /// The item's title.
@@ -273,6 +275,8 @@ class _MediaSessionState implements MediaSessionState {
 /// The artwork as a URI the OS can load without credentials: a local
 /// file, or on web a URL carrying the access token.
 @override final  Uri? artworkUri;
+/// Whether the current item is liked; what [MediaAction.like] shows.
+@override@JsonKey() final  bool liked;
 
 /// Create a copy of MediaSessionState
 /// with the given fields replaced by the non-null parameter values.
@@ -284,18 +288,18 @@ _$MediaSessionStateCopyWith<_MediaSessionState> get copyWith => __$MediaSessionS
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _MediaSessionState&&(identical(other.title, title) || other.title == title)&&(identical(other.artist, artist) || other.artist == artist)&&(identical(other.album, album) || other.album == album)&&(identical(other.position, position) || other.position == position)&&(identical(other.playing, playing) || other.playing == playing)&&(identical(other.buffering, buffering) || other.buffering == buffering)&&(identical(other.speed, speed) || other.speed == speed)&&(identical(other.skipInterval, skipInterval) || other.skipInterval == skipInterval)&&const DeepCollectionEquality().equals(other.actions, _actions)&&(identical(other.queueItemId, queueItemId) || other.queueItemId == queueItemId)&&(identical(other.duration, duration) || other.duration == duration)&&(identical(other.artworkUri, artworkUri) || other.artworkUri == artworkUri));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _MediaSessionState&&(identical(other.title, title) || other.title == title)&&(identical(other.artist, artist) || other.artist == artist)&&(identical(other.album, album) || other.album == album)&&(identical(other.position, position) || other.position == position)&&(identical(other.playing, playing) || other.playing == playing)&&(identical(other.buffering, buffering) || other.buffering == buffering)&&(identical(other.speed, speed) || other.speed == speed)&&(identical(other.skipInterval, skipInterval) || other.skipInterval == skipInterval)&&const DeepCollectionEquality().equals(other.actions, _actions)&&(identical(other.queueItemId, queueItemId) || other.queueItemId == queueItemId)&&(identical(other.duration, duration) || other.duration == duration)&&(identical(other.artworkUri, artworkUri) || other.artworkUri == artworkUri)&&(identical(other.liked, liked) || other.liked == liked));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,title,artist,album,position,playing,buffering,speed,skipInterval,const DeepCollectionEquality().hash(_actions),queueItemId,duration,artworkUri);
+    return Object.hash(runtimeType,title,artist,album,position,playing,buffering,speed,skipInterval,const DeepCollectionEquality().hash(_actions),queueItemId,duration,artworkUri,liked);
 }
 
 @override
 String toString() {
-    return 'MediaSessionState(title: $title, artist: $artist, album: $album, position: $position, playing: $playing, buffering: $buffering, speed: $speed, skipInterval: $skipInterval, actions: $actions, queueItemId: $queueItemId, duration: $duration, artworkUri: $artworkUri)';
+    return 'MediaSessionState(title: $title, artist: $artist, album: $album, position: $position, playing: $playing, buffering: $buffering, speed: $speed, skipInterval: $skipInterval, actions: $actions, queueItemId: $queueItemId, duration: $duration, artworkUri: $artworkUri, liked: $liked)';
 }
 
 
@@ -306,7 +310,7 @@ abstract mixin class _$MediaSessionStateCopyWith<$Res> implements $MediaSessionS
   factory _$MediaSessionStateCopyWith(_MediaSessionState value, $Res Function(_MediaSessionState) _then) = __$MediaSessionStateCopyWithImpl;
 @override @useResult
 $Res call({
- String title, String artist, String album, Duration position, bool playing, bool buffering, double speed, Duration skipInterval, Set<MediaAction> actions, String? queueItemId, Duration? duration, Uri? artworkUri
+ String title, String artist, String album, Duration position, bool playing, bool buffering, double speed, Duration skipInterval, Set<MediaAction> actions, String? queueItemId, Duration? duration, Uri? artworkUri, bool liked
 });
 
 
@@ -323,7 +327,7 @@ class __$MediaSessionStateCopyWithImpl<$Res>
 
 /// Create a copy of MediaSessionState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? title = null,Object? artist = null,Object? album = null,Object? position = null,Object? playing = null,Object? buffering = null,Object? speed = null,Object? skipInterval = null,Object? actions = null,Object? queueItemId = freezed,Object? duration = freezed,Object? artworkUri = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? title = null,Object? artist = null,Object? album = null,Object? position = null,Object? playing = null,Object? buffering = null,Object? speed = null,Object? skipInterval = null,Object? actions = null,Object? queueItemId = freezed,Object? duration = freezed,Object? artworkUri = freezed,Object? liked = null,}) {
   return _then(_MediaSessionState(
 title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
 as String,artist: null == artist ? _self.artist : artist // ignore: cast_nullable_to_non_nullable
@@ -337,7 +341,8 @@ as Duration,actions: null == actions ? _self._actions : actions // ignore: cast_
 as Set<MediaAction>,queueItemId: freezed == queueItemId ? _self.queueItemId : queueItemId // ignore: cast_nullable_to_non_nullable
 as String?,duration: freezed == duration ? _self.duration : duration // ignore: cast_nullable_to_non_nullable
 as Duration?,artworkUri: freezed == artworkUri ? _self.artworkUri : artworkUri // ignore: cast_nullable_to_non_nullable
-as Uri?,
+as Uri?,liked: null == liked ? _self.liked : liked // ignore: cast_nullable_to_non_nullable
+as bool,
   ));
 }
 

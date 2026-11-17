@@ -1,14 +1,17 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 
 // Checks the platform configuration files for the entries the app needs
-// (doc 10: Deep Links Summary, and the camera entries of the QR scanner) and
-// exits non-zero listing every missing one.
+// (doc 10: the Android manifest table, Cleartext HTTP and backup rules, the
+// Deep Links Summary, and the camera entries of the QR scanner) and exits
+// non-zero listing every missing one.
 //
 //   dart run tool/check_platform_config.dart [--android-manifest=<path>]
-//       [--ios-plist=<path>] [--macos-plist=<path>] [--linux-desktop=<path>]
-//       [--macos-entitlements=<path>[,<path>…]]
+//       [--android-res=<dir>] [--ios-plist=<path>] [--macos-plist=<path>]
+//       [--linux-desktop=<path>] [--macos-entitlements=<path>[,<path>…]]
 //
 // Paths default to the source files under client/. Run from client/.
+// --android-manifest also takes the merged manifest of a built APK
+// (`apkanalyzer manifest print`).
 
 import 'dart:io';
 
@@ -27,6 +30,7 @@ const String cameraEntitlement = 'com.apple.security.device.camera';
 /// `macos-entitlements` is a comma-separated list.
 const Map<String, String> defaultPaths = {
   'android-manifest': 'android/app/src/main/AndroidManifest.xml',
+  'android-res': 'android/app/src/main/res',
   'ios-plist': 'ios/Runner/Info.plist',
   'macos-plist': 'macos/Runner/Info.plist',
   'linux-desktop': 'linux/packaging/io.soundspan.app.desktop',
@@ -58,6 +62,7 @@ List<ConfigViolation> checkPlatformConfig([
   String path(String key) => paths[key] ?? defaultPaths[key]!;
   return [
     ...checkAndroidManifest(path('android-manifest')),
+    ...checkAndroidRes(path('android-res')),
     ...checkPlist(path('ios-plist')),
     ...checkPlist(path('macos-plist')),
     ...checkLinuxDesktop(path('linux-desktop')),
@@ -81,10 +86,36 @@ XmlDocument? _readXml(String path, List<ConfigViolation> out) {
   }
 }
 
-/// The camera permission and optional camera feature of the QR scanner,
-/// and the URL-scheme intent filter on `MainActivity`: action `VIEW`,
-/// categories `DEFAULT` and `BROWSABLE`, and
-/// `<data android:scheme="soundspan"/>`.
+/// The permissions of the doc 10 manifest table, the QR scanner's camera
+/// included. `FOREGROUND_SERVICE_DATA_SYNC` comes with the download
+/// notifications.
+const List<String> androidPermissions = [
+  'android.permission.INTERNET',
+  'android.permission.ACCESS_NETWORK_STATE',
+  'android.permission.FOREGROUND_SERVICE',
+  'android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK',
+  'android.permission.POST_NOTIFICATIONS',
+  'android.permission.WAKE_LOCK',
+  'android.permission.CAMERA',
+];
+
+/// The `audio_service` playback service.
+const String audioServiceClass = 'com.ryanheise.audioservice.AudioService';
+
+/// The `audio_service` media-button receiver.
+const String mediaButtonReceiverClass =
+    'com.ryanheise.audioservice.MediaButtonReceiver';
+
+/// The doc 10 manifest table (except `FOREGROUND_SERVICE_DATA_SYNC` and the
+/// Android Auto meta-data): [androidPermissions], the optional camera
+/// feature of the QR scanner, the `<application>` network security config
+/// and backup rules, cleartext traffic not switched off, `MainActivity` with
+/// `launchMode="singleTask"` and the URL-scheme intent filter (action
+/// `VIEW`, categories `DEFAULT` and `BROWSABLE`,
+/// `<data android:scheme="soundspan"/>`), the exported `AudioService` with
+/// `foregroundServiceType="mediaPlayback"` and the `MediaBrowserService`
+/// intent filter, and the exported `MediaButtonReceiver` with the
+/// `MEDIA_BUTTON` intent filter.
 List<ConfigViolation> checkAndroidManifest(String path) {
   final out = <ConfigViolation>[];
   final document = _readXml(path, out);
@@ -93,12 +124,20 @@ List<ConfigViolation> checkAndroidManifest(String path) {
   String? attr(XmlElement e, String name) =>
       e.getAttribute(name, namespaceUri: android) ??
       e.getAttribute('android:$name');
+  bool hasChild(XmlElement filter, String tag, String name, String value) =>
+      filter.findElements(tag).any((e) => attr(e, name) == value);
+  bool filtersAction(XmlElement component, String action) => component
+      .findElements('intent-filter')
+      .any((f) => hasChild(f, 'action', 'name', action));
 
-  const camera = 'android.permission.CAMERA';
-  if (!document.rootElement
-      .findElements('uses-permission')
-      .any((e) => attr(e, 'name') == camera)) {
-    out.add(ConfigViolation(path, '<uses-permission android:name="$camera"/>'));
+  for (final permission in androidPermissions) {
+    if (!document.rootElement
+        .findElements('uses-permission')
+        .any((e) => attr(e, 'name') == permission)) {
+      out.add(
+        ConfigViolation(path, '<uses-permission android:name="$permission"/>'),
+      );
+    }
   }
   const feature = 'android.hardware.camera';
   if (!document.rootElement
@@ -114,6 +153,63 @@ List<ConfigViolation> checkAndroidManifest(String path) {
     );
   }
 
+  final application = document.rootElement
+      .findElements('application')
+      .firstOrNull;
+  for (final (name, value) in const [
+    ('networkSecurityConfig', '@xml/network_security_config'),
+    ('dataExtractionRules', '@xml/data_extraction_rules'),
+    ('fullBackupContent', '@xml/backup_rules'),
+  ]) {
+    if (application == null || attr(application, name) != value) {
+      out.add(ConfigViolation(path, 'android:$name="$value"'));
+    }
+  }
+  if (application != null &&
+      attr(application, 'usesCleartextTraffic') == 'false') {
+    out.add(
+      ConfigViolation(
+        path,
+        'cleartext traffic (android:usesCleartextTraffic="false" is set)',
+      ),
+    );
+  }
+
+  final service = document
+      .findAllElements('service')
+      .where((e) => attr(e, 'name') == audioServiceClass)
+      .firstOrNull;
+  if (service == null ||
+      attr(service, 'foregroundServiceType') != 'mediaPlayback' ||
+      attr(service, 'exported') != 'true' ||
+      !filtersAction(service, 'android.media.browse.MediaBrowserService')) {
+    out.add(
+      ConfigViolation(
+        path,
+        '<service android:name="$audioServiceClass" '
+        'android:foregroundServiceType="mediaPlayback" '
+        'android:exported="true"> with the '
+        'android.media.browse.MediaBrowserService intent filter',
+      ),
+    );
+  }
+  final receiver = document
+      .findAllElements('receiver')
+      .where((e) => attr(e, 'name') == mediaButtonReceiverClass)
+      .firstOrNull;
+  if (receiver == null ||
+      attr(receiver, 'exported') != 'true' ||
+      !filtersAction(receiver, 'android.intent.action.MEDIA_BUTTON')) {
+    out.add(
+      ConfigViolation(
+        path,
+        '<receiver android:name="$mediaButtonReceiverClass" '
+        'android:exported="true"> with the '
+        'android.intent.action.MEDIA_BUTTON intent filter',
+      ),
+    );
+  }
+
   final activity = document.findAllElements('activity').where((e) {
     final name = attr(e, 'name');
     return name == '.MainActivity' ||
@@ -123,8 +219,11 @@ List<ConfigViolation> checkAndroidManifest(String path) {
     out.add(ConfigViolation(path, '<activity android:name=".MainActivity">'));
     return out;
   }
-  bool hasChild(XmlElement filter, String tag, String name, String value) =>
-      filter.findElements(tag).any((e) => attr(e, name) == value);
+  if (attr(activity, 'launchMode') != 'singleTask') {
+    out.add(
+      ConfigViolation(path, 'MainActivity android:launchMode="singleTask"'),
+    );
+  }
 
   final filters = activity
       .findElements('intent-filter')
@@ -155,6 +254,104 @@ List<ConfigViolation> checkAndroidManifest(String path) {
         ),
       );
     }
+  }
+  return out;
+}
+
+/// What the backup rules exclude (doc 10, `android:dataExtractionRules`):
+/// the profiles' tree and `app.db` under the app-support directory (the
+/// `file` domain on Android), and the shared preferences of
+/// `flutter_secure_storage`. The other databases live under `profiles/` or
+/// in the cache directory, which is never backed up.
+const List<(String, String)> backupExclusions = [
+  ('file', 'profiles/'),
+  ('file', 'app.db'),
+  ('file', 'app.db-wal'),
+  ('file', 'app.db-shm'),
+  ('file', 'app.db-journal'),
+  ('sharedpref', 'FlutterSecureStorage.xml'),
+];
+
+/// The resource files under the Android `res` directory [dir]:
+/// `xml/network_security_config.xml` permits cleartext in its base config
+/// and trusts the system and user certificate authorities;
+/// `xml/data_extraction_rules.xml` (`<cloud-backup>` and
+/// `<device-transfer>`) and `xml/backup_rules.xml` exclude every one of
+/// [backupExclusions].
+List<ConfigViolation> checkAndroidRes(String dir) {
+  final out = <ConfigViolation>[];
+  final security = '$dir/xml/network_security_config.xml';
+  final config = _readXml(security, out);
+  if (config != null) {
+    final base = config.rootElement.findElements('base-config').firstOrNull;
+    if (base?.getAttribute('cleartextTrafficPermitted') != 'true') {
+      out.add(
+        ConfigViolation(
+          security,
+          '<base-config cleartextTrafficPermitted="true">',
+        ),
+      );
+    }
+    final anchors = base?.findElements('trust-anchors').firstOrNull;
+    for (final source in const ['system', 'user']) {
+      if (anchors == null ||
+          !anchors
+              .findElements('certificates')
+              .any((c) => c.getAttribute('src') == source)) {
+        out.add(
+          ConfigViolation(
+            security,
+            '<certificates src="$source"/> in the base-config trust anchors',
+          ),
+        );
+      }
+    }
+  }
+
+  void checkExcludes(String path, XmlElement? section, String tag) {
+    if (section == null) {
+      out.add(ConfigViolation(path, '<$tag>'));
+      return;
+    }
+    for (final (domain, file) in backupExclusions) {
+      if (!section
+          .findElements('exclude')
+          .any(
+            (e) =>
+                e.getAttribute('domain') == domain &&
+                e.getAttribute('path') == file,
+          )) {
+        out.add(
+          ConfigViolation(
+            path,
+            '<exclude domain="$domain" path="$file"/> in <$tag>',
+          ),
+        );
+      }
+    }
+  }
+
+  final extraction = '$dir/xml/data_extraction_rules.xml';
+  final rules = _readXml(extraction, out);
+  if (rules != null) {
+    for (final tag in const ['cloud-backup', 'device-transfer']) {
+      checkExcludes(
+        extraction,
+        rules.rootElement.findElements(tag).firstOrNull,
+        tag,
+      );
+    }
+  }
+  final backup = '$dir/xml/backup_rules.xml';
+  final full = _readXml(backup, out);
+  if (full != null) {
+    checkExcludes(
+      backup,
+      full.rootElement.name.local == 'full-backup-content'
+          ? full.rootElement
+          : null,
+      'full-backup-content',
+    );
   }
   return out;
 }

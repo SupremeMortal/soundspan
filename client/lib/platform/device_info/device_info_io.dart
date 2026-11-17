@@ -2,7 +2,11 @@
 
 import 'dart:io';
 
+import 'package:flutter/services.dart';
+import 'package:soundspan/core/logging/app_logger.dart';
 import 'package:soundspan/platform/device_info/device_info.dart';
+
+final AppLogger _log = AppLogger.scope('DeviceInfo');
 
 /// The [DeviceInfo] of the operating system the app runs on; the host name
 /// is read on desktop only.
@@ -26,6 +30,20 @@ String? _hostName() {
     final name = Platform.localHostname.trim();
     return name.isEmpty ? null : name;
   } on Object {
+    return null;
+  }
+}
+
+/// The Android API level, asked of `MainActivity` over
+/// [deviceInfoChannel]; null off Android and when no activity answers
+/// (the engine was started by the playback service).
+Future<int?> androidSdkVersion() async {
+  if (!Platform.isAndroid) return null;
+  try {
+    return await const MethodChannel(deviceInfoChannel)
+        .invokeMethod<int>('sdkInt');
+  } on Object catch (error, stackTrace) {
+    _log.warning('The API level was not read', const {}, error, stackTrace);
     return null;
   }
 }

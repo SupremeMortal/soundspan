@@ -5,12 +5,14 @@ import 'dart:async';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:soundspan/core/playback/media_controls/artwork_pinner.dart';
+import 'package:soundspan/core/playback/media_controls/audio_service_controls.dart';
 import 'package:soundspan/core/playback/media_controls/media_controls.dart';
 import 'package:soundspan/core/playback/media_controls/media_controls_binder.dart';
 import 'package:soundspan/core/playback/playback_providers.dart';
 import 'package:soundspan/core/profile/profile_context.dart';
 import 'package:soundspan/core/profile/profile_providers.dart';
 import 'package:soundspan/core/profile/profile_runtime.dart';
+import 'package:soundspan/core/sync/sync_providers.dart';
 import 'package:soundspan/platform/artwork_store/artwork_store.dart';
 import 'package:soundspan/platform/media_controls/media_controls_factory.dart';
 import 'package:soundspan/shared/clock.dart';
@@ -25,6 +27,15 @@ final Provider<String> mediaControlsChannelNameProvider = Provider<String>(
   ),
 );
 
+/// The localized label of the Like action of the Android playback
+/// notification, by whether the item shown is liked. Bootstrap overrides
+/// it; it throws until then.
+final Provider<LikeLabel> mediaControlsLikeLabelProvider = Provider<LikeLabel>(
+  (ref) => throw UnimplementedError(
+    'mediaControlsLikeLabelProvider is set by bootstrap',
+  ),
+);
+
 /// The platform's [MediaControls], built by the media controls seam
 /// (`audio_service` on Android, iOS, macOS, Linux and the web; none on
 /// Windows). The channel name is read when they are initialised.
@@ -32,6 +43,7 @@ final Provider<MediaControls> mediaControlsProvider = Provider<MediaControls>(
   (ref) => createMediaControls(
     channelName: () => ref.read(mediaControlsChannelNameProvider),
     clock: ref.watch(clockProvider),
+    likeLabel: (liked) => ref.read(mediaControlsLikeLabelProvider)(liked),
   ),
 );
 
@@ -103,6 +115,9 @@ Future<void> startMediaControls(ProviderContainer root) async {
                 // Read at the first pin, so start-up opens no image cache.
                 pin: (ref) => active.read(artworkPinnerProvider).pin(ref),
                 clock: clock,
+                like: (track, {required liked}) => active
+                    .read(preferenceRepositoryProvider)
+                    .setTrackLiked(track, liked: liked),
               ),
       ),
     );
