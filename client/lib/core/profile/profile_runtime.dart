@@ -244,9 +244,13 @@ class ProfileRuntime {
     if (container != null) await _close(container);
   }
 
+  /// Runs the closers, disposes [container], which cancels every watcher
+  /// of its databases, paused ones included, then closes the databases.
   static Future<void> _close(ProviderContainer container) async {
-    await container.read(profileDisposerProvider).closeAll();
+    final disposer = container.read(profileDisposerProvider);
+    await disposer.closeAll();
     container.dispose();
+    await disposer.closeAfterDispose();
   }
 }
 

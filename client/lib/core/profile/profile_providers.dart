@@ -47,7 +47,7 @@ final Provider<ApiConfig> apiConfigProvider = Provider<ApiConfig>((ref) {
 }, dependencies: [profileContextProvider]);
 
 /// The profile's `state.db`. It opens on first use and closes through the
-/// [ProfileDisposer] when the profile scope ends.
+/// [ProfileDisposer] after the profile container is disposed.
 final Provider<StateDatabase> stateDatabaseProvider = Provider<StateDatabase>((
   ref,
 ) {
@@ -55,7 +55,7 @@ final Provider<StateDatabase> stateDatabaseProvider = Provider<StateDatabase>((
   final database = StateDatabase(
     ref.watch(databaseOpenerProvider).open(StateDatabaseTarget(profileId)),
   );
-  ref.watch(profileDisposerProvider).register(database.close);
+  ref.watch(profileDisposerProvider).registerAfterDispose(database.close);
   return database;
 }, dependencies: [profileContextProvider, profileDisposerProvider]);
 

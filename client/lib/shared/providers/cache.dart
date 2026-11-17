@@ -15,7 +15,7 @@ import 'package:soundspan/shared/data/playlist/playlist_remote_source.dart';
 import 'package:soundspan/shared/data/search/search_remote_source.dart';
 
 /// The profile's `cache.db`, opened with `openCacheDatabase` and closed
-/// through the [ProfileDisposer] when the profile scope ends.
+/// through the [ProfileDisposer] after the profile container is disposed.
 final FutureProvider<CacheDatabase> cacheDatabaseProvider =
     FutureProvider<CacheDatabase>((ref) async {
       final profileId = ref.watch(profileContextProvider).profile.id;
@@ -24,7 +24,7 @@ final FutureProvider<CacheDatabase> cacheDatabaseProvider =
         ref.watch(databaseOpenerProvider),
         profileId,
       );
-      disposer.register(database.close);
+      disposer.registerAfterDispose(database.close);
       return database;
     }, dependencies: [profileContextProvider, profileDisposerProvider]);
 

@@ -12,23 +12,37 @@ typedef ProfileCloser = Future<void> Function();
 /// `ref.onDispose` is synchronous, so a resource that closes asynchronously
 /// (a database, a socket, an engine) registers its close here as well.
 /// `ProfileRuntime` awaits [closeAll] before it disposes the profile
-/// container.
+/// container, and [closeAfterDispose] after it.
 class ProfileDisposer {
   /// Creates an empty registry; failures are logged to the given logger.
   new(this._logger);
 
   final AppLogger _logger;
   final List<ProfileCloser> _closers = [];
+  final List<ProfileCloser> _afterDispose = [];
 
   /// Adds [closer]; it runs once, in [closeAll].
   void register(ProfileCloser closer) => _closers.add(closer);
 
-  /// Runs every registered closer once, in reverse registration order, each
-  /// after the previous one completed. A closer that fails is logged and
-  /// the rest still run.
-  Future<void> closeAll() async {
-    final closers = _closers.reversed.toList();
-    _closers.clear();
+  /// Adds [closer] for a store whose close waits on its watchers, such as a
+  /// drift database, which waits on every watch query's listeners. A
+  /// listener that Riverpod paused (a screen that is not shown) only lets
+  /// go when the profile container cancels it, so [closer] runs once, in
+  /// [closeAfterDispose], after the container is disposed.
+  void registerAfterDispose(ProfileCloser closer) => _afterDispose.add(closer);
+
+  /// Runs every closer added with [register] once, in reverse registration
+  /// order, each after the previous one completed. A closer that fails is
+  /// logged and the rest still run.
+  Future<void> closeAll() => _run(_closers);
+
+  /// Runs every closer added with [registerAfterDispose] once, like
+  /// [closeAll].
+  Future<void> closeAfterDispose() => _run(_afterDispose);
+
+  Future<void> _run(List<ProfileCloser> registered) async {
+    final closers = registered.reversed.toList();
+    registered.clear();
     for (final closer in closers) {
       try {
         await closer();

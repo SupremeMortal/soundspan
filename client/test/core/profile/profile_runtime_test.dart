@@ -39,6 +39,16 @@ final Provider<ProfileContext> _asyncCloserProbe = Provider<ProfileContext>((
   return ref.watch(profileContextProvider);
 }, dependencies: [profileContextProvider, profileDisposerProvider]);
 
+/// A watch query over the profile's `state.db`, as a screen would watch it.
+final StreamProvider<int> _stateWatchProbe = StreamProvider<int>(
+  (ref) => ref
+      .watch(stateDatabaseProvider)
+      .customSelect('SELECT 1 AS one')
+      .watch()
+      .map((rows) => rows.length),
+  dependencies: [stateDatabaseProvider],
+);
+
 /// Records `ref.onDispose` of the providers under test, per container.
 final class _DisposeObserver extends ProviderObserver {
   final List<(ProviderContainer, ProviderBase<Object?>)> disposed = [];
@@ -149,6 +159,69 @@ void main() {
     disposer.register(() async => throw StateError('closing failed'));
     await runtime.switchTo(null);
     expect(order, ['third', 'second', 'first']);
+  });
+
+  test('closers registered to run after dispose run after the container is '
+      'disposed and after the other closers', () async {
+    final (h, runtime) = await setUpRuntime();
+    await runtime.switchTo(h.a);
+    final container = runtime.container!..read(_plainProbe);
+    final order = <String>[];
+    container.read(profileDisposerProvider)
+      ..registerAfterDispose(() async {
+        order.add('afterDispose: ${_disposed.join(',')}');
+      })
+      ..register(() async => order.add('closer'));
+
+    await runtime.switchTo(null);
+
+    expect(order, ['closer', 'afterDispose: plainProbe']);
+  });
+
+  group('a paused watcher of a state.db query does not hold up', () {
+    /// Activates [profileId] and watches a `state.db` query from its
+    /// container with a subscription that is then paused, as Riverpod
+    /// pauses the watchers of a screen that is not shown.
+    Future<void> watchPaused(ProfileRuntime runtime, String profileId) async {
+      await runtime.switchTo(profileId);
+      final container = runtime.container!;
+      final subscription = container.listen(_stateWatchProbe, (_, _) {});
+      await container.read(_stateWatchProbe.future);
+      subscription.pause();
+      await pumpEventQueue();
+    }
+
+    test('a profile switch', () async {
+      final (h, runtime) = await setUpRuntime();
+      await watchPaused(runtime, h.a);
+
+      await runtime.switchTo(h.b).timeout(const Duration(seconds: 5));
+
+      expect(runtime.state.value, ProfileRuntimeActive(h.b));
+      expect(h.opener.closed, [StateDatabaseTarget(h.a)]);
+    });
+
+    test('a sign-out', () async {
+      final (h, runtime) = await setUpRuntime();
+      await watchPaused(runtime, h.a);
+      final repository = h.root.read(profileRepositoryProvider);
+      await repository.deleteCredentials(h.a);
+      await repository.setState(h.a, ProfileState.signedOut);
+
+      await runtime.reload(h.a).timeout(const Duration(seconds: 5));
+
+      expect(runtime.state.value, ProfileRuntimeActive(h.a));
+      expect(h.opener.closed, [StateDatabaseTarget(h.a)]);
+    });
+
+    test('dispose', () async {
+      final (h, runtime) = await setUpRuntime();
+      await watchPaused(runtime, h.a);
+
+      await runtime.dispose().timeout(const Duration(seconds: 5));
+
+      expect(h.opener.closed, [StateDatabaseTarget(h.a)]);
+    });
   });
 
   test('concurrent switchTo calls run one after another and end on the last requested profile', () async {
