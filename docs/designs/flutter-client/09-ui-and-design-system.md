@@ -193,7 +193,7 @@ Subscribed grid (the Library grid's columns); Top Podcasts shelf, hidden when em
 | Section | Items |
 |---|---|
 | Servers | Profile list, add, switch, sign out, remove; per-server: version, link expiry, "Open server admin" (shown to admin users) |
-| Playback | Quality on Wi-Fi / mobile data; volume levelling mode (server setting `loudnessMode`); skip interval and default speed for podcasts |
+| Playback | Quality on Wi-Fi / mobile data (one "Streaming quality" row where `PlatformCapabilities.hasMobileData` is false), applied from the next resolved source; volume levelling mode (server setting `loudnessMode`: shown at once and posted, restored with a snackbar on failure, disabled with a tooltip while the server is not reachable, a skeleton until a value is known); skip interval (5, 10, 15, 30, 45 or 60 s) and default speed (0.5×–3×) for podcasts, the speed applied at once to a playing episode. Each row opens a single-choice list: a sheet on touch, a menu on pointer |
 | Storage | Download quality, Wi-Fi only, device limit, usage breakdown, clear cache, remove downloads |
 | Appearance | Theme mode, language |
 | Desktop | Close to tray, start minimised, global media keys |

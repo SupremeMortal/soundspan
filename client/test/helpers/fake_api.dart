@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:dio/dio.dart' show CancelToken, Options;
 import 'package:soundspan_api/soundspan_api.dart' as api;
@@ -23,6 +24,88 @@ final class FakeApi {
 
   /// The playlists resource: `rest.playlists`.
   final FakePlaylistsClient playlists = FakePlaylistsClient();
+
+  /// The session resource's settings endpoints: `rest.session`.
+  final FakeSessionClient session = FakeSessionClient();
+}
+
+/// An in-memory model of the server's settings endpoints (doc 03,
+/// `GET /settings`, `POST /settings`): the stored [loudnessMode] and
+/// [playbackQuality], every update body in [updates], and per-call
+/// failures in [failures]. While [gate] is set every call waits for it.
+/// Other session calls are not modelled.
+final class FakeSessionClient implements api.SessionClient {
+  /// The stored levelling mode, as its wire string.
+  String loudnessMode = 'off';
+
+  /// The stored stream quality.
+  String playbackQuality = 'high';
+
+  /// Every `POST /settings` body, in order.
+  final List<api.UpdateSettingsRequest> updates = [];
+
+  /// Calls by operation name.
+  final Map<String, int> calls = {};
+
+  /// Exceptions to throw, by operation name (`getSettings`,
+  /// `updateSettings`).
+  final Map<String, api.ApiException> failures = {};
+
+  /// When set, every call waits for it before answering.
+  Completer<void>? gate;
+
+  Future<void> _call(String name) async {
+    calls.update(name, (n) => n + 1, ifAbsent: () => 1);
+    await gate?.future;
+    if (failures[name] case final error?) throw error;
+  }
+
+  api.UserSettings get _settings => api.UserSettings.fromJson({
+    'userId': 'user-1',
+    'displayName': null,
+    'playbackQuality': playbackQuality,
+    'loudnessMode': loudnessMode,
+    'maxCacheSizeMb': 2048,
+    'offlineEnabled': false,
+    'shareListeningStatus': true,
+    'shareOnlinePresence': true,
+    'showTidalExplore': false,
+    'showYtMusicExplore': false,
+    'tidalStreamingQuality': 'HIGH',
+    'wifiOnly': false,
+    'ytMusicQuality': 'HIGH',
+  });
+
+  @override
+  Future<api.UserSettings> getSettings({
+    Map<String, Object?> extra = const {},
+    CancelToken? cancelToken,
+    Options? options,
+  }) async {
+    await _call('getSettings');
+    return _settings;
+  }
+
+  @override
+  Future<api.UserSettings> updateSettings({
+    required api.UpdateSettingsRequest body,
+    Map<String, Object?> extra = const {},
+    CancelToken? cancelToken,
+    Options? options,
+  }) async {
+    updates.add(body);
+    await _call('updateSettings');
+    final json = jsonDecode(jsonEncode(body)) as Map<String, Object?>;
+    if (json['loudnessMode'] case final String mode) loudnessMode = mode;
+    if (json['playbackQuality'] case final String quality) {
+      playbackQuality = quality;
+    }
+    return _settings;
+  }
+
+  @override
+  Never noSuchMethod(Invocation invocation) =>
+      throw UnimplementedError('${invocation.memberName}');
 }
 
 /// One request [FakePlaylistsClient] received: the operation and its

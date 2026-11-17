@@ -313,6 +313,138 @@ abstract class AppLocalizations {
   /// **'English'**
   String get settingsLanguageName;
 
+  /// Playback settings row: the stream quality used on Wi-Fi and other connections that are not mobile data.
+  ///
+  /// In en, this message translates to:
+  /// **'Quality on Wi-Fi'**
+  String get settingsPlaybackQualityWifi;
+
+  /// Playback settings row: the stream quality used on a mobile data connection.
+  ///
+  /// In en, this message translates to:
+  /// **'Quality on mobile data'**
+  String get settingsPlaybackQualityCellular;
+
+  /// Playback settings row on devices without mobile data: the stream quality on every connection.
+  ///
+  /// In en, this message translates to:
+  /// **'Streaming quality'**
+  String get settingsPlaybackQualitySingle;
+
+  /// Caption under the quality rows: the playing item is not reloaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Quality changes apply from the next item that starts.'**
+  String get settingsPlaybackQualityCaption;
+
+  /// Stream quality choice: use the quality saved on the server.
+  ///
+  /// In en, this message translates to:
+  /// **'Server default'**
+  String get settingsPlaybackQualityServerDefault;
+
+  /// Caption of the Server default quality choice.
+  ///
+  /// In en, this message translates to:
+  /// **'The quality saved on the server applies.'**
+  String get settingsPlaybackQualityServerDefaultCaption;
+
+  /// Stream quality choice: the original file, not transcoded.
+  ///
+  /// In en, this message translates to:
+  /// **'Original'**
+  String get settingsPlaybackQualityOriginal;
+
+  /// Stream quality choice: high.
+  ///
+  /// In en, this message translates to:
+  /// **'High'**
+  String get settingsPlaybackQualityHigh;
+
+  /// Stream quality choice: medium.
+  ///
+  /// In en, this message translates to:
+  /// **'Medium'**
+  String get settingsPlaybackQualityMedium;
+
+  /// Stream quality choice: low.
+  ///
+  /// In en, this message translates to:
+  /// **'Low'**
+  String get settingsPlaybackQualityLow;
+
+  /// Playback settings row: the loudness levelling mode, saved on the server.
+  ///
+  /// In en, this message translates to:
+  /// **'Volume levelling'**
+  String get settingsPlaybackLevelling;
+
+  /// Volume levelling choice: no levelling.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get settingsPlaybackLevellingOff;
+
+  /// Volume levelling choice: each track is levelled on its own.
+  ///
+  /// In en, this message translates to:
+  /// **'Track'**
+  String get settingsPlaybackLevellingTrack;
+
+  /// Volume levelling choice: tracks are levelled on their album's loudness.
+  ///
+  /// In en, this message translates to:
+  /// **'Album'**
+  String get settingsPlaybackLevellingAlbum;
+
+  /// Volume levelling choice: album levelling while an album plays, track levelling otherwise.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic'**
+  String get settingsPlaybackLevellingAuto;
+
+  /// Volume levelling value the server holds that this app does not know.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown'**
+  String get settingsPlaybackLevellingUnknown;
+
+  /// Tooltip of the disabled volume levelling row while the server cannot be reached.
+  ///
+  /// In en, this message translates to:
+  /// **'Available when the server can be reached'**
+  String get settingsPlaybackLevellingOffline;
+
+  /// Snackbar when saving the volume levelling mode failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t change volume levelling'**
+  String get settingsPlaybackLevellingFailed;
+
+  /// Playback settings row: how far the skip buttons move in an episode.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip interval (podcasts)'**
+  String get settingsPlaybackSkipInterval;
+
+  /// Playback settings row: the speed episodes play at.
+  ///
+  /// In en, this message translates to:
+  /// **'Default speed (podcasts)'**
+  String get settingsPlaybackSpeed;
+
+  /// A skip interval choice or value, in seconds.
+  ///
+  /// In en, this message translates to:
+  /// **'{seconds, plural, =1{1 second} other{{seconds} seconds}}'**
+  String settingsPlaybackSkipSeconds(int seconds);
+
+  /// A playback speed choice or value, such as 1.25×.
+  ///
+  /// In en, this message translates to:
+  /// **'{speed}×'**
+  String settingsPlaybackSpeedValue(double speed);
+
   /// Servers settings action: add another server.
   ///
   /// In en, this message translates to:

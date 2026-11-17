@@ -30,6 +30,7 @@ final class PlatformCapabilities {
     required this.supportsApiKeyStreaming,
     required this.isDesktop,
     required this.allowsPublicCleartextHttp,
+    required this.hasMobileData,
   });
 
   /// The capabilities of the native app on [platform] (doc 10).
@@ -49,6 +50,7 @@ final class PlatformCapabilities {
     supportsApiKeyStreaming: true,
     isDesktop: false,
     allowsPublicCleartextHttp: true,
+    hasMobileData: true,
   );
 
   /// iOS; App Transport Security blocks public `http://` servers.
@@ -60,6 +62,7 @@ final class PlatformCapabilities {
     supportsApiKeyStreaming: true,
     isDesktop: false,
     allowsPublicCleartextHttp: false,
+    hasMobileData: true,
   );
 
   /// macOS; closing the window keeps the app in the Dock, so there is no
@@ -72,6 +75,7 @@ final class PlatformCapabilities {
     supportsApiKeyStreaming: true,
     isDesktop: true,
     allowsPublicCleartextHttp: false,
+    hasMobileData: false,
   );
 
   /// Windows and Linux; no camera QR scanner.
@@ -83,6 +87,7 @@ final class PlatformCapabilities {
     supportsApiKeyStreaming: true,
     isDesktop: true,
     allowsPublicCleartextHttp: true,
+    hasMobileData: false,
   );
 
   /// The web app: no downloads, and streams carry a JWT in `?token=`, which
@@ -95,6 +100,7 @@ final class PlatformCapabilities {
     supportsApiKeyStreaming: false,
     isDesktop: false,
     allowsPublicCleartextHttp: true,
+    hasMobileData: false,
   );
 
   /// Tracks and episodes can be downloaded for offline use.
@@ -118,6 +124,10 @@ final class PlatformCapabilities {
   /// The platform lets the app reach a public server over plain `http://`.
   final bool allowsPublicCleartextHttp;
 
+  /// The device can be on a mobile data connection, so stream quality can
+  /// be set apart for it (Android and iOS).
+  final bool hasMobileData;
+
   @override
   bool operator ==(Object other) =>
       other is PlatformCapabilities &&
@@ -127,7 +137,8 @@ final class PlatformCapabilities {
       other.hasBackgroundPlayback == hasBackgroundPlayback &&
       other.supportsApiKeyStreaming == supportsApiKeyStreaming &&
       other.isDesktop == isDesktop &&
-      other.allowsPublicCleartextHttp == allowsPublicCleartextHttp;
+      other.allowsPublicCleartextHttp == allowsPublicCleartextHttp &&
+      other.hasMobileData == hasMobileData;
 
   @override
   int get hashCode => Object.hash(
@@ -138,6 +149,7 @@ final class PlatformCapabilities {
     supportsApiKeyStreaming,
     isDesktop,
     allowsPublicCleartextHttp,
+    hasMobileData,
   );
 
   @override
@@ -147,7 +159,8 @@ final class PlatformCapabilities {
       'hasBackgroundPlayback: $hasBackgroundPlayback, '
       'supportsApiKeyStreaming: $supportsApiKeyStreaming, '
       'isDesktop: $isDesktop, '
-      'allowsPublicCleartextHttp: $allowsPublicCleartextHttp)';
+      'allowsPublicCleartextHttp: $allowsPublicCleartextHttp, '
+      'hasMobileData: $hasMobileData)';
 }
 
 /// The capabilities of the platform the app runs on.

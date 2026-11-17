@@ -9,14 +9,19 @@ import 'package:soundspan/app/router/placeholder_screen.dart';
 import 'package:soundspan/app/router/routes.dart';
 import 'package:soundspan/app/shell/window_class.dart';
 import 'package:soundspan/app/theme/dimens.dart';
+import 'package:soundspan/core/profile/profile_scope.dart';
 import 'package:soundspan/features/settings/ui/about/about_section.dart';
 import 'package:soundspan/features/settings/ui/appearance_section.dart';
+import 'package:soundspan/features/settings/ui/playback_settings_screen.dart';
 import 'package:soundspan/features/settings/ui/servers_section.dart';
 
 /// The settings sections that exist, in list order.
 enum SettingsSection {
   /// The user's servers.
   servers(Icons.dns_rounded),
+
+  /// Stream quality, volume levelling and podcast playback.
+  playback(Icons.play_circle_outline_rounded),
 
   /// Theme and language.
   appearance(Icons.palette_rounded),
@@ -35,6 +40,7 @@ enum SettingsSection {
   /// The localized section name.
   String title(AppLocalizations l10n) => switch (this) {
     servers => l10n.screenSettingsServers,
+    playback => l10n.screenSettingsPlayback,
     appearance => l10n.screenSettingsAppearance,
     about => l10n.screenSettingsAbout,
   };
@@ -116,6 +122,9 @@ class SettingsScreen extends StatelessWidget {
 
   static Widget _body(SettingsSection section) => switch (section) {
     SettingsSection.servers => const ServersSection(),
+    SettingsSection.playback => const ProfileScope(
+      child: PlaybackSettingsScreen(),
+    ),
     SettingsSection.appearance => const AppearanceSection(),
     SettingsSection.about => const AboutSection(),
   };

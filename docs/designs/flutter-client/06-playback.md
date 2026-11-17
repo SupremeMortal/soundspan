@@ -254,7 +254,7 @@ engineVolume = clamp(userVolume × linear, 0, 1)
 - The engine volume range ends at 1.0 on ExoPlayer, AVPlayer, and HTML audio, so a positive gain is audible only when the user volume is below 1.0. This matches the web player, which also composites gain into element volume. mpv is held to the same range (`volume-max=100`) so every platform behaves alike.
 - Gain is applied when an item becomes current: on `AdvancedToNext` the controller sets the new volume immediately. A gapless transition between tracks with different gains therefore has a volume step at the boundary, the same as on the web.
 - Episodes get `gainDb = 0`.
-- `loudness_binding.dart` applies it: the `PlaybackController` provider starts a `LoudnessBinding` that follows the snapshots and, whenever the current entry changes, sets the `loudness` volume factor from the levelling mode and target of that moment, so the gain never changes in the middle of an item. The mode comes from the profile-scoped `loudnessModeProvider`, which fetches `GET /api/settings` once per profile session, is `off` until that has loaded and when it fails, and takes `setLoudnessMode` after the settings screen saved a new mode. The target is `ServerCapabilities.loudnessTargetLufs`.
+- `loudness_binding.dart` applies it: the `PlaybackController` provider starts a `LoudnessBinding` that follows the snapshots and, whenever the current entry changes, sets the `loudness` volume factor from the levelling mode and target of that moment, so the gain never changes in the middle of an item. The mode comes from the profile-scoped `loudnessModeProvider`, which fetches `GET /api/settings` once per profile session, is `off` until that has loaded and when it fails (its `loaded` flag tells the placeholder from a server value), and takes `setLoudnessMode` after the settings screen saved a new mode. The target is `ServerCapabilities.loudnessTargetLufs`.
 - The user volume is stored in `device_settings` `playback.volume` (a decimal string, 0.0–1.0) on every `setVolume` and read when the controller is created (1.0 when unset).
 
 ## OS Media Controls
@@ -369,7 +369,7 @@ On start `PlaybackController.restore()` runs before any command: it rebuilds `Qu
 - Controls differ by item kind: skip back/forward by `playback.skipSeconds` (default 15) and a speed control (0.5×–3×, remembered in `playback.speed.podcast`) are shown for episodes; shuffle and repeat are hidden. OS controls advertise skip intervals instead of previous/next when the queue holds a single episode.
 - Resume: an episode starts at `progress.currentTime` from the podcast detail payload unless `isFinished`.
 - Progress: `POST /podcasts/:podcastId/episodes/:episodeId/progress { currentTime, duration, isFinished }` every 15 s while playing, on pause, and on finish (`isFinished` when within 30 s of the end). Offline, the latest progress per episode is kept as one coalesced outbox operation.
-- Speed changes the engine speed only for episodes; switching to a track resets it to 1.0.
+- Speed changes the engine speed only for episodes; switching to a track resets it to 1.0. `PlaybackController.setEpisodeSpeed` applies a speed to the current entry only when it is an episode; `Settings → Playback` calls it when the default speed changes.
 
 ## Background Behaviour by Platform
 

@@ -303,6 +303,13 @@ class PlaybackController {
   /// device.
   Future<void> setVolume(double volume) => dispatch(SetVolumeCommand(volume));
 
+  /// Sets the engine speed to [speed] (clamped to 0.5–3.0 by the engine)
+  /// when the current entry is an episode; with a track or nothing current
+  /// it does nothing (doc 06, Podcasts).
+  Future<void> setEpisodeSpeed(double speed) => _enqueue(() async {
+    if (_queue.current is EpisodeQueueItem) await _engine.setSpeed(speed);
+  });
+
   /// Sets the volume factor named [key] (`loudness`, `duck`); the engine
   /// volume is the user volume times every factor, clamped to 0.0–1.0.
   /// An unset factor counts as 1.0; setting a factor to the value it has

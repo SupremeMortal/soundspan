@@ -150,6 +150,107 @@
   "@settingsLanguageName": {
     "description": "The name of this language written in this language, shown in the language choice."
   },
+  "settingsPlaybackQualityWifi": "[Qûåļîţý öñ Ŵî-Fî one two]",
+  "@settingsPlaybackQualityWifi": {
+    "description": "Playback settings row: the stream quality used on Wi-Fi and other connections that are not mobile data."
+  },
+  "settingsPlaybackQualityCellular": "[Qûåļîţý öñ möbîļé ðåţå one two three]",
+  "@settingsPlaybackQualityCellular": {
+    "description": "Playback settings row: the stream quality used on a mobile data connection."
+  },
+  "settingsPlaybackQualitySingle": "[Šţŕéåmîñĝ qûåļîţý one two]",
+  "@settingsPlaybackQualitySingle": {
+    "description": "Playback settings row on devices without mobile data: the stream quality on every connection."
+  },
+  "settingsPlaybackQualityCaption": "[Qûåļîţý çĥåñĝéš åþþļý fŕöm ţĥé ñéxţ îţém ţĥåţ šţåŕţš. one two three four five]",
+  "@settingsPlaybackQualityCaption": {
+    "description": "Caption under the quality rows: the playing item is not reloaded."
+  },
+  "settingsPlaybackQualityServerDefault": "[Šéŕvéŕ ðéfåûļţ one two]",
+  "@settingsPlaybackQualityServerDefault": {
+    "description": "Stream quality choice: use the quality saved on the server."
+  },
+  "settingsPlaybackQualityServerDefaultCaption": "[Ţĥé qûåļîţý šåvéð öñ ţĥé šéŕvéŕ åþþļîéš. one two three four]",
+  "@settingsPlaybackQualityServerDefaultCaption": {
+    "description": "Caption of the Server default quality choice."
+  },
+  "settingsPlaybackQualityOriginal": "[Öŕîĝîñåļ one]",
+  "@settingsPlaybackQualityOriginal": {
+    "description": "Stream quality choice: the original file, not transcoded."
+  },
+  "settingsPlaybackQualityHigh": "[Ĥîĝĥ one]",
+  "@settingsPlaybackQualityHigh": {
+    "description": "Stream quality choice: high."
+  },
+  "settingsPlaybackQualityMedium": "[Méðîûm one]",
+  "@settingsPlaybackQualityMedium": {
+    "description": "Stream quality choice: medium."
+  },
+  "settingsPlaybackQualityLow": "[Ļöŵ one]",
+  "@settingsPlaybackQualityLow": {
+    "description": "Stream quality choice: low."
+  },
+  "settingsPlaybackLevelling": "[Vöļûmé ļévéļļîñĝ one two]",
+  "@settingsPlaybackLevelling": {
+    "description": "Playback settings row: the loudness levelling mode, saved on the server."
+  },
+  "settingsPlaybackLevellingOff": "[Öff one]",
+  "@settingsPlaybackLevellingOff": {
+    "description": "Volume levelling choice: no levelling."
+  },
+  "settingsPlaybackLevellingTrack": "[Ţŕåçķ one]",
+  "@settingsPlaybackLevellingTrack": {
+    "description": "Volume levelling choice: each track is levelled on its own."
+  },
+  "settingsPlaybackLevellingAlbum": "[Åļbûm one]",
+  "@settingsPlaybackLevellingAlbum": {
+    "description": "Volume levelling choice: tracks are levelled on their album's loudness."
+  },
+  "settingsPlaybackLevellingAuto": "[Åûţömåţîç one]",
+  "@settingsPlaybackLevellingAuto": {
+    "description": "Volume levelling choice: album levelling while an album plays, track levelling otherwise."
+  },
+  "settingsPlaybackLevellingUnknown": "[Ûñķñöŵñ one]",
+  "@settingsPlaybackLevellingUnknown": {
+    "description": "Volume levelling value the server holds that this app does not know."
+  },
+  "settingsPlaybackLevellingOffline": "[Åvåîļåbļé ŵĥéñ ţĥé šéŕvéŕ çåñ bé ŕéåçĥéð one two three four]",
+  "@settingsPlaybackLevellingOffline": {
+    "description": "Tooltip of the disabled volume levelling row while the server cannot be reached."
+  },
+  "settingsPlaybackLevellingFailed": "[Çöûļðñ’ţ çĥåñĝé vöļûmé ļévéļļîñĝ one two three]",
+  "@settingsPlaybackLevellingFailed": {
+    "description": "Snackbar when saving the volume levelling mode failed."
+  },
+  "settingsPlaybackSkipInterval": "[Šķîþ îñţéŕvåļ (þöðçåšţš) one two three]",
+  "@settingsPlaybackSkipInterval": {
+    "description": "Playback settings row: how far the skip buttons move in an episode."
+  },
+  "settingsPlaybackSpeed": "[Ðéfåûļţ šþééð (þöðçåšţš) one two three]",
+  "@settingsPlaybackSpeed": {
+    "description": "Playback settings row: the speed episodes play at."
+  },
+  "settingsPlaybackSkipSeconds": "[{seconds, plural, =1{1 šéçöñð one} other{{seconds} šéçöñðš one}}]",
+  "@settingsPlaybackSkipSeconds": {
+    "description": "A skip interval choice or value, in seconds.",
+    "placeholders": {
+      "seconds": {
+        "type": "int",
+        "example": "15"
+      }
+    }
+  },
+  "settingsPlaybackSpeedValue": "[{speed}× one]",
+  "@settingsPlaybackSpeedValue": {
+    "description": "A playback speed choice or value, such as 1.25×.",
+    "placeholders": {
+      "speed": {
+        "type": "double",
+        "format": "decimalPattern",
+        "example": "1.25"
+      }
+    }
+  },
   "settingsServersAdd": "[Åðð šéŕvéŕ one]",
   "@settingsServersAdd": {
     "description": "Servers settings action: add another server."

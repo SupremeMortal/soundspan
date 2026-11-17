@@ -25,6 +25,12 @@ class LoudnessModeNotifier extends Notifier<LoudnessMode> {
   /// Whether [setLoudnessMode] was called; a later fetch result is older.
   bool _changed = false;
 
+  /// Whether the mode came from the server, by the fetch or through
+  /// [setLoudnessMode]; until then the state is the [LoudnessMode.off]
+  /// placeholder.
+  bool get loaded => _loaded;
+  bool _loaded = false;
+
   @override
   LoudnessMode build() {
     unawaited(_load(ref.watch(settingsRepositoryProvider)));
@@ -39,12 +45,16 @@ class LoudnessModeNotifier extends Notifier<LoudnessMode> {
       _log.info('Loading the loudness mode failed', {'error': '$error'});
       return;
     }
-    if (ref.mounted && !_changed) state = settings.loudnessMode;
+    if (ref.mounted && !_changed) {
+      _loaded = true;
+      state = settings.loudnessMode;
+    }
   }
 
   /// Makes [mode] the known mode, after the settings screen saved it.
   void setLoudnessMode(LoudnessMode mode) {
     _changed = true;
+    _loaded = true;
     state = mode;
   }
 }

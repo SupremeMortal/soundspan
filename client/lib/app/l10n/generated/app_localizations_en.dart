@@ -120,6 +120,90 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsLanguageName => 'English';
 
   @override
+  String get settingsPlaybackQualityWifi => 'Quality on Wi-Fi';
+
+  @override
+  String get settingsPlaybackQualityCellular => 'Quality on mobile data';
+
+  @override
+  String get settingsPlaybackQualitySingle => 'Streaming quality';
+
+  @override
+  String get settingsPlaybackQualityCaption =>
+      'Quality changes apply from the next item that starts.';
+
+  @override
+  String get settingsPlaybackQualityServerDefault => 'Server default';
+
+  @override
+  String get settingsPlaybackQualityServerDefaultCaption =>
+      'The quality saved on the server applies.';
+
+  @override
+  String get settingsPlaybackQualityOriginal => 'Original';
+
+  @override
+  String get settingsPlaybackQualityHigh => 'High';
+
+  @override
+  String get settingsPlaybackQualityMedium => 'Medium';
+
+  @override
+  String get settingsPlaybackQualityLow => 'Low';
+
+  @override
+  String get settingsPlaybackLevelling => 'Volume levelling';
+
+  @override
+  String get settingsPlaybackLevellingOff => 'Off';
+
+  @override
+  String get settingsPlaybackLevellingTrack => 'Track';
+
+  @override
+  String get settingsPlaybackLevellingAlbum => 'Album';
+
+  @override
+  String get settingsPlaybackLevellingAuto => 'Automatic';
+
+  @override
+  String get settingsPlaybackLevellingUnknown => 'Unknown';
+
+  @override
+  String get settingsPlaybackLevellingOffline =>
+      'Available when the server can be reached';
+
+  @override
+  String get settingsPlaybackLevellingFailed =>
+      'Couldn’t change volume levelling';
+
+  @override
+  String get settingsPlaybackSkipInterval => 'Skip interval (podcasts)';
+
+  @override
+  String get settingsPlaybackSpeed => 'Default speed (podcasts)';
+
+  @override
+  String settingsPlaybackSkipSeconds(int seconds) {
+    String _temp0 = intl.Intl.pluralLogic(
+      seconds,
+      locale: localeName,
+      other: '$seconds seconds',
+      one: '1 second',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String settingsPlaybackSpeedValue(double speed) {
+    final intl.NumberFormat speedNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String speedString = speedNumberFormat.format(speed);
+
+    return '$speedString×';
+  }
+
+  @override
   String get settingsServersAdd => 'Add server';
 
   @override
@@ -1444,6 +1528,93 @@ class AppLocalizationsEnXa extends AppLocalizationsEn {
 
   @override
   String get settingsLanguageName => '[Éñĝļîšĥ one]';
+
+  @override
+  String get settingsPlaybackQualityWifi => '[Qûåļîţý öñ Ŵî-Fî one two]';
+
+  @override
+  String get settingsPlaybackQualityCellular =>
+      '[Qûåļîţý öñ möbîļé ðåţå one two three]';
+
+  @override
+  String get settingsPlaybackQualitySingle => '[Šţŕéåmîñĝ qûåļîţý one two]';
+
+  @override
+  String get settingsPlaybackQualityCaption =>
+      '[Qûåļîţý çĥåñĝéš åþþļý fŕöm ţĥé ñéxţ îţém ţĥåţ šţåŕţš. one two three four five]';
+
+  @override
+  String get settingsPlaybackQualityServerDefault => '[Šéŕvéŕ ðéfåûļţ one two]';
+
+  @override
+  String get settingsPlaybackQualityServerDefaultCaption =>
+      '[Ţĥé qûåļîţý šåvéð öñ ţĥé šéŕvéŕ åþþļîéš. one two three four]';
+
+  @override
+  String get settingsPlaybackQualityOriginal => '[Öŕîĝîñåļ one]';
+
+  @override
+  String get settingsPlaybackQualityHigh => '[Ĥîĝĥ one]';
+
+  @override
+  String get settingsPlaybackQualityMedium => '[Méðîûm one]';
+
+  @override
+  String get settingsPlaybackQualityLow => '[Ļöŵ one]';
+
+  @override
+  String get settingsPlaybackLevelling => '[Vöļûmé ļévéļļîñĝ one two]';
+
+  @override
+  String get settingsPlaybackLevellingOff => '[Öff one]';
+
+  @override
+  String get settingsPlaybackLevellingTrack => '[Ţŕåçķ one]';
+
+  @override
+  String get settingsPlaybackLevellingAlbum => '[Åļbûm one]';
+
+  @override
+  String get settingsPlaybackLevellingAuto => '[Åûţömåţîç one]';
+
+  @override
+  String get settingsPlaybackLevellingUnknown => '[Ûñķñöŵñ one]';
+
+  @override
+  String get settingsPlaybackLevellingOffline =>
+      '[Åvåîļåbļé ŵĥéñ ţĥé šéŕvéŕ çåñ bé ŕéåçĥéð one two three four]';
+
+  @override
+  String get settingsPlaybackLevellingFailed =>
+      '[Çöûļðñ’ţ çĥåñĝé vöļûmé ļévéļļîñĝ one two three]';
+
+  @override
+  String get settingsPlaybackSkipInterval =>
+      '[Šķîþ îñţéŕvåļ (þöðçåšţš) one two three]';
+
+  @override
+  String get settingsPlaybackSpeed =>
+      '[Ðéfåûļţ šþééð (þöðçåšţš) one two three]';
+
+  @override
+  String settingsPlaybackSkipSeconds(int seconds) {
+    String _temp0 = intl.Intl.pluralLogic(
+      seconds,
+      locale: localeName,
+      other: '$seconds šéçöñðš one',
+      one: '1 šéçöñð one',
+    );
+    return '[$_temp0]';
+  }
+
+  @override
+  String settingsPlaybackSpeedValue(double speed) {
+    final intl.NumberFormat speedNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String speedString = speedNumberFormat.format(speed);
+
+    return '[$speedString× one]';
+  }
 
   @override
   String get settingsServersAdd => '[Åðð šéŕvéŕ one]';

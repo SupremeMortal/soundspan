@@ -13,6 +13,7 @@ Map<String, bool> flags(PlatformCapabilities c) => {
   'supportsApiKeyStreaming': c.supportsApiKeyStreaming,
   'isDesktop': c.isDesktop,
   'allowsPublicCleartextHttp': c.allowsPublicCleartextHttp,
+  'hasMobileData': c.hasMobileData,
 };
 
 void main() {
@@ -34,6 +35,7 @@ void main() {
       'supportsApiKeyStreaming': true,
       'isDesktop': false,
       'allowsPublicCleartextHttp': true,
+      'hasMobileData': true,
     });
   });
 
@@ -46,6 +48,7 @@ void main() {
       'supportsApiKeyStreaming': true,
       'isDesktop': false,
       'allowsPublicCleartextHttp': false,
+      'hasMobileData': true,
     });
   });
 
@@ -58,6 +61,7 @@ void main() {
       'supportsApiKeyStreaming': true,
       'isDesktop': true,
       'allowsPublicCleartextHttp': false,
+      'hasMobileData': false,
     });
   });
 
@@ -71,6 +75,7 @@ void main() {
         'supportsApiKeyStreaming': true,
         'isDesktop': true,
         'allowsPublicCleartextHttp': true,
+        'hasMobileData': false,
       });
     });
   }
@@ -84,6 +89,7 @@ void main() {
       'supportsApiKeyStreaming': false,
       'isDesktop': false,
       'allowsPublicCleartextHttp': true,
+      'hasMobileData': false,
     });
   });
 }

@@ -61,6 +61,9 @@ abstract final class RoutePaths {
   /// The Servers settings.
   static const settingsServers = '/settings/servers';
 
+  /// The Playback settings.
+  static const settingsPlayback = '/settings/playback';
+
   /// The Appearance settings.
   static const settingsAppearance = '/settings/appearance';
 
@@ -342,7 +345,6 @@ GoRouter createRouter(
             ),
           for (final (path, title)
               in <(String, String Function(AppLocalizations))>[
-                ('playback', (l10n) => l10n.screenSettingsPlayback),
                 ('storage', (l10n) => l10n.screenSettingsStorage),
               ])
             GoRoute(
