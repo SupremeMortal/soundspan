@@ -2142,5 +2142,169 @@
   "keyMouseForward": "Mouse forward button",
   "@keyMouseForward": {
     "description": "The mouse's forward button, listed beside the Forward shortcut."
+  },
+  "settingsStorageDownloads": "Downloads",
+  "@settingsStorageDownloads": {
+    "description": "Storage settings: heading of the download settings."
+  },
+  "settingsStorageDownloadQuality": "Download quality",
+  "@settingsStorageDownloadQuality": {
+    "description": "Storage settings: row choosing the audio quality of downloads."
+  },
+  "settingsStorageDownloadQualityCaption": "The quality applies to new downloads.",
+  "@settingsStorageDownloadQualityCaption": {
+    "description": "Storage settings: caption under the download quality row; items already downloaded keep their quality."
+  },
+  "settingsStorageWifiOnly": "Download on Wi-Fi only",
+  "@settingsStorageWifiOnly": {
+    "description": "Storage settings: switch that keeps downloads from running on mobile data."
+  },
+  "settingsStorageDeviceLimit": "Device limit",
+  "@settingsStorageDeviceLimit": {
+    "description": "Storage settings: title of the slider setting the most space downloads may use on this device."
+  },
+  "settingsStorageNoLimit": "No limit",
+  "@settingsStorageNoLimit": {
+    "description": "Storage settings: the device limit step that sets no limit."
+  },
+  "settingsStorageDeviceLimitUsage": "{used} of {limit} used",
+  "@settingsStorageDeviceLimitUsage": {
+    "description": "Storage settings: the space downloads use against the device limit.",
+    "placeholders": {
+      "used": {
+        "type": "String",
+        "example": "1.5 GB"
+      },
+      "limit": {
+        "type": "String",
+        "example": "20.0 GB"
+      }
+    }
+  },
+  "settingsStorageDeviceLimitUsageUnlimited": "{used} used, no limit",
+  "@settingsStorageDeviceLimitUsageUnlimited": {
+    "description": "Storage settings: the space downloads use when the device limit is off.",
+    "placeholders": {
+      "used": {
+        "type": "String",
+        "example": "1.5 GB"
+      }
+    }
+  },
+  "settingsStorageRemoveAll": "Remove all downloads",
+  "@settingsStorageRemoveAll": {
+    "description": "Storage settings: destructive action deleting every download of this server on this device."
+  },
+  "settingsStorageRemoveAllTitle": "Remove all downloads?",
+  "@settingsStorageRemoveAllTitle": {
+    "description": "Title of the dialog confirming that every download is removed."
+  },
+  "settingsStorageRemoveAllBody": "This frees {size} on this device. You can download them again later.",
+  "@settingsStorageRemoveAllBody": {
+    "description": "Body of the dialog confirming that every download is removed.",
+    "placeholders": {
+      "size": {
+        "type": "String",
+        "example": "1.5 GB"
+      }
+    }
+  },
+  "settingsStorageRemoveAllConfirm": "Remove",
+  "@settingsStorageRemoveAllConfirm": {
+    "description": "Confirm button of the dialog removing every download."
+  },
+  "settingsStorageThisDevice": "This device",
+  "@settingsStorageThisDevice": {
+    "description": "Storage settings: heading of the space this server’s data uses on the device."
+  },
+  "settingsStorageUsageDownloads": "Downloads",
+  "@settingsStorageUsageDownloads": {
+    "description": "Storage settings: usage row of the downloaded tracks and episodes."
+  },
+  "settingsStorageUsageDownloadCount": "{count, plural, =1{1 item} other{{count} items}}",
+  "@settingsStorageUsageDownloadCount": {
+    "description": "Storage settings: the number of downloaded tracks and episodes, under the Downloads usage row.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "12"
+      }
+    }
+  },
+  "settingsStorageUsageImages": "Images",
+  "@settingsStorageUsageImages": {
+    "description": "Storage settings: usage row of the saved artwork images."
+  },
+  "settingsStorageUsageDatabase": "Database",
+  "@settingsStorageUsageDatabase": {
+    "description": "Storage settings: usage row of the app’s databases for this server."
+  },
+  "settingsStorageUsageFree": "Free space",
+  "@settingsStorageUsageFree": {
+    "description": "Storage settings: usage row of the free space left on the device."
+  },
+  "settingsStorageServer": "Server",
+  "@settingsStorageServer": {
+    "description": "Storage settings: heading of the server’s download storage figures."
+  },
+  "settingsStorageServerUsed": "Used on the server: {used} of {limit}",
+  "@settingsStorageServerUsed": {
+    "description": "Storage settings: the space the user’s downloads take on the server against the server’s limit.",
+    "placeholders": {
+      "used": {
+        "type": "String",
+        "example": "1.5 GB"
+      },
+      "limit": {
+        "type": "String",
+        "example": "10.0 GB"
+      }
+    }
+  },
+  "settingsStorageServerDevice": "{count, plural, =1{From this device: {size}, 1 track} other{From this device: {size}, {count} tracks}}",
+  "@settingsStorageServerDevice": {
+    "description": "Storage settings: the part of the server figure that this device downloaded.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "12"
+      },
+      "size": {
+        "type": "String",
+        "example": "1.5 GB"
+      }
+    }
+  },
+  "settingsStorageServerCaption": "The server limit is changed in the server’s settings.",
+  "@settingsStorageServerCaption": {
+    "description": "Storage settings: caption under the server figures, which are read-only here."
+  },
+  "settingsStorageCache": "Cache",
+  "@settingsStorageCache": {
+    "description": "Storage settings: heading of the cache actions."
+  },
+  "settingsStorageClearCache": "Clear cache",
+  "@settingsStorageClearCache": {
+    "description": "Storage settings: action deleting saved images and browsing data."
+  },
+  "settingsStorageClearCacheCaption": "Saved images and browsing data are fetched again when needed. Downloads stay.",
+  "@settingsStorageClearCacheCaption": {
+    "description": "Storage settings: caption under the Clear cache action."
+  },
+  "settingsStorageClearCacheTitle": "Clear cache?",
+  "@settingsStorageClearCacheTitle": {
+    "description": "Title of the dialog confirming that the cache is cleared."
+  },
+  "settingsStorageClearCacheBody": "Saved images and browsing data are deleted. Downloads and playback are not affected.",
+  "@settingsStorageClearCacheBody": {
+    "description": "Body of the dialog confirming that the cache is cleared."
+  },
+  "settingsStorageClearCacheConfirm": "Clear",
+  "@settingsStorageClearCacheConfirm": {
+    "description": "Confirm button of the dialog clearing the cache."
+  },
+  "settingsStorageCancel": "Cancel",
+  "@settingsStorageCancel": {
+    "description": "Cancel button of the storage settings dialogs."
   }
 }

@@ -512,6 +512,19 @@ class DownloadStore {
     return paths.resolve(relative);
   }
 
+  /// The number of `completed` items and the sum of their `sizeBytes`.
+  Future<({int count, int bytes})> completedTotals() async {
+    final i = _db.downloadItems;
+    final count = i.itemKey.count();
+    final bytes = i.sizeBytes.sum();
+    final row =
+        await (_db.selectOnly(i)
+              ..addColumns([count, bytes])
+              ..where(i.status.equals(DownloadStatus.completed.name)))
+            .getSingle();
+    return (count: row.read(count) ?? 0, bytes: row.read(bytes) ?? 0);
+  }
+
   /// The bytes downloads hold or are about to hold: the size of completed
   /// items plus the expected size of queued, running, paused and verifying
   /// ones, counting an unknown size as [kUnknownItemBytes].

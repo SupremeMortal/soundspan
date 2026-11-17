@@ -33,6 +33,12 @@ import 'package:soundspan_api/soundspan_api.dart';
 /// downloads may only run on Wi-Fi or Ethernet.
 const String downloadsWifiOnlyKey = 'downloads.wifiOnly';
 
+/// Whether downloads run on Wi-Fi only, given the stored value of
+/// [downloadsWifiOnlyKey]. While the key is unset it is on where the device
+/// can be on mobile data ([mobileData]: Android and iOS) and off elsewhere.
+bool wifiOnlyFromStored(Object? stored, {required bool mobileData}) =>
+    stored is bool ? stored : mobileData;
+
 /// The most transfers of one profile that run at once.
 const int kMaxRunningDownloads = 2;
 
@@ -104,6 +110,7 @@ class DownloadScheduler {
     required this._mediaDirectory,
     required this._refreshCredentials,
     this._createTimer = Timer.new,
+    this._mobileData = false,
   }) : _group = downloaderGroup(profileId);
 
   static final AppLogger _log = AppLogger.scope('Downloads');
@@ -119,6 +126,9 @@ class DownloadScheduler {
   final String _mediaDirectory;
   final Future<void> Function() _refreshCredentials;
   final RetryTimerFactory _createTimer;
+
+  /// Whether the device can be on mobile data: the Wi-Fi-only default.
+  final bool _mobileData;
 
   final StreamController<DownloadItemEffect> _effects =
       StreamController<DownloadItemEffect>.broadcast();
@@ -156,7 +166,10 @@ class DownloadScheduler {
   Future<void> start() async {
     if (_started || _disposed) return;
     _started = true;
-    _wifiOnly = await _settings.read(downloadsWifiOnlyKey) == true;
+    _wifiOnly = wifiOnlyFromStored(
+      await _settings.read(downloadsWifiOnlyKey),
+      mobileData: _mobileData,
+    );
     try {
       _subscriptions.add(
         _downloader.events
@@ -183,7 +196,7 @@ class DownloadScheduler {
       ..add(_reachability.connectionTypeChanges.listen((_) => pump()))
       ..add(
         _settings.watch(downloadsWifiOnlyKey).listen((value) {
-          final wifiOnly = value == true;
+          final wifiOnly = wifiOnlyFromStored(value, mobileData: _mobileData);
           if (wifiOnly == _wifiOnly) return;
           _wifiOnly = wifiOnly;
           pump();
@@ -676,6 +689,7 @@ final Provider<DownloadScheduler> downloadSchedulerProvider =
           profileId: context.profile.id,
           mediaDirectory: profilePaths.media,
           refreshCredentials: session.refreshNow,
+          mobileData: ref.watch(platformCapabilitiesProvider).hasMobileData,
         );
         ref.watch(profileDisposerProvider).register(scheduler.dispose);
         return scheduler;

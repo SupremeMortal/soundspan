@@ -84,7 +84,7 @@ class _FakeTimer implements Timer {
 
 /// Everything a scheduler runs against, in memory.
 class _Rig {
-  new(this.dir) {
+  new(this.dir, {bool mobileData = false}) {
     clock = FakeClock(start: DateTime.utc(2026, 3, 1, 12));
     timers = _FakeTimers(clock);
     db = StateDatabase(NativeDatabase.memory());
@@ -117,6 +117,7 @@ class _Rig {
         credentials = const ApiKeyCredentials(apiKey: 'key-2');
       },
       createTimer: timers.create,
+      mobileData: mobileData,
     );
   }
 
@@ -359,6 +360,39 @@ void main() {
     await rig.settle();
     expect(await rig.status(keys[0]), DownloadStatus.running);
     expect(rig.requested, [_task(keys[0]), _task(keys[0])]);
+  });
+
+  test('with downloads.wifiOnly unset, Wi-Fi only is on where the device '
+      'has mobile data and off elsewhere', () async {
+    rig.reachability.connectionType = ConnectionType.cellular;
+    final desktopKeys = await rig.album('a', 1);
+    await rig.start();
+    expect(rig.requested, [_task(desktopKeys[0])]);
+
+    final mobileDir = Directory.systemTemp.createTempSync('download_mobile');
+    final mobile = _Rig(mobileDir, mobileData: true);
+    addTearDown(() async {
+      await mobile.dispose();
+      mobileDir.deleteSync(recursive: true);
+    });
+    mobile.reachability.connectionType = ConnectionType.cellular;
+    final mobileKeys = await mobile.album('a', 1);
+    await mobile.start();
+    expect(mobile.requested, isEmpty);
+
+    await mobile.settings.write(downloadsWifiOnlyKey, false);
+    await pumpEventQueue();
+    await mobile.settle();
+    expect(mobile.requested, [_task(mobileKeys[0])]);
+  });
+
+  test('the Wi-Fi-only default follows mobile data until a value is '
+      'stored', () {
+    expect(wifiOnlyFromStored(null, mobileData: true), isTrue);
+    expect(wifiOnlyFromStored(null, mobileData: false), isFalse);
+    expect(wifiOnlyFromStored(false, mobileData: true), isFalse);
+    expect(wifiOnlyFromStored(true, mobileData: false), isTrue);
+    expect(wifiOnlyFromStored('yes', mobileData: false), isFalse);
   });
 
   test('turning Wi-Fi only on while on mobile data pauses the running '

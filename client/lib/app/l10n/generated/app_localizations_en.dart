@@ -1671,6 +1671,121 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get keyMouseForward => 'Mouse forward button';
+
+  @override
+  String get settingsStorageDownloads => 'Downloads';
+
+  @override
+  String get settingsStorageDownloadQuality => 'Download quality';
+
+  @override
+  String get settingsStorageDownloadQualityCaption =>
+      'The quality applies to new downloads.';
+
+  @override
+  String get settingsStorageWifiOnly => 'Download on Wi-Fi only';
+
+  @override
+  String get settingsStorageDeviceLimit => 'Device limit';
+
+  @override
+  String get settingsStorageNoLimit => 'No limit';
+
+  @override
+  String settingsStorageDeviceLimitUsage(String used, String limit) {
+    return '$used of $limit used';
+  }
+
+  @override
+  String settingsStorageDeviceLimitUsageUnlimited(String used) {
+    return '$used used, no limit';
+  }
+
+  @override
+  String get settingsStorageRemoveAll => 'Remove all downloads';
+
+  @override
+  String get settingsStorageRemoveAllTitle => 'Remove all downloads?';
+
+  @override
+  String settingsStorageRemoveAllBody(String size) {
+    return 'This frees $size on this device. You can download them again later.';
+  }
+
+  @override
+  String get settingsStorageRemoveAllConfirm => 'Remove';
+
+  @override
+  String get settingsStorageThisDevice => 'This device';
+
+  @override
+  String get settingsStorageUsageDownloads => 'Downloads';
+
+  @override
+  String settingsStorageUsageDownloadCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count items',
+      one: '1 item',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get settingsStorageUsageImages => 'Images';
+
+  @override
+  String get settingsStorageUsageDatabase => 'Database';
+
+  @override
+  String get settingsStorageUsageFree => 'Free space';
+
+  @override
+  String get settingsStorageServer => 'Server';
+
+  @override
+  String settingsStorageServerUsed(String used, String limit) {
+    return 'Used on the server: $used of $limit';
+  }
+
+  @override
+  String settingsStorageServerDevice(int count, String size) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'From this device: $size, $count tracks',
+      one: 'From this device: $size, 1 track',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get settingsStorageServerCaption =>
+      'The server limit is changed in the server’s settings.';
+
+  @override
+  String get settingsStorageCache => 'Cache';
+
+  @override
+  String get settingsStorageClearCache => 'Clear cache';
+
+  @override
+  String get settingsStorageClearCacheCaption =>
+      'Saved images and browsing data are fetched again when needed. Downloads stay.';
+
+  @override
+  String get settingsStorageClearCacheTitle => 'Clear cache?';
+
+  @override
+  String get settingsStorageClearCacheBody =>
+      'Saved images and browsing data are deleted. Downloads and playback are not affected.';
+
+  @override
+  String get settingsStorageClearCacheConfirm => 'Clear';
+
+  @override
+  String get settingsStorageCancel => 'Cancel';
 }
 
 /// The translations for English (`en_XA`).
@@ -3379,4 +3494,121 @@ class AppLocalizationsEnXa extends AppLocalizationsEn {
 
   @override
   String get keyMouseForward => '[Möûšé föŕŵåŕð bûţţöñ one two]';
+
+  @override
+  String get settingsStorageDownloads => '[Ðöŵñļöåðš one]';
+
+  @override
+  String get settingsStorageDownloadQuality => '[Ðöŵñļöåð qûåļîţý one two]';
+
+  @override
+  String get settingsStorageDownloadQualityCaption =>
+      '[Ţĥé qûåļîţý åþþļîéš ţö ñéŵ ðöŵñļöåðš. one two three four]';
+
+  @override
+  String get settingsStorageWifiOnly =>
+      '[Ðöŵñļöåð öñ Ŵî-Fî öñļý one two three]';
+
+  @override
+  String get settingsStorageDeviceLimit => '[Ðévîçé ļîmîţ one two]';
+
+  @override
+  String get settingsStorageNoLimit => '[Ñö ļîmîţ one]';
+
+  @override
+  String settingsStorageDeviceLimitUsage(String used, String limit) {
+    return '[$used öf $limit ûšéð one]';
+  }
+
+  @override
+  String settingsStorageDeviceLimitUsageUnlimited(String used) {
+    return '[$used ûšéð, ñö ļîmîţ one two]';
+  }
+
+  @override
+  String get settingsStorageRemoveAll => '[Ŕémövé åļļ ðöŵñļöåðš one two]';
+
+  @override
+  String get settingsStorageRemoveAllTitle =>
+      '[Ŕémövé åļļ ðöŵñļöåðš? one two three]';
+
+  @override
+  String settingsStorageRemoveAllBody(String size) {
+    return '[Ţĥîš fŕééš $size öñ ţĥîš ðévîçé. Ýöû çåñ ðöŵñļöåð ţĥém åĝåîñ ļåţéŕ. one two three four five six]';
+  }
+
+  @override
+  String get settingsStorageRemoveAllConfirm => '[Ŕémövé one]';
+
+  @override
+  String get settingsStorageThisDevice => '[Ţĥîš ðévîçé one two]';
+
+  @override
+  String get settingsStorageUsageDownloads => '[Ðöŵñļöåðš one]';
+
+  @override
+  String settingsStorageUsageDownloadCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count îţémš one',
+      one: '1 îţém one',
+    );
+    return '[$_temp0]';
+  }
+
+  @override
+  String get settingsStorageUsageImages => '[Îmåĝéš one]';
+
+  @override
+  String get settingsStorageUsageDatabase => '[Ðåţåbåšé one]';
+
+  @override
+  String get settingsStorageUsageFree => '[Fŕéé šþåçé one]';
+
+  @override
+  String get settingsStorageServer => '[Šéŕvéŕ one]';
+
+  @override
+  String settingsStorageServerUsed(String used, String limit) {
+    return '[Ûšéð öñ ţĥé šéŕvéŕ: $used öf $limit one two three]';
+  }
+
+  @override
+  String settingsStorageServerDevice(int count, String size) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Fŕöm ţĥîš ðévîçé: $size, $count ţŕåçķš one two three',
+      one: 'Fŕöm ţĥîš ðévîçé: $size, 1 ţŕåçķ one two three',
+    );
+    return '[$_temp0]';
+  }
+
+  @override
+  String get settingsStorageServerCaption =>
+      '[Ţĥé šéŕvéŕ ļîmîţ îš çĥåñĝéð îñ ţĥé šéŕvéŕ’š šéţţîñĝš. one two three four five]';
+
+  @override
+  String get settingsStorageCache => '[Çåçĥé one]';
+
+  @override
+  String get settingsStorageClearCache => '[Çļéåŕ çåçĥé one two]';
+
+  @override
+  String get settingsStorageClearCacheCaption =>
+      '[Šåvéð îmåĝéš åñð bŕöŵšîñĝ ðåţå åŕé féţçĥéð åĝåîñ ŵĥéñ ñééðéð. Ðöŵñļöåðš šţåý. one two three four five six seven]';
+
+  @override
+  String get settingsStorageClearCacheTitle => '[Çļéåŕ çåçĥé? one two]';
+
+  @override
+  String get settingsStorageClearCacheBody =>
+      '[Šåvéð îmåĝéš åñð bŕöŵšîñĝ ðåţå åŕé ðéļéţéð. Ðöŵñļöåðš åñð þļåýbåçķ åŕé ñöţ åfféçţéð. one two three four five six seven]';
+
+  @override
+  String get settingsStorageClearCacheConfirm => '[Çļéåŕ one]';
+
+  @override
+  String get settingsStorageCancel => '[Çåñçéļ one]';
 }

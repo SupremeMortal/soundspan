@@ -16,6 +16,7 @@ import 'package:soundspan/features/settings/ui/appearance_section.dart';
 import 'package:soundspan/features/settings/ui/desktop_section.dart';
 import 'package:soundspan/features/settings/ui/playback_settings_screen.dart';
 import 'package:soundspan/features/settings/ui/servers_section.dart';
+import 'package:soundspan/features/settings/ui/storage_settings_screen.dart';
 
 /// The settings sections that exist, in list order.
 enum SettingsSection {
@@ -24,6 +25,9 @@ enum SettingsSection {
 
   /// Stream quality, volume levelling and podcast playback.
   playback(Icons.play_circle_outline_rounded),
+
+  /// Downloads, the device limit, usage and the caches.
+  storage(Icons.storage_rounded),
 
   /// Theme and language.
   appearance(Icons.palette_rounded),
@@ -53,6 +57,7 @@ enum SettingsSection {
   String title(AppLocalizations l10n) => switch (this) {
     servers => l10n.screenSettingsServers,
     playback => l10n.screenSettingsPlayback,
+    storage => l10n.screenSettingsStorage,
     appearance => l10n.screenSettingsAppearance,
     desktop => l10n.screenSettingsDesktop,
     about => l10n.screenSettingsAbout,
@@ -137,6 +142,9 @@ class SettingsScreen extends StatelessWidget {
     SettingsSection.servers => const ServersSection(),
     SettingsSection.playback => const ProfileScope(
       child: PlaybackSettingsScreen(),
+    ),
+    SettingsSection.storage => const ProfileScope(
+      child: StorageSettingsScreen(),
     ),
     SettingsSection.appearance => const AppearanceSection(),
     SettingsSection.desktop => const DesktopSection(),

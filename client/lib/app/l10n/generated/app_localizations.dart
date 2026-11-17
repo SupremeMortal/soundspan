@@ -2840,6 +2840,180 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Mouse forward button'**
   String get keyMouseForward;
+
+  /// Storage settings: heading of the download settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloads'**
+  String get settingsStorageDownloads;
+
+  /// Storage settings: row choosing the audio quality of downloads.
+  ///
+  /// In en, this message translates to:
+  /// **'Download quality'**
+  String get settingsStorageDownloadQuality;
+
+  /// Storage settings: caption under the download quality row; items already downloaded keep their quality.
+  ///
+  /// In en, this message translates to:
+  /// **'The quality applies to new downloads.'**
+  String get settingsStorageDownloadQualityCaption;
+
+  /// Storage settings: switch that keeps downloads from running on mobile data.
+  ///
+  /// In en, this message translates to:
+  /// **'Download on Wi-Fi only'**
+  String get settingsStorageWifiOnly;
+
+  /// Storage settings: title of the slider setting the most space downloads may use on this device.
+  ///
+  /// In en, this message translates to:
+  /// **'Device limit'**
+  String get settingsStorageDeviceLimit;
+
+  /// Storage settings: the device limit step that sets no limit.
+  ///
+  /// In en, this message translates to:
+  /// **'No limit'**
+  String get settingsStorageNoLimit;
+
+  /// Storage settings: the space downloads use against the device limit.
+  ///
+  /// In en, this message translates to:
+  /// **'{used} of {limit} used'**
+  String settingsStorageDeviceLimitUsage(String used, String limit);
+
+  /// Storage settings: the space downloads use when the device limit is off.
+  ///
+  /// In en, this message translates to:
+  /// **'{used} used, no limit'**
+  String settingsStorageDeviceLimitUsageUnlimited(String used);
+
+  /// Storage settings: destructive action deleting every download of this server on this device.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove all downloads'**
+  String get settingsStorageRemoveAll;
+
+  /// Title of the dialog confirming that every download is removed.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove all downloads?'**
+  String get settingsStorageRemoveAllTitle;
+
+  /// Body of the dialog confirming that every download is removed.
+  ///
+  /// In en, this message translates to:
+  /// **'This frees {size} on this device. You can download them again later.'**
+  String settingsStorageRemoveAllBody(String size);
+
+  /// Confirm button of the dialog removing every download.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get settingsStorageRemoveAllConfirm;
+
+  /// Storage settings: heading of the space this server’s data uses on the device.
+  ///
+  /// In en, this message translates to:
+  /// **'This device'**
+  String get settingsStorageThisDevice;
+
+  /// Storage settings: usage row of the downloaded tracks and episodes.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloads'**
+  String get settingsStorageUsageDownloads;
+
+  /// Storage settings: the number of downloaded tracks and episodes, under the Downloads usage row.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 item} other{{count} items}}'**
+  String settingsStorageUsageDownloadCount(int count);
+
+  /// Storage settings: usage row of the saved artwork images.
+  ///
+  /// In en, this message translates to:
+  /// **'Images'**
+  String get settingsStorageUsageImages;
+
+  /// Storage settings: usage row of the app’s databases for this server.
+  ///
+  /// In en, this message translates to:
+  /// **'Database'**
+  String get settingsStorageUsageDatabase;
+
+  /// Storage settings: usage row of the free space left on the device.
+  ///
+  /// In en, this message translates to:
+  /// **'Free space'**
+  String get settingsStorageUsageFree;
+
+  /// Storage settings: heading of the server’s download storage figures.
+  ///
+  /// In en, this message translates to:
+  /// **'Server'**
+  String get settingsStorageServer;
+
+  /// Storage settings: the space the user’s downloads take on the server against the server’s limit.
+  ///
+  /// In en, this message translates to:
+  /// **'Used on the server: {used} of {limit}'**
+  String settingsStorageServerUsed(String used, String limit);
+
+  /// Storage settings: the part of the server figure that this device downloaded.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{From this device: {size}, 1 track} other{From this device: {size}, {count} tracks}}'**
+  String settingsStorageServerDevice(int count, String size);
+
+  /// Storage settings: caption under the server figures, which are read-only here.
+  ///
+  /// In en, this message translates to:
+  /// **'The server limit is changed in the server’s settings.'**
+  String get settingsStorageServerCaption;
+
+  /// Storage settings: heading of the cache actions.
+  ///
+  /// In en, this message translates to:
+  /// **'Cache'**
+  String get settingsStorageCache;
+
+  /// Storage settings: action deleting saved images and browsing data.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear cache'**
+  String get settingsStorageClearCache;
+
+  /// Storage settings: caption under the Clear cache action.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved images and browsing data are fetched again when needed. Downloads stay.'**
+  String get settingsStorageClearCacheCaption;
+
+  /// Title of the dialog confirming that the cache is cleared.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear cache?'**
+  String get settingsStorageClearCacheTitle;
+
+  /// Body of the dialog confirming that the cache is cleared.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved images and browsing data are deleted. Downloads and playback are not affected.'**
+  String get settingsStorageClearCacheBody;
+
+  /// Confirm button of the dialog clearing the cache.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get settingsStorageClearCacheConfirm;
+
+  /// Cancel button of the storage settings dialogs.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get settingsStorageCancel;
 }
 
 class _AppLocalizationsDelegate

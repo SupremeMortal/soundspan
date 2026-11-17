@@ -2192,5 +2192,169 @@
   "keyMouseForward": "[Möûšé föŕŵåŕð bûţţöñ one two]",
   "@keyMouseForward": {
     "description": "The mouse's forward button, listed beside the Forward shortcut."
+  },
+  "settingsStorageDownloads": "[Ðöŵñļöåðš one]",
+  "@settingsStorageDownloads": {
+    "description": "Storage settings: heading of the download settings."
+  },
+  "settingsStorageDownloadQuality": "[Ðöŵñļöåð qûåļîţý one two]",
+  "@settingsStorageDownloadQuality": {
+    "description": "Storage settings: row choosing the audio quality of downloads."
+  },
+  "settingsStorageDownloadQualityCaption": "[Ţĥé qûåļîţý åþþļîéš ţö ñéŵ ðöŵñļöåðš. one two three four]",
+  "@settingsStorageDownloadQualityCaption": {
+    "description": "Storage settings: caption under the download quality row; items already downloaded keep their quality."
+  },
+  "settingsStorageWifiOnly": "[Ðöŵñļöåð öñ Ŵî-Fî öñļý one two three]",
+  "@settingsStorageWifiOnly": {
+    "description": "Storage settings: switch that keeps downloads from running on mobile data."
+  },
+  "settingsStorageDeviceLimit": "[Ðévîçé ļîmîţ one two]",
+  "@settingsStorageDeviceLimit": {
+    "description": "Storage settings: title of the slider setting the most space downloads may use on this device."
+  },
+  "settingsStorageNoLimit": "[Ñö ļîmîţ one]",
+  "@settingsStorageNoLimit": {
+    "description": "Storage settings: the device limit step that sets no limit."
+  },
+  "settingsStorageDeviceLimitUsage": "[{used} öf {limit} ûšéð one]",
+  "@settingsStorageDeviceLimitUsage": {
+    "description": "Storage settings: the space downloads use against the device limit.",
+    "placeholders": {
+      "used": {
+        "type": "String",
+        "example": "1.5 GB"
+      },
+      "limit": {
+        "type": "String",
+        "example": "20.0 GB"
+      }
+    }
+  },
+  "settingsStorageDeviceLimitUsageUnlimited": "[{used} ûšéð, ñö ļîmîţ one two]",
+  "@settingsStorageDeviceLimitUsageUnlimited": {
+    "description": "Storage settings: the space downloads use when the device limit is off.",
+    "placeholders": {
+      "used": {
+        "type": "String",
+        "example": "1.5 GB"
+      }
+    }
+  },
+  "settingsStorageRemoveAll": "[Ŕémövé åļļ ðöŵñļöåðš one two]",
+  "@settingsStorageRemoveAll": {
+    "description": "Storage settings: destructive action deleting every download of this server on this device."
+  },
+  "settingsStorageRemoveAllTitle": "[Ŕémövé åļļ ðöŵñļöåðš? one two three]",
+  "@settingsStorageRemoveAllTitle": {
+    "description": "Title of the dialog confirming that every download is removed."
+  },
+  "settingsStorageRemoveAllBody": "[Ţĥîš fŕééš {size} öñ ţĥîš ðévîçé. Ýöû çåñ ðöŵñļöåð ţĥém åĝåîñ ļåţéŕ. one two three four five six]",
+  "@settingsStorageRemoveAllBody": {
+    "description": "Body of the dialog confirming that every download is removed.",
+    "placeholders": {
+      "size": {
+        "type": "String",
+        "example": "1.5 GB"
+      }
+    }
+  },
+  "settingsStorageRemoveAllConfirm": "[Ŕémövé one]",
+  "@settingsStorageRemoveAllConfirm": {
+    "description": "Confirm button of the dialog removing every download."
+  },
+  "settingsStorageThisDevice": "[Ţĥîš ðévîçé one two]",
+  "@settingsStorageThisDevice": {
+    "description": "Storage settings: heading of the space this server’s data uses on the device."
+  },
+  "settingsStorageUsageDownloads": "[Ðöŵñļöåðš one]",
+  "@settingsStorageUsageDownloads": {
+    "description": "Storage settings: usage row of the downloaded tracks and episodes."
+  },
+  "settingsStorageUsageDownloadCount": "[{count, plural, =1{1 îţém one} other{{count} îţémš one}}]",
+  "@settingsStorageUsageDownloadCount": {
+    "description": "Storage settings: the number of downloaded tracks and episodes, under the Downloads usage row.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "12"
+      }
+    }
+  },
+  "settingsStorageUsageImages": "[Îmåĝéš one]",
+  "@settingsStorageUsageImages": {
+    "description": "Storage settings: usage row of the saved artwork images."
+  },
+  "settingsStorageUsageDatabase": "[Ðåţåbåšé one]",
+  "@settingsStorageUsageDatabase": {
+    "description": "Storage settings: usage row of the app’s databases for this server."
+  },
+  "settingsStorageUsageFree": "[Fŕéé šþåçé one]",
+  "@settingsStorageUsageFree": {
+    "description": "Storage settings: usage row of the free space left on the device."
+  },
+  "settingsStorageServer": "[Šéŕvéŕ one]",
+  "@settingsStorageServer": {
+    "description": "Storage settings: heading of the server’s download storage figures."
+  },
+  "settingsStorageServerUsed": "[Ûšéð öñ ţĥé šéŕvéŕ: {used} öf {limit} one two three]",
+  "@settingsStorageServerUsed": {
+    "description": "Storage settings: the space the user’s downloads take on the server against the server’s limit.",
+    "placeholders": {
+      "used": {
+        "type": "String",
+        "example": "1.5 GB"
+      },
+      "limit": {
+        "type": "String",
+        "example": "10.0 GB"
+      }
+    }
+  },
+  "settingsStorageServerDevice": "[{count, plural, =1{Fŕöm ţĥîš ðévîçé: {size}, 1 ţŕåçķ one two three} other{Fŕöm ţĥîš ðévîçé: {size}, {count} ţŕåçķš one two three}}]",
+  "@settingsStorageServerDevice": {
+    "description": "Storage settings: the part of the server figure that this device downloaded.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "12"
+      },
+      "size": {
+        "type": "String",
+        "example": "1.5 GB"
+      }
+    }
+  },
+  "settingsStorageServerCaption": "[Ţĥé šéŕvéŕ ļîmîţ îš çĥåñĝéð îñ ţĥé šéŕvéŕ’š šéţţîñĝš. one two three four five]",
+  "@settingsStorageServerCaption": {
+    "description": "Storage settings: caption under the server figures, which are read-only here."
+  },
+  "settingsStorageCache": "[Çåçĥé one]",
+  "@settingsStorageCache": {
+    "description": "Storage settings: heading of the cache actions."
+  },
+  "settingsStorageClearCache": "[Çļéåŕ çåçĥé one two]",
+  "@settingsStorageClearCache": {
+    "description": "Storage settings: action deleting saved images and browsing data."
+  },
+  "settingsStorageClearCacheCaption": "[Šåvéð îmåĝéš åñð bŕöŵšîñĝ ðåţå åŕé féţçĥéð åĝåîñ ŵĥéñ ñééðéð. Ðöŵñļöåðš šţåý. one two three four five six seven]",
+  "@settingsStorageClearCacheCaption": {
+    "description": "Storage settings: caption under the Clear cache action."
+  },
+  "settingsStorageClearCacheTitle": "[Çļéåŕ çåçĥé? one two]",
+  "@settingsStorageClearCacheTitle": {
+    "description": "Title of the dialog confirming that the cache is cleared."
+  },
+  "settingsStorageClearCacheBody": "[Šåvéð îmåĝéš åñð bŕöŵšîñĝ ðåţå åŕé ðéļéţéð. Ðöŵñļöåðš åñð þļåýbåçķ åŕé ñöţ åfféçţéð. one two three four five six seven]",
+  "@settingsStorageClearCacheBody": {
+    "description": "Body of the dialog confirming that the cache is cleared."
+  },
+  "settingsStorageClearCacheConfirm": "[Çļéåŕ one]",
+  "@settingsStorageClearCacheConfirm": {
+    "description": "Confirm button of the dialog clearing the cache."
+  },
+  "settingsStorageCancel": "[Çåñçéļ one]",
+  "@settingsStorageCancel": {
+    "description": "Cancel button of the storage settings dialogs."
   }
 }

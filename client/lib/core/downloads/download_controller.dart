@@ -461,6 +461,17 @@ class DownloadController {
     await _applyDeviceLimit();
   });
 
+  /// Removes every collection, tracks and episodes alike, as [unpin] does
+  /// for each, then applies the device limit again.
+  Future<void> unpinAll() => _serial(() async {
+    final kinds = DownloadCollectionKind.values.asNameMap();
+    for (final row in await _store.watchCollections().first) {
+      final kind = kinds[row.kind];
+      if (kind != null) await _unpin(kind, row.refId);
+    }
+    await _applyDeviceLimit();
+  });
+
   /// Sets the device limit to [bytes] and lets the items that now fit run,
   /// in schedule order.
   Future<void> raiseDeviceLimit(int bytes) => _serial(() async {

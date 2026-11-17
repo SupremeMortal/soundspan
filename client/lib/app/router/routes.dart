@@ -7,7 +7,6 @@ import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:soundspan/app/l10n/generated/app_localizations.dart';
 import 'package:soundspan/app/router/guards.dart';
-import 'package:soundspan/app/router/placeholder_screen.dart';
 import 'package:soundspan/app/router/shell_route.dart';
 import 'package:soundspan/app/shell/shell_history.dart';
 import 'package:soundspan/app/shell/two_pane.dart';
@@ -64,6 +63,9 @@ abstract final class RoutePaths {
 
   /// The Playback settings.
   static const settingsPlayback = '/settings/playback';
+
+  /// The Storage settings.
+  static const settingsStorage = '/settings/storage';
 
   /// The Appearance settings.
   static const settingsAppearance = '/settings/appearance';
@@ -351,15 +353,6 @@ GoRouter createRouter(
                     builder: (context, _) => const LicensesScreen(),
                   ),
               ],
-            ),
-          for (final (path, title)
-              in <(String, String Function(AppLocalizations))>[
-                ('storage', (l10n) => l10n.screenSettingsStorage),
-              ])
-            GoRoute(
-              path: path,
-              builder: (context, _) =>
-                  PlaceholderScreen(title(AppLocalizations.of(context))),
             ),
         ],
       ),
