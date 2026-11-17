@@ -290,7 +290,7 @@ Each seam is an abstract class in `lib/platform/<name>/<name>.dart` with `_io.da
 |---|---|---|---|---|---|
 | `canDownload` | yes | yes | yes | yes | no |
 | `canScanQr` | yes | yes | yes | no | yes |
-| `hasTray` | no | no | no (the Dock keeps the app) | yes | no |
+| `hasTray` | no | no | no (the Dock keeps the app) | yes (Linux: only when a StatusNotifier host answered `DesktopShell.initTray()`) | no |
 | `hasBackgroundPlayback` | yes | yes | yes | yes | no |
 | `supportsApiKeyStreaming` | yes | yes | yes | yes | no |
 | `isDesktop` | no | no | yes | yes | no |

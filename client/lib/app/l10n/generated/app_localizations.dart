@@ -3806,6 +3806,144 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Results from this device'**
   String get searchResultsFromDevice;
+
+  /// The desktop window title while a track plays: its title and artist, followed by the application name.
+  ///
+  /// In en, this message translates to:
+  /// **'{title} — {artist} · soundspan'**
+  String windowTitleNowPlaying(String title, String artist);
+
+  /// Tray menu entry that resumes playback.
+  ///
+  /// In en, this message translates to:
+  /// **'Play'**
+  String get trayPlay;
+
+  /// Tray menu entry that pauses playback.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause'**
+  String get trayPause;
+
+  /// Tray menu entry that shows the app's window.
+  ///
+  /// In en, this message translates to:
+  /// **'Show window'**
+  String get trayShowWindow;
+
+  /// Tray menu entry that quits the app.
+  ///
+  /// In en, this message translates to:
+  /// **'Quit'**
+  String get trayQuit;
+
+  /// Disabled tray menu entry naming the current track and its artist.
+  ///
+  /// In en, this message translates to:
+  /// **'{title} — {artist}'**
+  String trayNowPlaying(String title, String artist);
+
+  /// Switch in Settings → Desktop: closing the window hides it to the system tray and playback continues.
+  ///
+  /// In en, this message translates to:
+  /// **'Close to tray'**
+  String get settingsCloseToTray;
+
+  /// Explanation under the disabled Close to tray switch when the desktop has no system tray.
+  ///
+  /// In en, this message translates to:
+  /// **'No system tray was found'**
+  String get settingsCloseToTrayUnavailable;
+
+  /// Question asked when the window is closed while something plays and the desktop has no system tray.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep playing in the background?'**
+  String get closeKeepPlayingTitle;
+
+  /// Answer to the close question: minimises the window and keeps playing.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep playing'**
+  String get closeKeepPlaying;
+
+  /// Answer to the close question: quits the app.
+  ///
+  /// In en, this message translates to:
+  /// **'Quit'**
+  String get closeQuit;
+
+  /// macOS application menu item that opens Settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings…'**
+  String get menuSettings;
+
+  /// macOS application menu item that quits the app.
+  ///
+  /// In en, this message translates to:
+  /// **'Quit soundspan'**
+  String get menuQuit;
+
+  /// macOS menu bar menu with the playback commands.
+  ///
+  /// In en, this message translates to:
+  /// **'Playback'**
+  String get menuPlayback;
+
+  /// macOS menu bar menu that shows the queue and the lyrics.
+  ///
+  /// In en, this message translates to:
+  /// **'View'**
+  String get menuView;
+
+  /// macOS menu bar menu with the window commands.
+  ///
+  /// In en, this message translates to:
+  /// **'Window'**
+  String get menuWindow;
+
+  /// macOS Playback menu item that plays or pauses.
+  ///
+  /// In en, this message translates to:
+  /// **'Play/Pause'**
+  String get menuPlayPause;
+
+  /// macOS Playback menu item that skips to the next item.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get menuNext;
+
+  /// macOS Playback menu item that goes to the previous item.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous'**
+  String get menuPrevious;
+
+  /// macOS Playback menu item that turns shuffle on or off.
+  ///
+  /// In en, this message translates to:
+  /// **'Shuffle'**
+  String get menuShuffle;
+
+  /// macOS Playback menu item that changes the repeat mode.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeat'**
+  String get menuRepeat;
+
+  /// macOS View menu item that shows or hides the queue.
+  ///
+  /// In en, this message translates to:
+  /// **'Queue'**
+  String get menuQueue;
+
+  /// macOS View menu item that shows or hides the lyrics.
+  ///
+  /// In en, this message translates to:
+  /// **'Lyrics'**
+  String get menuLyrics;
 }
 
 class _AppLocalizationsDelegate

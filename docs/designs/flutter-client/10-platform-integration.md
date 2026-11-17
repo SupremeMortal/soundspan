@@ -98,7 +98,7 @@ Entitlements (release):
 
 `Info.plist`: URL scheme, `NSCameraUsageDescription`, `NSLocalNetworkUsageDescription`, `NSAppTransportSecurity` as on iOS, `LSMinimumSystemVersion`, `LSApplicationCategoryType = public.app-category.music`.
 
-Window: closing the window hides it and playback continues (standard macOS behaviour); Cmd+Q quits. Media keys and the Now Playing menu-bar item come from `audio_service`. Menu bar: a `PlatformMenuBar` with Playback (Play/Pause, Next, Previous, Shuffle, Repeat), View (Queue, Lyrics), and Window menus mirroring the shortcut table in [09](09-ui-and-design-system.md).
+Window: closing the window hides it and playback continues (standard macOS behaviour); a click on the Dock icon shows it again; Cmd+Q quits. There is no tray icon. Media keys and the Now Playing menu-bar item come from `audio_service`. Menu bar: a `PlatformMenuBar` with the application menu (About, Settings… as Cmd+,, Quit as Cmd+Q), Playback (Play/Pause, Next, Previous, Shuffle, Repeat), View (Queue, Lyrics), and Window (Minimise, Zoom) menus mirroring the shortcut table in [09](09-ui-and-design-system.md). Each item invokes the intent of its shortcut and shows its keys, except the keys limited to outside text fields (Space, Cmd+arrows), which a menu key equivalent would take from a text field; items whose action has no target are disabled.
 
 Distribution: `.app` in a `.dmg`, Developer ID signed and notarised (`notarytool`), stapled. Homebrew cask after the first signed release.
 
@@ -131,7 +131,7 @@ Packaging: MSIX (for winget and optional Store) and an Inno Setup `.exe` (per-us
 | Secrets | libsecret (Secret Service: GNOME Keyring, KWallet). When no provider answers, the app refuses to store credentials and the connect screen explains what to install; there is no unencrypted fallback |
 | URL scheme | `.desktop` file `MimeType=x-scheme-handler/soundspan;` and `Exec=soundspan %u` |
 | Single instance | `GApplication` with `G_APPLICATION_HANDLES_OPEN`; a second launch delivers its URI to the first |
-| Tray | `tray_manager` (StatusNotifierItem/AppIndicator). GNOME without the AppIndicator extension has no tray; "close to tray" is then disabled and closing the window asks whether to keep playing |
+| Tray | `tray_manager`, which exports a StatusNotifierItem over D-Bus itself (no `libayatana-appindicator` at build or run time). The tray is used only when a StatusNotifier watcher on the session bus reports a registered host (`IsStatusNotifierHostRegistered`); GNOME without the AppIndicator extension has none, so "close to tray" is then disabled and closing the window asks whether to keep playing ("Keep playing" minimises the window, "Quit" quits) |
 | Wayland and X11 | Both through GTK; no X11-only calls |
 | QR scan | Not offered; manual code entry |
 | Application id | `io.soundspan.app` (desktop file name, icon name, `GApplication` id, Wayland app id) |

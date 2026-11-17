@@ -3,9 +3,11 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:dbus/dbus.dart';
 import 'package:flutter/services.dart';
 import 'package:screen_retriever/screen_retriever.dart';
 import 'package:soundspan/platform/desktop_shell/desktop_shell.dart';
+import 'package:tray_manager/tray_manager.dart' as tray;
 import 'package:window_manager/window_manager.dart';
 
 /// The [DesktopShell] of the running app: [WindowManagerDesktopShell] on
@@ -16,7 +18,7 @@ DesktopShell createDesktopShell() =>
     : const NoopDesktopShell();
 
 /// A [DesktopShell] over `window_manager`'s current window, `screen_retriever`
-/// displays and the runner's [singleInstanceChannel].
+/// displays, a `tray_manager` icon and the runner's [singleInstanceChannel].
 class WindowManagerDesktopShell implements DesktopShell {
   /// Creates the shell; [init] attaches it to the window.
   new();
@@ -24,8 +26,34 @@ class WindowManagerDesktopShell implements DesktopShell {
   final StreamController<void> _geometry = StreamController.broadcast();
   final StreamController<void> _close = StreamController.broadcast();
   final StreamController<List<String>> _launches = StreamController.broadcast();
+  final StreamController<TrayCommand> _tray = StreamController.broadcast();
 
   Window? _window;
+
+  /// Whether a close request is cancelled before [closeRequests] emits.
+  bool _preventClose = false;
+
+  /// Whether [quit] closes the window, so its close request is let through.
+  bool _quitting = false;
+
+  /// The tray icon, once [initTray] created it.
+  tray.TrayIcon? _trayIcon;
+
+  /// The menu shown and its items, kept alive while the menu is shown.
+  List<Object> _menu = const [];
+
+  /// The tray icon of Windows, a light glyph for the dark taskbar.
+  static const String _windowsTrayIcon = 'assets/brand/tray/tray_dark_32.png';
+
+  /// The tray icon of Linux, a light glyph for the usual dark panels.
+  static const String _linuxTrayIcon = 'assets/brand/tray/tray_dark_22.png';
+
+  /// The service names of a StatusNotifier watcher (KDE's and the one
+  /// GNOME's AppIndicator extension also registers).
+  static const List<String> _watchers = [
+    'org.kde.StatusNotifierWatcher',
+    'com.canonical.StatusNotifierWatcher',
+  ];
 
   /// Bounds requested while the window was hidden on Linux, re-applied when
   /// the shown window measures its decorations.
@@ -60,7 +88,9 @@ class WindowManagerDesktopShell implements DesktopShell {
             WindowMaximizedEvent() ||
             WindowRestoredEvent():
           _geometry.add(null);
-        case WindowCloseRequestedEvent():
+        case WindowCloseRequestedEvent(:final request):
+          if (_quitting) return;
+          if (_preventClose) request.cancel();
           _close.add(null);
         default:
           break;
@@ -186,4 +216,124 @@ class WindowManagerDesktopShell implements DesktopShell {
 
   @override
   Stream<List<String>> get secondInstanceLaunches => _launches.stream;
+
+  @override
+  Future<void> setPreventClose(bool prevent) async => _preventClose = prevent;
+
+  @override
+  Future<void> hide() async => _current.hide();
+
+  @override
+  Future<void> minimize() async => _current.minimize();
+
+  /// Closes the window with its close request let through, which ends the
+  /// runner; where the window cannot be closed, exits the process.
+  @override
+  Future<void> quit() async {
+    _quitting = true;
+    _trayIcon?.setVisible(false);
+    if (Window.isCloseSupported() && _current.close()) return;
+    exit(0);
+  }
+
+  @override
+  Future<void> setTitle(String title) async => _current.title = title;
+
+  /// Creates the tray icon on Windows, and on Linux when a StatusNotifier
+  /// host answers; false on macOS (doc 10: the Dock keeps the app).
+  @override
+  Future<bool> initTray() async {
+    if (_trayIcon != null) return true;
+    final String asset;
+    if (Platform.isWindows) {
+      asset = _windowsTrayIcon;
+    } else if (Platform.isLinux) {
+      if (!await _hasStatusNotifierHost()) return false;
+      asset = _linuxTrayIcon;
+    } else {
+      return false;
+    }
+    if (!tray.TrayManager.instance.isSupported()) return false;
+    final icon = tray.TrayIcon.create();
+    if (icon == null) return false;
+    final image = tray.ImageAsset.fromAsset(asset);
+    if (image != null) icon.icon = image;
+    icon
+      ..setContextMenuTrigger(tray.ContextMenuTrigger.rightClicked)
+      ..addListener((event) {
+        if (event is tray.TrayIconClickedEvent) {
+          _tray.add(TrayCommand.showWindow);
+        }
+      })
+      ..setVisible(true);
+    _trayIcon = icon;
+    return true;
+  }
+
+  /// Whether a StatusNotifier watcher on the session bus has a host
+  /// registered, so a tray icon is shown.
+  static Future<bool> _hasStatusNotifierHost() async {
+    final client = DBusClient.session();
+    try {
+      for (final name in _watchers) {
+        if (!await client.nameHasOwner(name)) continue;
+        final registered = await DBusRemoteObject(
+          client,
+          name: name,
+          path: DBusObjectPath('/StatusNotifierWatcher'),
+        ).getProperty(name, 'IsStatusNotifierHostRegistered');
+        if (registered is DBusBoolean && registered.value) return true;
+      }
+      return false;
+    } on Object {
+      return false;
+    } finally {
+      await client.close();
+    }
+  }
+
+  @override
+  Future<void> setTray(TrayModel model) async {
+    final icon = _trayIcon;
+    if (icon == null) return;
+    final menu = tray.Menu.create();
+    if (menu == null) return;
+    final items = <tray.MenuItem>[];
+    for (final entry in model.entries) {
+      final item = tray.MenuItem.createWithLabelAndType(
+        entry.label,
+        tray.MenuItemType.normal,
+      );
+      if (item == null) continue;
+      item.isEnabled = entry.enabled;
+      final command = entry.command;
+      if (command != null) {
+        item.addListener((event) {
+          if (event is tray.MenuItemClickedEvent) _tray.add(command);
+        });
+      }
+      menu.addItem(item);
+      items.add(item);
+    }
+    icon
+      ..setTooltip(model.labels.tooltip)
+      ..setContextMenu(menu);
+    final previous = _menu;
+    _menu = [menu, ...items];
+    // A click runs inside the clicked item's own native callback, so the
+    // menu it belongs to outlives that call.
+    Timer.run(() {
+      for (final resource in previous) {
+        switch (resource) {
+          case tray.Menu():
+            resource.dispose();
+          case tray.MenuItem():
+            resource.dispose();
+        }
+      }
+    });
+  }
+
+  @override
+  Stream<TrayCommand> get trayCommands => _tray.stream;
 }

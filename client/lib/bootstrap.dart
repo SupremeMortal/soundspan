@@ -10,6 +10,7 @@ import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:soundspan/app/app.dart';
+import 'package:soundspan/app/desktop/desktop_controller.dart';
 import 'package:soundspan/app/l10n/generated/app_localizations.dart';
 import 'package:soundspan/app/licenses/license_registration.dart';
 import 'package:soundspan/app/router/deep_link_router.dart';
@@ -167,13 +168,20 @@ Future<void> bootstrap({
 }
 
 /// Desktop only (doc 02, step 5): restores the window's bounds before the
-/// first frame and starts persisting them. A failure is logged; the window
-/// then opens at the runner's default size.
+/// first frame and starts persisting them, then registers the tray and
+/// takes over closing the window ([startDesktop]). A failure is logged;
+/// the window then opens at the runner's default size, or closing it
+/// closes the app.
 Future<void> restoreWindow(ProviderContainer root) async {
   try {
     await root.read(windowStateControllerProvider).start();
   } on Object catch (error, stackTrace) {
     _log.severe('Could not restore the window', const {}, error, stackTrace);
+  }
+  try {
+    await startDesktop(root);
+  } on Object catch (error, stackTrace) {
+    _log.severe('Could not start the tray', const {}, error, stackTrace);
   }
 }
 

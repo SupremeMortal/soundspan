@@ -3,19 +3,30 @@
 import 'dart:async';
 
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:soundspan/app/l10n/generated/app_localizations.dart';
 import 'package:soundspan/app/shell/avatar_menu.dart';
 import 'package:soundspan/app/shell/window_class.dart';
 
+/// The window title the visible screen asked for, `<screen> · soundspan`;
+/// null before any screen showed. The desktop window shows it while nothing
+/// plays (`DesktopController`). A root provider.
+final Provider<ValueNotifier<String?>> routeTitleProvider =
+    Provider<ValueNotifier<String?>>((ref) {
+      final title = ValueNotifier<String?>(null);
+      ref.onDispose(title.dispose);
+      return title;
+    });
+
 /// Sets the window or tab title to `<screen> · soundspan` while its route is
-/// the visible one.
+/// the visible one, and records it in [routeTitleProvider].
 ///
 /// A route that is covered by another in its navigator, or that sits in a
 /// shell branch that is not selected, leaves the title alone. The widget
 /// tree below keeps its shape either way, so the state of [child] survives a
 /// dialog, sheet or popup opening over the route.
-class RouteTitle extends StatefulWidget {
+class RouteTitle extends ConsumerStatefulWidget {
   /// Titles the window with [screen] around [child].
   const new({required this.screen, required this.child, super.key});
 
@@ -26,10 +37,10 @@ class RouteTitle extends StatefulWidget {
   final Widget child;
 
   @override
-  State<RouteTitle> createState() => _RouteTitleState();
+  ConsumerState<RouteTitle> createState() => _RouteTitleState();
 }
 
-class _RouteTitleState extends State<RouteTitle> {
+class _RouteTitleState extends ConsumerState<RouteTitle> {
   /// The description this route last applied while visible, or null while
   /// it is hidden, so the title is set again when it becomes visible.
   ApplicationSwitcherDescription? _applied;
@@ -51,6 +62,7 @@ class _RouteTitleState extends State<RouteTitle> {
         _applied?.primaryColor != description.primaryColor) {
       _applied = description;
       unawaited(SystemChrome.setApplicationSwitcherDescription(description));
+      ref.read(routeTitleProvider).value = description.label;
     }
     return widget.child;
   }

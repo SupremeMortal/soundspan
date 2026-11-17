@@ -3091,5 +3091,117 @@
   "searchResultsFromDevice": "[Ŕéšûļţš fŕöm ţĥîš ðévîçé one two three]",
   "@searchResultsFromDevice": {
     "description": "Label above search results while offline: the results come from what is saved on this device."
+  },
+  "windowTitleNowPlaying": "[{title} — {artist} · šöûñðšþåñ one two]",
+  "@windowTitleNowPlaying": {
+    "description": "The desktop window title while a track plays: its title and artist, followed by the application name.",
+    "placeholders": {
+      "title": {
+        "type": "String",
+        "example": "Blue in Green"
+      },
+      "artist": {
+        "type": "String",
+        "example": "Miles Davis"
+      }
+    }
+  },
+  "trayPlay": "[Þļåý one]",
+  "@trayPlay": {
+    "description": "Tray menu entry that resumes playback."
+  },
+  "trayPause": "[Þåûšé one]",
+  "@trayPause": {
+    "description": "Tray menu entry that pauses playback."
+  },
+  "trayShowWindow": "[Šĥöŵ ŵîñðöŵ one two]",
+  "@trayShowWindow": {
+    "description": "Tray menu entry that shows the app's window."
+  },
+  "trayQuit": "[Qûîţ one]",
+  "@trayQuit": {
+    "description": "Tray menu entry that quits the app."
+  },
+  "trayNowPlaying": "[{title} — {artist} one]",
+  "@trayNowPlaying": {
+    "description": "Disabled tray menu entry naming the current track and its artist.",
+    "placeholders": {
+      "title": {
+        "type": "String",
+        "example": "Blue in Green"
+      },
+      "artist": {
+        "type": "String",
+        "example": "Miles Davis"
+      }
+    }
+  },
+  "settingsCloseToTray": "[Çļöšé ţö ţŕåý one two]",
+  "@settingsCloseToTray": {
+    "description": "Switch in Settings → Desktop: closing the window hides it to the system tray and playback continues."
+  },
+  "settingsCloseToTrayUnavailable": "[Ñö šýšţém ţŕåý ŵåš föûñð one two three]",
+  "@settingsCloseToTrayUnavailable": {
+    "description": "Explanation under the disabled Close to tray switch when the desktop has no system tray."
+  },
+  "closeKeepPlayingTitle": "[Ķééþ þļåýîñĝ îñ ţĥé båçķĝŕöûñð? one two three]",
+  "@closeKeepPlayingTitle": {
+    "description": "Question asked when the window is closed while something plays and the desktop has no system tray."
+  },
+  "closeKeepPlaying": "[Ķééþ þļåýîñĝ one two]",
+  "@closeKeepPlaying": {
+    "description": "Answer to the close question: minimises the window and keeps playing."
+  },
+  "closeQuit": "[Qûîţ one]",
+  "@closeQuit": {
+    "description": "Answer to the close question: quits the app."
+  },
+  "menuSettings": "[Šéţţîñĝš… one]",
+  "@menuSettings": {
+    "description": "macOS application menu item that opens Settings."
+  },
+  "menuQuit": "[Qûîţ šöûñðšþåñ one two]",
+  "@menuQuit": {
+    "description": "macOS application menu item that quits the app."
+  },
+  "menuPlayback": "[Þļåýbåçķ one]",
+  "@menuPlayback": {
+    "description": "macOS menu bar menu with the playback commands."
+  },
+  "menuView": "[Vîéŵ one]",
+  "@menuView": {
+    "description": "macOS menu bar menu that shows the queue and the lyrics."
+  },
+  "menuWindow": "[Ŵîñðöŵ one]",
+  "@menuWindow": {
+    "description": "macOS menu bar menu with the window commands."
+  },
+  "menuPlayPause": "[Þļåý/Þåûšé one]",
+  "@menuPlayPause": {
+    "description": "macOS Playback menu item that plays or pauses."
+  },
+  "menuNext": "[Ñéxţ one]",
+  "@menuNext": {
+    "description": "macOS Playback menu item that skips to the next item."
+  },
+  "menuPrevious": "[Þŕévîöûš one]",
+  "@menuPrevious": {
+    "description": "macOS Playback menu item that goes to the previous item."
+  },
+  "menuShuffle": "[Šĥûffļé one]",
+  "@menuShuffle": {
+    "description": "macOS Playback menu item that turns shuffle on or off."
+  },
+  "menuRepeat": "[Ŕéþéåţ one]",
+  "@menuRepeat": {
+    "description": "macOS Playback menu item that changes the repeat mode."
+  },
+  "menuQueue": "[Qûéûé one]",
+  "@menuQueue": {
+    "description": "macOS View menu item that shows or hides the queue."
+  },
+  "menuLyrics": "[Ļýŕîçš one]",
+  "@menuLyrics": {
+    "description": "macOS View menu item that shows or hides the lyrics."
   }
 }

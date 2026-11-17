@@ -115,7 +115,8 @@ final class PlatformCapabilities {
   /// A camera QR scanner is available for the device-link code.
   final bool canScanQr;
 
-  /// The app can show a system tray icon.
+  /// The app can show a system tray icon: on Windows, and on Linux while a
+  /// StatusNotifier host shows it ([trayHostProvider]).
   final bool hasTray;
 
   /// Playback continues with no window or with the app in the background.
@@ -137,6 +138,19 @@ final class PlatformCapabilities {
   /// The OS offers an audio output picker that the now-playing screen
   /// embeds (`AVRoutePickerView` for AirPlay on iOS, doc 10).
   final bool hasSystemRoutePicker;
+
+  /// These capabilities with [hasTray] off.
+  PlatformCapabilities withoutTray() => PlatformCapabilities(
+    canDownload: canDownload,
+    canScanQr: canScanQr,
+    hasTray: false,
+    hasBackgroundPlayback: hasBackgroundPlayback,
+    supportsApiKeyStreaming: supportsApiKeyStreaming,
+    isDesktop: isDesktop,
+    allowsPublicCleartextHttp: allowsPublicCleartextHttp,
+    hasMobileData: hasMobileData,
+    hasSystemRoutePicker: hasSystemRoutePicker,
+  );
 
   @override
   bool operator ==(Object other) =>
@@ -176,6 +190,30 @@ final class PlatformCapabilities {
       'hasSystemRoutePicker: $hasSystemRoutePicker)';
 }
 
-/// The capabilities of the platform the app runs on.
+/// Whether the tray icon could be created: true until the desktop shell's
+/// `initTray()` reports that no tray host answered (Linux without a
+/// StatusNotifier host).
+class TrayHost extends Notifier<bool> {
+  @override
+  bool build() => true;
+
+  /// Whether the tray icon was created.
+  bool get available => state;
+
+  /// Records whether the tray icon was created.
+  set available(bool available) => state = available;
+}
+
+/// Whether a tray host answered; a root provider.
+final NotifierProvider<TrayHost, bool> trayHostProvider =
+    NotifierProvider<TrayHost, bool>(TrayHost.new);
+
+/// The capabilities of the platform the app runs on; `hasTray` is off when
+/// [trayHostProvider] says no tray host answered.
 final Provider<PlatformCapabilities> platformCapabilitiesProvider =
-    Provider<PlatformCapabilities>((ref) => currentPlatformCapabilities());
+    Provider<PlatformCapabilities>((ref) {
+      final capabilities = currentPlatformCapabilities();
+      return ref.watch(trayHostProvider)
+          ? capabilities
+          : capabilities.withoutTray();
+    });

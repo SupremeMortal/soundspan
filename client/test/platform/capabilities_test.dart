@@ -98,4 +98,18 @@ void main() {
       'hasSystemRoutePicker': false,
     });
   });
+
+  test('Linux without a tray host has no tray; the rest is unchanged', () {
+    debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+    expect(container.read(platformCapabilitiesProvider).hasTray, isTrue);
+
+    container.read(trayHostProvider.notifier).available = false;
+
+    expect(
+      flags(container.read(platformCapabilitiesProvider)),
+      flags(PlatformCapabilities.windowsAndLinux)..['hasTray'] = false,
+    );
+  });
 }

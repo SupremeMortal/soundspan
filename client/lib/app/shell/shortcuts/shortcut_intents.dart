@@ -86,6 +86,13 @@ class ToggleQueueIntent extends Intent {
   const new();
 }
 
+/// Toggles the lyrics in the right panel; the macOS View menu sends it
+/// (doc 10), no key does.
+class ToggleLyricsIntent extends Intent {
+  /// Creates the intent.
+  const new();
+}
+
 /// Goes back in the current branch.
 class NavigateBackIntent extends Intent {
   /// Creates the intent.

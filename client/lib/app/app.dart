@@ -2,6 +2,7 @@
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:soundspan/app/desktop/keep_playing_prompt.dart';
 import 'package:soundspan/app/l10n/app_locales.dart';
 import 'package:soundspan/app/l10n/generated/app_localizations.dart';
 import 'package:soundspan/app/router/routes.dart';
@@ -58,8 +59,9 @@ class SoundspanApp extends ConsumerWidget {
     return MaterialApp.router(
       routerConfig: ref.watch(routerProvider),
       debugShowCheckedModeBanner: false,
-      builder: (context, child) =>
-          VolatileStorageNotice(child: child ?? const SizedBox.shrink()),
+      builder: (context, child) => KeepPlayingPrompt(
+        child: VolatileStorageNotice(child: child ?? const SizedBox.shrink()),
+      ),
       onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
       localizationsDelegates: appLocalizationsDelegates,
       supportedLocales: ref.watch(appLocalesProvider),

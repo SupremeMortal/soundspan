@@ -8,6 +8,7 @@ import 'package:flutter/gestures.dart'
 import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:soundspan/app/desktop/desktop_menu_bar.dart';
 import 'package:soundspan/app/shell/shortcuts/shell_focus_groups.dart';
 import 'package:soundspan/app/shell/shortcuts/shortcut_bindings.dart';
 import 'package:soundspan/app/shell/shortcuts/shortcut_intents.dart';
@@ -203,6 +204,12 @@ class _ShellShortcutsState extends ConsumerState<ShellShortcuts> {
       enabled: (_) => _controller != null,
       (_) => _toggleQueue(),
     ),
+    ToggleLyricsIntent: _ShellAction<ToggleLyricsIntent>(
+      enabled: (_) =>
+          _playing != null &&
+          windowClassOf(MediaQuery.sizeOf(context)) == WindowClass.expanded,
+      (_) => ref.read(rightPanelProvider.notifier).toggle(RightPanel.lyrics),
+    ),
     NavigateBackIntent: _ShellAction<NavigateBackIntent>(
       enabled: (_) => widget.onBack != null,
       (_) => widget.onBack!(),
@@ -245,7 +252,9 @@ class _ShellShortcutsState extends ConsumerState<ShellShortcuts> {
         shortcuts: shortcutMap(defaultTargetPlatform),
         child: Actions(
           actions: _actions(),
-          child: Focus(focusNode: _anchor, autofocus: true, child: scoped),
+          child: DesktopMenuBar(
+            child: Focus(focusNode: _anchor, autofocus: true, child: scoped),
+          ),
         ),
       ),
     );

@@ -9,8 +9,10 @@ import 'package:soundspan/platform/desktop_shell/desktop_shell.dart';
 ///
 /// Every call is recorded in [calls], in order, as its member name. The
 /// window's bounds, maximized state and displays are fields a test sets;
-/// [emitGeometryChange], [emitCloseRequest] and [emitSecondInstance] play
-/// the window events.
+/// [emitGeometryChange], [emitCloseRequest], [emitSecondInstance] and
+/// [emitTrayCommand] play the window and tray events. [hasTrayHost] is what
+/// [initTray] answers; the models shown are in [trayModels] and the titles
+/// set in [titles].
 class FakeDesktopShell implements DesktopShell {
   /// Creates a window at [bounds] on [displays] (primary first; one
   /// 1920 × 1080 display by default).
@@ -35,6 +37,31 @@ class FakeDesktopShell implements DesktopShell {
   /// What [displayAreas] answers.
   List<Rect> displays;
 
+  /// What [initTray] answers.
+  bool hasTrayHost = true;
+
+  /// Every tray model shown, in order.
+  final List<TrayModel> trayModels = [];
+
+  /// Every window title set, in order.
+  final List<String> titles = [];
+
+  /// Whether a close request leaves the window open.
+  bool preventClose = false;
+
+  /// Whether the window is hidden.
+  bool hidden = false;
+
+  /// Whether the window is minimized.
+  bool minimized = false;
+
+  /// Whether the app quit.
+  bool quitted = false;
+
+  final StreamController<TrayCommand> _tray = StreamController.broadcast(
+    sync: true,
+  );
+
   final StreamController<void> _geometry = StreamController.broadcast(
     sync: true,
   );
@@ -56,6 +83,9 @@ class FakeDesktopShell implements DesktopShell {
 
   /// Plays a second launch of the app with [args].
   void emitSecondInstance(List<String> args) => _launches.add(args);
+
+  /// Plays a click on the tray icon or one of its menu entries.
+  void emitTrayCommand(TrayCommand command) => _tray.add(command);
 
   @override
   Future<void> init() async => calls.add('init');
@@ -91,7 +121,11 @@ class FakeDesktopShell implements DesktopShell {
   }
 
   @override
-  Future<void> showAndFocus() async => calls.add('showAndFocus');
+  Future<void> showAndFocus() async {
+    calls.add('showAndFocus');
+    hidden = false;
+    minimized = false;
+  }
 
   @override
   Future<List<Rect>> displayAreas() async {
@@ -107,4 +141,49 @@ class FakeDesktopShell implements DesktopShell {
 
   @override
   Stream<List<String>> get secondInstanceLaunches => _launches.stream;
+
+  @override
+  Future<void> setPreventClose(bool prevent) async {
+    calls.add('setPreventClose');
+    preventClose = prevent;
+  }
+
+  @override
+  Future<void> hide() async {
+    calls.add('hide');
+    hidden = true;
+  }
+
+  @override
+  Future<void> minimize() async {
+    calls.add('minimize');
+    minimized = true;
+  }
+
+  @override
+  Future<void> quit() async {
+    calls.add('quit');
+    quitted = true;
+  }
+
+  @override
+  Future<void> setTitle(String title) async {
+    calls.add('setTitle');
+    titles.add(title);
+  }
+
+  @override
+  Future<bool> initTray() async {
+    calls.add('initTray');
+    return hasTrayHost;
+  }
+
+  @override
+  Future<void> setTray(TrayModel model) async {
+    calls.add('setTray');
+    trayModels.add(model);
+  }
+
+  @override
+  Stream<TrayCommand> get trayCommands => _tray.stream;
 }

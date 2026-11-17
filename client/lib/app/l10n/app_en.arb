@@ -2906,5 +2906,117 @@
   "searchResultsFromDevice": "Results from this device",
   "@searchResultsFromDevice": {
     "description": "Label above search results while offline: the results come from what is saved on this device."
+  },
+  "windowTitleNowPlaying": "{title} — {artist} · soundspan",
+  "@windowTitleNowPlaying": {
+    "description": "The desktop window title while a track plays: its title and artist, followed by the application name.",
+    "placeholders": {
+      "title": {
+        "type": "String",
+        "example": "Blue in Green"
+      },
+      "artist": {
+        "type": "String",
+        "example": "Miles Davis"
+      }
+    }
+  },
+  "trayPlay": "Play",
+  "@trayPlay": {
+    "description": "Tray menu entry that resumes playback."
+  },
+  "trayPause": "Pause",
+  "@trayPause": {
+    "description": "Tray menu entry that pauses playback."
+  },
+  "trayShowWindow": "Show window",
+  "@trayShowWindow": {
+    "description": "Tray menu entry that shows the app's window."
+  },
+  "trayQuit": "Quit",
+  "@trayQuit": {
+    "description": "Tray menu entry that quits the app."
+  },
+  "trayNowPlaying": "{title} — {artist}",
+  "@trayNowPlaying": {
+    "description": "Disabled tray menu entry naming the current track and its artist.",
+    "placeholders": {
+      "title": {
+        "type": "String",
+        "example": "Blue in Green"
+      },
+      "artist": {
+        "type": "String",
+        "example": "Miles Davis"
+      }
+    }
+  },
+  "settingsCloseToTray": "Close to tray",
+  "@settingsCloseToTray": {
+    "description": "Switch in Settings → Desktop: closing the window hides it to the system tray and playback continues."
+  },
+  "settingsCloseToTrayUnavailable": "No system tray was found",
+  "@settingsCloseToTrayUnavailable": {
+    "description": "Explanation under the disabled Close to tray switch when the desktop has no system tray."
+  },
+  "closeKeepPlayingTitle": "Keep playing in the background?",
+  "@closeKeepPlayingTitle": {
+    "description": "Question asked when the window is closed while something plays and the desktop has no system tray."
+  },
+  "closeKeepPlaying": "Keep playing",
+  "@closeKeepPlaying": {
+    "description": "Answer to the close question: minimises the window and keeps playing."
+  },
+  "closeQuit": "Quit",
+  "@closeQuit": {
+    "description": "Answer to the close question: quits the app."
+  },
+  "menuSettings": "Settings…",
+  "@menuSettings": {
+    "description": "macOS application menu item that opens Settings."
+  },
+  "menuQuit": "Quit soundspan",
+  "@menuQuit": {
+    "description": "macOS application menu item that quits the app."
+  },
+  "menuPlayback": "Playback",
+  "@menuPlayback": {
+    "description": "macOS menu bar menu with the playback commands."
+  },
+  "menuView": "View",
+  "@menuView": {
+    "description": "macOS menu bar menu that shows the queue and the lyrics."
+  },
+  "menuWindow": "Window",
+  "@menuWindow": {
+    "description": "macOS menu bar menu with the window commands."
+  },
+  "menuPlayPause": "Play/Pause",
+  "@menuPlayPause": {
+    "description": "macOS Playback menu item that plays or pauses."
+  },
+  "menuNext": "Next",
+  "@menuNext": {
+    "description": "macOS Playback menu item that skips to the next item."
+  },
+  "menuPrevious": "Previous",
+  "@menuPrevious": {
+    "description": "macOS Playback menu item that goes to the previous item."
+  },
+  "menuShuffle": "Shuffle",
+  "@menuShuffle": {
+    "description": "macOS Playback menu item that turns shuffle on or off."
+  },
+  "menuRepeat": "Repeat",
+  "@menuRepeat": {
+    "description": "macOS Playback menu item that changes the repeat mode."
+  },
+  "menuQueue": "Queue",
+  "@menuQueue": {
+    "description": "macOS View menu item that shows or hides the queue."
+  },
+  "menuLyrics": "Lyrics",
+  "@menuLyrics": {
+    "description": "macOS View menu item that shows or hides the lyrics."
   }
 }

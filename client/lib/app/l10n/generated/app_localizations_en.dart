@@ -2278,6 +2278,79 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get searchResultsFromDevice => 'Results from this device';
+
+  @override
+  String windowTitleNowPlaying(String title, String artist) {
+    return '$title — $artist · soundspan';
+  }
+
+  @override
+  String get trayPlay => 'Play';
+
+  @override
+  String get trayPause => 'Pause';
+
+  @override
+  String get trayShowWindow => 'Show window';
+
+  @override
+  String get trayQuit => 'Quit';
+
+  @override
+  String trayNowPlaying(String title, String artist) {
+    return '$title — $artist';
+  }
+
+  @override
+  String get settingsCloseToTray => 'Close to tray';
+
+  @override
+  String get settingsCloseToTrayUnavailable => 'No system tray was found';
+
+  @override
+  String get closeKeepPlayingTitle => 'Keep playing in the background?';
+
+  @override
+  String get closeKeepPlaying => 'Keep playing';
+
+  @override
+  String get closeQuit => 'Quit';
+
+  @override
+  String get menuSettings => 'Settings…';
+
+  @override
+  String get menuQuit => 'Quit soundspan';
+
+  @override
+  String get menuPlayback => 'Playback';
+
+  @override
+  String get menuView => 'View';
+
+  @override
+  String get menuWindow => 'Window';
+
+  @override
+  String get menuPlayPause => 'Play/Pause';
+
+  @override
+  String get menuNext => 'Next';
+
+  @override
+  String get menuPrevious => 'Previous';
+
+  @override
+  String get menuShuffle => 'Shuffle';
+
+  @override
+  String get menuRepeat => 'Repeat';
+
+  @override
+  String get menuQueue => 'Queue';
+
+  @override
+  String get menuLyrics => 'Lyrics';
 }
 
 /// The translations for English (`en_XA`).
@@ -4611,4 +4684,79 @@ class AppLocalizationsEnXa extends AppLocalizationsEn {
   @override
   String get searchResultsFromDevice =>
       '[Ŕéšûļţš fŕöm ţĥîš ðévîçé one two three]';
+
+  @override
+  String windowTitleNowPlaying(String title, String artist) {
+    return '[$title — $artist · šöûñðšþåñ one two]';
+  }
+
+  @override
+  String get trayPlay => '[Þļåý one]';
+
+  @override
+  String get trayPause => '[Þåûšé one]';
+
+  @override
+  String get trayShowWindow => '[Šĥöŵ ŵîñðöŵ one two]';
+
+  @override
+  String get trayQuit => '[Qûîţ one]';
+
+  @override
+  String trayNowPlaying(String title, String artist) {
+    return '[$title — $artist one]';
+  }
+
+  @override
+  String get settingsCloseToTray => '[Çļöšé ţö ţŕåý one two]';
+
+  @override
+  String get settingsCloseToTrayUnavailable =>
+      '[Ñö šýšţém ţŕåý ŵåš föûñð one two three]';
+
+  @override
+  String get closeKeepPlayingTitle =>
+      '[Ķééþ þļåýîñĝ îñ ţĥé båçķĝŕöûñð? one two three]';
+
+  @override
+  String get closeKeepPlaying => '[Ķééþ þļåýîñĝ one two]';
+
+  @override
+  String get closeQuit => '[Qûîţ one]';
+
+  @override
+  String get menuSettings => '[Šéţţîñĝš… one]';
+
+  @override
+  String get menuQuit => '[Qûîţ šöûñðšþåñ one two]';
+
+  @override
+  String get menuPlayback => '[Þļåýbåçķ one]';
+
+  @override
+  String get menuView => '[Vîéŵ one]';
+
+  @override
+  String get menuWindow => '[Ŵîñðöŵ one]';
+
+  @override
+  String get menuPlayPause => '[Þļåý/Þåûšé one]';
+
+  @override
+  String get menuNext => '[Ñéxţ one]';
+
+  @override
+  String get menuPrevious => '[Þŕévîöûš one]';
+
+  @override
+  String get menuShuffle => '[Šĥûffļé one]';
+
+  @override
+  String get menuRepeat => '[Ŕéþéåţ one]';
+
+  @override
+  String get menuQueue => '[Qûéûé one]';
+
+  @override
+  String get menuLyrics => '[Ļýŕîçš one]';
 }
