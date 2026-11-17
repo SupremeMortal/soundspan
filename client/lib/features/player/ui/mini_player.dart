@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:soundspan/app/l10n/generated/app_localizations.dart';
@@ -16,8 +17,11 @@ import 'package:soundspan/shared/widgets/artwork.dart';
 /// artwork, title and artist, play/pause and next (skip forward for an
 /// episode), on `surfaceRaised`.
 ///
-/// A tap calls [onOpen] when it is set. It renders nothing while the queue
-/// is empty.
+/// A tap calls [onOpen] when it is set, and so does a swipe up: a vertical
+/// drag upward of more than [openDragDistance], or one released upward
+/// faster than [openFlingVelocity], wherever it starts, its buttons
+/// included. Horizontal swipes do nothing. It renders nothing while the
+/// queue is empty.
 class MiniPlayer extends ConsumerWidget {
   /// Creates the mini player.
   const new({this.onOpen, super.key});
@@ -34,6 +38,17 @@ class MiniPlayer extends ConsumerWidget {
   /// The key of the played part of the progress line.
   static const Key progressKey = Key('miniPlayer.progress');
 
+  /// How far up, in logical pixels, a drag must go to open now playing.
+  static const double openDragDistance = 24;
+
+  /// How fast upward, in logical pixels per second, a released drag must
+  /// move to open now playing.
+  static const double openFlingVelocity = 300;
+
+  /// How far a pointer moves before it is a drag rather than a tap: less
+  /// than [openDragDistance], so a short drag neither taps nor opens.
+  static const double dragSlop = 8;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final snapshot = ref.watch(playbackStateProvider).value;
@@ -43,84 +58,141 @@ class MiniPlayer extends ConsumerWidget {
     final typography = context.typography;
     final l10n = AppLocalizations.of(context);
     final controller = ref.read(playbackControllerProvider);
-    return Material(
-      color: colors.surfaceRaised,
-      child: InkWell(
-        onTap: onOpen,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const _MiniProgress(),
-            Padding(
-              padding: const EdgeInsetsDirectional.fromSTEB(
-                Spacing.x8,
-                Spacing.x4,
-                Spacing.x4,
-                Spacing.x4,
-              ),
-              child: Row(
-                children: [
-                  Artwork(ref: current.playerArtworkRef, size: artworkSize),
-                  const SizedBox(width: Spacing.x12),
-                  Expanded(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          current.playerTitle,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: typography.body.copyWith(
-                            color: colors.content,
+    return _SwipeUp(
+      onOpen: onOpen,
+      child: Material(
+        color: colors.surfaceRaised,
+        child: InkWell(
+          onTap: onOpen,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const _MiniProgress(),
+              Padding(
+                padding: const EdgeInsetsDirectional.fromSTEB(
+                  Spacing.x8,
+                  Spacing.x4,
+                  Spacing.x4,
+                  Spacing.x4,
+                ),
+                child: Row(
+                  children: [
+                    Artwork(ref: current.playerArtworkRef, size: artworkSize),
+                    const SizedBox(width: Spacing.x12),
+                    Expanded(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            current.playerTitle,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: typography.body.copyWith(
+                              color: colors.content,
+                            ),
                           ),
-                        ),
-                        Text(
-                          current.playerSubtitle,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: typography.bodySmall.copyWith(
-                            color: colors.contentSecondary,
+                          Text(
+                            current.playerSubtitle,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: typography.bodySmall.copyWith(
+                              color: colors.contentSecondary,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    tooltip: snapshot.playing
-                        ? l10n.playerPause
-                        : l10n.playerPlay,
-                    color: colors.content,
-                    icon: Icon(
-                      snapshot.playing
-                          ? Icons.pause_rounded
-                          : Icons.play_arrow_rounded,
-                    ),
-                    onPressed: controller.togglePlayPause,
-                  ),
-                  if (current is EpisodeQueueItem)
-                    IconButton(
-                      tooltip: l10n.playerSkipForward(
-                        snapshot.skipInterval.inSeconds,
+                        ],
                       ),
-                      color: colors.content,
-                      icon: const Icon(Icons.fast_forward_rounded),
-                      onPressed: controller.skipForward,
-                    )
-                  else
-                    IconButton(
-                      tooltip: l10n.playerNext,
-                      color: colors.content,
-                      icon: const Icon(Icons.skip_next_rounded),
-                      onPressed: controller.next,
                     ),
-                ],
+                    IconButton(
+                      tooltip: snapshot.playing
+                          ? l10n.playerPause
+                          : l10n.playerPlay,
+                      color: colors.content,
+                      icon: Icon(
+                        snapshot.playing
+                            ? Icons.pause_rounded
+                            : Icons.play_arrow_rounded,
+                      ),
+                      onPressed: controller.togglePlayPause,
+                    ),
+                    if (current is EpisodeQueueItem)
+                      IconButton(
+                        tooltip: l10n.playerSkipForward(
+                          snapshot.skipInterval.inSeconds,
+                        ),
+                        color: colors.content,
+                        icon: const Icon(Icons.fast_forward_rounded),
+                        onPressed: controller.skipForward,
+                      )
+                    else
+                      IconButton(
+                        tooltip: l10n.playerNext,
+                        color: colors.content,
+                        icon: const Icon(Icons.skip_next_rounded),
+                        onPressed: controller.next,
+                      ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
+  }
+}
+
+/// Calls [onOpen] when a vertical drag over [child] goes up far or fast
+/// enough (see [MiniPlayer]).
+class _SwipeUp extends StatefulWidget {
+  const new({required this.onOpen, required this.child});
+
+  final VoidCallback? onOpen;
+  final Widget child;
+
+  @override
+  State<_SwipeUp> createState() => _SwipeUpState();
+}
+
+class _SwipeUpState extends State<_SwipeUp> {
+  double _dy = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.onOpen == null) return widget.child;
+    return RawGestureDetector(
+      gestures: {
+        VerticalDragGestureRecognizer:
+            GestureRecognizerFactoryWithHandlers<VerticalDragGestureRecognizer>(
+              VerticalDragGestureRecognizer.new,
+              (recognizer) {
+                recognizer
+                  // The distance counts from where the pointer went down.
+                  ..dragStartBehavior = DragStartBehavior.down
+                  ..gestureSettings = const DeviceGestureSettings(
+                    touchSlop: MiniPlayer.dragSlop,
+                  )
+                  ..onStart = _start
+                  ..onUpdate = _update
+                  ..onEnd = _end;
+              },
+            ),
+      },
+      child: widget.child,
+    );
+  }
+
+  void _start(DragStartDetails details) => _dy = 0;
+
+  void _update(DragUpdateDetails details) => _dy += details.delta.dy;
+
+  void _end(DragEndDetails details) {
+    final velocity = details.primaryVelocity ?? 0;
+    if (_dy < -MiniPlayer.openDragDistance ||
+        velocity < -MiniPlayer.openFlingVelocity) {
+      widget.onOpen?.call();
+    }
+    _dy = 0;
   }
 }
 

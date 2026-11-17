@@ -3,6 +3,8 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:flutter/gestures.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
@@ -44,6 +46,14 @@ import 'package:soundspan/shared/widgets/quality_badge.dart';
 /// beside the controls instead, with the [LyricsView] in a second tab. The
 /// lyrics are not offered for an episode. The background is the artwork's
 /// [Backdrop].
+///
+/// A downward drag that starts on the drag handle, the header or the
+/// artwork moves the screen with the finger; released further than
+/// [dismissFraction] of the height, or faster than [dismissVelocity], it
+/// pops the route, and otherwise springs back over [Motion.emphasized]. A
+/// drag inside a list scrolls the list and moves the screen only once the
+/// list is at its top. With reduced motion the screen stays in place and
+/// the same thresholds decide. Escape pops the route too.
 class NowPlayingScreen extends ConsumerWidget {
   /// Creates the screen.
   const new({super.key});
@@ -64,6 +74,19 @@ class NowPlayingScreen extends ConsumerWidget {
   /// output picker.
   static const Key routePickerKey = Key('nowPlaying.routePicker');
 
+  /// The key of the drag handle.
+  static const Key dragHandleKey = Key('nowPlaying.dragHandle');
+
+  /// The key of the artwork, a drag area.
+  static const Key artworkKey = Key('nowPlaying.artwork');
+
+  /// The part of the height a released drag must pass to pop the route.
+  static const double dismissFraction = 0.25;
+
+  /// How fast downward, in logical pixels per second, a released drag must
+  /// move to pop the route.
+  static const double dismissVelocity = 700;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = context.colors;
@@ -72,69 +95,220 @@ class NowPlayingScreen extends ConsumerWidget {
         ? ref.watch(playbackStateProvider).value
         : null;
     final current = snapshot?.current;
-    return Scaffold(
-      backgroundColor: colors.surface,
-      body: Backdrop(
-        artworkRef: current?.playerArtworkRef,
-        child: SafeArea(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final windowClass = windowClassOf(constraints.biggest);
-              final sideBySide =
-                  windowClass != WindowClass.compact &&
-                  constraints.maxWidth > constraints.maxHeight;
-              final gutter = windowClass == WindowClass.compact
-                  ? Spacing.x16
-                  : Spacing.x24;
-              final Widget body;
-              if (snapshot == null || current == null) {
-                body = EmptyState(
-                  icon: Icons.queue_music_rounded,
-                  message: l10n.queueEmpty,
-                );
-              } else if (sideBySide) {
-                body = Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Expanded(
-                      child: _Controls(
-                        snapshot: snapshot,
-                        current: current,
-                        showQueueButton: false,
-                      ),
-                    ),
-                    const SizedBox(width: Spacing.x24),
-                    Expanded(
-                      child: current is EpisodeQueueItem
-                          ? const QueueView(key: sideQueueKey)
-                          : const _QueueAndLyricsTabs(),
-                    ),
-                  ],
-                );
-              } else {
-                body = _Controls(
-                  snapshot: snapshot,
-                  current: current,
-                  showQueueButton: true,
-                );
-              }
-              return WindowClassScope(
-                windowClass: windowClass,
-                child: Padding(
-                  padding: EdgeInsets.fromLTRB(gutter, 0, gutter, gutter),
-                  child: Column(
+    return _DragToDismiss(
+      child: Scaffold(
+        backgroundColor: colors.surface,
+        body: Backdrop(
+          artworkRef: current?.playerArtworkRef,
+          child: SafeArea(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final windowClass = windowClassOf(constraints.biggest);
+                final sideBySide =
+                    windowClass != WindowClass.compact &&
+                    constraints.maxWidth > constraints.maxHeight;
+                final gutter = windowClass == WindowClass.compact
+                    ? Spacing.x16
+                    : Spacing.x24;
+                final Widget body;
+                if (snapshot == null || current == null) {
+                  body = EmptyState(
+                    icon: Icons.queue_music_rounded,
+                    message: l10n.queueEmpty,
+                  );
+                } else if (sideBySide) {
+                  body = Row(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const _Header(),
-                      Expanded(child: body),
+                      Expanded(
+                        child: _Controls(
+                          snapshot: snapshot,
+                          current: current,
+                          showQueueButton: false,
+                        ),
+                      ),
+                      const SizedBox(width: Spacing.x24),
+                      Expanded(
+                        child: current is EpisodeQueueItem
+                            ? const QueueView(key: sideQueueKey)
+                            : const _QueueAndLyricsTabs(),
+                      ),
                     ],
+                  );
+                } else {
+                  body = _Controls(
+                    snapshot: snapshot,
+                    current: current,
+                    showQueueButton: true,
+                  );
+                }
+                return WindowClassScope(
+                  windowClass: windowClass,
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(gutter, 0, gutter, gutter),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const _Header(),
+                        Expanded(child: body),
+                      ],
+                    ),
                   ),
-                ),
-              );
-            },
+                );
+              },
+            ),
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Moves its child down with a dismissing drag and pops the route (see
+/// [NowPlayingScreen]). Drags start in a [_DismissDragArea] or as the
+/// overscroll at the top of a vertical list.
+class _DragToDismiss extends StatefulWidget {
+  const new({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_DragToDismiss> createState() => _DragToDismissState();
+}
+
+class _DragToDismissState extends State<_DragToDismiss>
+    with SingleTickerProviderStateMixin {
+  /// The offset of the screen, in logical pixels.
+  late final AnimationController _offset = AnimationController.unbounded(
+    vsync: this,
+  );
+
+  /// How far the current drag went down, followed or not.
+  double _dragged = 0;
+  double _height = 1;
+  bool _scrollDrag = false;
+
+  @override
+  void dispose() {
+    _offset.dispose();
+    super.dispose();
+  }
+
+  bool get _reduceMotion => MediaQuery.disableAnimationsOf(context);
+
+  void _start() {
+    _offset.stop();
+    _dragged = _offset.value;
+  }
+
+  void _update(double dy) {
+    _dragged = math.max(0, _dragged + dy);
+    if (!_reduceMotion) _offset.value = _dragged;
+  }
+
+  void _end(double velocity) {
+    final pop =
+        _dragged > NowPlayingScreen.dismissFraction * _height ||
+        velocity > NowPlayingScreen.dismissVelocity;
+    _dragged = 0;
+    if (pop) {
+      unawaited(
+        Navigator.maybePop(context).then((popped) {
+          if (!popped && mounted) _springBack();
+        }),
+      );
+    } else {
+      _springBack();
+    }
+  }
+
+  void _springBack() {
+    if (_reduceMotion) {
+      _offset.value = 0;
+      return;
+    }
+    _offset.animateTo(0, duration: Motion.emphasized, curve: Motion.curve);
+  }
+
+  bool _onScroll(ScrollNotification notification) {
+    if (notification.metrics.axis != Axis.vertical) return false;
+    if (notification is OverscrollNotification &&
+        notification.dragDetails != null &&
+        notification.overscroll < 0) {
+      if (!_scrollDrag) {
+        _scrollDrag = true;
+        _start();
+      }
+      _update(-notification.overscroll);
+    } else if (notification is ScrollEndNotification && _scrollDrag) {
+      _scrollDrag = false;
+      _end(notification.dragDetails?.velocity.pixelsPerSecond.dy ?? 0);
+    }
+    return false;
+  }
+
+  @override
+  Widget build(BuildContext context) => CallbackShortcuts(
+    bindings: {
+      const SingleActivator(LogicalKeyboardKey.escape): () =>
+          Navigator.maybePop(context),
+    },
+    child: Focus(
+      autofocus: true,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          _height = math.max(1, constraints.maxHeight);
+          return _DismissScope(
+            state: this,
+            child: NotificationListener<ScrollNotification>(
+              onNotification: _onScroll,
+              child: AnimatedBuilder(
+                animation: _offset,
+                builder: (context, child) => Transform.translate(
+                  offset: Offset(0, _offset.value),
+                  child: child,
+                ),
+                child: widget.child,
+              ),
+            ),
+          );
+        },
+      ),
+    ),
+  );
+}
+
+/// Gives [_DismissDragArea]s the [_DragToDismissState] above them.
+class _DismissScope extends InheritedWidget {
+  const new({required this.state, required super.child});
+
+  final _DragToDismissState state;
+
+  @override
+  bool updateShouldNotify(_DismissScope oldWidget) => state != oldWidget.state;
+}
+
+/// Where a dismissing drag may start: the drag handle, the header and the
+/// artwork.
+class _DismissDragArea extends StatelessWidget {
+  const new({required this.child, super.key});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final state = context
+        .dependOnInheritedWidgetOfExactType<_DismissScope>()
+        ?.state;
+    if (state == null) return child;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      dragStartBehavior: DragStartBehavior.down,
+      onVerticalDragStart: (_) => state._start(),
+      onVerticalDragUpdate: (details) => state._update(details.delta.dy),
+      onVerticalDragEnd: (details) => state._end(details.primaryVelocity ?? 0),
+      onVerticalDragCancel: () => state._end(0),
+      child: child,
     );
   }
 }
@@ -147,30 +321,54 @@ class _Header extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.colors;
     final l10n = AppLocalizations.of(context);
-    return Row(
-      children: [
-        IconButton(
-          tooltip: l10n.nowPlayingClose,
-          color: colors.content,
-          icon: const Icon(Icons.keyboard_arrow_down_rounded),
-          onPressed: () => Navigator.maybePop(context),
-        ),
-        Expanded(
-          child: Text(
-            l10n.nowPlayingOverline.toUpperCase(),
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: context.typography.overline.copyWith(
-              color: colors.contentSecondary,
+    return _DismissDragArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            key: NowPlayingScreen.dragHandleKey,
+            padding: const EdgeInsets.only(top: Spacing.x8),
+            child: SizedBox(
+              width: _dragHandleWidth,
+              height: _dragHandleHeight,
+              child: DecoratedBox(
+                decoration: ShapeDecoration(
+                  color: colors.lineStrong,
+                  shape: Radii.pill,
+                ),
+              ),
             ),
           ),
-        ),
-        const SizedBox(width: Sizes.touchTarget),
-      ],
+          Row(
+            children: [
+              IconButton(
+                tooltip: l10n.nowPlayingClose,
+                color: colors.content,
+                icon: const Icon(Icons.keyboard_arrow_down_rounded),
+                onPressed: () => Navigator.maybePop(context),
+              ),
+              Expanded(
+                child: Text(
+                  l10n.nowPlayingOverline.toUpperCase(),
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: context.typography.overline.copyWith(
+                    color: colors.contentSecondary,
+                  ),
+                ),
+              ),
+              const SizedBox(width: Sizes.touchTarget),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
+
+const double _dragHandleWidth = 32;
+const double _dragHandleHeight = 4;
 
 /// Artwork, title and artist, the seek bar, the transport and the bottom
 /// row.
@@ -198,13 +396,16 @@ class _Controls extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(vertical: Spacing.x16),
             child: LayoutBuilder(
               builder: (context, constraints) => Center(
-                child: Artwork(
-                  ref: current.playerArtworkRef,
-                  size: math.min(
-                    NowPlayingScreen.maxArtworkSize,
-                    math.min(constraints.maxWidth, constraints.maxHeight),
+                child: _DismissDragArea(
+                  key: NowPlayingScreen.artworkKey,
+                  child: Artwork(
+                    ref: current.playerArtworkRef,
+                    size: math.min(
+                      NowPlayingScreen.maxArtworkSize,
+                      math.min(constraints.maxWidth, constraints.maxHeight),
+                    ),
+                    radius: Radii.large,
                   ),
-                  radius: Radii.large,
                 ),
               ),
             ),
