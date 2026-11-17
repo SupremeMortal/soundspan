@@ -115,7 +115,7 @@ void main() {
           ),
           playbackId: PlaybackId('pb-old'),
         ),
-        context: const QueueContext(kind: QueueContextKind.single),
+        context: QueueContext(kind: QueueContextKind.single),
       ),
     ]);
     await pumpPodcasts(

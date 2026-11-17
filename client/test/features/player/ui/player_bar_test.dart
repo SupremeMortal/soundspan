@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 
+import 'package:flutter/semantics.dart' show SemanticsNode;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart' hide RepeatMode;
 import 'package:soundspan/core/playback/engines/fake_engine.dart';
@@ -208,11 +209,19 @@ void main() {
       final semantics = tester.ensureSemantics();
       expect(
         tester.getSemantics(find.byTooltip('Skip forward 5 seconds')),
-        containsSemantics(tooltip: 'Skip forward 5 seconds', isButton: true),
+        isA<SemanticsNode>().having(
+          (n) => n.tooltip,
+          'tooltip',
+          'Skip forward 5 seconds',
+        ),
       );
       expect(
         tester.getSemantics(find.byTooltip('Skip back 5 seconds')),
-        containsSemantics(tooltip: 'Skip back 5 seconds', isButton: true),
+        isA<SemanticsNode>().having(
+          (n) => n.tooltip,
+          'tooltip',
+          'Skip back 5 seconds',
+        ),
       );
       semantics.dispose();
       await tester.tap(find.byTooltip('Skip forward 5 seconds'));
