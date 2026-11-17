@@ -188,6 +188,70 @@ Notes:
 - If your tunnel points to an existing reverse proxy/ingress, configure this path split there instead of in `cloudflared`.
 - Keep websocket-friendly timeouts on any proxy layer between Cloudflare and soundspan.
 
+## Hosting the app's web build
+
+The [soundspan app](CLIENT_APPS.md) also has a web build. It is optional: the soundspan web UI stays the server's main browser interface, and the server image does not include the app. Each app release publishes the web build as a container image, `ghcr.io/soundspan/soundspan-client-web:<version>`, and as a static bundle, `soundspan-<version>-web.tar.gz`, on the [GitHub releases page](https://github.com/soundspan/soundspan/releases).
+
+The image is NGINX serving the app under `/app/` on port `8080`. `/` and `/app` redirect to `/app/`, and `/healthz` answers `200 ok` for health checks. It runs as any user ID in group 0, also with a read-only root filesystem and a tmpfs on `/tmp`, and reads no environment variables:
+
+```bash
+docker run -d --name soundspan-client-web --read-only --tmpfs /tmp -p 8080:8080 \
+  ghcr.io/soundspan/soundspan-client-web:<version>
+```
+
+### On the server's own origin (recommended)
+
+Route `/app/` to the image and leave the routing of every other path as it is. The app then runs on the same origin as the server, so no CORS setting is needed. Pass the path through unchanged: the image expects it to start with `/app/`.
+
+NGINX, added to the `server` block of the examples above:
+
+```nginx
+    location /app/ {
+        proxy_pass http://soundspan-client-web:8080;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+```
+
+Caddy:
+
+```caddy
+soundspan.example.com {
+    @app path /app/*
+    reverse_proxy @app soundspan-client-web:8080
+
+    reverse_proxy soundspan-frontend:3030
+}
+```
+
+Users open `https://soundspan.example.com/app/` and enter `https://soundspan.example.com` as the server address.
+
+### On another origin
+
+Serve the image on its own host name, for example `https://app.example.com`, with the app at `https://app.example.com/app/`. The browser then sends cross-origin requests to the server, which the backend refuses unless the app's origin is listed in `ALLOWED_ORIGINS` (comma-separated, see [`CONFIGURATION_AND_SECURITY.md`](CONFIGURATION_AND_SECURITY.md)):
+
+```env
+ALLOWED_ORIGINS=https://app.example.com
+```
+
+Keep any origins already listed there. When the origin is missing, the app's connection screen says that the server could not be reached and shows the origin to add.
+
+### Headers the image sends
+
+You do not need to add caching or security headers in your proxy:
+
+- `Cache-Control: public, max-age=31536000, immutable` for files whose names carry a content hash, and `no-cache` with an `ETag` for everything else, `index.html` and Flutter's unhashed scripts included, so a redeployed version is picked up at once.
+- `Content-Security-Policy: default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; connect-src *; img-src * blob: data:; media-src *; style-src 'self' 'unsafe-inline'; worker-src 'self' blob:`. `connect-src`, `img-src` and `media-src` allow any host because each user chooses the server in the app.
+- `X-Content-Type-Options: nosniff` and `Referrer-Policy: no-referrer`.
+
+The static bundle, served by your own web server under `/app/`, needs the same headers.
+
+### Limits of the web build
+
+The web build signs in with a password only: single sign-on, device-link codes and API keys are not available in a browser, so users of a single-sign-on-only server use a native app or the web UI. It cannot download music, and playback stops when the browser tab is closed.
+
 ## Verification checklist
 
 1. Open browser devtools Network tab.

@@ -275,6 +275,7 @@ When you opt in, the other server sees your username or display name — that is
 
 ## See also
 
+- [soundspan Apps](CLIENT_APPS.md) — Installing the apps for phones and computers, signing in, and offline listening
 - [Deployment Guide](DEPLOYMENT.md) — Docker and compose deployment options
 - [Configuration and Security](CONFIGURATION_AND_SECURITY.md) — Environment variables and security hardening
 - [Integrations Guide](INTEGRATIONS.md) — Lidarr, Audiobookshelf, Soulseek, YouTube Music, TIDAL, podcasts, and OpenSubsonic
