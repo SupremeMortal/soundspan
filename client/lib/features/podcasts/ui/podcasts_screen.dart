@@ -65,9 +65,11 @@ class PodcastsScreen extends ConsumerWidget {
     final gutter = pageGutter(windowClass);
     final subscribed = ref.watch(subscribedPodcastsProvider);
     var podcasts = subscribed.value?.value;
-    // With nothing cached and no server, the podcasts of the downloaded
-    // episodes stand in for the list (doc 07, Podcasts).
-    if (podcasts == null && subscribed.hasError) {
+    // Offline with nothing cached, the podcasts of the downloaded episodes
+    // stand in for the list (doc 07, Podcasts).
+    if (podcasts == null &&
+        subscribed.hasError &&
+        ref.watch(isOfflineProvider)) {
       podcasts = _downloadedPodcasts(ref);
     }
 

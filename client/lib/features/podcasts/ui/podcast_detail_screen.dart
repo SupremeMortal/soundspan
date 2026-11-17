@@ -65,8 +65,12 @@ class PodcastDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final detail = ref.watch(podcastDetailProvider(podcastId));
-    final downloaded = _downloadedDetail(ref);
-    final value = detail.value == null && detail.hasError && downloaded != null
+    // Offline with nothing cached, the downloaded episodes stand in.
+    final downloaded =
+        detail.value == null && detail.hasError && ref.watch(isOfflineProvider)
+        ? _downloadedDetail(ref)
+        : null;
+    final value = downloaded != null
         ? AsyncValue<PodcastDetail>.data(downloaded)
         : detail.whenData((cached) => cached.value);
     return RouteTitle(
@@ -169,7 +173,10 @@ class _EpisodeTile extends ConsumerWidget {
     final offline = downloads && ref.watch(isOfflineProvider);
     final unavailableOffline = offline && glyph != DownloadGlyphState.completed;
     final key = EpisodeItemKey(podcastId: podcast.id, episodeId: episode.id);
-    final played = _withDownloadedProgress(ref, downloads);
+    final played = _withDownloadedProgress(
+      ref,
+      glyph == DownloadGlyphState.completed,
+    );
     final progress = played.progress;
     final durationSec = episode.durationSec;
     void retry() => unawaited(ref.read(downloadControllerProvider).retry(key));
@@ -229,8 +236,8 @@ class _EpisodeTile extends ConsumerWidget {
 
   /// The episode, with the position its download last reached as its
   /// progress when the server's progress is unknown.
-  Episode _withDownloadedProgress(WidgetRef ref, bool downloads) {
-    if (episode.progress != null || !downloads) return episode;
+  Episode _withDownloadedProgress(WidgetRef ref, bool downloaded) {
+    if (episode.progress != null || !downloaded) return episode;
     final progress = ref.watch(
       downloadedEpisodesProvider.select((value) {
         for (final meta in value.value ?? const <EpisodeDownloadMeta>[]) {
