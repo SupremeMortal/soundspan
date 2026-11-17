@@ -241,6 +241,12 @@ abstract class AppLocalizations {
   /// **'Playlist'**
   String get screenPlaylist;
 
+  /// Screen name: the detail screen of one generated mix of Made For You.
+  ///
+  /// In en, this message translates to:
+  /// **'Mix'**
+  String get screenMix;
+
   /// Top bar button: go back in the current navigation destination.
   ///
   /// In en, this message translates to:
@@ -3626,6 +3632,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Replace'**
   String get listenTogetherReplaceConfirm;
+
+  /// Small label above the title of a generated mix's page, naming what the page shows.
+  ///
+  /// In en, this message translates to:
+  /// **'Mix'**
+  String get mixOverline;
+
+  /// Shown on a generated mix's page when the mix has no tracks.
+  ///
+  /// In en, this message translates to:
+  /// **'This mix has no tracks right now'**
+  String get mixEmpty;
+
+  /// Shown in place of a generated mix's page when the server has generated mixes turned off.
+  ///
+  /// In en, this message translates to:
+  /// **'Not available on this server'**
+  String get mixNotAvailable;
+
+  /// Button on a generated mix's page that saves its tracks as a new playlist of the user.
+  ///
+  /// In en, this message translates to:
+  /// **'Save as playlist'**
+  String get actionSaveAsPlaylist;
+
+  /// Title of the dialog that names the playlist a generated mix is saved as.
+  ///
+  /// In en, this message translates to:
+  /// **'Save as playlist'**
+  String get mixSaveTitle;
+
+  /// Confirm button of the dialog that saves a generated mix as a playlist.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get mixSaveConfirm;
+
+  /// Snackbar after a generated mix was saved as a new playlist.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved to your playlists'**
+  String get mixSaved;
+
+  /// Snackbar action opening the playlist a generated mix was just saved as.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get mixSavedOpen;
 }
 
 class _AppLocalizationsDelegate

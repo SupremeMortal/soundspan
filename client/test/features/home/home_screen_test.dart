@@ -276,13 +276,13 @@ void main() {
     expect(home().readCount('mixes'), 0);
   });
 
-  testWidgets('mix cards with autoPlaylists are inert until mix detail '
-      'exists', (tester) async {
-    await pump(tester);
+  testWidgets('a mix card with autoPlaylists opens /mix/<id>', (tester) async {
+    final router = await pump(tester);
 
-    expect(card('Daily Mix 1'), findsOneWidget);
-    expect(tester.widget<MediaCard>(card('Daily Mix 1')).onTap, isNull);
     expect(home().readCount('mixes'), 1);
+    await tester.tap(card('Daily Mix 1'));
+    await tester.pumpAndSettle();
+    expect(location(router), '/mix/m1');
   });
 
   testWidgets('FeatureDisabled on mixes hides them and requests a capability '

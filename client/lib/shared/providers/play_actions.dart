@@ -112,6 +112,15 @@ class PlayActions {
   /// they become the queue, paused.
   Future<void> addToQueue(List<Track> tracks) => _add(tracks, next: false);
 
+  /// Replaces the queue with the playable [tracks] of a collection the
+  /// caller already holds, such as a mix, under [context]: from the first,
+  /// or with [shuffle] on from a random one.
+  Future<void> playCollection(
+    List<Track> tracks, {
+    required QueueContext context,
+    bool shuffle = false,
+  }) => _playCollection(() async => (tracks, context), shuffle: shuffle);
+
   /// Plays the album [albumId] from its first track, or shuffled.
   Future<void> playAlbum(String albumId, {bool shuffle = false}) =>
       _playCollection(() async {

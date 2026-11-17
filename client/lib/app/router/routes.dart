@@ -130,7 +130,10 @@ enum DetailKind {
   artist,
 
   /// `playlist/:playlistId`.
-  playlist;
+  playlist,
+
+  /// `mix/:mixId`: a generated mix of Made For You.
+  mix;
 
   /// The path parameter carrying the id.
   String get parameter => '${name}Id';
@@ -140,6 +143,7 @@ enum DetailKind {
     album => l10n.screenAlbum,
     artist => l10n.screenArtist,
     playlist => l10n.screenPlaylist,
+    mix => l10n.screenMix,
   };
 }
 
@@ -231,6 +235,15 @@ abstract final class DetailNavigation {
   /// Opens playlist [id].
   static void openPlaylist(BuildContext context, String id) =>
       _open(context, DetailKind.playlist, id);
+
+  /// Opens playlist [id] in [router]'s selected branch, for callers whose
+  /// context may have left the tree, such as a snackbar action.
+  static void openPlaylistIn(GoRouter router, String id) =>
+      openLocation(router, _location(DetailKind.playlist, id));
+
+  /// Opens the generated mix [id].
+  static void openMix(BuildContext context, String id) =>
+      _open(context, DetailKind.mix, id);
 
   /// Opens artist [id] in [router]'s selected branch, for callers whose
   /// context leaves the tree first, such as a route that closes.

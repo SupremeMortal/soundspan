@@ -84,6 +84,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get screenPlaylist => 'Playlist';
 
   @override
+  String get screenMix => 'Mix';
+
+  @override
   String get shellBack => 'Back';
 
   @override
@@ -2164,6 +2167,30 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get listenTogetherReplaceConfirm => 'Replace';
+
+  @override
+  String get mixOverline => 'Mix';
+
+  @override
+  String get mixEmpty => 'This mix has no tracks right now';
+
+  @override
+  String get mixNotAvailable => 'Not available on this server';
+
+  @override
+  String get actionSaveAsPlaylist => 'Save as playlist';
+
+  @override
+  String get mixSaveTitle => 'Save as playlist';
+
+  @override
+  String get mixSaveConfirm => 'Save';
+
+  @override
+  String get mixSaved => 'Saved to your playlists';
+
+  @override
+  String get mixSavedOpen => 'Open';
 }
 
 /// The translations for English (`en_XA`).
@@ -2243,6 +2270,9 @@ class AppLocalizationsEnXa extends AppLocalizationsEn {
 
   @override
   String get screenPlaylist => '[Þļåýļîšţ one]';
+
+  @override
+  String get screenMix => '[Mîx one]';
 
   @override
   String get shellBack => '[Båçķ one]';
@@ -4381,4 +4411,28 @@ class AppLocalizationsEnXa extends AppLocalizationsEn {
 
   @override
   String get listenTogetherReplaceConfirm => '[Ŕéþļåçé one]';
+
+  @override
+  String get mixOverline => '[Mîx one]';
+
+  @override
+  String get mixEmpty => '[Ţĥîš mîx ĥåš ñö ţŕåçķš ŕîĝĥţ ñöŵ one two three]';
+
+  @override
+  String get mixNotAvailable => '[Ñöţ åvåîļåbļé öñ ţĥîš šéŕvéŕ one two three]';
+
+  @override
+  String get actionSaveAsPlaylist => '[Šåvé åš þļåýļîšţ one two]';
+
+  @override
+  String get mixSaveTitle => '[Šåvé åš þļåýļîšţ one two]';
+
+  @override
+  String get mixSaveConfirm => '[Šåvé one]';
+
+  @override
+  String get mixSaved => '[Šåvéð ţö ýöûŕ þļåýļîšţš one two three]';
+
+  @override
+  String get mixSavedOpen => '[Öþéñ one]';
 }

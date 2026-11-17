@@ -102,6 +102,10 @@
   "@screenPlaylist": {
     "description": "Screen name: the detail screen of one playlist."
   },
+  "screenMix": "Mix",
+  "@screenMix": {
+    "description": "Screen name: the detail screen of one generated mix of Made For You."
+  },
   "shellBack": "Back",
   "@shellBack": {
     "description": "Top bar button: go back in the current navigation destination."
@@ -2758,5 +2762,37 @@
   "listenTogetherReplaceBody": "Everyone in the group hears this next.",
   "@listenTogetherReplaceBody": {"description": "Body of the dialog confirming Play replaces the queue of the Listen Together group."},
   "listenTogetherReplaceConfirm": "Replace",
-  "@listenTogetherReplaceConfirm": {"description": "Confirm button of the dialog that replaces the group's queue."}
+  "@listenTogetherReplaceConfirm": {"description": "Confirm button of the dialog that replaces the group's queue."},
+  "mixOverline": "Mix",
+  "@mixOverline": {
+    "description": "Small label above the title of a generated mix's page, naming what the page shows."
+  },
+  "mixEmpty": "This mix has no tracks right now",
+  "@mixEmpty": {
+    "description": "Shown on a generated mix's page when the mix has no tracks."
+  },
+  "mixNotAvailable": "Not available on this server",
+  "@mixNotAvailable": {
+    "description": "Shown in place of a generated mix's page when the server has generated mixes turned off."
+  },
+  "actionSaveAsPlaylist": "Save as playlist",
+  "@actionSaveAsPlaylist": {
+    "description": "Button on a generated mix's page that saves its tracks as a new playlist of the user."
+  },
+  "mixSaveTitle": "Save as playlist",
+  "@mixSaveTitle": {
+    "description": "Title of the dialog that names the playlist a generated mix is saved as."
+  },
+  "mixSaveConfirm": "Save",
+  "@mixSaveConfirm": {
+    "description": "Confirm button of the dialog that saves a generated mix as a playlist."
+  },
+  "mixSaved": "Saved to your playlists",
+  "@mixSaved": {
+    "description": "Snackbar after a generated mix was saved as a new playlist."
+  },
+  "mixSavedOpen": "Open",
+  "@mixSavedOpen": {
+    "description": "Snackbar action opening the playlist a generated mix was just saved as."
+  }
 }

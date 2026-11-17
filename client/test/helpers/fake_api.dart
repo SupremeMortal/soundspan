@@ -1011,6 +1011,13 @@ final class FakeDiscoveryClient implements api.DiscoveryClient {
   /// The tracks of `GET /discover/current`; empty when there is none.
   List<api.DiscoverTrack> current = [];
 
+  /// The answers of `GET /mixes/:id`, by mix id; an unknown id is
+  /// `NotFound`.
+  final Map<String, api.MixDetail> mixes = {};
+
+  /// The ids of every `GET /mixes/:id`, in order.
+  final List<String> mixIds = [];
+
   /// Calls by operation name.
   final Map<String, int> calls = {};
 
@@ -1063,6 +1070,18 @@ final class FakeDiscoveryClient implements api.DiscoveryClient {
       weekStart: DateTime.utc(2026, 11, 9),
       weekEnd: DateTime.utc(2026, 11, 15, 23, 59, 59),
     );
+  }
+
+  @override
+  Future<api.MixDetail> getMix({
+    required String id,
+    Map<String, Object?> extra = const {},
+    CancelToken? cancelToken,
+    Options? options,
+  }) async {
+    _call('getMix');
+    mixIds.add(id);
+    return mixes[id] ?? (throw const api.NotFound(status: 404));
   }
 
   @override

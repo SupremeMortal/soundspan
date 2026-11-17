@@ -102,6 +102,10 @@
   "@screenPlaylist": {
     "description": "Screen name: the detail screen of one playlist."
   },
+  "screenMix": "[Mîx one]",
+  "@screenMix": {
+    "description": "Screen name: the detail screen of one generated mix of Made For You."
+  },
   "shellBack": "[Båçķ one]",
   "@shellBack": {
     "description": "Top bar button: go back in the current navigation destination."
@@ -2928,5 +2932,37 @@
   "listenTogetherReplaceConfirm": "[Ŕéþļåçé one]",
   "@listenTogetherReplaceConfirm": {
     "description": "Confirm button of the dialog that replaces the group's queue."
+  },
+  "mixOverline": "[Mîx one]",
+  "@mixOverline": {
+    "description": "Small label above the title of a generated mix's page, naming what the page shows."
+  },
+  "mixEmpty": "[Ţĥîš mîx ĥåš ñö ţŕåçķš ŕîĝĥţ ñöŵ one two three]",
+  "@mixEmpty": {
+    "description": "Shown on a generated mix's page when the mix has no tracks."
+  },
+  "mixNotAvailable": "[Ñöţ åvåîļåbļé öñ ţĥîš šéŕvéŕ one two three]",
+  "@mixNotAvailable": {
+    "description": "Shown in place of a generated mix's page when the server has generated mixes turned off."
+  },
+  "actionSaveAsPlaylist": "[Šåvé åš þļåýļîšţ one two]",
+  "@actionSaveAsPlaylist": {
+    "description": "Button on a generated mix's page that saves its tracks as a new playlist of the user."
+  },
+  "mixSaveTitle": "[Šåvé åš þļåýļîšţ one two]",
+  "@mixSaveTitle": {
+    "description": "Title of the dialog that names the playlist a generated mix is saved as."
+  },
+  "mixSaveConfirm": "[Šåvé one]",
+  "@mixSaveConfirm": {
+    "description": "Confirm button of the dialog that saves a generated mix as a playlist."
+  },
+  "mixSaved": "[Šåvéð ţö ýöûŕ þļåýļîšţš one two three]",
+  "@mixSaved": {
+    "description": "Snackbar after a generated mix was saved as a new playlist."
+  },
+  "mixSavedOpen": "[Öþéñ one]",
+  "@mixSavedOpen": {
+    "description": "Snackbar action opening the playlist a generated mix was just saved as."
   }
 }

@@ -15,9 +15,10 @@ import 'package:soundspan/shared/widgets/like_button.dart';
 /// The actions of an album, artist or playlist page (doc 09, Components:
 /// `ActionBar`), for the actions slot of `DetailHeader`.
 ///
-/// Play is an `accent` pill; Shuffle, Like, Add to playlist and the
-/// overflow ("More options") are icon buttons with tooltips. A button whose
-/// callback is null is left out. The buttons wrap onto a second line rather
+/// Play is an `accent` pill; Shuffle, Like, Add to playlist, Save as
+/// playlist and the overflow ("More options") are icon buttons with
+/// tooltips. A button whose callback is null is left out, except Save as
+/// playlist, which [saveAsPlaylist] shows and a null callback disables. The buttons wrap onto a second line rather
 /// than overflow, and are centred on compact windows like the header text.
 ///
 /// In a Listen Together group Play and Shuffle replace the group's queue:
@@ -32,6 +33,8 @@ class ActionBar extends ConsumerWidget {
     this.liked = false,
     this.onToggleLike,
     this.onAddToPlaylist,
+    this.saveAsPlaylist = false,
+    this.onSaveAsPlaylist,
     this.onMenu,
     super.key,
   });
@@ -55,6 +58,13 @@ class ActionBar extends ConsumerWidget {
   /// Adds every playable track to a playlist.
   final VoidCallback? onAddToPlaylist;
 
+  /// Whether the Save as playlist button shows (mixes).
+  final bool saveAsPlaylist;
+
+  /// Saves the collection as a new playlist; while null a shown Save as
+  /// playlist button is disabled.
+  final VoidCallback? onSaveAsPlaylist;
+
   /// Opens the page's entity menu at the given global position.
   final void Function(Offset position)? onMenu;
 
@@ -69,6 +79,9 @@ class ActionBar extends ConsumerWidget {
 
   /// The key of the Add to playlist button.
   static const Key addToPlaylistKey = ValueKey('ActionBar.addToPlaylist');
+
+  /// The key of the Save as playlist button.
+  static const Key saveAsPlaylistKey = ValueKey('ActionBar.saveAsPlaylist');
 
   /// The key of the overflow button.
   static const Key menuKey = ValueKey('ActionBar.menu');
@@ -157,6 +170,13 @@ class ActionBar extends ConsumerWidget {
             glyph: Icons.playlist_add_rounded,
             tooltip: l10n.actionAddToPlaylist,
             onPressed: onAddToPlaylist,
+          ),
+        if (saveAsPlaylist)
+          icon(
+            key: saveAsPlaylistKey,
+            glyph: Icons.library_add_rounded,
+            tooltip: l10n.actionSaveAsPlaylist,
+            onPressed: onSaveAsPlaylist,
           ),
         if (onMenu != null)
           Builder(

@@ -301,6 +301,7 @@ class _ShelfSlotState extends ConsumerState<_ShelfSlot> {
             subtitle: mix.description,
             artworkRef: null,
             mosaicRefs: mix.coverRefs,
+            onTap: () => DetailNavigation.openMix(context, mix.id),
           );
         },
       ),

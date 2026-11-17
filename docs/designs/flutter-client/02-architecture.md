@@ -181,7 +181,7 @@ Playback restore (showing the last queue, paused) reads only `state.db`, so the 
 ├── /album/:albumId              Pushed inside the current branch
 ├── /artist/:artistId
 ├── /playlist/:playlistId        `liked` is a reserved id for Liked Songs
-├── /mix/:mixId                  M4
+├── /mix/:mixId                  M4, `autoPlaylists`: pushed inside the current branch like a detail
 ├── /explore                     M4, `discovery`: pushed inside the current branch like a detail
 └── /listen-together             M4
 /now-playing                     Root navigator, full-screen (compact and medium only)

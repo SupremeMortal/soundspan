@@ -20,6 +20,7 @@ import 'package:soundspan/features/library/library.dart';
 import 'package:soundspan/features/listen_together/listen_together.dart';
 import 'package:soundspan/features/listen_together/ui/listen_together_screen.dart'
     deferred as listen_together_screen;
+import 'package:soundspan/features/mixes/mixes.dart';
 import 'package:soundspan/features/playlist/playlist.dart';
 import 'package:soundspan/features/podcasts/podcasts.dart';
 import 'package:soundspan/features/search/search.dart';
@@ -90,6 +91,7 @@ Widget _detailScreen(DetailKind kind, GoRouterState state) {
     DetailKind.album => AlbumScreen(albumId: id),
     DetailKind.playlist => PlaylistScreen(playlistId: id),
     DetailKind.artist => ArtistScreen(artistId: id),
+    DetailKind.mix => MixDetailScreen(mixId: id),
   };
 }
 
