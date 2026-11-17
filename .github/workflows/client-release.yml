@@ -3,7 +3,8 @@ name: Client Release
 # A client-v<version> tag becomes a draft pre-release with the unsigned
 # artifacts of client-build.yml, SHA256SUMS, build-provenance attestations
 # and notes from the Client changelog. Approving the client-release
-# environment publishes it as a pre-release. client-quality.yml runs the
+# environment pushes the web container image to GHCR and publishes the
+# release as a pre-release. client-quality.yml runs the
 # tag validation and notes scripts as client-release-dry-run on pull requests.
 
 on:
@@ -144,15 +145,45 @@ jobs:
 
   publish:
     name: publish
-    needs: draft-release
+    needs: [validate, draft-release]
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     # The environment's required reviewers are the approval step.
     environment: client-release
     permissions:
       contents: write
+      packages: write
     env:
       GH_TOKEN: ${{ github.token }}
+      VERSION: ${{ needs.validate.outputs.version }}
     steps:
+      - name: Download release files
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: client-release-files
+          path: release
+
+      - name: Verify SHA256SUMS
+        working-directory: release
+        run: sha256sum --check --strict SHA256SUMS
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # ghcr.io/<owner>/<repository>-client-web:<version>, lower-cased as
+      # GHCR requires (doc 11, client-release.yml).
+      - name: Push the web image
+        run: |
+          set -euo pipefail
+          image="ghcr.io/${GITHUB_REPOSITORY,,}-client-web:$VERSION"
+          gunzip -c "release/soundspan-$VERSION-web-image.tar.gz" | docker load
+          docker tag "soundspan-client-web:$VERSION" "$image"
+          docker push "$image"
+          echo "Pushed $image" >> "$GITHUB_STEP_SUMMARY"
+
       - name: Publish the pre-release
         run: gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --draft=false --prerelease

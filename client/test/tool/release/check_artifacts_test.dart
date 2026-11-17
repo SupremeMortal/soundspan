@@ -15,6 +15,7 @@ const _expected = [
   'soundspan-0.1.0-linux-x64-unsigned.tar.gz',
   'soundspan-0.1.0-macos-universal-unsigned.dmg',
   'soundspan-0.1.0-macos-universal-unsigned.zip',
+  'soundspan-0.1.0-web-image.tar.gz',
   'soundspan-0.1.0-web.tar.gz',
   'soundspan-0.1.0-windows-x64-unsigned-setup.exe',
   'soundspan-0.1.0-windows-x64-unsigned.msix',
@@ -97,6 +98,25 @@ void main() {
         'soundspan-0.1.0-windows-x64-unsigned-setup.exe',
       ]),
     );
+  });
+
+  test('the set includes the web container image tarball', () {
+    expect(
+      expectedArtifactNames(_version),
+      contains('soundspan-0.1.0-web-image.tar.gz'),
+    );
+  });
+
+  test('a set without the web image fails and names it', () {
+    writeFullSet();
+    const image = 'soundspan-0.1.0-web-image.tar.gz';
+    File(p.join(dir.path, image)).deleteSync();
+
+    final result = run(writeSums: true);
+
+    expect(result.ok, isFalse);
+    expect(result.lines, contains('missing: $image'));
+    expect(sums().existsSync(), isFalse);
   });
 
   test('a set without the MSIX fails and names it', () {

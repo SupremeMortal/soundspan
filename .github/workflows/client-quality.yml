@@ -89,8 +89,8 @@ jobs:
             echo "device=$device"
             echo "workflows=$(has '^(\.github/workflows/client-[^/]*\.yml$|scripts/ci/client-nightly-report\.mjs$|scripts/ci/__tests__/client-nightly-report\.test\.mjs$|scripts/ci/ensure-ubuntu-apt-sources\.sh$|scripts/ci/__tests__/ensure-ubuntu-apt-sources\.test\.mjs$|\.github/actions/client-flutter/)')"
             echo "downloads=$(has '^(client/lib/platform/downloader/|client/lib/core/downloads/|client/integration_test/downloads/|client/integration_test/support/throttled_file_server\.dart$|\.github/workflows/client-quality\.yml$)')"
-            echo "release_build=$(has '^(\.github/workflows/client-(build|release)\.yml$|client/tool/release/|client/pubspec\.(yaml|lock)$|client/config/|client/(android|ios|linux|macos|windows|web)/)')"
-            echo "release_notes=$(has '^(\.github/workflows/client-(build|release)\.yml$|client/tool/release/|client/pubspec\.(yaml|lock)$|client/config/|client/(android|ios|linux|macos|windows|web)/|CHANGELOG\.md$)')"
+            echo "release_build=$(has '^(\.github/workflows/client-(build|release)\.yml$|client/tool/release/|client/pubspec\.(yaml|lock)$|client/config/|client/(android|docker|ios|linux|macos|windows|web)/)')"
+            echo "release_notes=$(has '^(\.github/workflows/client-(build|release)\.yml$|client/tool/release/|client/pubspec\.(yaml|lock)$|client/config/|client/(android|docker|ios|linux|macos|windows|web)/|CHANGELOG\.md$)')"
           } | tee -a "$GITHUB_OUTPUT"
           # The job groups of client-device-tests.yml, separated by spaces:
           # the engine suite when `device` is true, the desktop suite when the

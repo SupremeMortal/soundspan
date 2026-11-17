@@ -26,6 +26,7 @@ const List<String> artifactNameTemplates = [
   'soundspan-{version}-windows-x64-unsigned-setup.exe',
   ...macosArtifactNameTemplates,
   'soundspan-{version}-web.tar.gz',
+  'soundspan-{version}-web-image.tar.gz',
 ];
 
 /// The expected artifact file names for [version].
