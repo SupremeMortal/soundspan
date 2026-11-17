@@ -280,6 +280,34 @@ void main() {
       });
     }
 
+    test('a compiled manifest with numeric launch mode and service type '
+        'passes', () {
+      final compiled = _manifest
+          .replaceFirst(
+            'android:launchMode="singleTask"',
+            'android:launchMode="2"',
+          )
+          .replaceFirst(
+            'android:foregroundServiceType="mediaPlayback"',
+            'android:foregroundServiceType="0x2"',
+          );
+      expect(checkAndroidManifest(_write('m.xml', compiled)), isEmpty);
+    });
+
+    test('a numeric launch mode other than singleTask fails', () {
+      final path = _write(
+        'm.xml',
+        _manifest.replaceFirst(
+          'android:launchMode="singleTask"',
+          'android:launchMode="1"',
+        ),
+      );
+      expect(
+        checkAndroidManifest(path).single.entry,
+        'MainActivity android:launchMode="singleTask"',
+      );
+    });
+
     test('fails when cleartext traffic is switched off', () {
       final path = _write(
         'm.xml',

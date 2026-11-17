@@ -180,7 +180,7 @@ List<ConfigViolation> checkAndroidManifest(String path) {
       .where((e) => attr(e, 'name') == audioServiceClass)
       .firstOrNull;
   if (service == null ||
-      attr(service, 'foregroundServiceType') != 'mediaPlayback' ||
+      !_isMediaPlayback(attr(service, 'foregroundServiceType')) ||
       attr(service, 'exported') != 'true' ||
       !filtersAction(service, 'android.media.browse.MediaBrowserService')) {
     out.add(
@@ -219,7 +219,8 @@ List<ConfigViolation> checkAndroidManifest(String path) {
     out.add(ConfigViolation(path, '<activity android:name=".MainActivity">'));
     return out;
   }
-  if (attr(activity, 'launchMode') != 'singleTask') {
+  // A compiled manifest carries the enum value: singleTask is 2.
+  if (!const {'singleTask', '2'}.contains(attr(activity, 'launchMode'))) {
     out.add(
       ConfigViolation(path, 'MainActivity android:launchMode="singleTask"'),
     );
@@ -256,6 +257,17 @@ List<ConfigViolation> checkAndroidManifest(String path) {
     }
   }
   return out;
+}
+
+/// Whether a `foregroundServiceType` value includes `mediaPlayback`: by
+/// name in a source manifest, or as the flag 0x2 in a compiled one.
+bool _isMediaPlayback(String? value) {
+  if (value == null) return false;
+  if (value.split('|').contains('mediaPlayback')) return true;
+  final number = value.startsWith('0x')
+      ? int.tryParse(value.substring(2), radix: 16)
+      : int.tryParse(value);
+  return number != null && number & 0x2 != 0;
 }
 
 /// What the backup rules exclude (doc 10, `android:dataExtractionRules`):
