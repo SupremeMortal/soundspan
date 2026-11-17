@@ -15,6 +15,7 @@ import 'package:soundspan/core/playback/playback_snapshot.dart';
 import 'package:soundspan/core/playback/queue/queue_reducer.dart';
 import 'package:soundspan/core/playback/source_resolver.dart';
 import 'package:soundspan/core/storage/state/device_settings_dao.dart';
+import 'package:soundspan/core/sync/data/playback_state_repository.dart';
 import 'package:soundspan/shared/clock.dart';
 import 'package:soundspan/shared/domain/queue_item.dart';
 import 'package:soundspan_api/soundspan_api.dart' as api;
@@ -169,13 +170,15 @@ class FakeResolver implements SourceResolver {
 class ControllerHarness {
   /// Creates the harness; [reducer] defaults to a plain one. The
   /// controller persists its queue through [persistence] when one is given.
-  /// It keeps its volume in [deviceSettings] when one is given.
+  /// It keeps its volume in [deviceSettings] when one is given, and asks
+  /// [remoteRestore] for a queue when [persistence] has none stored.
   new({
     List<String> ids = const ['a', 'b', 'c', 'd'],
     QueueReducer reducer = const QueueReducer(),
     Clock? clock,
     QueuePersistence? persistence,
     DeviceSettingsDao? deviceSettings,
+    Future<RestoredQueue?> Function()? remoteRestore,
   }) : clock = clock ?? FakeClock() {
     for (final id in ids) {
       fake.sources[uriOf(id)] = const FakeSource(duration: trackLength);
@@ -228,6 +231,7 @@ class ControllerHarness {
       reducer: reducer,
       createTimer: timers.create,
       persistence: persistence,
+      remoteRestore: remoteRestore,
     );
     controller.snapshots.listen(snapshots.add);
     controller.notices.listen(notices.add);
@@ -312,6 +316,24 @@ class MockProfileRepository extends Mock implements ProfileRepository;
 
 /// A generated playback client whose answers a test scripts.
 class MockPlaybackClient extends Mock implements api.PlaybackClient;
+
+/// A [PlaybackStateRepository] over a server that stores no state for this
+/// device and accepts every write, for scopes whose controller syncs it.
+PlaybackStateRepository idlePlaybackStateRepository() {
+  registerFallbackValue(
+    const api.SavePlaybackStateRequest(
+      playbackType: api.SavePlaybackStateRequestPlaybackType.track,
+    ),
+  );
+  final client = MockPlaybackClient();
+  when(client.getPlaybackState).thenAnswer((_) async => null);
+  when(() => client.savePlaybackState(body: any(named: 'body')))
+      .thenAnswer((_) async => null);
+  when(client.clearPlaybackState).thenAnswer(
+    (_) async => api.ClearPlaybackStateResponse.fromJson({'success': true}),
+  );
+  return PlaybackStateRepository(client);
+}
 
 /// One-shot timers that fire only when a test fires them.
 class ManualTimers {

@@ -54,7 +54,9 @@ abstract interface class RemoteDriver {
 /// [FailurePolicy]; a 401 renews the credential through [_session] once.
 ///
 /// With a [QueuePersistence], [restore] reads the queue this device stored
-/// and the persistence follows the snapshots from then on.
+/// and the persistence follows the snapshots from then on. When none is
+/// stored, the queue comes from the remote restore when one is given (the
+/// state the server keeps for this device, doc 06, Playback-State Sync).
 ///
 /// The user volume is kept in the device settings under
 /// [playbackVolumeKey] and read back before the first command is applied.
@@ -70,6 +72,7 @@ class PlaybackController {
     this._reducer = const QueueReducer(),
     this._createTimer = Timer.new,
     this._persistence,
+    this._remoteRestore,
   }) : _publisher = SnapshotPublisher(clock) {
     _stateSubscription = _engine.state.listen(_onEngineState);
     _eventSubscription = _engine.events.listen(
@@ -87,6 +90,7 @@ class PlaybackController {
   final QueueReducer _reducer;
   final SnapshotPublisher _publisher;
   final QueuePersistence? _persistence;
+  final Future<RestoredQueue?> Function()? _remoteRestore;
   final StreamController<PlaybackNotice> _notices =
       StreamController<PlaybackNotice>.broadcast();
   final StreamController<EntryEnded> _ended =
@@ -206,13 +210,14 @@ class PlaybackController {
 
   /// Rebuilds the queue this device stored, paused at the stored position,
   /// and starts persisting changes. Called once, before any command; it
-  /// makes no engine call and no network request: the first [play] loads
-  /// the current item at that position. Does nothing without a
+  /// makes no engine call and, with a stored queue, no network request: the
+  /// first [play] loads the current item at that position. Only when no
+  /// queue is stored is the remote restore asked. Does nothing without a
   /// [QueuePersistence].
   Future<void> restore() => _enqueue(() async {
     final persistence = _persistence;
     if (persistence == null) return;
-    final restored = await persistence.load();
+    final restored = await persistence.load() ?? await _remoteRestore?.call();
     if (restored != null) {
       _queue = restored.queue;
       _pendingStartAt = restored.position;

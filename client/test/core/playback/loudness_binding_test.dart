@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:soundspan/core/auth/session_controller.dart';
+import 'package:soundspan/core/connectivity/reachability.dart';
 import 'package:soundspan/core/logging/app_logger.dart';
 import 'package:soundspan/core/playback/data/playback_info_repository.dart';
 import 'package:soundspan/core/playback/engines/fake_engine.dart';
@@ -24,11 +25,13 @@ import 'package:soundspan/core/profile/settings/user_settings.dart';
 import 'package:soundspan/core/storage/state/device_settings_dao.dart';
 import 'package:soundspan/core/storage/state/state_database.dart';
 import 'package:soundspan/core/sync/outbox/outbox.dart';
+import 'package:soundspan/core/sync/sync_providers.dart';
 import 'package:soundspan/shared/clock.dart';
 import 'package:soundspan/shared/domain/domain.dart';
 import 'package:soundspan_api/soundspan_api.dart' as api;
 
 import '../../helpers/fake_clock.dart';
+import '../../helpers/fake_reachability.dart';
 import '../../helpers/idle_outbox.dart';
 import 'controller/controller_harness.dart';
 
@@ -316,6 +319,10 @@ void main() {
           playbackInfoRepositoryProvider.overrideWithValue(
             PlaybackInfoRepository(MockPlaybackClient()),
           ),
+          playbackStateRepositoryProvider.overrideWithValue(
+            idlePlaybackStateRepository(),
+          ),
+          reachabilityProvider.overrideWithValue(FakeReachability()),
           sessionControllerProvider.overrideWithValue(
             SessionController(
               profileId: 'p1',

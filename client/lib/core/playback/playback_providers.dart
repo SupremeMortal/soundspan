@@ -15,6 +15,7 @@ import 'package:soundspan/core/playback/play_reporter_input.dart';
 import 'package:soundspan/core/playback/playback_controller.dart';
 import 'package:soundspan/core/playback/playback_snapshot.dart';
 import 'package:soundspan/core/playback/source_resolver.dart';
+import 'package:soundspan/core/playback/state_sync_binding.dart';
 import 'package:soundspan/core/playback/stream_quality_policy.dart';
 import 'package:soundspan/core/profile/api_provider.dart';
 import 'package:soundspan/core/profile/capabilities.dart';
@@ -26,6 +27,8 @@ import 'package:soundspan/core/storage/state/queue_dao.dart';
 import 'package:soundspan/core/sync/outbox/outbox.dart';
 import 'package:soundspan/core/sync/play_reporter.dart';
 import 'package:soundspan/core/sync/play_session_store.dart';
+import 'package:soundspan/core/sync/playback_state_sync.dart';
+import 'package:soundspan/core/sync/sync_providers.dart';
 import 'package:soundspan/platform/audio_session/audio_session_gateway.dart';
 import 'package:soundspan/platform/stream_auth/stream_auth.dart';
 import 'package:soundspan/shared/clock.dart';
@@ -93,6 +96,10 @@ final Provider<QueuePersistence> queuePersistenceProvider =
 /// writes it at once when the app goes to the background. Ending the scope
 /// writes the queue, stops playback and disposes the engine.
 ///
+/// Its [PlaybackStateSync] keeps the server's copy of the queue current once
+/// the queue is restored, and supplies the queue when none is stored on the
+/// device.
+///
 /// It starts the scope's [LoudnessBinding]: the levelling mode of
 /// [loudnessModeProvider] and the target of [serverCapabilitiesProvider]
 /// (-18 LUFS while unknown) are read whenever an item becomes current.
@@ -107,6 +114,14 @@ final Provider<PlaybackController> playbackControllerProvider =
     Provider<PlaybackController>(
       (ref) {
         final persistence = ref.watch(queuePersistenceProvider);
+        final lifecycleStates = StreamController<AppLifecycleState>.broadcast(
+          sync: true,
+        );
+        final stateSync = PlaybackStateSync(
+          repository: ref.watch(playbackStateRepositoryProvider),
+          reachability: ref.watch(reachabilityProvider),
+          lifecycle: lifecycleStates.stream,
+        );
         final controller = PlaybackController(
           engine: ref.watch(playerEngineBuilderProvider)(),
           resolver: ref.watch(sourceResolverProvider),
@@ -115,6 +130,10 @@ final Provider<PlaybackController> playbackControllerProvider =
           clock: ref.watch(clockProvider),
           deviceSettings: ref.watch(deviceSettingsDaoProvider),
           persistence: persistence,
+          remoteRestore: () async {
+            final remote = await stateSync.restore();
+            return remote == null ? null : restoredQueueOf(remote);
+          },
         );
         var mode = LoudnessMode.off;
         ref.listen<LoudnessMode>(
@@ -140,9 +159,10 @@ final Provider<PlaybackController> playbackControllerProvider =
           controller,
           ref.watch(audioSessionGatewayProvider),
         );
-        unawaited(controller.restore());
-        final lifecycleStates = StreamController<AppLifecycleState>.broadcast(
-          sync: true,
+        unawaited(
+          controller.restore().then(
+            (_) => stateSync.follow(controller.snapshots.map(syncedPlaybackOf)),
+          ),
         );
         final reporter = PlayReporter(
           ControllerListeningSource(controller),
@@ -166,6 +186,7 @@ final Provider<PlaybackController> playbackControllerProvider =
           lifecycle.dispose();
           unawaited(lifecycleStates.close());
           unawaited(reporter.dispose());
+          unawaited(stateSync.dispose());
           unawaited(loudness.dispose());
           focus.dispose();
           unawaited(controller.dispose());
@@ -183,6 +204,7 @@ final Provider<PlaybackController> playbackControllerProvider =
         queuePersistenceProvider,
         stateDatabaseProvider,
         outboxProvider,
+        playbackStateRepositoryProvider,
       ],
     );
 

@@ -448,6 +448,48 @@ void main() {
       );
     });
 
+    test('a windowed 100-item state is returned intact for the same device '
+        'and is absent for another device', () async {
+      final device = deviceApi(_deviceId());
+      final other = deviceApi(_deviceId());
+      addTearDown(
+        () => device.send((rest) => rest.playback.clearPlaybackState()),
+      );
+      final queue = await queueOf(100);
+
+      await device.send(
+        (rest) => rest.playback.savePlaybackState(
+          body: SavePlaybackStateRequest(
+            playbackType: SavePlaybackStateRequestPlaybackType.track,
+            playbackId: queue[20].playbackId,
+            queue: queue,
+            currentIndex: 20,
+            currentTime: 30,
+            isShuffle: false,
+            isPlaying: true,
+          ),
+        ),
+      );
+      // Clearing for the other device also clears the shared legacy state,
+      // which a device without a state of its own would otherwise be given.
+      await other.send((rest) => rest.playback.clearPlaybackState());
+
+      expect(
+        await other.send((rest) => rest.playback.getPlaybackState()),
+        isNull,
+      );
+      final stored = await device.send(
+        (rest) => rest.playback.getPlaybackState(),
+      );
+      expect(stored!.currentIndex, 20);
+      expect(stored.currentTime, 30);
+      expect(stored.isPlaying, isTrue);
+      expect(
+        [for (final item in stored.queue!) item.playbackId],
+        [for (final item in queue) item.playbackId],
+      );
+    });
+
     test('a queue of 120 items is stored as 100', () async {
       final device = deviceApi(_deviceId());
       addTearDown(
