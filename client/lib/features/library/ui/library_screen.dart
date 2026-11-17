@@ -128,7 +128,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
           ),
           body: Column(
             children: [
-              const OfflineBanner(),
+              const OfflineBanner(canGoOnline: true),
               Expanded(
                 child: IndexedStack(
                   index: _indexOf(widget.tab),

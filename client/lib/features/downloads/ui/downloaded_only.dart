@@ -15,6 +15,8 @@ import 'package:soundspan/core/connectivity/reachability.dart';
 import 'package:soundspan/core/downloads/download_keys.dart';
 import 'package:soundspan/core/downloads/downloaded_library.dart';
 import 'package:soundspan/core/profile/profile_context.dart';
+import 'package:soundspan/core/profile/profile_providers.dart';
+import 'package:soundspan/core/profile/reachability_binding.dart';
 import 'package:soundspan/core/storage/state/enums.dart';
 import 'package:soundspan/features/downloads/ui/download_providers.dart';
 import 'package:soundspan/shared/domain/domain.dart';
@@ -109,6 +111,14 @@ Future<Set<PlaybackId>?> availableOffline(Ref ref) async {
   if (ref.read(reachabilityProvider).isOnline) return null;
   return await ref.read(downloadedLibraryProvider).downloadedPlaybackIds();
 }
+
+/// Turns forced offline mode [on] or off: writes `offline.forced` of the
+/// profile in [container] (doc 05, `device_settings`), which the
+/// reachability controller follows.
+Future<void> setOfflineForced(
+  ProviderContainer container, {
+  required bool on,
+}) => container.read(deviceSettingsDaoProvider).write(offlineForcedKey, on);
 
 Duration? _noRetry(int _, Object _) => null;
 

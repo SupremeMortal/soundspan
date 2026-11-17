@@ -15,7 +15,9 @@ import 'package:soundspan/app/theme/extensions.dart';
 import 'package:soundspan/app/theme/typography.dart';
 import 'package:soundspan/core/auth/active_profile.dart';
 import 'package:soundspan/core/auth/profile.dart';
+import 'package:soundspan/core/connectivity/reachability.dart';
 import 'package:soundspan/core/profile/profile_runtime.dart';
+import 'package:soundspan/features/downloads/downloads.dart';
 import 'package:soundspan/features/listen_together/listen_together.dart';
 import 'package:soundspan/features/social/social.dart';
 
@@ -44,6 +46,9 @@ class AvatarButton extends ConsumerWidget {
 
   /// The key of the button.
   static const Key buttonKey = Key('shell.avatar');
+
+  /// The key of the "Offline mode" switch entry.
+  static const Key offlineModeKey = Key('shell.avatar.offlineMode');
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -99,8 +104,16 @@ class AvatarButton extends ConsumerWidget {
             )
           else
             MenuItemButton(
+              key: entry.key,
               leadingIcon: _marked(context, entry, Icon(entry.icon)),
-              trailingIcon: entry.current
+              trailingIcon: entry.toggled != null
+                  ? ExcludeSemantics(
+                      child: Switch(
+                        value: entry.toggled!,
+                        onChanged: (_) => entry.onSelected?.call(),
+                      ),
+                    )
+                  : entry.current
                   ? Icon(
                       Icons.check_rounded,
                       color: colors.brand,
@@ -108,7 +121,9 @@ class AvatarButton extends ConsumerWidget {
                     )
                   : null,
               onPressed: entry.onSelected,
-              child: Text(entry.label),
+              child: entry.toggled != null
+                  ? Semantics(toggled: entry.toggled, child: Text(entry.label))
+                  : Text(entry.label),
             ),
       ],
       builder: (context, controller, _) => IconButton(
@@ -136,6 +151,10 @@ class AvatarButton extends ConsumerWidget {
     final container = ProviderScope.containerOf(context);
     final expanded = WindowClass.of(context) == WindowClass.expanded;
     final inGroup = ref.watch(inListenTogetherGroupProvider);
+    final forcedOffline =
+        (ref.watch(reachabilityStateProvider).value ??
+            ref.watch(reachabilityProvider).current) ==
+        Reachability.forcedOffline;
     return [
       AvatarMenuEntry.header(l10n.shellMenuServers),
       for (final profile in profiles)
@@ -150,6 +169,15 @@ class AvatarButton extends ConsumerWidget {
         icon: Icons.add_rounded,
         onSelected: () => unawaited(router?.push<void>(RoutePaths.connect)),
       ),
+      if (ref.watch(downloadsAvailableProvider))
+        AvatarMenuEntry(
+          key: AvatarButton.offlineModeKey,
+          label: l10n.shellMenuOfflineMode,
+          icon: Icons.cloud_off_rounded,
+          toggled: forcedOffline,
+          onSelected: () =>
+              unawaited(setOfflineForced(container, on: !forcedOffline)),
+        ),
       if (!expanded)
         AvatarMenuEntry(
           label: inGroup
@@ -191,6 +219,8 @@ class AvatarMenuEntry {
     required this.onSelected,
     this.current = false,
     this.dot = false,
+    this.toggled,
+    this.key,
   }) : isHeader = false;
 
   /// A heading above a group of entries.
@@ -199,6 +229,8 @@ class AvatarMenuEntry {
       onSelected = null,
       current = false,
       dot = false,
+      toggled = null,
+      key = null,
       isHeader = true;
 
   /// The localized label, or the server's display name.
@@ -219,6 +251,13 @@ class AvatarMenuEntry {
   /// Whether a `brand` dot marks the icon (Listen Together while in a
   /// group).
   final bool dot;
+
+  /// Whether the switch of a switch entry is on; null for an entry
+  /// without a switch.
+  final bool? toggled;
+
+  /// The key of the entry's widget, if any.
+  final Key? key;
 }
 
 /// [icon], marked with a `brand` dot when [entry] asks for one.
@@ -266,6 +305,17 @@ class AvatarMenuSheet extends StatelessWidget {
                       color: colors.contentSecondary,
                     ),
                   ),
+                )
+              else if (entry.toggled case final toggled?)
+                SwitchListTile(
+                  key: entry.key,
+                  secondary: Icon(entry.icon),
+                  title: Text(entry.label),
+                  value: toggled,
+                  onChanged: (_) {
+                    Navigator.of(context).pop();
+                    entry.onSelected?.call();
+                  },
                 )
               else
                 ListTile(
