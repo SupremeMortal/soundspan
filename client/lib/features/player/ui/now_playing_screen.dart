@@ -14,6 +14,7 @@ import 'package:soundspan/app/theme/extensions.dart';
 import 'package:soundspan/app/theme/typography.dart';
 import 'package:soundspan/core/playback/playback_providers.dart';
 import 'package:soundspan/core/playback/playback_snapshot.dart';
+import 'package:soundspan/features/player/ui/lyrics_view.dart';
 import 'package:soundspan/features/player/ui/player_bar.dart';
 import 'package:soundspan/features/player/ui/player_item.dart';
 import 'package:soundspan/features/player/ui/queue_sheet.dart';
@@ -33,9 +34,11 @@ import 'package:soundspan/shared/widgets/quality_badge.dart';
 /// to the artist page when the track has one); the [SeekBar] with the
 /// elapsed and remaining time; shuffle, previous, a [playButtonSize]
 /// play/pause circle, next and repeat; and a row with the [QualityBadge]
-/// and the queue button, which opens the queue as a sheet. A landscape
-/// window wider than compact shows the [QueueView] beside the controls
-/// instead. The background is the artwork's [Backdrop].
+/// and the lyrics and queue buttons, which open the lyrics and the queue
+/// as sheets. A landscape window wider than compact shows the [QueueView]
+/// beside the controls instead, with the [LyricsView] in a second tab. The
+/// lyrics are not offered for an episode. The background is the artwork's
+/// [Backdrop].
 class NowPlayingScreen extends ConsumerWidget {
   /// Creates the screen.
   const new({super.key});
@@ -92,7 +95,11 @@ class NowPlayingScreen extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(width: Spacing.x24),
-                    const Expanded(child: QueueView(key: sideQueueKey)),
+                    Expanded(
+                      child: current is EpisodeQueueItem
+                          ? const QueueView(key: sideQueueKey)
+                          : const _QueueAndLyricsTabs(),
+                    ),
                   ],
                 );
               } else {
@@ -212,6 +219,13 @@ class _Controls extends ConsumerWidget {
           children: [
             if (quality != null) QualityBadge(info: quality),
             const Spacer(),
+            if (showQueueButton && current is! EpisodeQueueItem)
+              IconButton(
+                tooltip: l10n.lyricsTitle,
+                color: colors.contentSecondary,
+                icon: const Icon(Icons.lyrics_outlined),
+                onPressed: () => unawaited(showLyricsSheet(context)),
+              ),
             if (showQueueButton)
               IconButton(
                 tooltip: l10n.nowPlayingQueue,
@@ -222,6 +236,44 @@ class _Controls extends ConsumerWidget {
           ],
         ),
       ],
+    );
+  }
+}
+
+/// The queue and the lyrics as two tabs, beside the controls of a
+/// landscape window wider than compact.
+class _QueueAndLyricsTabs extends StatelessWidget {
+  const new();
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final l10n = AppLocalizations.of(context);
+    return DefaultTabController(
+      length: 2,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          TabBar(
+            labelColor: colors.content,
+            unselectedLabelColor: colors.contentSecondary,
+            indicatorColor: colors.brand,
+            dividerColor: colors.line,
+            tabs: [
+              Tab(text: l10n.queueTitle),
+              Tab(text: l10n.lyricsTitle),
+            ],
+          ),
+          const Expanded(
+            child: TabBarView(
+              children: [
+                QueueView(key: NowPlayingScreen.sideQueueKey),
+                LyricsView(),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

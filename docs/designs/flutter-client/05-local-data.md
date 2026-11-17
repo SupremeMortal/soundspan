@@ -187,7 +187,7 @@ class Cached<T> {
 | Album, artist, playlist detail | 10 min | Playlist detail is invalidated by any local edit to it |
 | Home shelves | 5 min | |
 | Search results | 2 min | Not shown offline unless the query matches the cache exactly |
-| Lyrics | 30 days | |
+| Lyrics | 30 days | "No lyrics found" is fresh for 24 hours, so lyrics added on the server appear the next day |
 | Podcast detail | 10 min | |
 
 Offline, every cached value is shown regardless of age.
@@ -198,6 +198,7 @@ Where each read is stored (`CacheStore`, `lib/shared/data/cache_store.dart`):
 
 - Album, artist and playlist detail: the whole detail as the blob `album:<id>`, `artist:<id>` or `playlist:<id>`, read back from it, together with an upsert of the entity row with `detailFetchedAt` and, for albums and playlists, a page write of the tracks as the list `album:<id>:tracks` or `playlist:<id>`, in one transaction.
 - Home shelves: one blob per shelf, `home:<shelf>`.
+- Lyrics: one blob per track, `lyrics:<tracks.key>`, holding the synced lines, the plain text or the absence of lyrics. A track with neither a library id nor a `playbackId` has no lyrics and is not looked up.
 - Subscribed podcasts: a page write of the podcast rows as the list `podcasts:subscribed`. Podcast detail: the podcast row and a page write of the episode rows as the list `podcast:<id>:episodes`, in one transaction; the detail is a cache miss when the podcast row is gone or an episode row fails to decode. Subscribing and unsubscribing mark `podcasts:subscribed` stale (its `fetchedAt` set to the epoch) so the next read fetches it; posted episode progress is written into the cached episode row.
 - Search results: one blob per query and scope, `search:<query>:<scope>`, so a result is served offline only for that exact query and scope.
 - Library list pages: page writes into `lists` and `list_entries`; reading a list marks it read for pruning.

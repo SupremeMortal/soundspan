@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 
-import 'package:flutter_riverpod/flutter_riverpod.dart' show Consumer;
+import 'package:flutter_riverpod/flutter_riverpod.dart'
+    show AsyncData, Consumer;
 import 'package:flutter_riverpod/misc.dart' show Override;
+import 'package:flutter_test/flutter_test.dart' show find;
 import 'package:material_ui/material_ui.dart' hide RepeatMode;
 import 'package:soundspan/app/l10n/app_locales.dart';
 import 'package:soundspan/app/shell/app_shell.dart';
@@ -14,6 +16,7 @@ import 'package:soundspan/core/playback/stream_quality_info.dart';
 import 'package:soundspan/features/player/player.dart';
 
 import '../../features/player/ui/player_rig.dart';
+import '../../helpers/fake_lyrics_repository.dart';
 import '../../helpers/golden.dart';
 import '../../helpers/pump_app.dart';
 
@@ -53,6 +56,32 @@ final List<Override> _overrides = [
   playbackSnapshotProvider.overrideWith((ref) => Stream.value(_snapshot)),
 ];
 
+/// Synced lyrics of "Song a" around the position of [_snapshot], 1:05.
+final List<Override> _lyrics = [
+  lyricsRepositoryProvider.overrideWithValue(
+    AsyncData(
+      FakeLyricsRepository()
+        ..byTitle['Song a'] = SyncedLyrics([
+          for (final (index, text) in const [
+            'The morning light comes through',
+            'Across the quiet street',
+            '',
+            'We walk the long way home',
+            'With nothing left to keep',
+            'And every song we sang',
+            'Is echoing in me',
+            'So hold the line tonight',
+            'Until the sound is free',
+          ].indexed)
+            LyricLine(
+              time: Duration(seconds: 45 + 5 * index),
+              text: text,
+            ),
+        ]),
+    ),
+  ),
+];
+
 Widget _bottom(Widget player) =>
     Align(alignment: Alignment.bottomCenter, child: player);
 
@@ -68,6 +97,12 @@ Widget _withController(Widget child) => Consumer(
 class _QueueOpen extends RightPanelNotifier {
   @override
   RightPanel build() => RightPanel.queue;
+}
+
+/// The right panel showing the lyrics.
+class _LyricsOpen extends RightPanelNotifier {
+  @override
+  RightPanel build() => RightPanel.lyrics;
 }
 
 /// The now-playing overlay shown.
@@ -150,6 +185,29 @@ void main() {
       initialActiveProfileIdProvider.overrideWithValue(null),
       rightPanelProvider.overrideWith(_QueueOpen.new),
     ],
+  );
+
+  goldenMatrix(
+    'lyrics_panel',
+    builder: (_) => _shell(),
+    sizes: const [TestSizes.expanded],
+    overrides: [
+      ..._overrides,
+      ..._lyrics,
+      initialActiveProfileIdProvider.overrideWithValue(null),
+      rightPanelProvider.overrideWith(_LyricsOpen.new),
+    ],
+  );
+
+  goldenMatrix(
+    'lyrics_sheet',
+    builder: (_) => _withController(const NowPlayingScreen()),
+    sizes: const [TestSizes.compact],
+    overrides: [..._overrides, ..._lyrics],
+    act: (tester) async {
+      await tester.tap(find.byTooltip('Lyrics'));
+      await tester.pumpAndSettle();
+    },
   );
 
   goldenMatrix(

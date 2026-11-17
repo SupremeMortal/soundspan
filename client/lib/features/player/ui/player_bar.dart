@@ -13,6 +13,7 @@ import 'package:soundspan/core/playback/queue/queue_state.dart';
 import 'package:soundspan/features/player/ui/player_item.dart';
 import 'package:soundspan/features/player/ui/right_panel.dart';
 import 'package:soundspan/features/player/ui/seek_bar.dart';
+import 'package:soundspan/shared/domain/queue_item.dart';
 import 'package:soundspan/shared/widgets/artwork.dart';
 import 'package:soundspan/shared/widgets/quality_badge.dart';
 
@@ -21,8 +22,10 @@ import 'package:soundspan/shared/widgets/quality_badge.dart';
 ///
 /// Left: the current item's artwork, title, artist and [QualityBadge].
 /// Centre: shuffle, previous, play/pause, next and repeat, with the
-/// [SeekBar] and the elapsed and total times beneath. Right: the queue
-/// button, which toggles the queue in the right panel, the expand button,
+/// [SeekBar] and the elapsed and total times beneath. Right: the lyrics
+/// button, which toggles the lyrics in the right panel (hidden for an
+/// episode), the queue button, which toggles the queue there, the expand
+/// button,
 /// which shows and hides the now-playing overlay, and the volume slider.
 /// It reads only the playback controller's snapshots and calls its
 /// commands; position changes rebuild the seek bar alone. It renders
@@ -330,7 +333,8 @@ class _PlayerBarProgress extends ConsumerWidget {
   }
 }
 
-/// The queue button and the expand button.
+/// The lyrics button (not for an episode), the queue button and the
+/// expand button.
 class _PanelButtons extends ConsumerWidget {
   const new();
 
@@ -338,11 +342,26 @@ class _PanelButtons extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = context.colors;
     final l10n = AppLocalizations.of(context);
-    final queueOpen = ref.watch(rightPanelProvider) == RightPanel.queue;
+    final panel = ref.watch(rightPanelProvider);
+    final queueOpen = panel == RightPanel.queue;
     final expanded = ref.watch(nowPlayingOverlayProvider);
+    final episode = ref.watch(
+      playbackStateProvider.select(
+        (snapshot) => snapshot.value?.current is EpisodeQueueItem,
+      ),
+    );
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
+        if (!episode)
+          _ToggleButton(
+            on: panel == RightPanel.lyrics,
+            label: l10n.lyricsTitle,
+            icon: Icons.lyrics_outlined,
+            onColor: colors.brand,
+            onPressed: () =>
+                ref.read(rightPanelProvider.notifier).toggle(RightPanel.lyrics),
+          ),
         _ToggleButton(
           on: queueOpen,
           label: l10n.nowPlayingQueue,

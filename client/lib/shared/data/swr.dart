@@ -37,7 +37,9 @@ class Swr {
   /// The value of [key] as the cache holds it, kept fresh by [fetch].
   ///
   /// [cache] watches the cached value; [fetch] gets the value from the
-  /// server and writes it to the cache, which makes [cache] emit.
+  /// server and writes it to the cache, which makes [cache] emit. When
+  /// [ttlOf] is given, it chooses the TTL of a cached value in place of
+  /// [ttl].
   ///
   /// 1. The cached value is emitted at once if present.
   /// 2. If it is older than [ttl] and the server is reachable, it is
@@ -54,6 +56,7 @@ class Swr {
     required Duration ttl,
     required Stream<CacheEntry<T>?> Function() cache,
     required Future<void> Function() fetch,
+    Duration Function(T value)? ttlOf,
   }) {
     late final StreamController<Cached<T>> controller;
     StreamSubscription<CacheEntry<T>?>? subscription;
@@ -131,7 +134,9 @@ class Swr {
         }
         return;
       }
-      final stale = _clock.now().difference(entry.fetchedAt) > ttl;
+      final stale =
+          _clock.now().difference(entry.fetchedAt) >
+          (ttlOf?.call(entry.value) ?? ttl);
       if (stale && online) {
         startFetch();
         emit(entry, refreshing: true);

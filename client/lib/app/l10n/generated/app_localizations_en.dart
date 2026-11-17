@@ -1374,6 +1374,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get nowPlayingCollapse => 'Hide now playing';
 
   @override
+  String get lyricsTitle => 'Lyrics';
+
+  @override
+  String get lyricsNone => 'No lyrics found';
+
+  @override
   String get queueTitle => 'Queue';
 
   @override
@@ -2817,6 +2823,12 @@ class AppLocalizationsEnXa extends AppLocalizationsEn {
 
   @override
   String get nowPlayingCollapse => '[Ĥîðé ñöŵ þļåýîñĝ one two]';
+
+  @override
+  String get lyricsTitle => '[Ļýŕîçš one]';
+
+  @override
+  String get lyricsNone => '[Ñö ļýŕîçš föûñð one two]';
 
   @override
   String get queueTitle => '[Qûéûé one]';

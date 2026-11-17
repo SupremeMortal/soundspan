@@ -1762,6 +1762,14 @@
   "@nowPlayingCollapse": {
     "description": "Tooltip of the player bar button that hides the large artwork of the playing item."
   },
+  "lyricsTitle": "[Ļýŕîçš one]",
+  "@lyricsTitle": {
+    "description": "Title of the lyrics panel and sheet, and tooltip of the button that shows the lyrics, on the now-playing screen and on the player bar."
+  },
+  "lyricsNone": "[Ñö ļýŕîçš föûñð one two]",
+  "@lyricsNone": {
+    "description": "Shown in the lyrics view when the server has no lyrics for the current track."
+  },
   "queueTitle": "[Qûéûé one]",
   "@queueTitle": {
     "description": "Title of the play queue panel and sheet."

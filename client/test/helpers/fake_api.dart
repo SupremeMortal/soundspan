@@ -27,6 +27,9 @@ final class FakeApi {
 
   /// The session resource's settings endpoints: `rest.session`.
   final FakeSessionClient session = FakeSessionClient();
+
+  /// The playback resource's lyrics endpoint: `rest.playback`.
+  final FakePlaybackClient playback = FakePlaybackClient();
 }
 
 /// An in-memory model of the server's settings endpoints (doc 03,
@@ -101,6 +104,66 @@ final class FakeSessionClient implements api.SessionClient {
       playbackQuality = quality;
     }
     return _settings;
+  }
+
+  @override
+  Never noSuchMethod(Invocation invocation) =>
+      throw UnimplementedError('${invocation.memberName}');
+}
+
+/// One `GET /lyrics/:trackId` request [FakePlaybackClient] received.
+typedef FakeLyricsRequest = ({
+  String trackId,
+  String? artist,
+  String? title,
+  String? album,
+  num? duration,
+});
+
+/// An in-memory model of the server's lyrics endpoint (doc 03,
+/// `GET /lyrics/:trackId`): the answer by path value in [lyrics], every
+/// request in [requests], and per-call failures in [failures]. A path value
+/// without an answer gets `source: none`. The other playback operations
+/// throw [UnimplementedError].
+final class FakePlaybackClient implements api.PlaybackClient {
+  /// The answers by path value.
+  final Map<String, api.Lyrics> lyrics = {};
+
+  /// Every lyrics request, in order.
+  final List<FakeLyricsRequest> requests = [];
+
+  /// Exceptions the next calls throw, oldest first; a call takes one when
+  /// any is left.
+  final List<api.ApiException> failures = [];
+
+  /// The `source: none` answer.
+  static const api.Lyrics none = api.Lyrics(
+    plainLyrics: null,
+    source: api.LyricsSource.none,
+    synced: false,
+    syncedLyrics: null,
+  );
+
+  @override
+  Future<api.Lyrics> getLyrics({
+    required String trackId,
+    Map<String, Object?> extra = const {},
+    CancelToken? cancelToken,
+    Options? options,
+    String? artist,
+    String? title,
+    String? album,
+    num? duration,
+  }) async {
+    requests.add((
+      trackId: trackId,
+      artist: artist,
+      title: title,
+      album: album,
+      duration: duration,
+    ));
+    if (failures.isNotEmpty) throw failures.removeAt(0);
+    return lyrics[trackId] ?? none;
   }
 
   @override

@@ -83,6 +83,27 @@ void main() {
     return values;
   }
 
+  test('ttlOf chooses the TTL of each cached value', () async {
+    Stream<Cached<String>> watchShort() => swr.watch<String>(
+      key: _key,
+      ttl: _ttl,
+      ttlOf: (value) => value == 'short' ? const Duration(minutes: 1) : _ttl,
+      cache: () => store.watchBlob(_key, (json) => json! as String),
+      fetch: () async {
+        await store.putBlob(_key, await remote.fetch());
+      },
+    );
+
+    await seed('long', age: const Duration(minutes: 2));
+    await collect(watchShort());
+    expect(remote.calls, 0);
+
+    await seed('short', age: const Duration(minutes: 2));
+    final values = await collect(watchShort());
+    expect(remote.calls, 1);
+    expect(values.last.value, 'fresh');
+  });
+
   test(
     'cache hit: a fresh value is emitted once and nothing is fetched',
     () async {

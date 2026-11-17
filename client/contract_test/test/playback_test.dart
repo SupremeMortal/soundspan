@@ -529,4 +529,18 @@ void main() {
 
     expect(lyrics.source, isNotNull);
   });
+
+  test('a track without lyrics answers the none shape', () async {
+    // A value the library does not hold, without artist and title: the
+    // server looks nothing up and answers `source: none`, which the
+    // client's repository maps to NoLyrics.
+    final lyrics = await api.send(
+      (rest) => rest.playback.getLyrics(trackId: 'contract-no-lyrics'),
+    );
+
+    expect(lyrics.source, LyricsSource.none);
+    expect(lyrics.synced, isFalse);
+    expect(lyrics.syncedLyrics, isNull);
+    expect(lyrics.plainLyrics, isNull);
+  });
 }

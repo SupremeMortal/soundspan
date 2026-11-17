@@ -80,7 +80,8 @@ class AppShell extends ConsumerWidget {
     onExplore: onExplore,
     rightPanel: switch (ref.watch(rightPanelProvider)) {
       RightPanel.queue => const QueuePanel(),
-      RightPanel.none || RightPanel.lyrics => null,
+      RightPanel.lyrics => const LyricsPanel(),
+      RightPanel.none => null,
     },
     contentOverlay: ref.watch(nowPlayingOverlayProvider)
         ? const NowPlayingOverlay()

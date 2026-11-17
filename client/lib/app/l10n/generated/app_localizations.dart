@@ -2327,6 +2327,18 @@ abstract class AppLocalizations {
   /// **'Hide now playing'**
   String get nowPlayingCollapse;
 
+  /// Title of the lyrics panel and sheet, and tooltip of the button that shows the lyrics, on the now-playing screen and on the player bar.
+  ///
+  /// In en, this message translates to:
+  /// **'Lyrics'**
+  String get lyricsTitle;
+
+  /// Shown in the lyrics view when the server has no lyrics for the current track.
+  ///
+  /// In en, this message translates to:
+  /// **'No lyrics found'**
+  String get lyricsNone;
+
   /// Title of the play queue panel and sheet.
   ///
   /// In en, this message translates to:

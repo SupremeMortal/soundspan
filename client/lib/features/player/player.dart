@@ -2,9 +2,16 @@
 
 /// The player: the player bar on expanded windows, the mini player on
 /// compact and medium ones, the seek bar they share, now playing and the
-/// queue (doc 09, Components; Now Playing, Queue, Lyrics).
+/// queue and the lyrics (doc 09, Components; Now Playing, Queue, Lyrics).
 library;
 
+export 'domain/lrc.dart' show LyricLine, currentLineIndex, parseLrc;
+export 'domain/lyrics.dart'
+    show Lyrics, LyricsRepository, NoLyrics, PlainLyrics, SyncedLyrics;
+export 'lyrics_providers.dart'
+    show currentLyricsProvider, lyricsRepositoryProvider;
+export 'ui/lyrics_view.dart'
+    show LyricsPanel, LyricsSheet, LyricsView, showLyricsSheet;
 export 'ui/mini_player.dart' show MiniPlayer;
 export 'ui/now_playing_overlay.dart' show NowPlayingOverlay, QueuePanel;
 export 'ui/now_playing_screen.dart' show NowPlayingScreen, NowPlayingTitle;
