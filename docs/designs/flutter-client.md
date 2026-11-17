@@ -62,7 +62,7 @@ Rust remains an option for a future, isolated need (e.g. client-side DSP) behind
 | Credential storage | Keystore | Keychain | Credential Manager (DPAPI) | Keychain | libsecret | Memory / `sessionStorage` |
 | CORS applies | No | No | No | No | No | Yes |
 | Updates | Play Store / F-Droid | App Store | In-app updater (WinSparkle) | In-app updater (Sparkle) | Flatpak / package manager | Redeploy |
-| Minimum version | Android 8 (API 26) | iOS 15 | Windows 10 1809 | macOS 11 | GTK 3.24 (Ubuntu 22.04-class) | Current Chrome, Firefox, Safari, Edge |
+| Minimum version | Android 8 (API 26) | iOS 15 | Windows 10 1809 | macOS 12 | GTK 3.24 (Ubuntu 22.04-class) | Current Chrome, Firefox, Safari, Edge |
 | App identifier | `io.soundspan.app` (applicationId) | `io.soundspan.app` (bundle ID) | `io.soundspan.app` (MSIX identity) | `io.soundspan.app` (bundle ID) | `io.soundspan.app` (Flatpak / desktop file) | — |
 
 The web build is supported but secondary: canvas rendering gives weaker text selection and accessibility than the Next.js UI, and it cannot play in the background or download. It ships only as its own optional container image / static bundle; it is not bundled into the server image, and the Next.js UI stays the default web experience. Operators who deploy it either put it behind the same origin as the server or add its origin to `ALLOWED_ORIGINS`.

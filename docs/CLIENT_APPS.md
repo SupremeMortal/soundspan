@@ -103,7 +103,7 @@ Sign in with your user name or email and password. If your account uses two-fact
 
 Linking signs the app in without typing your password. It is the way to sign in when your server uses single sign-on (the sign-in screen then reads **Sign in with** and the provider's name).
 
-1. In a browser where you are signed in to soundspan, open the **Link Device** page at `<your server address>/device`.
+1. In a browser where you are signed in to soundspan, open **Settings → Link Device**, or go straight to the **Link Device** page at `<your server address>/device`.
 2. Select **Generate Code**. The page shows a six-character code and a QR code, valid for 5 minutes.
 3. In the app, select **Link with a code** and type the code, or select **Scan QR code** and point the camera at the QR code. Codes never contain the characters I, O, 0 or 1.
 

@@ -16,6 +16,7 @@ import { SignInSecuritySection } from "@/features/settings/components/sections/S
 import { SocialSection } from "@/features/settings/components/sections/SocialSection";
 import { PlaybackSection } from "@/features/settings/components/sections/PlaybackSection";
 import { IntegrationsSection } from "@/features/settings/components/sections/IntegrationsSection";
+import { LinkDeviceSection } from "@/features/settings/components/sections/LinkDeviceSection";
 
 // Define sidebar items
 const sidebarItems: SidebarItem[] = [
@@ -26,6 +27,7 @@ const sidebarItems: SidebarItem[] = [
     { id: "playback", label: "Playback" },
     { id: "scrobbling", label: "Scrobbling" },
     { id: "integrations", label: "Integrations" },
+    { id: "link-device", label: "Link Device" },
     { id: "api-keys", label: "API Keys" },
 ];
 
@@ -178,6 +180,9 @@ export default function SettingsPage() {
                 settings={userSettings}
                 onUpdate={updateUserSettings}
             />
+
+            {/* Link Device: the page that issues device-link codes */}
+            <LinkDeviceSection />
 
             {/* API Keys */}
             <APIKeysSection />

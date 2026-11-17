@@ -132,3 +132,15 @@ test("shows the interactive-session message when link-code generation is forbidd
         /Interactive session authentication required/,
     );
 });
+
+test("describes the soundspan app, the web app and Subsonic clients as the mobile choices", async (t) => {
+    const harness = await mountDevicePage();
+    t.after(harness.unmount);
+
+    const text = document.body.textContent ?? "";
+    assert.doesNotMatch(text, /PWA-first/);
+    assert.match(
+        text,
+        /On a phone, use the soundspan app, install this web app, or connect a Subsonic-compatible app with an app password\./,
+    );
+});
