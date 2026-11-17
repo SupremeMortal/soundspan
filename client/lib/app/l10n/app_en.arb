@@ -134,6 +134,134 @@
   "@shellMenuSettings": {
     "description": "Account menu entry: open the settings."
   },
+  "shellActivity": "Activity",
+  "@shellActivity": {
+    "description": "Top bar button tooltip: show or hide the Activity panel listing who is online."
+  },
+  "shellMenuActivity": "Activity",
+  "@shellMenuActivity": {
+    "description": "Account menu entry: open the Activity sheet listing who is online."
+  },
+  "activityTitle": "Activity",
+  "@activityTitle": {
+    "description": "Heading of the Activity panel and sheet, which list who is online."
+  },
+  "activityOnThisServer": "On this server",
+  "@activityOnThisServer": {
+    "description": "Activity section heading: users of the server the app is signed in to."
+  },
+  "activityOnConnectedServers": "On connected servers",
+  "@activityOnConnectedServers": {
+    "description": "Activity section heading: users of other servers this server is connected to."
+  },
+  "activityStatusPlaying": "Playing",
+  "@activityStatusPlaying": {
+    "description": "Activity row status: the user is playing music."
+  },
+  "activityStatusPaused": "Paused",
+  "@activityStatusPaused": {
+    "description": "Activity row status: the user has paused playback."
+  },
+  "activityStatusIdle": "Idle",
+  "@activityStatusIdle": {
+    "description": "Activity row status: the user is online but not playing."
+  },
+  "activityPeerStatus": "{status} on {server}",
+  "@activityPeerStatus": {
+    "description": "Activity row status of a user of a connected server.",
+    "placeholders": {
+      "status": {
+        "type": "String",
+        "example": "Playing"
+      },
+      "server": {
+        "type": "String",
+        "example": "North"
+      }
+    }
+  },
+  "activityTrack": "{title} · {artist}",
+  "@activityTrack": {
+    "description": "Activity row second line: the track the user plays and its artist.",
+    "placeholders": {
+      "title": {
+        "type": "String",
+        "example": "Blue Monday"
+      },
+      "artist": {
+        "type": "String",
+        "example": "New Order"
+      }
+    }
+  },
+  "activityEmpty": "Nobody else is online",
+  "@activityEmpty": {
+    "description": "Activity empty state: no other user is online."
+  },
+  "activityRowPlaying": "{name}, playing {title} by {artist}",
+  "@activityRowPlaying": {
+    "description": "Screen reader label of an Activity row: the user plays a track.",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "Ana"
+      },
+      "title": {
+        "type": "String",
+        "example": "Blue Monday"
+      },
+      "artist": {
+        "type": "String",
+        "example": "New Order"
+      }
+    }
+  },
+  "activityRowPaused": "{name}, paused on {title} by {artist}",
+  "@activityRowPaused": {
+    "description": "Screen reader label of an Activity row: the user paused a track.",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "Ana"
+      },
+      "title": {
+        "type": "String",
+        "example": "Blue Monday"
+      },
+      "artist": {
+        "type": "String",
+        "example": "New Order"
+      }
+    }
+  },
+  "activityRowStatus": "{name}, {status}",
+  "@activityRowStatus": {
+    "description": "Screen reader label of an Activity row without a track; status is the row status text.",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "Ana"
+      },
+      "status": {
+        "type": "String",
+        "example": "Idle"
+      }
+    }
+  },
+  "activityRowPeer": "{label}, on {server}",
+  "@activityRowPeer": {
+    "description": "Screen reader label of an Activity row of a connected server: the row label and the server name.",
+    "placeholders": {
+      "label": {
+        "type": "String",
+        "example": "Ana, idle"
+      },
+      "server": {
+        "type": "String",
+        "example": "North"
+      }
+    }
+  },
   "settingsThemeTitle": "Theme",
   "@settingsThemeTitle": {
     "description": "Heading of the theme choice in the Appearance settings."

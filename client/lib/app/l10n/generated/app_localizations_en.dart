@@ -108,6 +108,63 @@ class AppLocalizationsEn extends AppLocalizations {
   String get shellMenuSettings => 'Settings';
 
   @override
+  String get shellActivity => 'Activity';
+
+  @override
+  String get shellMenuActivity => 'Activity';
+
+  @override
+  String get activityTitle => 'Activity';
+
+  @override
+  String get activityOnThisServer => 'On this server';
+
+  @override
+  String get activityOnConnectedServers => 'On connected servers';
+
+  @override
+  String get activityStatusPlaying => 'Playing';
+
+  @override
+  String get activityStatusPaused => 'Paused';
+
+  @override
+  String get activityStatusIdle => 'Idle';
+
+  @override
+  String activityPeerStatus(String status, String server) {
+    return '$status on $server';
+  }
+
+  @override
+  String activityTrack(String title, String artist) {
+    return '$title · $artist';
+  }
+
+  @override
+  String get activityEmpty => 'Nobody else is online';
+
+  @override
+  String activityRowPlaying(String name, String title, String artist) {
+    return '$name, playing $title by $artist';
+  }
+
+  @override
+  String activityRowPaused(String name, String title, String artist) {
+    return '$name, paused on $title by $artist';
+  }
+
+  @override
+  String activityRowStatus(String name, String status) {
+    return '$name, $status';
+  }
+
+  @override
+  String activityRowPeer(String label, String server) {
+    return '$label, on $server';
+  }
+
+  @override
   String get settingsThemeTitle => 'Theme';
 
   @override
@@ -2056,6 +2113,63 @@ class AppLocalizationsEnXa extends AppLocalizationsEn {
 
   @override
   String get shellMenuSettings => '[Šéţţîñĝš one]';
+
+  @override
+  String get shellActivity => '[Åçţîvîţý one]';
+
+  @override
+  String get shellMenuActivity => '[Åçţîvîţý one]';
+
+  @override
+  String get activityTitle => '[Åçţîvîţý one]';
+
+  @override
+  String get activityOnThisServer => '[Öñ ţĥîš šéŕvéŕ one two]';
+
+  @override
+  String get activityOnConnectedServers => '[Öñ çöññéçţéð šéŕvéŕš one two]';
+
+  @override
+  String get activityStatusPlaying => '[Þļåýîñĝ one]';
+
+  @override
+  String get activityStatusPaused => '[Þåûšéð one]';
+
+  @override
+  String get activityStatusIdle => '[Îðļé one]';
+
+  @override
+  String activityPeerStatus(String status, String server) {
+    return '[$status öñ $server one]';
+  }
+
+  @override
+  String activityTrack(String title, String artist) {
+    return '[$title · $artist one]';
+  }
+
+  @override
+  String get activityEmpty => '[Ñöböðý éļšé îš öñļîñé one two three]';
+
+  @override
+  String activityRowPlaying(String name, String title, String artist) {
+    return '[$name, þļåýîñĝ $title bý $artist one two]';
+  }
+
+  @override
+  String activityRowPaused(String name, String title, String artist) {
+    return '[$name, þåûšéð öñ $title bý $artist one two]';
+  }
+
+  @override
+  String activityRowStatus(String name, String status) {
+    return '[$name, $status one]';
+  }
+
+  @override
+  String activityRowPeer(String label, String server) {
+    return '[$label, öñ $server one]';
+  }
 
   @override
   String get settingsThemeTitle => '[Ţĥémé one]';

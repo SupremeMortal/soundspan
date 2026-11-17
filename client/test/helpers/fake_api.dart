@@ -33,6 +33,9 @@ final class FakeApi {
 
   /// The Listen Together resource: `rest.listenTogether`.
   final FakeListenTogetherClient listenTogether = FakeListenTogetherClient();
+
+  /// The social resource's presence endpoints: `rest.social`.
+  final FakeSocialClient social = FakeSocialClient();
 }
 
 /// An in-memory model of the server's settings endpoints (doc 03,
@@ -1240,5 +1243,92 @@ final class FakeListenTogetherClient implements api.ListenTogetherClient {
     _call('end', groupId);
     member = false;
     return const api.EndListenGroupResponse(success: true);
+  }
+}
+
+/// An `online` roster user as the server sends it; [track] adds a
+/// `listeningTrack`.
+Map<String, Object?> onlineUserJson(
+  String id, {
+  String? displayName,
+  String status = 'idle',
+  Map<String, Object?>? track,
+}) => {
+  'id': id,
+  'username': id,
+  'displayName': displayName ?? 'User $id',
+  'hasProfilePicture': false,
+  'isInListenTogetherGroup': false,
+  'listeningStatus': status,
+  'listeningTrack': track,
+  'lastHeartbeatAt': '2025-01-01T00:00:00.000Z',
+};
+
+/// A `listeningTrack` as the server sends it.
+Map<String, Object?> onlineTrackJson(String title, {String artist = 'Band'}) =>
+    {
+      'id': 'track-$title',
+      'title': title,
+      'artistName': artist,
+      'artistId': null,
+      'albumTitle': 'Record',
+      'albumId': null,
+      'coverArt': 'art-$title',
+      'duration': 200,
+    };
+
+/// An in-memory model of the server's presence endpoints (doc 03,
+/// `POST /social/presence/heartbeat`, `GET /social/online`): every call in
+/// [calls], the roster `online` answers in [users] and [peers], and
+/// per-call failures in [failures].
+final class FakeSocialClient implements api.SocialClient {
+  /// The roster users, as JSON.
+  final List<Map<String, Object?>> users = [];
+
+  /// The `peers` value of the roster, as JSON; null leaves it out.
+  List<Object?>? peers;
+
+  /// Every call, in order: `heartbeat` or `online`.
+  final List<String> calls = [];
+
+  /// Exceptions to throw, by operation name (`heartbeat`, `online`).
+  final Map<String, Exception> failures = {};
+
+  /// When set, `online` waits for it before answering.
+  Completer<void>? gate;
+
+  /// How many heartbeats were sent.
+  int get heartbeats => calls.where((c) => c == 'heartbeat').length;
+
+  /// How many rosters were requested.
+  int get onlineCalls => calls.where((c) => c == 'online').length;
+
+  @override
+  Future<api.PresenceHeartbeatResponse> sendPresenceHeartbeat({
+    Map<String, Object?> extra = const {},
+    CancelToken? cancelToken,
+    Options? options,
+  }) async {
+    calls.add('heartbeat');
+    if (failures['heartbeat'] case final error?) throw error;
+    return api.PresenceHeartbeatResponse.fromJson({
+      'success': true,
+      'ttlSeconds': 90,
+    });
+  }
+
+  @override
+  Future<api.OnlineUsersResponse> listOnlineUsers({
+    Map<String, Object?> extra = const {},
+    CancelToken? cancelToken,
+    Options? options,
+  }) async {
+    calls.add('online');
+    await gate?.future;
+    if (failures['online'] case final error?) throw error;
+    return api.OnlineUsersResponse.fromJson(
+      jsonDecode(jsonEncode({'users': users, 'peers': ?peers}))
+          as Map<String, Object?>,
+    );
   }
 }

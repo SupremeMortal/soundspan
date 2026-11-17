@@ -15,6 +15,7 @@ import 'package:soundspan/app/theme/typography.dart';
 import 'package:soundspan/core/auth/active_profile.dart';
 import 'package:soundspan/core/auth/profile.dart';
 import 'package:soundspan/core/profile/profile_runtime.dart';
+import 'package:soundspan/features/social/social.dart';
 
 /// The upper-case first letter of the name [profile]'s user goes by, or an
 /// empty string without a profile.
@@ -30,7 +31,8 @@ String avatarInitial(Profile? profile) {
 /// The avatar button of the shell (doc 09, Shell by Window Class).
 ///
 /// It shows the active user's initial and opens the account menu: the
-/// server switcher, "Add server" and "Settings". On compact windows the menu
+/// server switcher, "Add server", "Activity" (compact and medium windows;
+/// expanded ones have the top-bar toggle) and "Settings". On compact windows the menu
 /// is a bottom sheet; otherwise it is a popup under the button.
 class AvatarButton extends ConsumerWidget {
   /// Creates the button.
@@ -126,6 +128,9 @@ class AvatarButton extends ConsumerWidget {
     // Captured now: the button's element may be rebuilt while the menu is
     // open, so the callbacks must not look the router up from it.
     final router = GoRouter.maybeOf(context);
+    final navigator = Navigator.maybeOf(context);
+    final container = ProviderScope.containerOf(context);
+    final expanded = WindowClass.of(context) == WindowClass.expanded;
     return [
       AvatarMenuEntry.header(l10n.shellMenuServers),
       for (final profile in profiles)
@@ -140,6 +145,14 @@ class AvatarButton extends ConsumerWidget {
         icon: Icons.add_rounded,
         onSelected: () => unawaited(router?.push<void>(RoutePaths.connect)),
       ),
+      if (!expanded && navigator != null)
+        AvatarMenuEntry(
+          label: l10n.shellMenuActivity,
+          icon: Icons.group_rounded,
+          onSelected: () => unawaited(
+            showActivitySheet(navigator.context, container: container),
+          ),
+        ),
       AvatarMenuEntry(
         label: l10n.shellMenuSettings,
         icon: Icons.settings_rounded,

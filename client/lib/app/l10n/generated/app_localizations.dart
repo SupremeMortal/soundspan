@@ -289,6 +289,96 @@ abstract class AppLocalizations {
   /// **'Settings'**
   String get shellMenuSettings;
 
+  /// Top bar button tooltip: show or hide the Activity panel listing who is online.
+  ///
+  /// In en, this message translates to:
+  /// **'Activity'**
+  String get shellActivity;
+
+  /// Account menu entry: open the Activity sheet listing who is online.
+  ///
+  /// In en, this message translates to:
+  /// **'Activity'**
+  String get shellMenuActivity;
+
+  /// Heading of the Activity panel and sheet, which list who is online.
+  ///
+  /// In en, this message translates to:
+  /// **'Activity'**
+  String get activityTitle;
+
+  /// Activity section heading: users of the server the app is signed in to.
+  ///
+  /// In en, this message translates to:
+  /// **'On this server'**
+  String get activityOnThisServer;
+
+  /// Activity section heading: users of other servers this server is connected to.
+  ///
+  /// In en, this message translates to:
+  /// **'On connected servers'**
+  String get activityOnConnectedServers;
+
+  /// Activity row status: the user is playing music.
+  ///
+  /// In en, this message translates to:
+  /// **'Playing'**
+  String get activityStatusPlaying;
+
+  /// Activity row status: the user has paused playback.
+  ///
+  /// In en, this message translates to:
+  /// **'Paused'**
+  String get activityStatusPaused;
+
+  /// Activity row status: the user is online but not playing.
+  ///
+  /// In en, this message translates to:
+  /// **'Idle'**
+  String get activityStatusIdle;
+
+  /// Activity row status of a user of a connected server.
+  ///
+  /// In en, this message translates to:
+  /// **'{status} on {server}'**
+  String activityPeerStatus(String status, String server);
+
+  /// Activity row second line: the track the user plays and its artist.
+  ///
+  /// In en, this message translates to:
+  /// **'{title} · {artist}'**
+  String activityTrack(String title, String artist);
+
+  /// Activity empty state: no other user is online.
+  ///
+  /// In en, this message translates to:
+  /// **'Nobody else is online'**
+  String get activityEmpty;
+
+  /// Screen reader label of an Activity row: the user plays a track.
+  ///
+  /// In en, this message translates to:
+  /// **'{name}, playing {title} by {artist}'**
+  String activityRowPlaying(String name, String title, String artist);
+
+  /// Screen reader label of an Activity row: the user paused a track.
+  ///
+  /// In en, this message translates to:
+  /// **'{name}, paused on {title} by {artist}'**
+  String activityRowPaused(String name, String title, String artist);
+
+  /// Screen reader label of an Activity row without a track; status is the row status text.
+  ///
+  /// In en, this message translates to:
+  /// **'{name}, {status}'**
+  String activityRowStatus(String name, String status);
+
+  /// Screen reader label of an Activity row of a connected server: the row label and the server name.
+  ///
+  /// In en, this message translates to:
+  /// **'{label}, on {server}'**
+  String activityRowPeer(String label, String server);
+
   /// Heading of the theme choice in the Appearance settings.
   ///
   /// In en, this message translates to:

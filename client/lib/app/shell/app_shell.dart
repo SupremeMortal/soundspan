@@ -16,12 +16,13 @@ import 'package:soundspan/app/shell/sidebar_playlists.dart';
 import 'package:soundspan/app/shell/top_bar.dart';
 import 'package:soundspan/app/shell/window_class.dart';
 import 'package:soundspan/features/player/player.dart';
+import 'package:soundspan/features/social/social.dart';
 
 /// The [AdaptiveShell] with its slots filled: the [TopBar] on expanded
 /// windows, the [AvatarButton] at the bottom of the rail on medium ones,
 /// the [SidebarPlaylists] under the expanded sidebar's destinations, the
-/// player slots, the [QueuePanel] in the right panel while
-/// [rightPanelProvider] is [RightPanel.queue], and the [NowPlayingOverlay]
+/// player slots, the [QueuePanel], [LyricsPanel] or [ActivityPanel] in the
+/// right panel as [rightPanelProvider] says, and the [NowPlayingOverlay]
 /// over the content while [nowPlayingOverlayProvider] is set.
 ///
 /// On compact windows the avatar sits in each branch root's app bar, which
@@ -119,6 +120,9 @@ class _AppShellState extends ConsumerState<AppShell> {
         onSearchChanged: widget.onSearchChanged,
         searchFocusNode: _searchFocus,
         avatar: const AvatarButton(),
+        activityOpen: ref.watch(rightPanelProvider) == RightPanel.activity,
+        onToggleActivity: () =>
+            ref.read(rightPanelProvider.notifier).toggle(RightPanel.activity),
       ),
       railTrailing: const AvatarButton(),
       miniPlayer: const MiniPlayerSlot(),
@@ -130,6 +134,7 @@ class _AppShellState extends ConsumerState<AppShell> {
       rightPanel: switch (ref.watch(rightPanelProvider)) {
         RightPanel.queue => const QueuePanel(),
         RightPanel.lyrics => const LyricsPanel(),
+        RightPanel.activity => const ActivityPanel(),
         RightPanel.none => null,
       },
       contentOverlay: ref.watch(nowPlayingOverlayProvider)

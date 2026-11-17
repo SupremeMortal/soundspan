@@ -169,7 +169,9 @@ While attached, UI transport and queue commands are sent to the server and **not
 - **Heartbeat:** `POST /api/social/presence/heartbeat` every 25 s while the app is in the foreground (the web cadence). Stopped in the background and while offline. Playback state posts ([06](06-playback.md)) already publish what is playing.
 - **Reading presence:** `GET /api/social/online` when the presence panel opens. While it is open the socket is connected and each `social:presence-updated` event schedules a debounced (1 s) refetch. The event names only a user id, so the list is always re-read over REST.
 - **UI:** an "Activity" panel on expanded layouts (toggled from the top bar) and a sheet from the avatar menu elsewhere, listing users with Playing/Paused/Idle and the current track. Federation peers appear in a second section when the server has `federation` enabled.
-- Presence is off until the user opens the panel once per session; it is not needed for playback.
+- Presence is off until the user opens the panel once per session; it is not needed for playback. From the first opening until the profile closes the heartbeat runs (foreground and `online` only, an immediate beat on each resume); the socket lease and the roster requests last only while the panel or sheet is open, and the last roster is kept for the next opening. A heartbeat answered with `FeatureDisabled` or `Forbidden` stops for the session; any other failure is logged and the cadence goes on.
+- The current user is left out of the roster. `peers` is not declared in the client-surface spec, so `PresenceRepository` reads it from the response's additional properties (`peerName`, and per user `username`, `displayName`, `status` and an optional `track` of title, artist and album) and leaves out entries of another shape.
+- The code is `lib/core/realtime/presence_repository.dart`, `presence_controller.dart` (profile-scoped) and `lib/features/social/ui/activity_view.dart`.
 
 ## Testing
 

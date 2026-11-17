@@ -134,6 +134,134 @@
   "@shellMenuSettings": {
     "description": "Account menu entry: open the settings."
   },
+  "shellActivity": "[Åçţîvîţý one]",
+  "@shellActivity": {
+    "description": "Top bar button tooltip: show or hide the Activity panel listing who is online."
+  },
+  "shellMenuActivity": "[Åçţîvîţý one]",
+  "@shellMenuActivity": {
+    "description": "Account menu entry: open the Activity sheet listing who is online."
+  },
+  "activityTitle": "[Åçţîvîţý one]",
+  "@activityTitle": {
+    "description": "Heading of the Activity panel and sheet, which list who is online."
+  },
+  "activityOnThisServer": "[Öñ ţĥîš šéŕvéŕ one two]",
+  "@activityOnThisServer": {
+    "description": "Activity section heading: users of the server the app is signed in to."
+  },
+  "activityOnConnectedServers": "[Öñ çöññéçţéð šéŕvéŕš one two]",
+  "@activityOnConnectedServers": {
+    "description": "Activity section heading: users of other servers this server is connected to."
+  },
+  "activityStatusPlaying": "[Þļåýîñĝ one]",
+  "@activityStatusPlaying": {
+    "description": "Activity row status: the user is playing music."
+  },
+  "activityStatusPaused": "[Þåûšéð one]",
+  "@activityStatusPaused": {
+    "description": "Activity row status: the user has paused playback."
+  },
+  "activityStatusIdle": "[Îðļé one]",
+  "@activityStatusIdle": {
+    "description": "Activity row status: the user is online but not playing."
+  },
+  "activityPeerStatus": "[{status} öñ {server} one]",
+  "@activityPeerStatus": {
+    "description": "Activity row status of a user of a connected server.",
+    "placeholders": {
+      "status": {
+        "type": "String",
+        "example": "Playing"
+      },
+      "server": {
+        "type": "String",
+        "example": "North"
+      }
+    }
+  },
+  "activityTrack": "[{title} · {artist} one]",
+  "@activityTrack": {
+    "description": "Activity row second line: the track the user plays and its artist.",
+    "placeholders": {
+      "title": {
+        "type": "String",
+        "example": "Blue Monday"
+      },
+      "artist": {
+        "type": "String",
+        "example": "New Order"
+      }
+    }
+  },
+  "activityEmpty": "[Ñöböðý éļšé îš öñļîñé one two three]",
+  "@activityEmpty": {
+    "description": "Activity empty state: no other user is online."
+  },
+  "activityRowPlaying": "[{name}, þļåýîñĝ {title} bý {artist} one two]",
+  "@activityRowPlaying": {
+    "description": "Screen reader label of an Activity row: the user plays a track.",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "Ana"
+      },
+      "title": {
+        "type": "String",
+        "example": "Blue Monday"
+      },
+      "artist": {
+        "type": "String",
+        "example": "New Order"
+      }
+    }
+  },
+  "activityRowPaused": "[{name}, þåûšéð öñ {title} bý {artist} one two]",
+  "@activityRowPaused": {
+    "description": "Screen reader label of an Activity row: the user paused a track.",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "Ana"
+      },
+      "title": {
+        "type": "String",
+        "example": "Blue Monday"
+      },
+      "artist": {
+        "type": "String",
+        "example": "New Order"
+      }
+    }
+  },
+  "activityRowStatus": "[{name}, {status} one]",
+  "@activityRowStatus": {
+    "description": "Screen reader label of an Activity row without a track; status is the row status text.",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "Ana"
+      },
+      "status": {
+        "type": "String",
+        "example": "Idle"
+      }
+    }
+  },
+  "activityRowPeer": "[{label}, öñ {server} one]",
+  "@activityRowPeer": {
+    "description": "Screen reader label of an Activity row of a connected server: the row label and the server name.",
+    "placeholders": {
+      "label": {
+        "type": "String",
+        "example": "Ana, idle"
+      },
+      "server": {
+        "type": "String",
+        "example": "North"
+      }
+    }
+  },
   "settingsThemeTitle": "[Ţĥémé one]",
   "@settingsThemeTitle": {
     "description": "Heading of the theme choice in the Appearance settings."

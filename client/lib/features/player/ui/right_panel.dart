@@ -3,7 +3,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// What the right-hand panel of expanded windows shows (doc 09, Shell by
-/// Window Class).
+/// Window Class); one at a time, so choosing one replaces the other.
 enum RightPanel {
   /// No panel.
   none,
@@ -13,6 +13,9 @@ enum RightPanel {
 
   /// The lyrics.
   lyrics,
+
+  /// Who is online (doc 08, Social Presence).
+  activity,
 }
 
 /// The right-hand panel of expanded windows; [RightPanel.none] at start.

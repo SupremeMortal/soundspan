@@ -10,7 +10,8 @@ import 'package:soundspan/app/theme/typography.dart';
 import 'package:soundspan/shared/widgets/wordmark.dart';
 
 /// The top bar of expanded windows (doc 09, Shell by Window Class): the
-/// [Wordmark], Back and Forward, a pill search field and the [avatar].
+/// [Wordmark], Back and Forward, a pill search field, the Activity toggle
+/// and the [avatar].
 class TopBar extends StatefulWidget {
   /// Creates the top bar.
   const new({
@@ -20,6 +21,8 @@ class TopBar extends StatefulWidget {
     required this.avatar,
     this.onSearchChanged,
     this.searchFocusNode,
+    this.onToggleActivity,
+    this.activityOpen = false,
     super.key,
   });
 
@@ -49,6 +52,12 @@ class TopBar extends StatefulWidget {
 
   /// The avatar button.
   final Widget avatar;
+
+  /// Shows or hides the Activity panel; null leaves the toggle out.
+  final VoidCallback? onToggleActivity;
+
+  /// Whether the Activity panel is shown.
+  final bool activityOpen;
 
   /// The focus node of the search field, which the search shortcut
   /// focuses; null lets the field make its own.
@@ -157,6 +166,17 @@ class _TopBarState extends State<TopBar> {
               ),
             ),
             const SizedBox(width: Spacing.x12),
+            if (widget.onToggleActivity case final onToggle?) ...[
+              IconButton(
+                onPressed: onToggle,
+                isSelected: widget.activityOpen,
+                tooltip: l10n.shellActivity,
+                color: colors.contentSecondary,
+                selectedIcon: Icon(Icons.group_rounded, color: colors.brand),
+                icon: const Icon(Icons.group_outlined),
+              ),
+              const SizedBox(width: Spacing.x4),
+            ],
             widget.avatar,
           ],
         ),
