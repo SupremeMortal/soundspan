@@ -281,7 +281,9 @@ jobs:
           DEBIAN_FRONTEND: noninteractive
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends appstream flatpak flatpak-builder
+          # elfutils is only a Recommends of flatpak-builder: it provides the
+          # eu-strip and eu-elfcompress that split each module's debug info.
+          sudo apt-get install -y --no-install-recommends appstream elfutils flatpak flatpak-builder
           # Ubuntu's AppArmor otherwise denies bubblewrap a user namespace.
           sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
           flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
