@@ -288,6 +288,90 @@ void main() {
     expect(find.text('3:41'), findsOneWidget);
   });
 
+  testWidgets('at 390 px and text scale 2.0 the title keeps its minimum '
+      'width; the heart leaves the index row and stays an action', (
+    tester,
+  ) async {
+    for (final leading in const [
+      TrackRowLeading.index(1),
+      TrackRowLeading.thumbnail('cover-1'),
+    ]) {
+      await tester.pumpApp(
+        Align(
+          alignment: Alignment.topCenter,
+          child: TrackRow(
+            title: 'Come Together',
+            artist: 'The Beatles',
+            duration: duration,
+            leading: leading,
+            onTap: () {},
+            onToggleLike: () {},
+            onMenu: (_) {},
+          ),
+        ),
+        textScale: 2,
+      );
+      expect(tester.takeException(), isNull);
+
+      final rowWidth = tester.getSize(find.byType(TrackRow)).width;
+      expect(rowWidth, 390);
+      final titleWidth = tester
+          .getSize(
+            find
+                .ancestor(
+                  of: find.text('Come Together'),
+                  matching: find.byType(Column),
+                )
+                .first,
+          )
+          .width;
+      expect(
+        titleWidth,
+        greaterThanOrEqualTo(rowWidth * TrackRow.minTitleFraction),
+      );
+      if (leading is TrackRowIndex) {
+        expect(find.byType(LikeButton), findsNothing);
+      }
+      final labels = tester
+          .getSemantics(find.byType(TrackRow))
+          .getSemanticsData()
+          .customSemanticsActionIds!
+          .map((id) => CustomSemanticsAction.getAction(id)!.label);
+      expect(labels, containsAll(['Like', 'More options']));
+      final overflow = tester.getSize(find.byKey(TrackRow.overflowKey));
+      expect(overflow.width, greaterThanOrEqualTo(48));
+      expect(overflow.height, greaterThanOrEqualTo(48));
+    }
+  });
+
+  testWidgets('at 390 px and text scale 1.0 the heart stays in the row', (
+    tester,
+  ) async {
+    for (final leading in const [
+      TrackRowLeading.index(1),
+      TrackRowLeading.thumbnail('cover-1'),
+    ]) {
+      await tester.pumpApp(
+        Align(
+          alignment: Alignment.topCenter,
+          child: TrackRow(
+            title: 'Come Together',
+            artist: 'The Beatles',
+            duration: duration,
+            leading: leading,
+            onTap: () {},
+            onToggleLike: () {},
+            onMenu: (_) {},
+          ),
+        ),
+      );
+      expect(find.byType(LikeButton), findsOneWidget);
+      final like = tester.getSize(find.byType(LikeButton));
+      expect(like.width, greaterThanOrEqualTo(48));
+      expect(like.height, greaterThanOrEqualTo(48));
+    }
+  });
+
   testWidgets('no heart without onToggleLike', (tester) async {
     await tester.pumpApp(row(onTap: () {}));
 

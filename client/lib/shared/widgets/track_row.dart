@@ -84,6 +84,10 @@ final class TrackRowThumbnail extends TrackRowLeading {
 /// With [onToggleLike], a [LikeButton] showing [liked] sits before the
 /// duration and the node gains a "Like" or "Remove like" custom action;
 /// without it the slot is left out, as for a track with no `playbackId`.
+/// The title and artist column keeps at least [minTitleFraction] of the
+/// row's width at any text scale: the duration column is as wide as its
+/// text, and where that is not enough the heart leaves the row while the
+/// custom action stays.
 /// [semanticActions] adds further custom actions to the node.
 ///
 /// With [onMenu], an overflow button ("More options") ends the row, and a
@@ -223,6 +227,11 @@ class TrackRow extends ConsumerStatefulWidget {
   /// The edge of the thumbnail artwork.
   static const double thumbnailSize = 44;
 
+  /// The share of the row's width the title and artist column keeps
+  /// before the fixed columns (doc 09, Components: `TrackRow`); the heart
+  /// is left out of the row where it would take that space.
+  static const double minTitleFraction = 0.35;
+
   /// The height of a row with a title and an artist line at the ambient
   /// text scale, for fixed-extent lists: at least [Sizes.trackRow] with a
   /// thumbnail and [Sizes.albumTrackRow] with an index.
@@ -325,6 +334,10 @@ class _TrackRowState extends ConsumerState<TrackRow> {
 
     final album = widget.album;
     final playbackId = widget.playbackId;
+    final durationText = formatTrackDuration(widget.duration);
+    final durationStyle = typography.caption.tabular.copyWith(
+      color: colors.contentSecondary,
+    );
     var leading = switch (widget.leading) {
       TrackRowIndex(:final number) => Text(
         '$number',
@@ -390,13 +403,8 @@ class _TrackRowState extends ConsumerState<TrackRow> {
       like: onToggleLike == null
           ? null
           : LikeButton(liked: widget.liked, onToggle: onToggleLike),
-      duration: Text(
-        formatTrackDuration(widget.duration),
-        maxLines: 1,
-        style: typography.caption.tabular.copyWith(
-          color: colors.contentSecondary,
-        ),
-      ),
+      duration: Text(durationText, maxLines: 1, style: durationStyle),
+      durationWidth: _textWidth(context, durationText, durationStyle),
       overflow: onMenu == null ? null : _OverflowButton(onMenu: onMenu),
     );
 
@@ -675,14 +683,36 @@ String spokenTrackDuration(AppLocalizations l10n, Duration duration) {
   ].join(' ');
 }
 
+/// The width of [text] in [style] as a [Text] in [context] draws it.
+double _textWidth(BuildContext context, String text, TextStyle style) {
+  final painter = TextPainter(
+    text: TextSpan(
+      text: text,
+      style: DefaultTextStyle.of(context).style.merge(style),
+    ),
+    textDirection: Directionality.of(context),
+    textScaler: MediaQuery.textScalerOf(context),
+    locale: Localizations.maybeLocaleOf(context),
+    maxLines: 1,
+  )..layout();
+  final width = painter.width;
+  painter.dispose();
+  return width;
+}
+
 /// The columns of a track row, shared by [TrackRow] and
 /// [TrackRowSkeleton] so both have the same height.
+///
+/// The duration column is [durationWidth] wide. The [like] slot is left
+/// out where it would leave the title and artist column less than
+/// [TrackRow.minTitleFraction] of the row.
 class _RowLayout extends StatelessWidget {
   const new({
     required this.withThumbnail,
     required this.leading,
     required this.titleAndArtist,
     required this.duration,
+    required this.durationWidth,
     this.album,
     this.download,
     this.like,
@@ -696,21 +726,55 @@ class _RowLayout extends StatelessWidget {
   final Widget? download;
   final Widget? like;
   final Widget duration;
+  final double durationWidth;
   final Widget? overflow;
 
   /// The width of the index column.
   static const double _indexWidth = 32;
-
-  /// The width of the duration column at text scale 1.0.
-  static const double _durationWidth = 56;
 
   @override
   Widget build(BuildContext context) {
     final scaler = MediaQuery.textScalerOf(context);
     final album = this.album;
     final download = this.download;
-    final like = this.like;
     final overflow = this.overflow;
+    final target = usesPointerInput() ? Sizes.pointerTarget : Sizes.touchTarget;
+    final leadingWidth = withThumbnail
+        ? TrackRow.thumbnailSize
+        : scaler.scale(_indexWidth);
+    // Everything but the title, artist, album and like columns.
+    final fixed =
+        2 * Spacing.x8 +
+        leadingWidth +
+        Spacing.x12 +
+        Spacing.x16 +
+        durationWidth +
+        (overflow == null ? 0 : Spacing.x4 + target);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        var like = this.like;
+        if (like != null && width.isFinite) {
+          final flexible = width - fixed - Spacing.x8 - target;
+          final title = album == null
+              ? flexible
+              : (flexible - Spacing.x16) * 3 / 5;
+          if (title < width * TrackRow.minTitleFraction) like = null;
+        }
+        return _row(scaler, leading, album, download, like, overflow, target);
+      },
+    );
+  }
+
+  Widget _row(
+    TextScaler scaler,
+    Widget leading,
+    Widget? album,
+    Widget? download,
+    Widget? like,
+    Widget? overflow,
+    double target,
+  ) {
     return ConstrainedBox(
       constraints: BoxConstraints(
         minHeight: withThumbnail ? Sizes.trackRow : Sizes.albumTrackRow,
@@ -733,10 +797,13 @@ class _RowLayout extends StatelessWidget {
               Expanded(flex: 2, child: album),
             ],
             ?download,
-            if (like != null) ...[const SizedBox(width: Spacing.x8), like],
+            if (like != null) ...[
+              const SizedBox(width: Spacing.x8),
+              SizedBox.square(dimension: target, child: like),
+            ],
             const SizedBox(width: Spacing.x16),
             SizedBox(
-              width: scaler.scale(_durationWidth),
+              width: durationWidth,
               child: Align(
                 alignment: AlignmentDirectional.centerEnd,
                 heightFactor: 1,
@@ -835,6 +902,11 @@ class TrackRowSkeleton extends StatelessWidget {
           ],
         ),
         duration: bar(line(typography.caption), 0.7),
+        durationWidth: _textWidth(
+          context,
+          formatTrackDuration(Duration.zero),
+          typography.caption.tabular,
+        ),
       ),
     );
   }
