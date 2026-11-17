@@ -33,4 +33,8 @@ abstract interface class LibraryRepository {
 
   /// The liked tracks, newest first, in pages of [listPageSize].
   PagedSource<Track> likedTracks();
+
+  /// Library tracks in an order the server shuffled, for "Shuffle all";
+  /// read from the network every time, never cached.
+  Future<List<Track>> shuffledTracks();
 }

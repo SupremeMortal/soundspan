@@ -12,6 +12,7 @@ import 'package:soundspan_api/soundspan_api.dart' show ServerError;
 
 import '../../helpers/fake_repositories.dart';
 import '../../helpers/guidelines.dart';
+import '../../helpers/play_rig.dart';
 import '../../helpers/pump_app.dart';
 import '../detail_fixtures.dart';
 
@@ -177,7 +178,80 @@ void main() {
       findsNWidgets(find.byType(LikeButton).evaluate().length),
     );
     expect(find.byType(TextField), findsNothing);
-    expect(_rows(tester).every((row) => row.onTap == null), isTrue);
+  });
+
+  for (final owner in [false, true]) {
+    testWidgets('tapping a row plays the playable items from it '
+        '(owner: $owner)', (tester) async {
+      final rig = PlayRig();
+      await pumpDetail(
+        tester,
+        _screen,
+        repositories: _playlist([
+          _item(1),
+          _item(2, playable: false, message: 'Gone'),
+          _item(3),
+          _item(4),
+        ], isOwner: owner),
+        overrides: rig.overrides,
+      );
+
+      await tester.tap(find.text('Song 1.3'));
+      await rig.settle(tester);
+
+      expect(rig.queued, ['p-1-1', 'p-1-3', 'p-1-4']);
+      expect(rig.current, 'p-1-3');
+      expect(
+        rig.context,
+        const QueueContext(
+          kind: QueueContextKind.playlist,
+          id: 'pl-1',
+          title: 'Road Trip',
+        ),
+      );
+      await rig.close(tester);
+    });
+  }
+
+  testWidgets('an unplayable item does nothing on tap', (tester) async {
+    final rig = PlayRig();
+    await pumpDetail(
+      tester,
+      _screen,
+      repositories: _playlist([_item(1), _item(2, playable: false)]),
+      overrides: rig.overrides,
+    );
+
+    await tester.tap(find.text('Song 1.2'), warnIfMissed: false);
+    await rig.settle(tester);
+
+    expect(rig.queued, isEmpty);
+    await rig.close(tester);
+  });
+
+  testWidgets('a Liked Songs row plays the loaded liked tracks from it', (
+    tester,
+  ) async {
+    final rig = PlayRig();
+    final repositories = FakeRepositories();
+    repositories.library.likedList = [
+      for (var n = 1; n <= 3; n++) fixtureTrack(n),
+    ];
+    await pumpDetail(
+      tester,
+      const PlaylistScreen(playlistId: likedPlaylistId),
+      repositories: repositories,
+      overrides: rig.overrides,
+    );
+
+    await tester.tap(find.text('Song 1.2'));
+    await rig.settle(tester);
+
+    expect(rig.queued, ['p-1-1', 'p-1-2', 'p-1-3']);
+    expect(rig.current, 'p-1-2');
+    expect(rig.context?.kind, QueueContextKind.playlist);
+    expect(rig.context?.id, likedPlaylistId);
+    await rig.close(tester);
   });
 
   testWidgets('an empty playlist shows an empty state', (tester) async {

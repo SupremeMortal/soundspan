@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:soundspan/app/router/routes.dart';
 import 'package:soundspan/features/library/ui/library_controls.dart';
+import 'package:soundspan/features/library/ui/songs_tab.dart';
 import 'package:soundspan/shared/domain/domain.dart';
 import 'package:soundspan/shared/providers/likes.dart';
 import 'package:soundspan/shared/widgets/artwork.dart';
@@ -17,6 +18,7 @@ import 'package:soundspan_api/soundspan_api.dart' show ServerError;
 
 import '../../helpers/fake_repositories.dart';
 import '../../helpers/guidelines.dart';
+import '../../helpers/play_rig.dart';
 import '../../helpers/pump_app.dart';
 import 'library_harness.dart';
 
@@ -84,15 +86,66 @@ void main() {
     expect(tester.widget<TrackRow>(row('Song 0')).enabled, isTrue);
   });
 
-  testWidgets('rows do nothing on tap', (tester) async {
+  testWidgets('tapping a row plays the loaded rows from that row', (
+    tester,
+  ) async {
+    final rig = PlayRig();
     final harness = await tester.pumpLibrary(
       tab: LibraryTab.songs,
-      library: library(20),
+      library: library(150, unplayable: {1}),
+      overrides: rig.overrides,
     );
-    expect(tester.widget<TrackRow>(row('Song 2')).onTap, isNull);
+    final loaded = harness.sources.single.total;
+    expect(loaded, 150);
+
     await tester.tap(find.text('Song 2'));
-    await tester.pumpAndSettle();
+    await rig.settle(tester);
+
+    // Page 0 (100 rows) and the page ahead are loaded; row 1 is unplayable.
+    expect(rig.queued, [
+      for (var i = 0; i < 150; i++)
+        if (i != 1) 'p$i',
+    ]);
+    expect(rig.current, 'p2');
+    expect(rig.context, const QueueContext(kind: QueueContextKind.library));
     expect(harness.location, '/library/songs');
+    await rig.close(tester);
+  });
+
+  testWidgets('an unplayable row does nothing on tap', (tester) async {
+    final rig = PlayRig();
+    await tester.pumpLibrary(
+      tab: LibraryTab.songs,
+      library: library(20, unplayable: {2}),
+      overrides: rig.overrides,
+    );
+
+    await tester.tap(find.text('Song 2'), warnIfMissed: false);
+    await rig.settle(tester);
+
+    expect(rig.queued, isEmpty);
+    await rig.close(tester);
+  });
+
+  testWidgets('Shuffle all plays the server shuffled list with shuffle off', (
+    tester,
+  ) async {
+    final rig = PlayRig();
+    final repository = library(20)..shuffledList = [track(7), track(3)];
+    await tester.pumpLibrary(
+      tab: LibraryTab.songs,
+      library: repository,
+      overrides: rig.overrides,
+    );
+
+    await tester.tap(find.byKey(SongsTab.shuffleAllKey));
+    await rig.settle(tester);
+
+    expect(rig.queued, ['p7', 'p3']);
+    expect(rig.current, 'p7');
+    expect(rig.controller.snapshot.queue.isShuffled, isFalse);
+    expect(repository.readCount('shuffledTracks'), 1);
+    await rig.close(tester);
   });
 
   testWidgets('empty, error and refresh-error states', (tester) async {

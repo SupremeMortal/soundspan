@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:soundspan/app/l10n/generated/app_localizations.dart';
@@ -8,6 +10,7 @@ import 'package:soundspan/features/library/ui/library_controls.dart';
 import 'package:soundspan/features/library/ui/library_queries.dart';
 import 'package:soundspan/features/library/ui/paged_media_grid.dart';
 import 'package:soundspan/shared/domain/domain.dart';
+import 'package:soundspan/shared/providers/play_actions.dart';
 import 'package:soundspan/shared/widgets/media_card.dart';
 
 /// The localized name of an albums order.
@@ -18,7 +21,8 @@ String albumSortLabel(AppLocalizations l10n, AlbumSort sort) => switch (sort) {
 };
 
 /// The Albums tab: the library's albums as a paged grid of square cards
-/// that open the album (doc 09, Library).
+/// that open the album, and play it from their play button (doc 09,
+/// Library).
 class AlbumsTab extends ConsumerWidget {
   /// Creates the tab.
   const new({super.key});
@@ -51,6 +55,8 @@ class AlbumsTab extends ConsumerWidget {
         subtitle: album.artistName,
         artworkRef: album.artworkRef,
         onTap: () => DetailNavigation.openAlbum(context, album.id),
+        onPlay: () =>
+            unawaited(ref.read(playActionsProvider).playAlbum(album.id)),
       ),
     );
   }

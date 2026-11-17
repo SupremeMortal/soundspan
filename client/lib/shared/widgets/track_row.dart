@@ -1,13 +1,17 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 
 import 'package:flutter/semantics.dart' show CustomSemanticsAction;
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:soundspan/app/l10n/generated/app_localizations.dart';
 import 'package:soundspan/app/theme/dimens.dart';
 import 'package:soundspan/app/theme/extensions.dart';
 import 'package:soundspan/app/theme/typography.dart';
+import 'package:soundspan/shared/domain/playback_id.dart';
+import 'package:soundspan/shared/providers/now_playing.dart';
 import 'package:soundspan/shared/util/duration_format.dart';
 import 'package:soundspan/shared/widgets/artwork.dart';
+import 'package:soundspan/shared/widgets/equaliser_bars.dart';
 import 'package:soundspan/shared/widgets/like_button.dart';
 
 /// What a [TrackRow] starts with: the track's number or its cover.
@@ -48,8 +52,15 @@ final class TrackRowThumbnail extends TrackRowLeading {
 /// Hover draws `surfaceHover`, [selected] `surfaceActive`, keyboard focus a
 /// 2 px `brand` ring. A disabled row is drawn at 40 % opacity, ignores taps
 /// and gives [disabledReason] as its tooltip. Screen readers get one node,
-/// "title, artist, spoken duration[, reason]", which is a button only when
-/// [onTap] is set and the row is enabled.
+/// "title, artist, spoken duration[, reason]", which is a button with the
+/// hint "Play" only when [onTap] is set and the row is enabled.
+///
+/// With a [playbackId], the row marks itself while that track is the
+/// queue's current item ([nowPlayingProvider]): [EqualiserBars] in `brand`
+/// in place of the index or over the thumbnail, moving only while it plays
+/// and motion is allowed, a `brand` title, and "playing" or "paused" read
+/// last. Only those small parts watch playback; the row itself takes plain
+/// values and does not rebuild when playback changes.
 ///
 /// With [onToggleLike], a [LikeButton] showing [liked] sits before the
 /// duration and the node gains a "Like" or "Remove like" custom action;
@@ -69,8 +80,13 @@ class TrackRow extends StatefulWidget {
     this.selected = false,
     this.liked = false,
     this.onToggleLike,
+    this.playbackId,
     super.key,
   });
+
+  /// The track's playback id, which marks the row while that track is
+  /// current; null never marks it.
+  final PlaybackId? playbackId;
 
   /// The track title, in `body`.
   final String title;
@@ -114,6 +130,9 @@ class TrackRow extends StatefulWidget {
 
   /// The key of the focus ring while it is shown.
   static const Key focusRingKey = ValueKey('TrackRow.focusRing');
+
+  /// The key of the equaliser bars of the playing row.
+  static const Key playingIndicatorKey = ValueKey('TrackRow.playing');
 
   /// The key of the box that draws the hover and selection fill.
   static const Key backgroundKey = ValueKey('TrackRow.background');
@@ -176,32 +195,45 @@ class _TrackRowState extends State<TrackRow> {
     }
 
     final album = widget.album;
+    final playbackId = widget.playbackId;
+    var leading = switch (widget.leading) {
+      TrackRowIndex(:final number) => Text(
+        '$number',
+        maxLines: 1,
+        textAlign: TextAlign.end,
+        style: typography.caption.tabular.copyWith(color: colors.contentMuted),
+      ),
+      TrackRowThumbnail(:final artworkRef) => Artwork(
+        ref: artworkRef,
+        size: TrackRow.thumbnailSize,
+      ),
+    };
+    Widget title = Text(
+      widget.title,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: typography.body.copyWith(color: colors.content),
+    );
+    if (playbackId != null) {
+      leading = _PlayingLeading(
+        playbackId: playbackId,
+        overThumbnail: withThumbnail,
+        child: leading,
+      );
+      title = _PlayingTitle(
+        playbackId: playbackId,
+        title: widget.title,
+        child: title,
+      );
+    }
     Widget content = _RowLayout(
       withThumbnail: withThumbnail,
-      leading: switch (widget.leading) {
-        TrackRowIndex(:final number) => Text(
-          '$number',
-          maxLines: 1,
-          textAlign: TextAlign.end,
-          style: typography.caption.tabular.copyWith(
-            color: colors.contentMuted,
-          ),
-        ),
-        TrackRowThumbnail(:final artworkRef) => Artwork(
-          ref: artworkRef,
-          size: TrackRow.thumbnailSize,
-        ),
-      },
+      leading: leading,
       titleAndArtist: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            widget.title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: typography.body.copyWith(color: colors.content),
-          ),
+          title,
           if (widget.artist.isNotEmpty)
             Text(
               widget.artist,
@@ -267,10 +299,11 @@ class _TrackRowState extends State<TrackRow> {
       }
     }
 
-    return Semantics(
+    Widget semantics(String label, Widget child) => Semantics(
       container: true,
       button: onTap != null,
       label: label,
+      hint: onTap != null ? l10n.trackRowPlayHint : null,
       excludeSemantics: true,
       onTap: onTap,
       customSemanticsActions: onToggleLike == null
@@ -282,29 +315,148 @@ class _TrackRowState extends State<TrackRow> {
                     : l10n.likeButtonLike,
               ): onToggleLike,
             },
-      child: FocusableActionDetector(
-        enabled: onTap != null,
-        mouseCursor: onTap != null
-            ? SystemMouseCursors.click
-            : MouseCursor.defer,
-        onShowFocusHighlight: (value) => setState(() => _focused = value),
-        actions: {
-          ActivateIntent: CallbackAction<ActivateIntent>(
-            onInvoke: (_) => onTap?.call(),
-          ),
-        },
-        child: MouseRegion(
-          onEnter: (_) => setState(() => _hovered = true),
-          onExit: (_) => setState(() => _hovered = false),
-          child: GestureDetector(
-            onTap: onTap,
-            behavior: HitTestBehavior.opaque,
-            child: content,
-          ),
+      child: child,
+    );
+
+    final interactive = FocusableActionDetector(
+      enabled: onTap != null,
+      mouseCursor: onTap != null ? SystemMouseCursors.click : MouseCursor.defer,
+      onShowFocusHighlight: (value) => setState(() => _focused = value),
+      actions: {
+        ActivateIntent: CallbackAction<ActivateIntent>(
+          onInvoke: (_) => onTap?.call(),
+        ),
+      },
+      child: MouseRegion(
+        onEnter: (_) => setState(() => _hovered = true),
+        onExit: (_) => setState(() => _hovered = false),
+        child: GestureDetector(
+          onTap: onTap,
+          behavior: HitTestBehavior.opaque,
+          child: content,
         ),
       ),
     );
+    if (playbackId == null) return semantics(label, interactive);
+    return _PlayingSemantics(
+      playbackId: playbackId,
+      builder: (state) => semantics(switch (state) {
+        _PlayingState.none => label,
+        _PlayingState.playing => '$label, ${l10n.trackRowPlaying}',
+        _PlayingState.paused => '$label, ${l10n.trackRowPaused}',
+      }, interactive),
+      child: interactive,
+    );
   }
+}
+
+/// Whether a row's track is current, and if so whether it plays.
+enum _PlayingState {
+  /// Another item, or none, is current.
+  none,
+
+  /// The track is current and playing.
+  playing,
+
+  /// The track is current and paused.
+  paused,
+}
+
+/// The [_PlayingState] of [playbackId], watched through one `select`.
+_PlayingState _watchState(WidgetRef ref, PlaybackId playbackId) => ref.watch(
+  nowPlayingProvider.select((now) {
+    if (now.playbackId != playbackId) return _PlayingState.none;
+    return now.playing ? _PlayingState.playing : _PlayingState.paused;
+  }),
+);
+
+/// The row's leading [child], or the equaliser bars in its place (over it
+/// for a thumbnail) while [playbackId] is current.
+class _PlayingLeading extends ConsumerWidget {
+  const new({
+    required this.playbackId,
+    required this.overThumbnail,
+    required this.child,
+  });
+
+  final PlaybackId playbackId;
+  final bool overThumbnail;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = _watchState(ref, playbackId);
+    if (state == _PlayingState.none) return child;
+    final colors = context.colors;
+    final bars = EqualiserBars(
+      key: TrackRow.playingIndicatorKey,
+      color: colors.brand,
+      animate:
+          state == _PlayingState.playing &&
+          !MediaQuery.disableAnimationsOf(context),
+    );
+    if (!overThumbnail) {
+      return Align(alignment: AlignmentDirectional.centerEnd, child: bars);
+    }
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        child,
+        Positioned.fill(
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: colors.scrim,
+              borderRadius: BorderRadius.circular(Radii.small),
+            ),
+          ),
+        ),
+        bars,
+      ],
+    );
+  }
+}
+
+/// The row's title [child], redrawn in `brand` while [playbackId] is
+/// current.
+class _PlayingTitle extends ConsumerWidget {
+  const new({
+    required this.playbackId,
+    required this.title,
+    required this.child,
+  });
+
+  final PlaybackId playbackId;
+  final String title;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (_watchState(ref, playbackId) == _PlayingState.none) return child;
+    return Text(
+      title,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: context.typography.body.copyWith(color: context.colors.brand),
+    );
+  }
+}
+
+/// The row's semantics node, rebuilt by [builder] only when the
+/// [_PlayingState] of [playbackId] changes; [child] is kept.
+class _PlayingSemantics extends ConsumerWidget {
+  const new({
+    required this.playbackId,
+    required this.builder,
+    required this.child,
+  });
+
+  final PlaybackId playbackId;
+  final Widget Function(_PlayingState state) builder;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) =>
+      builder(_watchState(ref, playbackId));
 }
 
 /// [duration] as a screen reader says it: "3 minutes 41 seconds",

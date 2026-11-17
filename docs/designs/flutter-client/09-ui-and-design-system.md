@@ -99,7 +99,7 @@ Elevation is expressed by surface colour in dark and by a soft shadow (0 2 12, 8
 
 ## Icons
 
-Material Symbols (Rounded, weight 500), bundled with Flutter's icon font so they tree-shake. The web UI uses Lucide; the two sets are close enough in stroke style that screens look related, and Material Symbols has the media glyphs the player needs. Custom glyphs (logo mark, equaliser bars for "now playing") are SVG assets.
+Material Symbols (Rounded, weight 500), bundled with Flutter's icon font so they tree-shake. The web UI uses Lucide; the two sets are close enough in stroke style that screens look related, and Material Symbols has the media glyphs the player needs. The logo mark is an SVG asset; the "now playing" equaliser bars (`EqualiserBars`) are painted in code so they can move.
 
 ## Components
 

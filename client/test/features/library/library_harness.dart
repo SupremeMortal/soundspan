@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
@@ -129,7 +130,8 @@ GoRouter libraryRouter(LibraryTab tab) {
 extension PumpLibrary on WidgetTester {
   /// Pumps the library routes at [tab] in a window of [size], over
   /// [library] and [playlists] (new empty fakes by default) and a server
-  /// with [federation]. [settle] false pumps one frame instead of settling.
+  /// with [federation], with [overrides] last. [settle] false pumps one
+  /// frame instead of settling.
   Future<LibraryHarness> pumpLibrary({
     LibraryTab tab = LibraryTab.albums,
     FakeLibraryRepository? library,
@@ -140,6 +142,7 @@ extension PumpLibrary on WidgetTester {
     ThemeMode theme = ThemeMode.dark,
     double textScale = 1.0,
     FakeReachability? reachability,
+    List<Override> overrides = const [],
   }) async {
     library ??= FakeLibraryRepository();
     playlists ??= FakePlaylistRepository();
@@ -163,6 +166,7 @@ extension PumpLibrary on WidgetTester {
           reachability ?? FakeReachability(),
         ),
         activeProfileIdProvider.overrideWithBuild((ref, notifier) => null),
+        ...overrides,
       ],
     );
     if (settle) {

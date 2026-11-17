@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 
+import 'package:flutter/gestures.dart' show PointerDeviceKind;
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
@@ -28,6 +29,7 @@ import '../../helpers/fake_clock.dart';
 import '../../helpers/fake_reachability.dart';
 import '../../helpers/fake_repositories.dart';
 import '../../helpers/guidelines.dart';
+import '../../helpers/play_rig.dart';
 import '../../helpers/pump_app.dart';
 
 /// Capabilities fixed for a test.
@@ -170,6 +172,7 @@ void main() {
     VersionNotice? notice,
     FakeClock? clock,
     bool settle = true,
+    List<Override> extra = const [],
   }) async {
     final router = GoRouter(
       initialLocation: '/home',
@@ -196,6 +199,7 @@ void main() {
       profilesProvider.overrideWith((ref) => Stream.value(const <Profile>[])),
       initialActiveProfileIdProvider.overrideWithValue(null),
       reachabilityProvider.overrideWithValue(reachability),
+      ...extra,
     ];
     await tester.pumpApp(
       WindowClassScope(
@@ -336,6 +340,55 @@ void main() {
     await tester.pumpAndSettle();
     expect(location(router), '/playlist/pl1');
   });
+
+  for (final (title, id) in [('Road trip', 'pl1'), ('Liked Songs', 'liked')]) {
+    testWidgets('the play button of the $title card plays it', (tester) async {
+      final rig = PlayRig();
+      repositories.playlists.playlistDetails['pl1'] = PlaylistDetail(
+        summary: repositories.playlists.playlistList.single,
+        items: [
+          for (var n = 0; n < 3; n++)
+            PlaylistItem(
+              id: 'i$n',
+              sort: n,
+              track: Track(
+                meta: TrackMeta(
+                  title: 'Song $n',
+                  artist: 'Band',
+                  album: 'Record',
+                  durationSec: 100,
+                ),
+                playbackId: PlaybackId('pl-$n'),
+              ),
+              isPlayable: true,
+            ),
+        ],
+      );
+      repositories.library.likedList = [
+        for (final item
+            in repositories.playlists.playlistDetails['pl1']!.items.reversed)
+          item.track,
+      ];
+      await pump(tester, size: const Size(1440, 2400), extra: rig.overrides);
+
+      final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
+      addTearDown(gesture.removePointer);
+      await gesture.addPointer(location: tester.getCenter(card(title)));
+      await tester.pump();
+      await tester.tap(
+        find.descendant(of: card(title), matching: find.byTooltip('Play')),
+      );
+      await rig.settle(tester);
+
+      expect(
+        rig.queued,
+        id == 'pl1' ? ['pl-0', 'pl-1', 'pl-2'] : ['pl-2', 'pl-1', 'pl-0'],
+      );
+      expect(rig.context?.kind, QueueContextKind.playlist);
+      expect(rig.context?.id, id);
+      await rig.close(tester);
+    });
+  }
 
   testWidgets('Your Playlists Show all goes to /library/playlists', (
     tester,

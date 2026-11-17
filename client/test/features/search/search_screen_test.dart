@@ -23,6 +23,7 @@ import 'package:soundspan_api/soundspan_api.dart' show Offline, Upstream;
 import '../../helpers/fake_clock.dart';
 import '../../helpers/fake_repositories.dart';
 import '../../helpers/guidelines.dart';
+import '../../helpers/play_rig.dart';
 import '../../helpers/pump_app.dart';
 
 Track _track(String title, {String? playbackId, String artist = 'Miles'}) =>
@@ -148,6 +149,7 @@ void main() {
     Size size = _tallCompact,
     ThemeMode theme = ThemeMode.dark,
     double textScale = 1.0,
+    List<Override> extra = const [],
   }) async {
     final router = GoRouter(
       initialLocation: initial,
@@ -199,6 +201,7 @@ void main() {
       searchHistoryStoreProvider.overrideWithValue(history),
       profilesProvider.overrideWith((ref) => Stream.value(const <Profile>[])),
       initialActiveProfileIdProvider.overrideWithValue(null),
+      ...extra,
     ];
     await tester.pumpApp(
       WindowClassScope(
@@ -392,24 +395,77 @@ void main() {
     expect(await recent(tester), ['miles']);
   });
 
-  testWidgets('song rows do nothing on tap', (tester) async {
-    search().results['blue'] = SearchResults(
-      library: LibrarySearchResults(
-        tracks: [
-          _track('Blue in Green', playbackId: 'pb1'),
-          _track('Blue Train', playbackId: 'pb2'),
-          _track('Blue Moon'),
-        ],
-      ),
-    );
-    await pump(tester, initial: '/search?q=blue', size: const Size(1440, 2400));
+  void seedBlue() => search().results['blue'] = SearchResults(
+    library: LibrarySearchResults(
+      tracks: [
+        _track('Blue in Green', playbackId: 'pb1'),
+        _track('Blue Train', playbackId: 'pb2'),
+        _track('Blue Moon'),
+        _track('Blue Bossa', playbackId: 'pb4'),
+      ],
+    ),
+  );
 
-    expect(tester.widget<TrackRow>(row('Blue Train')).onTap, isNull);
+  testWidgets('a song row plays the Songs section from that song', (
+    tester,
+  ) async {
+    seedBlue();
+    final rig = PlayRig();
+    await pump(
+      tester,
+      initial: '/search?q=blue',
+      size: const Size(1440, 2400),
+      extra: rig.overrides,
+    );
+
     expect(tester.widget<TrackRow>(row('Blue Moon')).enabled, isFalse);
     expect(
       tester.widget<TrackRow>(row('Blue Moon')).disabledReason,
       'Not playable',
     );
+    await tester.tap(find.text('Blue Bossa'));
+    await rig.settle(tester);
+
+    // Blue in Green is the top result, not repeated in Songs.
+    expect(rig.queued, ['pb2', 'pb4']);
+    expect(rig.current, 'pb4');
+    expect(rig.context, const QueueContext(kind: QueueContextKind.search));
+    await rig.close(tester);
+  });
+
+  testWidgets('an unplayable song row does nothing on tap', (tester) async {
+    seedBlue();
+    final rig = PlayRig();
+    await pump(
+      tester,
+      initial: '/search?q=blue',
+      size: const Size(1440, 2400),
+      extra: rig.overrides,
+    );
+
+    await tester.tap(find.text('Blue Moon'), warnIfMissed: false);
+    await rig.settle(tester);
+
+    expect(rig.queued, isEmpty);
+    await rig.close(tester);
+  });
+
+  testWidgets('the top result song plays that song alone', (tester) async {
+    seedBlue();
+    final rig = PlayRig();
+    await pump(
+      tester,
+      initial: '/search?q=blue',
+      size: const Size(1440, 2400),
+      extra: rig.overrides,
+    );
+
+    await tester.tap(find.text('Blue in Green'));
+    await rig.settle(tester);
+
+    expect(rig.queued, ['pb1']);
+    expect(rig.context?.kind, QueueContextKind.search);
+    await rig.close(tester);
   });
 
   testWidgets('no results shows the empty state with the query', (

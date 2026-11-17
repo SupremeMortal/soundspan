@@ -51,23 +51,15 @@ class _ErrorViewState extends ConsumerState<ErrorView> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final (IconData icon, String message, bool retry) = switch (widget.error) {
-      Unauthenticated() => (Icons.lock_outline_rounded, '', false),
-      Offline() => (Icons.cloud_off_rounded, l10n.errorViewOffline, true),
-      FeatureDisabled() => (
-        Icons.block_rounded,
-        l10n.errorViewFeatureDisabled,
-        false,
-      ),
-      RateLimited() => (
-        Icons.hourglass_empty_rounded,
-        l10n.errorViewRateLimited,
-        true,
-      ),
-      ServerError() ||
-      Upstream() => (Icons.dns_rounded, l10n.errorViewServerProblem, true),
-      NotFound() => (Icons.search_off_rounded, l10n.errorViewNotFound, false),
-      _ => (Icons.error_outline_rounded, l10n.errorViewGeneric, true),
+    final message = errorMessageOf(l10n, widget.error);
+    final (IconData icon, bool retry) = switch (widget.error) {
+      Unauthenticated() => (Icons.lock_outline_rounded, false),
+      Offline() => (Icons.cloud_off_rounded, true),
+      FeatureDisabled() => (Icons.block_rounded, false),
+      RateLimited() => (Icons.hourglass_empty_rounded, true),
+      ServerError() || Upstream() => (Icons.dns_rounded, true),
+      NotFound() => (Icons.search_off_rounded, false),
+      _ => (Icons.error_outline_rounded, true),
     };
     if (widget.error is Unauthenticated) return const SizedBox.shrink();
     final onRetry = widget.onRetry;
@@ -79,3 +71,17 @@ class _ErrorViewState extends ConsumerState<ErrorView> {
     );
   }
 }
+
+/// The sentence the user sees for [error], as [ErrorView] and the error
+/// snackbars show it (doc 02, Error Model); empty for `Unauthenticated`,
+/// which shows nothing. The server's text and the exception's `toString()`
+/// are never used.
+String errorMessageOf(AppLocalizations l10n, Object error) => switch (error) {
+  Unauthenticated() => '',
+  Offline() => l10n.errorViewOffline,
+  FeatureDisabled() => l10n.errorViewFeatureDisabled,
+  RateLimited() => l10n.errorViewRateLimited,
+  ServerError() || Upstream() => l10n.errorViewServerProblem,
+  NotFound() => l10n.errorViewNotFound,
+  _ => l10n.errorViewGeneric,
+};

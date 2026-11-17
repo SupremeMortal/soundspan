@@ -1017,6 +1017,32 @@
   "@trackNotPlayable": {
     "description": "Tooltip and accessibility reason of a track row that cannot be played."
   },
+  "trackRowPlayHint": "Play",
+  "@trackRowPlayHint": {
+    "description": "Accessibility hint of a track row: activating it plays the track within its list."
+  },
+  "trackRowPlaying": "playing",
+  "@trackRowPlaying": {
+    "description": "Read last in the accessibility label of the track row that is the current queue item while it plays."
+  },
+  "trackRowPaused": "paused",
+  "@trackRowPaused": {
+    "description": "Read last in the accessibility label of the track row that is the current queue item while it is paused."
+  },
+  "playQueueTruncated": "Only the first {count} songs were queued",
+  "@playQueueTruncated": {
+    "description": "Snackbar after playing or queueing more songs than the queue holds; count is the most it holds (5,000).",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "librarySongsShuffleAll": "Shuffle all",
+  "@librarySongsShuffleAll": {
+    "description": "Button above the Library Songs list that plays the whole library in a random order."
+  },
   "albumOverline": "Album",
   "@albumOverline": {
     "description": "Type label above the title of an album page."

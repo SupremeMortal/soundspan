@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 
+import 'dart:async';
+
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -18,6 +20,7 @@ import 'package:soundspan/features/home/ui/expiry_banner.dart';
 import 'package:soundspan/features/home/ui/home_view_model.dart';
 import 'package:soundspan/shared/clock.dart';
 import 'package:soundspan/shared/domain/domain.dart';
+import 'package:soundspan/shared/providers/play_actions.dart';
 import 'package:soundspan/shared/widgets/app_banner.dart';
 import 'package:soundspan/shared/widgets/artwork.dart';
 import 'package:soundspan/shared/widgets/empty_state.dart';
@@ -238,6 +241,9 @@ class _ShelfSlotState extends ConsumerState<_ShelfSlot> {
           artworkRef: null,
           mosaicRefs: playlist.coverRefs,
           onTap: () => DetailNavigation.openPlaylist(context, playlist.id),
+          onPlay: () => unawaited(
+            ref.read(playActionsProvider).playPlaylist(playlist.id),
+          ),
         ),
         onShowAll: () =>
             GoRouter.of(context)
@@ -273,7 +279,15 @@ class _ShelfSlotState extends ConsumerState<_ShelfSlot> {
               title: l10n.homeLikedSongs,
               subtitle: l10n.homeLikedSongsSubtitle,
               artworkRef: null,
-              onTap: () => DetailNavigation.openPlaylist(context, 'liked'),
+              onTap: () => DetailNavigation.openPlaylist(
+                context,
+                PlayActions.likedPlaylistId,
+              ),
+              onPlay: () => unawaited(
+                ref
+                    .read(playActionsProvider)
+                    .playPlaylist(PlayActions.likedPlaylistId),
+              ),
             );
           }
           final mix = items[index - 1];

@@ -2,6 +2,7 @@
 
 import 'dart:async';
 
+import 'package:flutter/gestures.dart' show PointerDeviceKind;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:soundspan/features/album/album.dart';
@@ -13,6 +14,7 @@ import 'package:soundspan_api/soundspan_api.dart' show ServerError;
 
 import '../../helpers/fake_repositories.dart';
 import '../../helpers/guidelines.dart';
+import '../../helpers/play_rig.dart';
 import '../../helpers/pump_app.dart';
 import '../detail_fixtures.dart';
 
@@ -169,16 +171,90 @@ void main() {
     expect(rows[1].disabledReason, 'Not playable');
   });
 
-  testWidgets('rows do nothing on tap', (tester) async {
+  testWidgets('tapping a row plays the album from that track', (tester) async {
+    final rig = PlayRig();
+    await pumpDetail(
+      tester,
+      _screen,
+      repositories: albumRepositories([
+        fixtureTrack(1),
+        fixtureTrack(2),
+        fixtureTrack(1, disc: 2),
+      ]),
+      overrides: rig.overrides,
+    );
+
+    await tester.tap(find.text('Song 1.2'));
+    await rig.settle(tester);
+
+    expect(rig.queued, ['p-1-1', 'p-1-2', 'p-2-1']);
+    expect(rig.current, 'p-1-2');
+    expect(rig.controller.snapshot.playing, isTrue);
+    expect(
+      rig.context,
+      const QueueContext(
+        kind: QueueContextKind.album,
+        id: 'al-1',
+        title: 'Album al-1',
+      ),
+    );
+    await rig.close(tester);
+  });
+
+  testWidgets('an unplayable row does nothing on tap', (tester) async {
+    final rig = PlayRig();
     final router = await pumpDetail(
       tester,
       _screen,
-      repositories: albumRepositories([fixtureTrack(1)]),
+      repositories: albumRepositories([
+        fixtureTrack(1),
+        fixtureTrack(2, playable: false),
+      ]),
+      overrides: rig.overrides,
     );
-    expect(_rows(tester).every((row) => row.onTap == null), isTrue);
-    await tester.tap(find.text('Song 1.1'));
-    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Song 1.2'), warnIfMissed: false);
+    await rig.settle(tester);
+
+    expect(rig.queued, isEmpty);
     expect(router.state.uri.path, '/detail');
+    await rig.close(tester);
+  });
+
+  testWidgets('a card of More by this artist plays its album', (tester) async {
+    final rig = PlayRig();
+    final repositories = albumRepositories(
+      [fixtureTrack(1)],
+      others: [fixtureAlbum('al-2')],
+    );
+    repositories.library.albumDetails['al-2'] = AlbumDetail(
+      album: fixtureAlbum('al-2'),
+      tracks: [fixtureTrack(7), fixtureTrack(8)],
+      owned: true,
+    );
+    await pumpDetail(
+      tester,
+      _screen,
+      size: TestSizes.expanded,
+      repositories: repositories,
+      overrides: rig.overrides,
+    );
+
+    final card = find.ancestor(
+      of: find.text('Album al-2'),
+      matching: find.byType(MediaCard),
+    );
+    final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    addTearDown(gesture.removePointer);
+    await gesture.addPointer(location: tester.getCenter(card));
+    await tester.pump();
+    await tester.tap(find.byTooltip('Play'));
+    await rig.settle(tester);
+
+    expect(rig.queued, ['p-1-7', 'p-1-8']);
+    expect(rig.context?.kind, QueueContextKind.album);
+    expect(rig.context?.id, 'al-2');
+    await rig.close(tester);
   });
 
   testWidgets('NotFound shows the unavailable message', (tester) async {

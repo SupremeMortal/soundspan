@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -14,6 +15,7 @@ import 'package:soundspan/app/theme/extensions.dart';
 import 'package:soundspan/app/theme/typography.dart';
 import 'package:soundspan/shared/domain/domain.dart';
 import 'package:soundspan/shared/providers/likes.dart';
+import 'package:soundspan/shared/providers/play_actions.dart';
 import 'package:soundspan/shared/providers/repositories.dart';
 import 'package:soundspan/shared/widgets/artwork.dart';
 import 'package:soundspan/shared/widgets/detail_header.dart';
@@ -106,11 +108,15 @@ class ArtistScreen extends ConsumerWidget {
         itemCount: items.length,
         itemBuilder: (context, index) {
           final album = items[index];
-          return MediaCard(
-            title: album.title,
-            subtitle: album.year?.toString() ?? album.artistName,
-            artworkRef: album.artworkRef,
-            onTap: () => DetailNavigation.openAlbum(context, album.id),
+          return Consumer(
+            builder: (context, ref, _) => MediaCard(
+              title: album.title,
+              subtitle: album.year?.toString() ?? album.artistName,
+              artworkRef: album.artworkRef,
+              onTap: () => DetailNavigation.openAlbum(context, album.id),
+              onPlay: () =>
+                  unawaited(ref.read(playActionsProvider).playAlbum(album.id)),
+            ),
           );
         },
       ),
@@ -127,7 +133,7 @@ class ArtistScreen extends ConsumerWidget {
         ),
         slivers: [
           if (detail.topTracks.isNotEmpty)
-            _PopularSection(tracks: detail.topTracks, artistName: artist.name),
+            _PopularSection(tracks: detail.topTracks, artist: artist),
           if (albums.isNotEmpty) shelf(l10n.artistAlbums, albums),
           if (singles.isNotEmpty) shelf(l10n.artistSinglesAndEps, singles),
           if (similar.isNotEmpty)
@@ -231,10 +237,10 @@ class _SectionHeader extends StatelessWidget {
 /// The Popular section: the first five [tracks], or up to ten once
 /// expanded.
 class _PopularSection extends StatefulWidget {
-  const new({required this.tracks, required this.artistName});
+  const new({required this.tracks, required this.artist});
 
   final List<Track> tracks;
-  final String artistName;
+  final Artist artist;
 
   @override
   State<_PopularSection> createState() => _PopularSectionState();
@@ -274,13 +280,27 @@ class _PopularSectionState extends State<_PopularSection> {
               return Consumer(
                 builder: (context, ref, _) => TrackRow(
                   title: track.meta.title,
-                  artist: artist == widget.artistName ? '' : artist,
+                  artist: artist == widget.artist.name ? '' : artist,
                   duration: Duration(seconds: track.meta.durationSec),
                   leading: TrackRowLeading.index(index + 1),
                   enabled: track.playbackId != null,
                   disabledReason: l10n.trackNotPlayable,
                   liked: track.isLiked,
                   onToggleLike: toggleLikeOf(ref, track),
+                  playbackId: track.playbackId,
+                  onTap: () => unawaited(
+                    ref
+                        .read(playActionsProvider)
+                        .playTracks(
+                          tracks.sublist(0, shown),
+                          startIndex: index,
+                          context: QueueContext(
+                            kind: QueueContextKind.artist,
+                            id: widget.artist.id,
+                            title: widget.artist.name,
+                          ),
+                        ),
+                  ),
                 ),
               );
             },

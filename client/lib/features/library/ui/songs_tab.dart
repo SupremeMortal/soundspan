@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/rendering.dart';
@@ -13,6 +14,7 @@ import 'package:soundspan/features/library/ui/library_queries.dart';
 import 'package:soundspan/features/library/ui/paged_library_view.dart';
 import 'package:soundspan/shared/domain/domain.dart';
 import 'package:soundspan/shared/providers/likes.dart';
+import 'package:soundspan/shared/providers/play_actions.dart';
 import 'package:soundspan/shared/widgets/track_row.dart';
 
 /// The localized name of a tracks order.
@@ -25,14 +27,20 @@ String trackSortLabel(AppLocalizations l10n, TrackSort sort) => switch (sort) {
 /// [TrackRow]s of one fixed height, so the scroll extent is the same
 /// before and after any page loads (doc 09, Library).
 ///
-/// Unloaded indexes are [TrackRowSkeleton]s. Rows do nothing on tap; a
-/// track without a playback id is disabled as not playable.
+/// Unloaded indexes are [TrackRowSkeleton]s. Tapping a row plays the rows
+/// loaded so far, in list order, from that row (context `library`); a
+/// track without a playback id is disabled as not playable. "Shuffle all",
+/// beside the sort and filter controls, plays the library in the server's
+/// random order ([PlayActions.shuffleLibrary]).
 class SongsTab extends ConsumerWidget {
   /// Creates the tab.
   const new({super.key});
 
   /// The space after the last row.
   static const double bottomPadding = Spacing.x32;
+
+  /// The key of the "Shuffle all" button.
+  static const Key shuffleAllKey = ValueKey('SongsTab.shuffleAll');
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -45,6 +53,13 @@ class SongsTab extends ConsumerWidget {
       emptyIcon: Icons.music_note_outlined,
       emptyMessage: l10n.librarySongsEmpty,
       controls: [
+        TextButton.icon(
+          key: shuffleAllKey,
+          onPressed: () =>
+              unawaited(ref.read(playActionsProvider).shuffleLibrary()),
+          icon: const Icon(Icons.shuffle_rounded),
+          label: Text(l10n.librarySongsShuffleAll),
+        ),
         LibrarySortMenu<TrackSort>(
           values: TrackSort.values,
           selected: query.sortBy,
@@ -117,10 +132,27 @@ class SongsTab extends ConsumerWidget {
               disabledReason: l10n.trackNotPlayable,
               liked: track.isLiked,
               onToggleLike: toggleLikeOf(ref, track),
+              playbackId: track.playbackId,
+              onTap: () => _play(ref, snapshot!, index),
             ),
           );
         },
       ),
+    );
+  }
+
+  /// Plays the rows loaded so far, in list order, from row [index].
+  void _play(WidgetRef ref, PagedSnapshot<Track> snapshot, int index) {
+    final loaded = snapshot.loaded.entries.toList()
+      ..sort((a, b) => a.key.compareTo(b.key));
+    unawaited(
+      ref
+          .read(playActionsProvider)
+          .playTracks(
+            [for (final entry in loaded) entry.value],
+            startIndex: loaded.indexWhere((entry) => entry.key == index),
+            context: const QueueContext(kind: QueueContextKind.library),
+          ),
     );
   }
 }

@@ -17,6 +17,7 @@ import 'package:soundspan/features/search/domain/search_sections.dart';
 import 'package:soundspan/features/search/ui/search_view_model.dart';
 import 'package:soundspan/shared/domain/domain.dart';
 import 'package:soundspan/shared/providers/likes.dart';
+import 'package:soundspan/shared/providers/play_actions.dart';
 import 'package:soundspan/shared/widgets/artwork.dart';
 import 'package:soundspan/shared/widgets/empty_state.dart';
 import 'package:soundspan/shared/widgets/error_view.dart';
@@ -448,13 +449,16 @@ class _SectionItems extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (kind == SearchSectionKind.songs) {
+      final tracks = [
+        for (final item in items) (item as SearchTrackItem).track,
+      ];
       return Padding(
         padding: EdgeInsets.symmetric(horizontal: gutter - Spacing.x8),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            for (final item in items)
-              _songRow(context, (item as SearchTrackItem).track),
+            for (var index = 0; index < tracks.length; index++)
+              _songRow(context, tracks, index),
           ],
         ),
       );
@@ -476,27 +480,51 @@ class _SectionItems extends StatelessWidget {
   }
 }
 
-Widget _songRow(BuildContext context, Track track) => Consumer(
-  builder: (context, ref, _) => TrackRow(
-    title: track.meta.title,
-    artist: track.meta.artist,
-    album: track.meta.album,
-    duration: Duration(seconds: track.meta.durationSec),
-    leading: TrackRowThumbnail(track.meta.artworkRef),
-    enabled: track.playbackId != null,
-    disabledReason: AppLocalizations.of(context).searchNotPlayable,
-    liked: track.isLiked,
-    onToggleLike: toggleLikeOf(ref, track),
-  ),
-);
+Widget _songRow(BuildContext context, List<Track> tracks, int index) {
+  final track = tracks[index];
+  return Consumer(
+    builder: (context, ref, _) => TrackRow(
+      title: track.meta.title,
+      artist: track.meta.artist,
+      album: track.meta.album,
+      duration: Duration(seconds: track.meta.durationSec),
+      leading: TrackRowThumbnail(track.meta.artworkRef),
+      enabled: track.playbackId != null,
+      disabledReason: AppLocalizations.of(context).searchNotPlayable,
+      liked: track.isLiked,
+      onToggleLike: toggleLikeOf(ref, track),
+      playbackId: track.playbackId,
+      onTap: () => unawaited(
+        ref
+            .read(playActionsProvider)
+            .playTracks(tracks, startIndex: index, context: _searchContext),
+      ),
+    ),
+  );
+}
 
-/// The card of [item]; it opens a page only when the item has one.
+/// The context of tracks played from search results.
+const QueueContext _searchContext = QueueContext(kind: QueueContextKind.search);
+
+/// The card of [item]; it opens a page only when the item has one. A
+/// song's card (the top result) plays the song; a library album's and a
+/// playlist's card play it from their play button.
 Widget _card(
   BuildContext context,
   SearchItem item,
   ValueChanged<VoidCallback> onOpened,
+) => Consumer(
+  builder: (context, ref, _) => _cardOf(context, ref, item, onOpened),
+);
+
+Widget _cardOf(
+  BuildContext context,
+  WidgetRef ref,
+  SearchItem item,
+  ValueChanged<VoidCallback> onOpened,
 ) {
   final l10n = AppLocalizations.of(context);
+  PlayActions actions() => ref.read(playActionsProvider);
   return switch (item) {
     SearchTrackItem(:final track) => MediaCard(
       title: track.meta.title,
@@ -504,6 +532,17 @@ Widget _card(
           ? l10n.searchKindSong
           : track.meta.artist,
       artworkRef: track.meta.artworkRef,
+      onTap: track.playbackId == null
+          ? null
+          : () => onOpened(
+              () => unawaited(
+                actions().playTracks(
+                  [track],
+                  startIndex: 0,
+                  context: _searchContext,
+                ),
+              ),
+            ),
     ),
     SearchArtistItem(:final artist, :final libraryId) => MediaCard(
       title: artist.name,
@@ -523,6 +562,9 @@ Widget _card(
           ? null
           : () =>
                 onOpened(() => DetailNavigation.openAlbum(context, libraryId)),
+      onPlay: libraryId == null
+          ? null
+          : () => unawaited(actions().playAlbum(libraryId)),
     ),
     SearchPlaylistItem(:final playlist) => MediaCard(
       title: playlist.name,
@@ -531,6 +573,7 @@ Widget _card(
       mosaicRefs: playlist.coverRefs,
       onTap: () =>
           onOpened(() => DetailNavigation.openPlaylist(context, playlist.id)),
+      onPlay: () => unawaited(actions().playPlaylist(playlist.id)),
     ),
     SearchPodcastItem(:final podcast) => MediaCard(
       title: podcast.title,

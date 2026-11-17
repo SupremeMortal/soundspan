@@ -1349,6 +1349,36 @@ abstract class AppLocalizations {
   /// **'Not playable'**
   String get trackNotPlayable;
 
+  /// Accessibility hint of a track row: activating it plays the track within its list.
+  ///
+  /// In en, this message translates to:
+  /// **'Play'**
+  String get trackRowPlayHint;
+
+  /// Read last in the accessibility label of the track row that is the current queue item while it plays.
+  ///
+  /// In en, this message translates to:
+  /// **'playing'**
+  String get trackRowPlaying;
+
+  /// Read last in the accessibility label of the track row that is the current queue item while it is paused.
+  ///
+  /// In en, this message translates to:
+  /// **'paused'**
+  String get trackRowPaused;
+
+  /// Snackbar after playing or queueing more songs than the queue holds; count is the most it holds (5,000).
+  ///
+  /// In en, this message translates to:
+  /// **'Only the first {count} songs were queued'**
+  String playQueueTruncated(int count);
+
+  /// Button above the Library Songs list that plays the whole library in a random order.
+  ///
+  /// In en, this message translates to:
+  /// **'Shuffle all'**
+  String get librarySongsShuffleAll;
+
   /// Type label above the title of an album page.
   ///
   /// In en, this message translates to:

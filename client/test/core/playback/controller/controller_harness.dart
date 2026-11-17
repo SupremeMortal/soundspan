@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 
 import 'dart:async';
+import 'dart:collection';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -179,6 +180,7 @@ class ControllerHarness {
     QueuePersistence? persistence,
     DeviceSettingsDao? deviceSettings,
     Future<RestoredQueue?> Function()? remoteRestore,
+    this.playAny = false,
   }) : clock = clock ?? FakeClock() {
     for (final id in ids) {
       fake.sources[uriOf(id)] = const FakeSource(duration: trackLength);
@@ -237,8 +239,14 @@ class ControllerHarness {
     controller.notices.listen(notices.add);
   }
 
-  /// The engine behind [engine].
-  final FakeEngine fake = FakeEngine();
+  /// The engine behind [engine]; with [playAny] it plays every source.
+  late final FakeEngine fake = FakeEngine(
+    sources: playAny ? _AnySource() : null,
+  );
+
+  /// Whether every source plays as a [trackLength] source, scripted or not,
+  /// as for entries with generated ids.
+  final bool playAny;
 
   /// The engine the controller drives.
   late final RecordingEngine engine = RecordingEngine(fake);
@@ -387,4 +395,26 @@ class ManualTimer implements Timer {
 
   @override
   int get tick => _active ? 0 : 1;
+}
+
+/// Scripts that answer a [trackLength] source for every URI.
+class _AnySource extends MapBase<Uri, FakeSource> {
+  final Map<Uri, FakeSource> _scripts = {};
+
+  @override
+  FakeSource? operator [](Object? key) =>
+      _scripts[key] ??
+      (key is Uri ? const FakeSource(duration: trackLength) : null);
+
+  @override
+  void operator []=(Uri key, FakeSource value) => _scripts[key] = value;
+
+  @override
+  void clear() => _scripts.clear();
+
+  @override
+  Iterable<Uri> get keys => _scripts.keys;
+
+  @override
+  FakeSource? remove(Object? key) => _scripts.remove(key);
 }

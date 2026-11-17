@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show StreamProviderFamily;
 import 'package:material_ui/material_ui.dart';
@@ -12,6 +14,7 @@ import 'package:soundspan/app/theme/extensions.dart';
 import 'package:soundspan/app/theme/typography.dart';
 import 'package:soundspan/shared/domain/domain.dart';
 import 'package:soundspan/shared/providers/likes.dart';
+import 'package:soundspan/shared/providers/play_actions.dart';
 import 'package:soundspan/shared/providers/repositories.dart';
 import 'package:soundspan/shared/widgets/detail_header.dart';
 import 'package:soundspan/shared/widgets/detail_page.dart';
@@ -54,8 +57,10 @@ final StreamProviderFamily<List<Album>, String> artistAlbumsProvider =
 /// A [DetailHeader] with the album's cover, release type, title and
 /// "Artist · Year · N songs · duration" (the artist opens the artist page),
 /// then the tracks grouped by disc ("Disc N" only with more than one disc)
-/// and a "More by this artist" shelf. Read-only: rows do nothing on tap,
-/// and a track without a playback id is disabled as not playable.
+/// and a "More by this artist" shelf. Tapping a row plays the album from
+/// that track ([PlayActions.playTracks], context `album`); a track without
+/// a playback id is disabled as not playable. The shelf's cards play their
+/// album from the play button.
 class AlbumScreen extends ConsumerWidget {
   /// Creates the page of album [albumId].
   const new({required this.albumId, super.key});
@@ -107,6 +112,21 @@ class AlbumScreen extends ConsumerWidget {
       (discs[track.discNumber ?? 1] ??= []).add(track);
     }
     final grouped = discs.length > 1;
+    final ordered = [for (final disc in discs.values) ...disc];
+    final queueContext = QueueContext(
+      kind: QueueContextKind.album,
+      id: album.id,
+      title: album.title,
+    );
+    void play(Track track) => unawaited(
+      ref
+          .read(playActionsProvider)
+          .playTracks(
+            ordered,
+            startIndex: ordered.indexWhere((t) => identical(t, track)),
+            context: queueContext,
+          ),
+    );
     final more = [
       for (final other
           in ref.watch(artistAlbumsProvider(album.artistId)).value ??
@@ -170,6 +190,8 @@ class AlbumScreen extends ConsumerWidget {
                     disabledReason: l10n.trackNotPlayable,
                     liked: track.isLiked,
                     onToggleLike: toggleLikeOf(ref, track),
+                    playbackId: track.playbackId,
+                    onTap: () => play(track),
                   );
                 },
               ),
@@ -191,6 +213,9 @@ class AlbumScreen extends ConsumerWidget {
                     subtitle: other.year?.toString() ?? other.artistName,
                     artworkRef: other.artworkRef,
                     onTap: () => DetailNavigation.openAlbum(context, other.id),
+                    onPlay: () => unawaited(
+                      ref.read(playActionsProvider).playAlbum(other.id),
+                    ),
                   );
                 },
               ),

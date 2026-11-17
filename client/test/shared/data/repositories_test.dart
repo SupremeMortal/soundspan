@@ -75,6 +75,10 @@ class _FakeLibrarySource with _Calls implements LibraryRemoteSource {
   );
 
   @override
+  Future<List<Track>> shuffledTracks({int? limit}) =>
+      answer('shuffledTracks', [_track('t2'), _track('t1')]);
+
+  @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
@@ -223,6 +227,15 @@ void main() {
     expect(entries.map((e) => e.entityKey), ['t1', 't2']);
     expect((await db.select(db.albums).getSingle()).detailFetchedAt, isNotNull);
   });
+
+  test(
+    'shuffledTracks asks the server every time and keeps its order',
+    () async {
+      expect(await library.shuffledTracks(), [_track('t2'), _track('t1')]);
+      await library.shuffledTracks();
+      expect(librarySource.count('shuffledTracks'), 2);
+    },
+  );
 
   test('artist detail uses the 10-minute TTL and round-trips', () async {
     await expectTtl(

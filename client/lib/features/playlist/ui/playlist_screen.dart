@@ -16,6 +16,7 @@ import 'package:soundspan/features/playlist/ui/playlist_dialogs.dart';
 import 'package:soundspan/features/playlist/ui/playlist_view_model.dart';
 import 'package:soundspan/shared/domain/domain.dart';
 import 'package:soundspan/shared/providers/likes.dart';
+import 'package:soundspan/shared/providers/play_actions.dart';
 import 'package:soundspan/shared/providers/repositories.dart';
 import 'package:soundspan/shared/widgets/detail_header.dart';
 import 'package:soundspan/shared/widgets/detail_page.dart';
@@ -208,19 +209,65 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
             _rows(
               windowClass,
               itemCount: items.length,
-              itemBuilder: (context, index) => _itemRow(items[index], l10n),
+              itemBuilder: (context, index) =>
+                  _itemRow(detail, items[index], l10n),
             ),
         ],
       ),
     ];
   }
 
-  Widget _itemRow(PlaylistItem item, AppLocalizations l10n) => _row(
+  Widget _itemRow(
+    PlaylistDetail detail,
+    PlaylistItem item,
+    AppLocalizations l10n,
+  ) => _row(
     item.track,
     WindowClass.of(context),
     enabled: item.isPlayable && item.track.playbackId != null,
     reason: item.message ?? l10n.trackNotPlayable,
+    onTap: () => _playItem(detail, item),
   );
+
+  /// Plays the playable items of [detail] from [item].
+  void _playItem(PlaylistDetail detail, PlaylistItem item) {
+    final playable = [
+      for (final other in detail.items)
+        if (other.isPlayable) other,
+    ];
+    unawaited(
+      ref
+          .read(playActionsProvider)
+          .playTracks(
+            [for (final other in playable) other.track],
+            startIndex: playable.indexWhere((other) => identical(other, item)),
+            context: QueueContext(
+              kind: QueueContextKind.playlist,
+              id: detail.summary.id,
+              title: detail.summary.name,
+            ),
+          ),
+    );
+  }
+
+  /// Plays the liked tracks loaded so far, in list order, from row [index].
+  void _playLiked(PagedSnapshot<Track> snapshot, int index) {
+    final loaded = snapshot.loaded.entries.toList()
+      ..sort((a, b) => a.key.compareTo(b.key));
+    unawaited(
+      ref
+          .read(playActionsProvider)
+          .playTracks(
+            [for (final entry in loaded) entry.value],
+            startIndex: loaded.indexWhere((entry) => entry.key == index),
+            context: QueueContext(
+              kind: QueueContextKind.playlist,
+              id: likedPlaylistId,
+              title: AppLocalizations.of(context).playlistLikedTitle,
+            ),
+          ),
+    );
+  }
 
   /// The owner's rows, reordered by dragging: by a trailing handle on touch
   /// platforms and by the whole row with a pointer.
@@ -246,7 +293,7 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
             unawaited(viewModel.reorder(items, oldIndex, newIndex)),
         itemBuilder: (context, index) {
           final item = items[index];
-          final row = _itemRow(item, l10n);
+          final row = _itemRow(detail, item, l10n);
           if (!touch) {
             return ReorderableDragStartListener(
               key: ValueKey(item.id),
@@ -335,6 +382,7 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
                   windowClass,
                   enabled: track.playbackId != null,
                   reason: l10n.trackNotPlayable,
+                  onTap: () => _playLiked(snapshot, index),
                 );
               },
             ),
@@ -385,6 +433,7 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
     WindowClass windowClass, {
     required bool enabled,
     required String reason,
+    required VoidCallback onTap,
   }) => TrackRow(
     title: track.meta.title,
     artist: track.meta.artist,
@@ -396,6 +445,8 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
     disabledReason: reason,
     liked: track.isLiked,
     onToggleLike: toggleLikeOf(ref, track),
+    playbackId: track.playbackId,
+    onTap: onTap,
   );
 }
 

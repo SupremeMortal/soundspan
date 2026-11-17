@@ -240,6 +240,16 @@ class FakeLibraryRepository with _FakeReads implements LibraryRepository {
   @override
   PagedSource<Track> likedTracks() => _source('liked', likedList, listPageSize);
 
+  /// The tracks every [shuffledTracks] call answers, in the server's order.
+  List<Track> shuffledList = [];
+
+  @override
+  Future<List<Track>> shuffledTracks() async {
+    readCalls.update('shuffledTracks', (n) => n + 1, ifAbsent: () => 1);
+    if (errors['shuffledTracks'] case final error?) throw error;
+    return shuffledList;
+  }
+
   FakePagedSource<T> _source<T extends Object>(
     Object query,
     List<T> items,

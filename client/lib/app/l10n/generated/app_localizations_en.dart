@@ -790,6 +790,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trackNotPlayable => 'Not playable';
 
   @override
+  String get trackRowPlayHint => 'Play';
+
+  @override
+  String get trackRowPlaying => 'playing';
+
+  @override
+  String get trackRowPaused => 'paused';
+
+  @override
+  String playQueueTruncated(int count) {
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'Only the first $countString songs were queued';
+  }
+
+  @override
+  String get librarySongsShuffleAll => 'Shuffle all';
+
+  @override
   String get albumOverline => 'Album';
 
   @override
@@ -2072,6 +2093,27 @@ class AppLocalizationsEnXa extends AppLocalizationsEn {
 
   @override
   String get trackNotPlayable => '[Ñöţ þļåýåbļé one two]';
+
+  @override
+  String get trackRowPlayHint => '[Þļåý one]';
+
+  @override
+  String get trackRowPlaying => '[þļåýîñĝ one]';
+
+  @override
+  String get trackRowPaused => '[þåûšéð one]';
+
+  @override
+  String playQueueTruncated(int count) {
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return '[Öñļý ţĥé fîŕšţ $countString šöñĝš ŵéŕé qûéûéð one two three]';
+  }
+
+  @override
+  String get librarySongsShuffleAll => '[Šĥûffļé åļļ one two]';
 
   @override
   String get albumOverline => '[Åļbûm one]';

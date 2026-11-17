@@ -128,6 +128,9 @@ class CachedLibraryRepository implements LibraryRepository {
   );
 
   @override
+  Future<List<Track>> shuffledTracks() => _remote.shuffledTracks();
+
+  @override
   PagedSource<Track> likedTracks() => OverlaidPagedSource(
     _likedTracks(),
     _pending,

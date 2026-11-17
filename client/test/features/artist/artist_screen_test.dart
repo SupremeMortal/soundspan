@@ -16,6 +16,7 @@ import 'package:soundspan_api/soundspan_api.dart' show ServerError;
 
 import '../../helpers/fake_repositories.dart';
 import '../../helpers/guidelines.dart';
+import '../../helpers/play_rig.dart';
 import '../../helpers/pump_app.dart';
 import '../detail_fixtures.dart';
 
@@ -304,18 +305,57 @@ void main() {
     expect(rows[1].disabledReason, 'Not playable');
   });
 
-  testWidgets('rows do nothing on tap', (tester) async {
+  testWidgets('a Popular row plays the shown tracks from that row', (
+    tester,
+  ) async {
+    final rig = PlayRig();
+    await pumpDetail(
+      tester,
+      _screen,
+      repositories: artistRepositories(
+        fixtureArtistDetail(
+          topTracks: [
+            for (var n = 1; n <= 7; n++) fixtureTrack(n, playable: n != 2),
+          ],
+        ),
+      ),
+      overrides: rig.overrides,
+    );
+
+    await tester.tap(find.text('Song 1.3'));
+    await rig.settle(tester);
+
+    // Five are shown; the second is not playable.
+    expect(rig.queued, ['p-1-1', 'p-1-3', 'p-1-4', 'p-1-5']);
+    expect(rig.current, 'p-1-3');
+    expect(
+      rig.context,
+      const QueueContext(
+        kind: QueueContextKind.artist,
+        id: 'ar-1',
+        title: fixtureArtist,
+      ),
+    );
+    await rig.close(tester);
+  });
+
+  testWidgets('an unplayable Popular row does nothing on tap', (tester) async {
+    final rig = PlayRig();
     final router = await pumpDetail(
       tester,
       _screen,
       repositories: artistRepositories(
-        fixtureArtistDetail(topTracks: [fixtureTrack(1)]),
+        fixtureArtistDetail(topTracks: [fixtureTrack(1, playable: false)]),
       ),
+      overrides: rig.overrides,
     );
-    expect(_rows(tester).every((row) => row.onTap == null), isTrue);
-    await tester.tap(find.text('Song 1.1'));
-    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Song 1.1'), warnIfMissed: false);
+    await rig.settle(tester);
+
+    expect(rig.queued, isEmpty);
     expect(router.state.uri.path, '/detail');
+    await rig.close(tester);
   });
 
   testWidgets('NotFound shows the unavailable message', (tester) async {
@@ -354,8 +394,8 @@ void main() {
     expect(find.text('Song 1.1'), findsOneWidget);
   });
 
-  testWidgets('the only controls are navigation, expand and collapse, and '
-      'refresh', (tester) async {
+  testWidgets('the only controls are the Popular rows, navigation, expand '
+      'and collapse, and refresh', (tester) async {
     await pumpDetail(
       tester,
       _screen,
@@ -392,7 +432,15 @@ void main() {
       'Kindred, Artist',
       'Neighbour, Artist',
     ];
-    expect(labels, unorderedEquals([...cards, 'Show more', 'Read more']));
+    expect(
+      labels,
+      unorderedEquals([
+        ...cards,
+        'Show more',
+        'Read more',
+        for (var n = 1; n <= 5; n++) startsWith('Song 1.$n, '),
+      ]),
+    );
     // Refresh is the scroll view's pull-to-refresh, not a button.
     expect(find.byType(RefreshIndicator), findsOneWidget);
   });

@@ -5,6 +5,8 @@ library;
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:soundspan/shared/domain/playback_id.dart';
+import 'package:soundspan/shared/providers/now_playing.dart';
 import 'package:soundspan/shared/widgets/track_row.dart';
 
 import '../../helpers/golden.dart';
@@ -70,6 +72,53 @@ Widget _rows(BuildContext context) => Padding(
   ),
 );
 
+/// The current track, as an album row and as a thumbnail row (with the
+/// album column from 800), then a row of another track. Tickers are off so
+/// the moving bars are drawn at rest.
+Widget _playingRows(BuildContext context) => TickerMode(
+  enabled: false,
+  child: Padding(
+    padding: const EdgeInsets.all(16),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        TrackRow(
+          title: 'Come Together',
+          artist: 'The Beatles',
+          album: 'Abbey Road',
+          duration: _duration,
+          leading: const TrackRowLeading.index(1),
+          playbackId: _current,
+          onTap: () {},
+          liked: true,
+          onToggleLike: () {},
+        ),
+        TrackRow(
+          title: 'Come Together',
+          artist: 'The Beatles',
+          album: 'Abbey Road',
+          duration: _duration,
+          leading: const TrackRowLeading.thumbnail('album-1'),
+          showAlbumColumn: MediaQuery.sizeOf(context).width >= 800,
+          playbackId: _current,
+          onTap: () {},
+        ),
+        TrackRow(
+          title: 'So What',
+          artist: 'Miles Davis',
+          album: 'Kind of Blue',
+          duration: const Duration(minutes: 9, seconds: 22),
+          leading: const TrackRowLeading.index(2),
+          playbackId: const PlaybackId('pb-other'),
+          onTap: () {},
+        ),
+      ],
+    ),
+  ),
+);
+
+const PlaybackId _current = PlaybackId('pb-current');
+
 void main() {
   goldenMatrix(
     'track_row',
@@ -83,4 +132,17 @@ void main() {
     textScales: const [2],
     builder: _rows,
   );
+  for (final playing in [true, false]) {
+    goldenMatrix(
+      playing ? 'track_row_playing' : 'track_row_paused',
+      sizes: const [Size(390, 240), Size(800, 240), Size(1440, 240)],
+      overrides: [
+        nowPlayingProvider.overrideWithValue((
+          playbackId: _current,
+          playing: playing,
+        )),
+      ],
+      builder: _playingRows,
+    );
+  }
 }
