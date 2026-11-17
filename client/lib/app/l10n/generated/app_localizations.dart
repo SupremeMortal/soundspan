@@ -1721,13 +1721,13 @@ abstract class AppLocalizations {
   /// **'Play'**
   String get trackRowPlayHint;
 
-  /// Read last in the accessibility label of the track row that is the current queue item while it plays.
+  /// Read in the accessibility label of the track row that is the current queue item while it plays, after the downloaded and liked words, as in 'Title, Artist, 3 minutes, liked, now playing'.
   ///
   /// In en, this message translates to:
-  /// **'playing'**
+  /// **'now playing'**
   String get trackRowPlaying;
 
-  /// Read last in the accessibility label of the track row that is the current queue item while it is paused.
+  /// Read in the accessibility label of the track row that is the current queue item while it is paused, in the place of 'now playing'.
   ///
   /// In en, this message translates to:
   /// **'paused'**
@@ -3272,6 +3272,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'downloaded'**
   String get trackRowDownloaded;
+
+  /// Read in a track row’s screen-reader label when the track is liked, after 'downloaded', as in 'Title, Artist, 3 minutes, downloaded, liked'.
+  ///
+  /// In en, this message translates to:
+  /// **'liked'**
+  String get trackRowLiked;
 
   /// Menu entry and action-bar button that keeps a track, album or playlist on this device.
   ///

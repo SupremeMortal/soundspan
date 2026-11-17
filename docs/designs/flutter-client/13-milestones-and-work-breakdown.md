@@ -162,7 +162,8 @@ Exit: accessibility script passes on every platform, resource budgets are met an
 
 | Id | Task | Depends | Acceptance |
 |---|---|---|---|
-| M5-01 | Accessibility pass: labels, traversal, announcements, text scale, high contrast; fixes | all UI | Scripted screen-reader pass recorded per platform |
+| M5-01a | Accessibility pass, labels and checks: a registry of every routed screen and of the surfaces that are not routes (sheets, menus, panels, confirmation dialogs, offline and error states), each checked against the tap-target, label and text-contrast guidelines at 390 and 1440 in both themes; tooltips and labels on icon-only controls; `TrackRow` as one semantics node with custom actions; `SeekBar` and volume as sliders; fixes | all UI | `test/a11y/all_screens_test.dart` passes, and fails when the router declares a route with no registry case |
+| M5-01b | Accessibility pass, interaction: focus ring, traversal groups and F6, now-playing announcements, text scale 2.0, high contrast; fixes | M5-01a | Scripted screen-reader pass recorded per platform |
 | M5-02 | Performance pass against the resource budget; fixes | all | Measurements recorded in the release checklist |
 | M5-03 | Desktop update notice: a version check that opens the release page; `auto_updater` is evaluated once builds are signed (spike S7) | — | A build older than the latest release shows the notice |
 | M5-05 | Packaging, all unsigned, in four tasks: Windows MSIX and Inno Setup installer; macOS `.dmg`; Linux AppImage, `.deb` and Flatpak manifest; web container image | M2-12 | Each package installs and launches on a clean runner or container in the `client-build-dry-run` run of the pull request (Windows: `smoke-windows`) |

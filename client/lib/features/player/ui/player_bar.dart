@@ -16,6 +16,7 @@ import 'package:soundspan/features/listen_together/listen_together.dart';
 import 'package:soundspan/features/player/ui/player_item.dart';
 import 'package:soundspan/features/player/ui/right_panel.dart';
 import 'package:soundspan/features/player/ui/seek_bar.dart';
+import 'package:soundspan/features/player/ui/volume_slider.dart';
 import 'package:soundspan/shared/domain/queue_item.dart';
 import 'package:soundspan/shared/widgets/artwork.dart';
 import 'package:soundspan/shared/widgets/group_controls.dart';
@@ -581,7 +582,6 @@ class _VolumeControl extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = context.colors;
-    final l10n = AppLocalizations.of(context);
     final controller = ref.watch(playbackControllerProvider);
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -592,17 +592,8 @@ class _VolumeControl extends ConsumerWidget {
           height: Sizes.touchTarget,
           child: ValueListenableBuilder<double>(
             valueListenable: controller.volumeListenable,
-            builder: (context, volume, _) => Semantics(
-              label: l10n.playerVolume,
-              child: Slider(
-                value: volume,
-                activeColor: colors.brand,
-                inactiveColor: colors.lineStrong,
-                onChanged: controller.setVolume,
-                semanticFormatterCallback: (value) =>
-                    '${(value * 100).round()}%',
-              ),
-            ),
+            builder: (context, volume, _) =>
+                VolumeSlider(value: volume, onChanged: controller.setVolume),
           ),
         ),
       ],

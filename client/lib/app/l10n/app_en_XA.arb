@@ -1396,13 +1396,13 @@
   "@trackRowPlayHint": {
     "description": "Accessibility hint of a track row: activating it plays the track within its list."
   },
-  "trackRowPlaying": "[þļåýîñĝ one]",
+  "trackRowPlaying": "[ñöŵ þļåýîñĝ one two]",
   "@trackRowPlaying": {
-    "description": "Read last in the accessibility label of the track row that is the current queue item while it plays."
+    "description": "Read in the accessibility label of the track row that is the current queue item while it plays, after the downloaded and liked words, as in 'Title, Artist, 3 minutes, liked, now playing'."
   },
   "trackRowPaused": "[þåûšéð one]",
   "@trackRowPaused": {
-    "description": "Read last in the accessibility label of the track row that is the current queue item while it is paused."
+    "description": "Read in the accessibility label of the track row that is the current queue item while it is paused, in the place of 'now playing'."
   },
   "playQueueTruncated": "[Öñļý ţĥé fîŕšţ {count} šöñĝš ŵéŕé qûéûéð one two three]",
   "@playQueueTruncated": {
@@ -2666,6 +2666,10 @@
   "trackRowDownloaded": "[ðöŵñļöåðéð one]",
   "@trackRowDownloaded": {
     "description": "Appended to a track row’s screen-reader label when the track is downloaded, as in 'Title, Artist, 3 minutes, downloaded'."
+  },
+  "trackRowLiked": "[ļîķéð one]",
+  "@trackRowLiked": {
+    "description": "Read in a track row’s screen-reader label when the track is liked, after 'downloaded', as in 'Title, Artist, 3 minutes, downloaded, liked'."
   },
   "menuDownload": "[Ðöŵñļöåð one]",
   "@menuDownload": {

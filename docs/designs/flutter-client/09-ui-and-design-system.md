@@ -263,10 +263,10 @@ Implemented with `Shortcuts`/`Actions` at the shell so they are discoverable to 
 
 ## Accessibility
 
-- Every icon-only control has a tooltip and a semantics label. `TrackRow` exposes one merged node: "Title, Artist, 3 minutes 41 seconds, downloaded", with custom actions for like, queue, and menu.
+- Every icon-only control has a tooltip and a semantics label. `TrackRow` exposes one merged node: "Title, Artist, 3 minutes 41 seconds", then "downloaded", "liked" and "now playing" (or "paused") where they apply and last the reason a disabled row cannot play, with custom actions "Like" or "Remove like", "Add to queue" and "More options" where the row offers them. Its like and overflow buttons are out of the semantics tree; a disabled row is marked disabled and has no tap action.
 - Focus order follows reading order; the shell defines `FocusTraversalGroup`s for sidebar, content, right panel, and player bar; F6 cycles between them on desktop.
 - Visible focus ring: 2 px `brand`, 2 px offset, on every focusable in both themes.
 - Now-playing changes are announced politely (`SemanticsService.announce`) when the screen reader is on.
-- `SeekBar` and volume are sliders with increase/decrease actions.
+- `SeekBar` and volume are sliders with increase/decrease actions: 5 s per step for seek, read as "1:05 of 3:41", and 5 % for volume, read in percent; both stop at their ends.
 - Golden tests run at text scale 1.0 and 2.0 for the shell and rows. The widget-test helper runs Flutter's `meetsGuideline` checks (`androidTapTargetGuideline`, `labeledTapTargetGuideline`, `textContrastGuideline`) on every screen.
 - Manual screen-reader passes (TalkBack, VoiceOver on iOS and macOS, Narrator, Orca) are an M5 exit criterion with a written script.

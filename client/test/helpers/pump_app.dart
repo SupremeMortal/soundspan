@@ -18,6 +18,7 @@ import 'fake_clock.dart';
 import 'fake_reachability.dart';
 import 'fake_repositories.dart';
 import 'fake_tint_extractor.dart';
+import 'guidelines.dart';
 import 'in_memory_database_opener.dart';
 import 'in_memory_secret_store.dart';
 import 'placeholder_image_provider.dart';
@@ -32,6 +33,34 @@ abstract final class TestSizes {
 
   /// An expanded (desktop) window.
   static const expanded = Size(1440, 900);
+}
+
+/// Expects the pumped tree to meet [screenGuidelines]
+/// (`androidTapTargetGuideline`, `labeledTapTargetGuideline` and
+/// `textContrastGuideline`, checked with semantics enabled) and to have
+/// thrown nothing.
+///
+/// The guidelines in [skip] are not checked: a screen case's exemption.
+/// [contrastSamplingExempt] is passed to [failedGuidelines], and text at
+/// the edge of a viewport or panel is not sampled for contrast
+/// ([textAtClipEdge]).
+Future<void> expectAccessible(
+  WidgetTester tester, {
+  Set<AccessibilityGuideline> skip = const {},
+  List<Finder> contrastSamplingExempt = const [],
+}) async {
+  final failed = await failedGuidelines(
+    tester,
+    skip: skip,
+    contrastSamplingExempt: contrastSamplingExempt,
+    skipTextAtClipEdge: true,
+  );
+  expect(
+    failed,
+    isEmpty,
+    reason: failed.map((evaluation) => evaluation.reason).join('\n'),
+  );
+  expect(tester.takeException(), isNull);
 }
 
 /// Pumps a widget inside the soundspan app scaffolding.

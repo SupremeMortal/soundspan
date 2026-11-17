@@ -66,8 +66,12 @@ final class TrackRowThumbnail extends TrackRowLeading {
 /// Hover draws `surfaceHover`, [selected] `surfaceActive`, keyboard focus a
 /// 2 px `brand` ring. A disabled row is drawn at 40 % opacity, ignores taps
 /// and gives [disabledReason] as its tooltip. Screen readers get one node,
-/// "title, artist, spoken duration[, reason]", which is a button with the
-/// hint "Play" only when [onTap] is set and the row is enabled.
+/// "title, artist, spoken duration", then the state words that apply
+/// ("downloaded", "liked", "now playing" or "paused") and last the disabled
+/// reason. It is a button with the hint "Play" only when [onTap] is set and
+/// the row is enabled; a disabled row is marked disabled and has no tap
+/// action. The like and overflow buttons inside it are out of the
+/// semantics tree and stay reachable by pointer and keyboard.
 ///
 /// While the app is offline, on a platform that downloads, a row with a
 /// [playbackId] whose track has no completed file on this device is
@@ -77,8 +81,8 @@ final class TrackRowThumbnail extends TrackRowLeading {
 /// With a [playbackId], the row marks itself while that track is the
 /// queue's current item ([nowPlayingProvider]): [EqualiserBars] in `brand`
 /// in place of the index or over the thumbnail, moving only while it plays
-/// and motion is allowed, a `brand` title, and "playing" or "paused" read
-/// last. Only those small parts watch playback; the row itself takes plain
+/// and motion is allowed, a `brand` title, and "now playing" or "paused"
+/// read. Only those small parts watch playback; the row itself takes plain
 /// values and does not rebuild when playback changes.
 ///
 /// With [onToggleLike], a [LikeButton] showing [liked] sits before the
@@ -316,10 +320,15 @@ class _TrackRowState extends ConsumerState<TrackRow> {
         : widget.disabledReason;
     final withThumbnail = widget.leading is TrackRowThumbnail;
 
-    final label = [
+    // Title, artist and spoken duration, then the state words that apply
+    // (downloaded, liked, now playing) and last the disabled reason.
+    String label({bool downloaded = false, String? playing}) => [
       widget.title,
       if (widget.artist.isNotEmpty) widget.artist,
       spokenTrackDuration(l10n, widget.duration),
+      if (downloaded) l10n.trackRowDownloaded,
+      if (widget.liked) l10n.trackRowLiked,
+      ?playing,
       ?reason,
     ].join(', ');
 
@@ -442,6 +451,7 @@ class _TrackRowState extends ConsumerState<TrackRow> {
 
     Widget semantics(String label, Widget child) => Semantics(
       container: true,
+      enabled: enabled,
       button: onTap != null,
       selected: widget.onSelect == null ? null : widget.selected,
       label: label,
@@ -509,19 +519,20 @@ class _TrackRowState extends ConsumerState<TrackRow> {
         ),
       ),
     );
-    if (playbackId == null) return semantics(label, interactive);
+    if (playbackId == null) return semantics(label(), interactive);
     return _PlayingSemantics(
       playbackId: playbackId,
-      builder: (state, downloaded) {
-        final withDownload = downloaded
-            ? '$label, ${l10n.trackRowDownloaded}'
-            : label;
-        return semantics(switch (state) {
-          _PlayingState.none => withDownload,
-          _PlayingState.playing => '$withDownload, ${l10n.trackRowPlaying}',
-          _PlayingState.paused => '$withDownload, ${l10n.trackRowPaused}',
-        }, interactive);
-      },
+      builder: (state, downloaded) => semantics(
+        label(
+          downloaded: downloaded,
+          playing: switch (state) {
+            _PlayingState.none => null,
+            _PlayingState.playing => l10n.trackRowPlaying,
+            _PlayingState.paused => l10n.trackRowPaused,
+          },
+        ),
+        interactive,
+      ),
       child: interactive,
     );
   }

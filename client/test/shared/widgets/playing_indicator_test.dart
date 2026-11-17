@@ -170,7 +170,7 @@ void main() {
     await rig.close(tester);
   });
 
-  testWidgets('the row reads "playing" or "paused" last', (tester) async {
+  testWidgets('the row reads "now playing" or "paused"', (tester) async {
     final handle = tester.ensureSemantics();
     await pumpRows(tester);
     await play(tester);
@@ -178,7 +178,7 @@ void main() {
     expect(
       tester.getSemantics(row('a')),
       isSemantics(
-        label: 'Song a, Band, 10 seconds, playing',
+        label: 'Song a, Band, 10 seconds, now playing',
         hint: 'Play',
         isButton: true,
       ),

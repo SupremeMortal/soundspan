@@ -1042,7 +1042,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trackRowPlayHint => 'Play';
 
   @override
-  String get trackRowPlaying => 'playing';
+  String get trackRowPlaying => 'now playing';
 
   @override
   String get trackRowPaused => 'paused';
@@ -1972,6 +1972,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get trackRowDownloaded => 'downloaded';
+
+  @override
+  String get trackRowLiked => 'liked';
 
   @override
   String get menuDownload => 'Download';
@@ -3507,7 +3510,7 @@ class AppLocalizationsEnXa extends AppLocalizationsEn {
   String get trackRowPlayHint => '[Þļåý one]';
 
   @override
-  String get trackRowPlaying => '[þļåýîñĝ one]';
+  String get trackRowPlaying => '[ñöŵ þļåýîñĝ one two]';
 
   @override
   String get trackRowPaused => '[þåûšéð one]';
@@ -4455,6 +4458,9 @@ class AppLocalizationsEnXa extends AppLocalizationsEn {
 
   @override
   String get trackRowDownloaded => '[ðöŵñļöåðéð one]';
+
+  @override
+  String get trackRowLiked => '[ļîķéð one]';
 
   @override
   String get menuDownload => '[Ðöŵñļöåð one]';

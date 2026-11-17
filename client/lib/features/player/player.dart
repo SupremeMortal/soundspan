@@ -32,3 +32,4 @@ export 'ui/right_panel.dart'
         nowPlayingOverlayProvider,
         rightPanelProvider;
 export 'ui/seek_bar.dart' show SeekBar;
+export 'ui/volume_slider.dart' show VolumeSlider;
