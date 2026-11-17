@@ -68,10 +68,13 @@ libmpv_name="$(basename "$libmpv")"
 echo "bundling $libmpv ($libmpv_name)"
 
 # Dependencies of libmpv that linuxdeploy's excludelist leaves to the host,
-# but that a system without audio or GL packages lacks (the smoke-linux
-# container has none of them): they are deployed explicitly.
+# but that a system without audio packages lacks (the smoke-linux container
+# has none of them): they are deployed explicitly. The GL, EGL and GLES
+# libraries (libGL, libEGL, libGLESv2, libgbm) stay with the host, which
+# must provide them for its own GPU, as for every AppImage; the Flutter
+# engine opens libEGL and libGLESv2 at run time.
 extra_libs=()
-for name in libasound.so.2 libEGL.so.1 libgbm.so.1 libjack.so.0 libusb-1.0.so.0; do
+for name in libasound.so.2 libjack.so.0 libusb-1.0.so.0; do
   path="$(ldd "$libmpv" | awk -v n="$name" '$1 == n { print $3; exit }')"
   [[ -n "$path" && -e "$path" ]] && extra_libs+=(--library "$path")
 done

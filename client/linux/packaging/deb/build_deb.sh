@@ -2,8 +2,9 @@
 # SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 #
 # Builds soundspan-<version>-linux-amd64.deb from a Flutter release bundle
-# (doc 10, Linux). libmpv, GTK and libsecret come from the distribution:
-#   Depends: libmpv2 | libmpv1, libgtk-3-0, libsecret-1-0
+# (doc 10, Linux). libmpv, GTK, libsecret and the EGL and GLES libraries the
+# Flutter engine opens at run time come from the distribution:
+#   Depends: libmpv2 | libmpv1, libgtk-3-0, libsecret-1-0, libegl1, libgles2
 #
 # Usage: deb/build_deb.sh <bundle dir> <version> <out dir>
 set -euo pipefail
@@ -37,7 +38,7 @@ Version: $version
 Architecture: amd64
 Maintainer: soundspan project <https://github.com/soundspan/soundspan>
 Installed-Size: $installed_size
-Depends: libmpv2 | libmpv1, libgtk-3-0, libsecret-1-0
+Depends: libmpv2 | libmpv1, libgtk-3-0, libsecret-1-0, libegl1, libgles2
 Section: sound
 Priority: optional
 Homepage: https://github.com/soundspan/soundspan

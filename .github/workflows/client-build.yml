@@ -219,11 +219,13 @@ jobs:
             kind: deb
             image: ubuntu:24.04@sha256:73b999393d07f2bf65a40373778a44dc9a6d54ad7718d29247d8ff9413c4d6a8
             packages: xvfb dbus desktop-file-utils
-          # Only GTK, Xvfb and D-Bus: no mpv, no ffmpeg.
+          # Only GTK, Xvfb, D-Bus and the host's EGL and GLES libraries,
+          # which Flutter opens at run time and no AppImage bundles (Xvfb
+          # already brings Mesa's GLX and DRI drivers): no mpv, no ffmpeg.
           - row: appimage-ubuntu-22.04
             kind: appimage
             image: ubuntu:22.04@sha256:74b12b11ffa550fba1929ad4d8d16533c34f6612728469671afba1b03b66881c
-            packages: libgtk-3-0 xvfb dbus
+            packages: libgtk-3-0 xvfb dbus libegl1 libgles2
     container:
       image: ${{ matrix.image }}
     steps:

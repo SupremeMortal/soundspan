@@ -13,8 +13,9 @@
 #     apt-get remove leaves nothing under /usr/lib/soundspan.
 #
 #   smoke.sh appimage <dist dir> <version> [log out]
-#     Run in a bare ubuntu container with only libgtk-3-0, xvfb and dbus
-#     added (no mpv, no ffmpeg): --appimage-extract works; ldd resolves every
+#     Run in a bare ubuntu container with only libgtk-3-0, xvfb, dbus and
+#     the host's EGL and GLES libraries (libegl1, libgles2) added (no mpv,
+#     no ffmpeg): --appimage-extract works; ldd resolves every
 #     dependency of the executable and of the bundled libmpv; libmpv and its
 #     codec libraries resolve inside the AppDir, and the system has no
 #     libmpv; the app launches with --appimage-extract-and-run.
