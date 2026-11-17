@@ -10,6 +10,7 @@ import 'package:soundspan/core/playback/media_controls/media_session_mapper.dart
 import 'package:soundspan/core/playback/playback_controller.dart';
 import 'package:soundspan/core/playback/playback_snapshot.dart';
 import 'package:soundspan/shared/clock.dart';
+import 'package:soundspan/shared/domain/podcast.dart';
 import 'package:soundspan/shared/domain/queue_item.dart';
 import 'package:soundspan/shared/domain/track.dart';
 import 'package:soundspan/shared/util/uuid.dart';
@@ -37,7 +38,8 @@ typedef LikeTrack = Future<void> Function(Track track, {required bool liked});
 /// controller. Like goes to [_like]: the current item is shown with the
 /// new liked flag at once, until another item becomes current. A
 /// [PlayRequest] of Android Auto replaces the queue, each track a fresh
-/// entry.
+/// entry; an episode request replaces it with that episode alone, the way
+/// the podcast screens play one.
 class MediaControlsBinder implements MediaCommandHandler {
   /// Starts rendering [_controller]'s snapshots on [_controls]; artwork is
   /// pinned by [_pin], elapsed time read from [_clock], and likes stored
@@ -186,7 +188,21 @@ class MediaControlsBinder implements MediaCommandHandler {
 
   @override
   Future<void> playRequest(PlayRequest request) async {
-    if (_disposed || request.tracks.isEmpty) return;
+    if (_disposed) return;
+    if ((request.episode, request.podcast) case (
+      final Episode episode,
+      final Podcast podcast,
+    )) {
+      await _controller.playItems([
+        QueueItem.episode(
+          queueItemId: Uuid.v4(),
+          episode: episode,
+          podcast: podcast,
+        ),
+      ]);
+      return;
+    }
+    if (request.tracks.isEmpty) return;
     await _controller.playItems(
       [
         for (final track in request.tracks)

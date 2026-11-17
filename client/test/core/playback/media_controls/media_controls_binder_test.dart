@@ -5,6 +5,7 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:soundspan/core/playback/engines/fake_engine.dart';
 import 'package:soundspan/core/playback/engines/player_engine.dart';
+import 'package:soundspan/core/playback/media_controls/browse/browse_tree.dart';
 import 'package:soundspan/core/playback/media_controls/media_controls.dart';
 import 'package:soundspan/core/playback/media_controls/media_controls_binder.dart';
 import 'package:soundspan/shared/domain/domain.dart';
@@ -251,6 +252,31 @@ void main() {
     expect(calls, isEmpty);
     expect(r.controls.updates, hasLength(sent));
   });
+
+  test(
+    'an episode play request replaces the queue with that one episode',
+    () async {
+      final r = _Rig();
+      addTearDown(r.binder.dispose);
+      await r.h.controller.playItems([_track('a'), _track('b')]);
+      await r.h.settle();
+
+      await r.binder.playRequest(
+        const PlayRequest.ofEpisode(
+          podcast: Podcast(id: 'p', title: 'P'),
+          episode: Episode(id: 'e1', podcastId: 'p', title: 'E'),
+        ),
+      );
+      await r.h.settle();
+
+      final items = r.h.controller.snapshot.queue.items;
+      expect(items, hasLength(1));
+      final item = items.single as EpisodeQueueItem;
+      expect(item.episode.id, 'e1');
+      expect(item.podcast.id, 'p');
+      expect(item.queueItemId, isNot(isEmpty));
+    },
+  );
 
   test('a failing like is logged and keeps the shown state', () async {
     final r = _Rig(like: (_, {required liked}) async => throw StateError('x'));

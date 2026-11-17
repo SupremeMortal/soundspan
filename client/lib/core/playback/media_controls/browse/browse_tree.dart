@@ -17,29 +17,34 @@
 /// | `album/<id>` | browsable | `album/<id>/<index>` |
 /// | `…/<index>` | playable | the whole parent list from `<index>` |
 /// | `search/<query>/<index>` | playable | the same over the search result |
-/// | `downloads` | browsable | `downloads/<kind>/<refId>`, or `…/0` for a song |
+/// | `downloads` | browsable | `downloads/<kind>/<refId>`, or `…/0` for a song or an episode |
 /// | `downloads/<kind>/<refId>` | browsable | `downloads/<kind>/<refId>/<index>` |
+/// | `downloads/episode/<refId>/0` | playable | the downloaded episode alone |
 ///
 /// `<id>`, `<query>` and `<refId>` are percent-encoded. Unplayable tracks
 /// (no playback id) are left out of every list, and `<index>` counts the
 /// list without them.
 ///
 /// `downloads` is served from the [DownloadStore] alone, so it works with
-/// no network: a collection is listed while it has a completed track, and
-/// lists only its completed tracks, in membership order. Its covers are
-/// the pinned files, as content URIs.
+/// no network: a collection is listed while it has a completed item, and
+/// lists only its completed items, in membership order. An episode
+/// collection (`<refId>` is `<podcastId>:<episodeId>`) plays its episode
+/// alone, built from the item's [EpisodeDownloadMeta]. Its covers are the
+/// pinned files, as content URIs.
 library;
 
 import 'dart:convert';
 
 import 'package:soundspan/core/downloads/download_keys.dart';
 import 'package:soundspan/core/downloads/download_store.dart';
+import 'package:soundspan/core/downloads/episode_download_meta.dart';
 import 'package:soundspan/core/logging/app_logger.dart';
 import 'package:soundspan/core/playback/media_controls/browse/media_browse_source.dart';
 import 'package:soundspan/core/storage/state/enums.dart';
 import 'package:soundspan/core/storage/state/state_database.dart';
 import 'package:soundspan/platform/artwork_content_uri/artwork_content_uri.dart';
 import 'package:soundspan/shared/domain/playback_id.dart';
+import 'package:soundspan/shared/domain/podcast.dart';
 import 'package:soundspan/shared/domain/queue_item.dart';
 import 'package:soundspan/shared/domain/track.dart';
 
@@ -127,14 +132,29 @@ final class BrowseNode {
 }
 
 /// What a playable media id plays: [tracks] from [startIndex], queued
-/// from [context].
+/// from [context], or, with no tracks, [episode] of [podcast] alone.
 final class PlayRequest {
   /// Creates a request.
   const new({
     required this.tracks,
     required this.startIndex,
     required this.context,
-  });
+  }) : episode = null,
+       podcast = null;
+
+  /// A request that plays [episode] of [podcast] alone.
+  const new ofEpisode({
+    required Episode this.episode,
+    required Podcast this.podcast,
+  }) : tracks = const [],
+       startIndex = 0,
+       context = const QueueContext(kind: QueueContextKind.single);
+
+  /// The episode to play alone; null for a track request.
+  final Episode? episode;
+
+  /// The podcast of [episode]; null for a track request.
+  final Podcast? podcast;
 
   /// The playable tracks of the list, in order.
   final List<Track> tracks;
@@ -335,7 +355,7 @@ final class BrowseTree {
     final prefix = parts.join('/');
     return [
       for (final (index, item) in collection.items.indexed)
-        _downloadTrackNode('$prefix/$index', item, downloads.artwork),
+        _downloadItemNode('$prefix/$index', item, downloads.artwork),
     ];
   }
 
@@ -348,12 +368,14 @@ final class BrowseTree {
     final nodes = <BrowseNode>[];
     for (final row in rows) {
       final kind = _collectionKind(row.collection.kind);
-      final items = _completedTracks(row.items);
-      if (kind == null || items.isEmpty) continue;
+      if (kind == null) continue;
+      final items = _completedItems(kind, row.items);
+      if (items.isEmpty) continue;
       final id = '$downloadsId/${kind.name}/${_encode(row.collection.refId)}';
       final subtitle = _titles.downloadsSubtitle(kind, items.length);
-      if (kind == DownloadCollectionKind.track) {
-        final track = _downloadTrackNode(
+      if (kind == DownloadCollectionKind.track ||
+          kind == DownloadCollectionKind.episode) {
+        final track = _downloadItemNode(
           '$id/0',
           items.first,
           downloads.artwork,
@@ -396,6 +418,8 @@ final class BrowseTree {
         : null;
     final request = collection == null
         ? null
+        : collection.kind == DownloadCollectionKind.episode
+        ? _episodeRequest(collection.items, int.parse(parts[3]))
         : _request(
             [for (final item in collection.items) _downloadTrack(item)],
             int.parse(parts[3]),
@@ -438,7 +462,21 @@ final class BrowseTree {
         .watchCollectionWithItems(kind, refId)
         .first;
     if (row == null) return null;
-    return (kind: kind, refId: refId, items: _completedTracks(row.items));
+    return (kind: kind, refId: refId, items: _completedItems(kind, row.items));
+  }
+
+  /// The downloaded episode at [index] of [items], played alone; null when
+  /// there is none.
+  static PlayRequest? _episodeRequest(List<DownloadItem> items, int index) {
+    final meta = index < items.length
+        ? EpisodeDownloadMeta.fromJson(items[index].metaJson)
+        : null;
+    return meta == null
+        ? null
+        : PlayRequest.ofEpisode(
+            episode: meta.toEpisode(),
+            podcast: meta.toPodcast(),
+          );
   }
 
   static DownloadCollectionKind? _collectionKind(String name) {
@@ -448,20 +486,40 @@ final class BrowseTree {
     return null;
   }
 
-  /// The completed track items of [items], in order. Episodes are not
-  /// played from the car yet.
-  static List<DownloadItem> _completedTracks(List<DownloadItem> items) => [
-    for (final item in items)
-      if (item.status == DownloadStatus.completed &&
-          item.itemKey.startsWith('t:'))
-        item,
-  ];
+  /// The completed items of [items] that a collection of [kind] plays,
+  /// in order: episodes for an episode collection, tracks otherwise.
+  static List<DownloadItem> _completedItems(
+    DownloadCollectionKind kind,
+    List<DownloadItem> items,
+  ) {
+    final prefix = kind == DownloadCollectionKind.episode ? 'e:' : 't:';
+    return [
+      for (final item in items)
+        if (item.status == DownloadStatus.completed &&
+            item.itemKey.startsWith(prefix))
+          item,
+    ];
+  }
 
-  static BrowseNode _downloadTrackNode(
+  /// The playable node [id] of the completed track or episode [item].
+  static BrowseNode _downloadItemNode(
     String id,
     DownloadItem item,
     ArtworkContentUri artwork,
   ) {
+    if (item.itemKey.startsWith('e:')) {
+      final meta = EpisodeDownloadMeta.fromJson(item.metaJson);
+      final ref = meta?.artworkRef;
+      final duration = meta?.durationSec;
+      return BrowseNode(
+        id: id,
+        title: meta?.title ?? '',
+        subtitle: meta?.podcastTitle,
+        duration: duration == null ? null : Duration(seconds: duration),
+        artUri: ref == null || ref.isEmpty ? null : artwork.forArtRef(ref),
+        playable: true,
+      );
+    }
     final meta = _downloadTrack(item).meta;
     final ref = meta.artworkRef;
     return BrowseNode(

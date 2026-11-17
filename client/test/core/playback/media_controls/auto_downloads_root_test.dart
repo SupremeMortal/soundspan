@@ -7,6 +7,7 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:soundspan/core/downloads/download_keys.dart';
 import 'package:soundspan/core/downloads/download_store.dart';
+import 'package:soundspan/core/downloads/episode_download_meta.dart';
 import 'package:soundspan/core/logging/app_logger.dart';
 import 'package:soundspan/core/playback/media_controls/audio_service_controls.dart';
 import 'package:soundspan/core/playback/media_controls/browse/browse_tree.dart';
@@ -86,6 +87,45 @@ void main() {
       );
       await store.addMembership(kind, refId, key, i);
     }
+  }
+
+  Future<void> episode(
+    String podcastId,
+    String episodeId,
+    DownloadStatus status,
+  ) async {
+    final refId = '$podcastId:$episodeId';
+    await store.upsertCollection(
+      kind: DownloadCollectionKind.episode,
+      refId: refId,
+      title: 'Ep $episodeId',
+      metaJson: jsonEncode({
+        'subtitle': 'Pod',
+        'artworkRef': 'cover-$podcastId',
+      }),
+      status: DownloadCollectionStatus.ready,
+      requestedAt: DateTime.utc(2026, 5, 1, 12, minute++),
+    );
+    final key = EpisodeItemKey(podcastId: podcastId, episodeId: episodeId);
+    await store.upsertItem(
+      key,
+      DownloadItemsCompanion(
+        metaJson: Value(
+          EpisodeDownloadMeta(
+            episodeId: episodeId,
+            podcastId: podcastId,
+            title: 'Ep $episodeId',
+            podcastTitle: 'Pod $podcastId',
+            durationSec: 1200,
+            artworkRef: 'cover-$podcastId',
+            positionSec: 30,
+          ).toJson(),
+        ),
+        status: Value(status),
+        requestedAt: Value(DateTime.utc(2026, 5, 2)),
+      ),
+    );
+    await store.addMembership(DownloadCollectionKind.episode, refId, key, 0);
   }
 
   setUp(() async {
@@ -259,6 +299,64 @@ void main() {
       const QueueContext(kind: QueueContextKind.playlist, id: _oddPlaylist),
     );
   });
+
+  test('a completed episode collection is listed as a playable episode with '
+      'the episode subtitle and its cover; a queued one is not', () async {
+    await episode('pod/1', 'ep1', DownloadStatus.completed);
+    await episode('pod2', 'ep2', DownloadStatus.queued);
+    artwork.pinned.add('cover-pod/1');
+
+    final items = await handler.getChildren('downloads');
+    final id = 'downloads/episode/${Uri.encodeComponent('pod/1:ep1')}/0';
+
+    expect([for (final i in items) i.id], contains(id));
+    expect(
+      items.where((i) => i.id.startsWith('downloads/episode/')),
+      hasLength(1),
+    );
+    final node = items.singleWhere((i) => i.id == id);
+    expect(node.playable, isTrue);
+    expect(node.title, 'Ep ep1');
+    expect(node.artist, 'episode · 1');
+    expect(node.duration, const Duration(seconds: 1200));
+    expect(node.artUri, Uri.parse('content://art/cover-pod/1'));
+  });
+
+  test('playing a downloaded episode sends one episode to the controller, '
+      'with no call to the browse source', () async {
+    await episode('pod/1', 'ep1', DownloadStatus.completed);
+    final id = 'downloads/episode/${Uri.encodeComponent('pod/1:ep1')}/0';
+
+    await handler.getChildren('downloads');
+    await handler.playFromMediaId(id);
+
+    expect(commands.calls, ['playRequest 0']);
+    final request = commands.requests.single;
+    expect(request.tracks, isEmpty);
+    expect(request.episode?.id, 'ep1');
+    expect(request.episode?.title, 'Ep ep1');
+    expect(request.episode?.progress?.currentTimeSec, 30);
+    expect(request.podcast?.id, 'pod/1');
+    expect(request.podcast?.title, 'Pod pod/1');
+    expect(source.calls, 0);
+  });
+
+  test(
+    'a queued episode, or an index past the episode, plays nothing',
+    () async {
+      await episode('pod2', 'ep2', DownloadStatus.queued);
+      await episode('pod3', 'ep3', DownloadStatus.completed);
+
+      await handler.playFromMediaId(
+        'downloads/episode/${Uri.encodeComponent('pod2:ep2')}/0',
+      );
+      await handler.playFromMediaId(
+        'downloads/episode/${Uri.encodeComponent('pod3:ep3')}/1',
+      );
+
+      expect(commands.calls, isEmpty);
+    },
+  );
 
   test('without downloads the root has no Downloads entry', () async {
     commands.browseDownloads = null;
