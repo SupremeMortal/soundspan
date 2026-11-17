@@ -6,6 +6,7 @@ import 'package:flutter/widgets.dart'
     show AppLifecycleListener, AppLifecycleState, WidgetsBinding;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:soundspan/core/connectivity/reachability.dart';
+import 'package:soundspan/core/logging/app_logger.dart';
 import 'package:soundspan/core/playback/audio_focus.dart';
 import 'package:soundspan/core/playback/data/playback_info_repository.dart';
 import 'package:soundspan/core/playback/engines/player_engine_provider.dart';
@@ -21,6 +22,7 @@ import 'package:soundspan/core/profile/api_provider.dart';
 import 'package:soundspan/core/profile/capabilities.dart';
 import 'package:soundspan/core/profile/profile_disposer.dart';
 import 'package:soundspan/core/profile/profile_providers.dart';
+import 'package:soundspan/core/profile/profile_runtime.dart';
 import 'package:soundspan/core/profile/settings/settings_providers.dart';
 import 'package:soundspan/core/profile/settings/user_settings.dart';
 import 'package:soundspan/core/storage/state/queue_dao.dart';
@@ -34,6 +36,8 @@ import 'package:soundspan/platform/audio_session/audio_session_gateway.dart';
 import 'package:soundspan/platform/stream_auth/stream_auth.dart';
 import 'package:soundspan/shared/clock.dart';
 import 'package:soundspan_api/soundspan_api.dart' show StreamUrls;
+
+final AppLogger _log = AppLogger.scope('Playback');
 
 /// The [PlaybackInfoRepository] of the profile scope; its cache lives as
 /// long as the scope.
@@ -240,3 +244,37 @@ final StreamProvider<PlaybackSnapshot> playbackStateProvider =
       dependencies: [playbackControllerProvider],
       retry: (_, _) => null,
     );
+
+/// Creates the [PlaybackController] of every profile that becomes active in
+/// [root]'s [ProfileRuntime], as soon as it is active, so the queue it
+/// restores from `state.db` shows in the players, paused, on the first
+/// frame (doc 02, Bootstrap Sequence; doc 06, Local Queue Persistence).
+///
+/// Call it before the runtime activates the stored profile. A controller
+/// that cannot be created (no engine on the platform) is logged; the next
+/// play action reports the failure.
+void createPlaybackOnActivation(ProviderContainer root) {
+  final runtime = root.read(profileRuntimeProvider);
+  final created = Expando<bool>();
+  void onState() {
+    final container = runtime.container;
+    if (runtime.state.value is! ProfileRuntimeActive || container == null) {
+      return;
+    }
+    if (created[container] ?? false) return;
+    created[container] = true;
+    try {
+      container.read(playbackControllerProvider);
+    } on Object catch (error, stackTrace) {
+      _log.severe(
+        'Could not create the playback controller',
+        const {},
+        error,
+        stackTrace,
+      );
+    }
+  }
+
+  runtime.state.addListener(onState);
+  onState();
+}

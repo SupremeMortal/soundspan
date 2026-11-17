@@ -20,6 +20,7 @@ import 'package:soundspan/core/downloads/download_scheduler.dart';
 import 'package:soundspan/core/logging/app_logger.dart';
 import 'package:soundspan/core/logging/console_log_sink.dart';
 import 'package:soundspan/core/playback/media_controls/media_controls_providers.dart';
+import 'package:soundspan/core/playback/playback_providers.dart';
 import 'package:soundspan/core/profile/capability_refresher.dart';
 import 'package:soundspan/core/profile/key_expiry_binding.dart';
 import 'package:soundspan/core/profile/profile_providers.dart';
@@ -180,7 +181,8 @@ String currentOsName() => kIsWeb
       };
 
 /// Builds the root [ProviderContainer] (doc 02, steps 3, 4 and 6) and
-/// activates the stored active profile.
+/// activates the stored active profile, creating the playback controller
+/// of every profile that becomes active ([createPlaybackOnActivation]).
 ///
 /// The container overrides the paths, the database opener, the opened
 /// `app.db`, the secret store and the `User-Agent`, and seeds the active
@@ -222,6 +224,7 @@ Future<ProviderContainer> createRootContainer({
       ...overrides,
     ],
   );
+  createPlaybackOnActivation(root);
   try {
     await root.read(profileRuntimeProvider).start();
   } on Object catch (error, stackTrace) {

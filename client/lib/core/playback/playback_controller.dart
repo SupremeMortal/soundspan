@@ -236,6 +236,10 @@ class PlaybackController {
     persistence.follow(snapshots, isRemote: () => hasRemoteDriver);
   });
 
+  /// Completes once every step queued before it, [restore] included, is
+  /// done.
+  Future<void> get settled => _enqueue(() async {});
+
   /// Applies [command] after every command that arrived before it, or
   /// hands it to the attached [RemoteDriver].
   ///

@@ -61,7 +61,8 @@ class TestRoot {
   /// Each name in [others] adds a signed-in profile of user `<name>` on
   /// `https://<name>.example.com`, each used one minute after the one
   /// before; their ids are in [otherIds]. [secrets] and [clock] replace the
-  /// new [InMemorySecretStore] and [FakeClock].
+  /// new [InMemorySecretStore] and [FakeClock]. [engine] replaces
+  /// `FakeEngine.new` as the playback engine builder.
   static Future<TestRoot> create({
     StoredProfile stored = StoredProfile.none,
     List<Override> overrides = const [],
@@ -71,6 +72,7 @@ class TestRoot {
     List<String> others = const [],
     InMemorySecretStore? secrets,
     FakeClock? clock,
+    PlayerEngineBuilder? engine,
   }) async {
     final reused = database != null;
     database ??= AppDatabase(NativeDatabase.memory());
@@ -132,10 +134,16 @@ class TestRoot {
       userAgent: 'soundspan-client/test (test)',
       overrides: [
         clockProvider.overrideWithValue(clock),
-        playerEngineBuilderProvider.overrideWithValue(FakeEngine.new),
+        playerEngineBuilderProvider.overrideWithValue(engine ?? FakeEngine.new),
         ...overrides,
       ],
     );
+    // The active profile's controller restores its queue in real time;
+    // let it finish here, so the first pumped frame shows it.
+    final profile = container.read(profileRuntimeProvider).container;
+    if (profile != null && profile.read(playbackControllerProvider.exists)) {
+      await profile.read(playbackControllerProvider).settled;
+    }
     return TestRoot._(
       container,
       database,
@@ -174,8 +182,8 @@ extension PumpSoundspanApp on WidgetTester {
   /// Builds a [TestRoot] with [stored] and pumps [SoundspanApp] on it at
   /// [size]; everything is released when the test ends.
   ///
-  /// [overrides], [database], [opener], [role], [others], [secrets] and
-  /// [clock] are passed to [TestRoot.create].
+  /// [overrides], [database], [opener], [role], [others], [secrets],
+  /// [clock] and [engine] are passed to [TestRoot.create].
   Future<TestRoot> pumpSoundspanApp({
     StoredProfile stored = StoredProfile.none,
     Size size = const Size(390, 844),
@@ -186,6 +194,7 @@ extension PumpSoundspanApp on WidgetTester {
     List<String> others = const [],
     InMemorySecretStore? secrets,
     FakeClock? clock,
+    PlayerEngineBuilder? engine,
   }) async {
     view
       ..physicalSize = size
@@ -201,6 +210,7 @@ extension PumpSoundspanApp on WidgetTester {
         others: others,
         secrets: secrets,
         clock: clock,
+        engine: engine,
       ),
     ))!;
     addTearDown(() async {
