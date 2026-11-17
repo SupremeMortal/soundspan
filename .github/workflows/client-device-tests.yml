@@ -12,7 +12,8 @@ name: Client Device Tests
 # headless Chrome, Linux and Windows) with tones from the in-process (web: a
 # separate process) tone server, then
 # integration_test/media_controls_smoke_test.dart against the platform's OS
-# media controls (audio_service; MPRIS on Linux; SMTC on Windows).
+# media controls (audio_service; MPRIS on Linux; SMTC on Windows). The iOS
+# job also runs integration_test/ios/route_picker_test.dart.
 #
 # The desktop suite: every desktop-integration job runs the real app from
 # integration_test/desktop/ against an in-process API server (shell,
@@ -137,6 +138,12 @@ jobs:
         env:
           UDID: ${{ steps.sim.outputs.udid }}
         run: flutter test integration_test/media_controls_smoke_test.dart -d "$UDID"
+
+      - name: Route picker on the simulator
+        working-directory: client
+        env:
+          UDID: ${{ steps.sim.outputs.udid }}
+        run: flutter test integration_test/ios/route_picker_test.dart -d "$UDID"
 
   engine-conformance-macos:
     name: engine-conformance-macos

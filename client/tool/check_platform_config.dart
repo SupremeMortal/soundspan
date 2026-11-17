@@ -2,16 +2,20 @@
 
 // Checks the platform configuration files for the entries the app needs
 // (doc 10: the Android manifest table, Cleartext HTTP and backup rules, the
-// Deep Links Summary, and the camera entries of the QR scanner) and exits
-// non-zero listing every missing one.
+// Deep Links Summary, the camera entries of the QR scanner, and the iOS and
+// macOS Info.plist, entitlements and privacy manifest tables) and exits
+// non-zero listing every missing or unexpected one.
 //
 //   dart run tool/check_platform_config.dart [--android-manifest=<path>]
 //       [--android-res=<dir>] [--ios-plist=<path>] [--macos-plist=<path>]
 //       [--linux-desktop=<path>] [--macos-entitlements=<path>[,<path>…]]
+//       [--macos-release-entitlements=<path>]
+//       [--ios-privacy-manifest=<path>]
 //
 // Paths default to the source files under client/. Run from client/.
 // --android-manifest also takes the merged manifest of a built APK
-// (`apkanalyzer manifest print`).
+// (`apkanalyzer manifest print`). The plist files must be XML property
+// lists; convert a built binary one first with `plutil -convert xml1`.
 
 import 'dart:io';
 
@@ -23,8 +27,38 @@ const String urlScheme = 'soundspan';
 /// The `NSCameraUsageDescription` of the iOS and macOS apps (doc 10).
 const String cameraUsageDescription = 'Scan a soundspan link code.';
 
+/// The `NSLocalNetworkUsageDescription` of the iOS and macOS apps (doc 10).
+const String localNetworkUsageDescription =
+    'Connect to a soundspan server on your network.';
+
 /// The macOS entitlement that lets the QR scanner use the camera.
 const String cameraEntitlement = 'com.apple.security.device.camera';
+
+/// The entitlements every macOS build carries (doc 10, macOS).
+const List<String> macosEntitlements = [
+  'com.apple.security.app-sandbox',
+  'com.apple.security.network.client',
+  'com.apple.security.network.server',
+  cameraEntitlement,
+];
+
+/// The entitlement the release build adds for secure storage; its value is
+/// an array of access groups.
+const String keychainEntitlement = 'keychain-access-groups';
+
+/// The lowest macOS release the app supports (doc 10, macOS).
+const String macosMinimumVersion = '12.0';
+
+/// The required-reason API categories of the iOS privacy manifest and the
+/// reason codes the bundled plugins need (doc 10, App Store notes): file
+/// timestamps of files inside the app container, the app's own user
+/// defaults, and free disk space checked before downloads and shown in the
+/// storage settings.
+const Map<String, List<String>> privacyAccessedApiReasons = {
+  'NSPrivacyAccessedAPICategoryFileTimestamp': ['C617.1'],
+  'NSPrivacyAccessedAPICategoryUserDefaults': ['CA92.1'],
+  'NSPrivacyAccessedAPICategoryDiskSpace': ['E174.1', '85F4.1'],
+};
 
 /// The source file each flag defaults to, relative to `client/`.
 /// `macos-entitlements` is a comma-separated list.
@@ -37,21 +71,27 @@ const Map<String, String> defaultPaths = {
   'macos-entitlements':
       'macos/Runner/DebugProfile.entitlements,'
       'macos/Runner/Release.entitlements',
+  'macos-release-entitlements': 'macos/Runner/Release.entitlements',
+  'ios-privacy-manifest': 'ios/Runner/PrivacyInfo.xcprivacy',
 };
 
-/// One entry a configuration file lacks.
+/// One entry a configuration file lacks, or carries but must not.
 class ConfigViolation {
-  /// Creates a violation of [entry] in the file at [path].
-  const new(this.path, this.entry);
+  /// Creates a violation of [entry] in the file at [path]; [unexpected]
+  /// when the file has an entry it must not have.
+  const new(this.path, this.entry, {this.unexpected = false});
 
   /// The file checked.
   final String path;
 
-  /// What is missing.
+  /// What is missing or unexpected.
   final String entry;
 
+  /// Whether [entry] is present but must not be.
+  final bool unexpected;
+
   @override
-  String toString() => '$path: missing $entry';
+  String toString() => '$path: ${unexpected ? 'unexpected' : 'missing'} $entry';
 }
 
 /// Checks the files named in [paths] (keys of [defaultPaths]; absent keys
@@ -63,12 +103,17 @@ List<ConfigViolation> checkPlatformConfig([
   return [
     ...checkAndroidManifest(path('android-manifest')),
     ...checkAndroidRes(path('android-res')),
-    ...checkPlist(path('ios-plist')),
-    ...checkPlist(path('macos-plist')),
+    ...checkIosPlist(path('ios-plist')),
+    ...checkMacosPlist(path('macos-plist')),
     ...checkLinuxDesktop(path('linux-desktop')),
     for (final entitlements in path('macos-entitlements').split(','))
       if (entitlements.trim().isNotEmpty)
         ...checkMacosEntitlements(entitlements.trim()),
+    ...checkMacosEntitlements(
+      path('macos-release-entitlements'),
+      release: true,
+    ),
+    ...checkIosPrivacyManifest(path('ios-privacy-manifest')),
   ];
 }
 
@@ -368,14 +413,40 @@ List<ConfigViolation> checkAndroidRes(String dir) {
   return out;
 }
 
-/// `CFBundleURLTypes` with a `CFBundleURLSchemes` entry `soundspan`, and the
-/// [cameraUsageDescription] (iOS and macOS `Info.plist`).
+/// The top-level `<dict>` of the property list at [path], or `null` after
+/// adding the violation to [out].
+XmlElement? _readPlistDict(String path, List<ConfigViolation> out) {
+  final document = _readXml(path, out);
+  if (document == null) return null;
+  final top = document.rootElement.findElements('dict').firstOrNull;
+  if (top == null) out.add(ConfigViolation(path, 'a top-level <dict>'));
+  return top;
+}
+
+bool _isTrue(XmlElement? value) => value?.name.local == 'true';
+
+bool _isFalse(XmlElement? value) => value?.name.local == 'false';
+
+bool _isString(XmlElement? value, String expected) =>
+    value?.name.local == 'string' && value!.innerText.trim() == expected;
+
+List<String>? _stringArray(XmlElement? value) => value?.name.local != 'array'
+    ? null
+    : [for (final e in value!.childElements) e.innerText.trim()];
+
+/// The entries the iOS and macOS `Info.plist` share: `CFBundleURLTypes`
+/// with a `CFBundleURLSchemes` entry `soundspan`, the camera and local
+/// network usage descriptions, and `NSAppTransportSecurity` allowing local
+/// networking and no arbitrary loads.
 List<ConfigViolation> checkPlist(String path) {
   final out = <ConfigViolation>[];
-  final document = _readXml(path, out);
-  if (document == null) return out;
-  final top = document.rootElement.findElements('dict').firstOrNull;
-  final types = top == null ? null : _plistValue(top, 'CFBundleURLTypes');
+  final top = _readPlistDict(path, out);
+  if (top != null) _checkSharedPlist(path, top, out);
+  return out;
+}
+
+void _checkSharedPlist(String path, XmlElement top, List<ConfigViolation> out) {
+  final types = _plistValue(top, 'CFBundleURLTypes');
   final registered =
       types != null &&
       types.name.local == 'array' &&
@@ -394,12 +465,10 @@ List<ConfigViolation> checkPlist(String path) {
       ),
     );
   }
-  final camera = top == null
-      ? null
-      : _plistValue(top, 'NSCameraUsageDescription');
-  if (camera == null ||
-      camera.name.local != 'string' ||
-      camera.innerText.trim() != cameraUsageDescription) {
+  if (!_isString(
+    _plistValue(top, 'NSCameraUsageDescription'),
+    cameraUsageDescription,
+  )) {
     out.add(
       ConfigViolation(
         path,
@@ -407,19 +476,202 @@ List<ConfigViolation> checkPlist(String path) {
       ),
     );
   }
+  if (!_isString(
+    _plistValue(top, 'NSLocalNetworkUsageDescription'),
+    localNetworkUsageDescription,
+  )) {
+    out.add(
+      ConfigViolation(
+        path,
+        'NSLocalNetworkUsageDescription "$localNetworkUsageDescription"',
+      ),
+    );
+  }
+  final ats = _plistValue(top, 'NSAppTransportSecurity');
+  if (ats?.name.local != 'dict' ||
+      !_isTrue(_plistValue(ats!, 'NSAllowsLocalNetworking'))) {
+    out.add(
+      ConfigViolation(
+        path,
+        'NSAppTransportSecurity with NSAllowsLocalNetworking true',
+      ),
+    );
+  }
+  if (ats != null && ats.name.local == 'dict') {
+    for (final key in ats.findElements('key')) {
+      final name = key.innerText.trim();
+      if (name.startsWith('NSAllowsArbitraryLoads')) {
+        out.add(
+          ConfigViolation(
+            path,
+            '$name in NSAppTransportSecurity',
+            unexpected: true,
+          ),
+        );
+      }
+      if (name == 'NSExceptionDomains') {
+        out.add(
+          ConfigViolation(
+            path,
+            'NSExceptionDomains in NSAppTransportSecurity',
+            unexpected: true,
+          ),
+        );
+      }
+    }
+  }
+}
+
+/// The iOS `Info.plist` (doc 10, iOS): the shared entries of [checkPlist],
+/// `UIBackgroundModes` of `audio` only, `ITSAppUsesNonExemptEncryption`
+/// false, `UIApplicationSupportsIndirectInputEvents` true,
+/// `UISupportsDocumentBrowser` false and no `LSApplicationQueriesSchemes`.
+List<ConfigViolation> checkIosPlist(String path) {
+  final out = <ConfigViolation>[];
+  final top = _readPlistDict(path, out);
+  if (top == null) return out;
+  _checkSharedPlist(path, top, out);
+  final modes = _stringArray(_plistValue(top, 'UIBackgroundModes'));
+  if (modes == null || !modes.contains('audio')) {
+    out.add(ConfigViolation(path, 'UIBackgroundModes [audio]'));
+  }
+  for (final mode in modes ?? const <String>[]) {
+    if (mode != 'audio') {
+      out.add(
+        ConfigViolation(path, 'UIBackgroundModes $mode', unexpected: true),
+      );
+    }
+  }
+  if (!_isFalse(_plistValue(top, 'ITSAppUsesNonExemptEncryption'))) {
+    out.add(ConfigViolation(path, 'ITSAppUsesNonExemptEncryption false'));
+  }
+  if (!_isTrue(_plistValue(top, 'UIApplicationSupportsIndirectInputEvents'))) {
+    out.add(
+      ConfigViolation(path, 'UIApplicationSupportsIndirectInputEvents true'),
+    );
+  }
+  if (!_isFalse(_plistValue(top, 'UISupportsDocumentBrowser'))) {
+    out.add(ConfigViolation(path, 'UISupportsDocumentBrowser false'));
+  }
+  if (_plistValue(top, 'LSApplicationQueriesSchemes') != null) {
+    out.add(
+      ConfigViolation(path, 'LSApplicationQueriesSchemes', unexpected: true),
+    );
+  }
   return out;
 }
 
-/// `<key>com.apple.security.device.camera</key><true/>` in a macOS
-/// `.entitlements` file.
-List<ConfigViolation> checkMacosEntitlements(String path) {
+/// The macOS `Info.plist` (doc 10, macOS): the shared entries of
+/// [checkPlist], `LSMinimumSystemVersion` of [macosMinimumVersion] (or the
+/// build setting that expands to it in the source file) and
+/// `LSApplicationCategoryType` `public.app-category.music`.
+List<ConfigViolation> checkMacosPlist(String path) {
   final out = <ConfigViolation>[];
-  final document = _readXml(path, out);
-  if (document == null) return out;
-  final top = document.rootElement.findElements('dict').firstOrNull;
-  final value = top == null ? null : _plistValue(top, cameraEntitlement);
-  if (value == null || value.name.local != 'true') {
-    out.add(ConfigViolation(path, '<key>$cameraEntitlement</key><true/>'));
+  final top = _readPlistDict(path, out);
+  if (top == null) return out;
+  _checkSharedPlist(path, top, out);
+  final minimum = _plistValue(top, 'LSMinimumSystemVersion');
+  if (!_isString(minimum, macosMinimumVersion) &&
+      !_isString(minimum, r'$(MACOSX_DEPLOYMENT_TARGET)')) {
+    out.add(
+      ConfigViolation(path, 'LSMinimumSystemVersion $macosMinimumVersion'),
+    );
+  }
+  if (!_isString(
+    _plistValue(top, 'LSApplicationCategoryType'),
+    'public.app-category.music',
+  )) {
+    out.add(
+      ConfigViolation(
+        path,
+        'LSApplicationCategoryType public.app-category.music',
+      ),
+    );
+  }
+  return out;
+}
+
+/// The [macosEntitlements] set to true in a macOS `.entitlements` file
+/// (or the output of `codesign -d --entitlements - --xml`); with
+/// [release], also a non-empty [keychainEntitlement] array.
+List<ConfigViolation> checkMacosEntitlements(
+  String path, {
+  bool release = false,
+}) {
+  final out = <ConfigViolation>[];
+  final top = _readPlistDict(path, out);
+  if (top == null) return out;
+  for (final entitlement in macosEntitlements) {
+    if (!_isTrue(_plistValue(top, entitlement))) {
+      out.add(ConfigViolation(path, '<key>$entitlement</key><true/>'));
+    }
+  }
+  if (release) {
+    final groups = _stringArray(_plistValue(top, keychainEntitlement));
+    if (groups == null || groups.isEmpty || groups.any((g) => g.isEmpty)) {
+      out.add(ConfigViolation(path, '$keychainEntitlement with a group'));
+    }
+  }
+  return out;
+}
+
+/// The iOS privacy manifest `PrivacyInfo.xcprivacy` (doc 10, App Store
+/// notes): no tracking, no tracking domains, no collected data types, and
+/// exactly the [privacyAccessedApiReasons].
+List<ConfigViolation> checkIosPrivacyManifest(String path) {
+  final out = <ConfigViolation>[];
+  final top = _readPlistDict(path, out);
+  if (top == null) return out;
+  if (!_isFalse(_plistValue(top, 'NSPrivacyTracking'))) {
+    out.add(ConfigViolation(path, 'NSPrivacyTracking false'));
+  }
+  for (final key in const [
+    'NSPrivacyTrackingDomains',
+    'NSPrivacyCollectedDataTypes',
+  ]) {
+    final value = _plistValue(top, key);
+    if (value?.name.local != 'array' || value!.childElements.isNotEmpty) {
+      out.add(ConfigViolation(path, '$key as an empty array'));
+    }
+  }
+  final types = _plistValue(top, 'NSPrivacyAccessedAPITypes');
+  final declared = <String, List<String>>{};
+  if (types?.name.local == 'array') {
+    for (final entry in types!.findElements('dict')) {
+      final category = _plistValue(entry, 'NSPrivacyAccessedAPIType');
+      final reasons = _stringArray(
+        _plistValue(entry, 'NSPrivacyAccessedAPITypeReasons'),
+      );
+      if (category != null) {
+        declared[category.innerText.trim()] = reasons ?? const [];
+      }
+    }
+  }
+  for (final MapEntry(key: category, value: reasons)
+      in privacyAccessedApiReasons.entries) {
+    final found = declared[category];
+    if (found == null ||
+        found.length != reasons.length ||
+        !reasons.every(found.contains)) {
+      out.add(
+        ConfigViolation(
+          path,
+          'NSPrivacyAccessedAPITypes $category with reasons '
+          '${reasons.join(', ')}',
+        ),
+      );
+    }
+  }
+  for (final category in declared.keys) {
+    if (!privacyAccessedApiReasons.containsKey(category)) {
+      out.add(
+        ConfigViolation(
+          path,
+          'NSPrivacyAccessedAPITypes $category',
+          unexpected: true,
+        ),
+      );
+    }
   }
   return out;
 }
@@ -508,7 +760,7 @@ void main(List<String> args) {
   final violations = checkPlatformConfig(paths)..forEach(stderr.writeln);
   if (violations.isNotEmpty) {
     stderr.writeln(
-      'check_platform_config: ${violations.length} missing '
+      'check_platform_config: ${violations.length} missing or unexpected '
       '${violations.length == 1 ? 'entry' : 'entries'}',
     );
     exitCode = 1;

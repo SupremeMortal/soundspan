@@ -1865,6 +1865,10 @@
   "@nowPlayingQueue": {
     "description": "Tooltip of the button that shows the play queue, on the now-playing screen and on the player bar."
   },
+  "nowPlayingAudioOutput": "[Åûðîö öûţþûţ one two]",
+  "@nowPlayingAudioOutput": {
+    "description": "Accessibility label of the system audio output picker (AirPlay) on the now-playing screen."
+  },
   "nowPlayingExpand": "[Šĥöŵ ñöŵ þļåýîñĝ one two]",
   "@nowPlayingExpand": {
     "description": "Tooltip of the player bar button that shows large artwork of the playing item over the content area."

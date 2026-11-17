@@ -31,6 +31,7 @@ final class PlatformCapabilities {
     required this.isDesktop,
     required this.allowsPublicCleartextHttp,
     required this.hasMobileData,
+    required this.hasSystemRoutePicker,
   });
 
   /// The capabilities of the native app on [platform] (doc 10).
@@ -51,6 +52,7 @@ final class PlatformCapabilities {
     isDesktop: false,
     allowsPublicCleartextHttp: true,
     hasMobileData: true,
+    hasSystemRoutePicker: false,
   );
 
   /// iOS; App Transport Security blocks public `http://` servers.
@@ -63,6 +65,7 @@ final class PlatformCapabilities {
     isDesktop: false,
     allowsPublicCleartextHttp: false,
     hasMobileData: true,
+    hasSystemRoutePicker: true,
   );
 
   /// macOS; closing the window keeps the app in the Dock, so there is no
@@ -76,6 +79,7 @@ final class PlatformCapabilities {
     isDesktop: true,
     allowsPublicCleartextHttp: false,
     hasMobileData: false,
+    hasSystemRoutePicker: false,
   );
 
   /// Windows and Linux; no camera QR scanner.
@@ -88,6 +92,7 @@ final class PlatformCapabilities {
     isDesktop: true,
     allowsPublicCleartextHttp: true,
     hasMobileData: false,
+    hasSystemRoutePicker: false,
   );
 
   /// The web app: no downloads, and streams carry a JWT in `?token=`, which
@@ -101,6 +106,7 @@ final class PlatformCapabilities {
     isDesktop: false,
     allowsPublicCleartextHttp: true,
     hasMobileData: false,
+    hasSystemRoutePicker: false,
   );
 
   /// Tracks and episodes can be downloaded for offline use.
@@ -128,6 +134,10 @@ final class PlatformCapabilities {
   /// be set apart for it (Android and iOS).
   final bool hasMobileData;
 
+  /// The OS offers an audio output picker that the now-playing screen
+  /// embeds (`AVRoutePickerView` for AirPlay on iOS, doc 10).
+  final bool hasSystemRoutePicker;
+
   @override
   bool operator ==(Object other) =>
       other is PlatformCapabilities &&
@@ -138,7 +148,8 @@ final class PlatformCapabilities {
       other.supportsApiKeyStreaming == supportsApiKeyStreaming &&
       other.isDesktop == isDesktop &&
       other.allowsPublicCleartextHttp == allowsPublicCleartextHttp &&
-      other.hasMobileData == hasMobileData;
+      other.hasMobileData == hasMobileData &&
+      other.hasSystemRoutePicker == hasSystemRoutePicker;
 
   @override
   int get hashCode => Object.hash(
@@ -150,6 +161,7 @@ final class PlatformCapabilities {
     isDesktop,
     allowsPublicCleartextHttp,
     hasMobileData,
+    hasSystemRoutePicker,
   );
 
   @override
@@ -160,7 +172,8 @@ final class PlatformCapabilities {
       'supportsApiKeyStreaming: $supportsApiKeyStreaming, '
       'isDesktop: $isDesktop, '
       'allowsPublicCleartextHttp: $allowsPublicCleartextHttp, '
-      'hasMobileData: $hasMobileData)';
+      'hasMobileData: $hasMobileData, '
+      'hasSystemRoutePicker: $hasSystemRoutePicker)';
 }
 
 /// The capabilities of the platform the app runs on.

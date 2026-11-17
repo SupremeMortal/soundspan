@@ -76,7 +76,7 @@ jobs:
           changed="$(git diff --name-only "$base" HEAD)"
           printf 'Changed files:\n%s\n' "$changed"
           has() { grep -Eq "$1" <<< "$changed" && echo true || echo false; }
-          device="$(has '^(client/lib/core/playback/engines/|client/integration_test/|client/lib/platform/player_engine/|client/lib/core/playback/media_controls/|client/lib/platform/media_controls/|client/android/|client/windows/|client/packages/soundspan_smtc/|\.github/workflows/client-device-tests\.yml$)')"
+          device="$(has '^(client/lib/core/playback/engines/|client/integration_test/|client/lib/platform/player_engine/|client/lib/core/playback/media_controls/|client/lib/platform/media_controls/|client/android/|client/ios/|client/windows/|client/packages/soundspan_smtc/|\.github/workflows/client-device-tests\.yml$)')"
           desktop_integration="$(has '^(client/integration_test/desktop/|client/lib/app/|client/lib/platform/|client/linux/|client/windows/|client/macos/|client/pubspec\.lock$|\.github/workflows/client-device-tests\.yml$)')"
           {
             echo "client=$(has '^(client/|\.github/workflows/client-[^/]*\.yml$|\.github/actions/client-flutter/)')"
@@ -671,6 +671,44 @@ jobs:
       - name: Build iOS release without code signing
         working-directory: client
         run: flutter build ios --release --no-codesign --dart-define-from-file=config/dev.json
+
+      # The built bundles carry the Info.plist keys, entitlements and
+      # privacy manifest of doc 10, a universal macOS binary and the
+      # hardened runtime.
+      - name: Check the built bundles
+        working-directory: client
+        shell: bash
+        run: |
+          set -euo pipefail
+          mac_app=build/macos/Build/Products/Release/soundspan.app
+          ios_app=build/ios/iphoneos/Runner.app
+          out="$RUNNER_TEMP/built-config"
+          mkdir -p "$out"
+          plutil -convert xml1 -o "$out/ios-Info.plist" "$ios_app/Info.plist"
+          plutil -convert xml1 -o "$out/macos-Info.plist" "$mac_app/Contents/Info.plist"
+          codesign -d --entitlements - --xml "$mac_app" > "$out/macos.entitlements"
+          test -f "$ios_app/PrivacyInfo.xcprivacy" || {
+            echo "PrivacyInfo.xcprivacy is missing from $ios_app"
+            exit 1
+          }
+          plutil -convert xml1 -o "$out/PrivacyInfo.xcprivacy" "$ios_app/PrivacyInfo.xcprivacy"
+          dart run tool/check_platform_config.dart \
+            --ios-plist="$out/ios-Info.plist" \
+            --macos-plist="$out/macos-Info.plist" \
+            --macos-release-entitlements="$out/macos.entitlements" \
+            --ios-privacy-manifest="$out/PrivacyInfo.xcprivacy"
+          archs="$(lipo -archs "$mac_app/Contents/MacOS/soundspan")"
+          echo "macOS architectures: $archs"
+          [[ " $archs " == *" arm64 "* && " $archs " == *" x86_64 "* ]] || {
+            echo "The macOS executable is not universal"
+            exit 1
+          }
+          signature="$(codesign -dv "$mac_app" 2>&1)"
+          echo "$signature"
+          grep -Eq 'flags=.*runtime' <<< "$signature" || {
+            echo "The macOS app is not signed with the hardened runtime"
+            exit 1
+          }
 
   # The engine conformance suite on an Android emulator, an iOS simulator,
   # macOS, headless Chrome, Linux and Windows, and the desktop integration

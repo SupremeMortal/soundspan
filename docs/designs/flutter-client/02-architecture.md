@@ -282,7 +282,7 @@ Each seam is an abstract class in `lib/platform/<name>/<name>.dart` with `_io.da
 | Persistent log sink | `createPersistentLogSink` (returns a `LogSink`) | `RollingFileLogSink` | `RingLogSink` |
 | Log export | `LogExporter` | Zip through `share_plus` (Android, iOS) or a `file_selector` save dialog (desktop) | Download of the ring as text |
 
-`PlatformCapabilities` is the only place UI asks "can this platform do X": `canDownload`, `canScanQr`, `hasTray`, `hasBackgroundPlayback`, `supportsApiKeyStreaming`, `isDesktop`, `allowsPublicCleartextHttp` (false on iOS and macOS, where App Transport Security blocks a public `http://` server), and `hasMobileData` (the device can be on a mobile data connection, so `Settings → Playback` shows a separate quality for it). Screens hide features by capability, never by `Platform.isX`.
+`PlatformCapabilities` is the only place UI asks "can this platform do X": `canDownload`, `canScanQr`, `hasTray`, `hasBackgroundPlayback`, `supportsApiKeyStreaming`, `isDesktop`, `allowsPublicCleartextHttp` (false on iOS and macOS, where App Transport Security blocks a public `http://` server), `hasMobileData` (the device can be on a mobile data connection, so `Settings → Playback` shows a separate quality for it), and `hasSystemRoutePicker` (the OS has an audio output picker the now-playing screen embeds: `AVRoutePickerView` on iOS). Screens hide features by capability, never by `Platform.isX`.
 
 | | Android | iOS | macOS | Windows, Linux | Web |
 |---|---|---|---|---|---|
@@ -294,3 +294,4 @@ Each seam is an abstract class in `lib/platform/<name>/<name>.dart` with `_io.da
 | `isDesktop` | no | no | yes | yes | no |
 | `allowsPublicCleartextHttp` | yes | no | no | yes | yes |
 | `hasMobileData` | yes | yes | no | no | no |
+| `hasSystemRoutePicker` | no | yes | no | no | no |

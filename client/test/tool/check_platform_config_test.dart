@@ -170,10 +170,8 @@ const _backupRules =
 $_excludes</full-backup-content>
 ''';
 
-const _plist = '''
-<?xml version="1.0" encoding="UTF-8"?>
-<plist version="1.0">
-<dict>
+/// The entries the iOS and macOS Info.plist share.
+const _sharedPlist = '''
   <key>CFBundleURLTypes</key>
   <array>
     <dict>
@@ -189,6 +187,45 @@ const _plist = '''
   <string>soundspan</string>
   <key>NSCameraUsageDescription</key>
   <string>Scan a soundspan link code.</string>
+  <key>NSLocalNetworkUsageDescription</key>
+  <string>Connect to a soundspan server on your network.</string>
+  <key>NSAppTransportSecurity</key>
+  <dict>
+    <key>NSAllowsLocalNetworking</key>
+    <true/>
+  </dict>
+''';
+
+const _iosPlist =
+    '''
+<?xml version="1.0" encoding="UTF-8"?>
+<plist version="1.0">
+<dict>
+$_sharedPlist
+  <key>UIBackgroundModes</key>
+  <array>
+    <string>audio</string>
+  </array>
+  <key>ITSAppUsesNonExemptEncryption</key>
+  <false/>
+  <key>UIApplicationSupportsIndirectInputEvents</key>
+  <true/>
+  <key>UISupportsDocumentBrowser</key>
+  <false/>
+</dict>
+</plist>
+''';
+
+const _macosPlist =
+    '''
+<?xml version="1.0" encoding="UTF-8"?>
+<plist version="1.0">
+<dict>
+$_sharedPlist
+  <key>LSMinimumSystemVersion</key>
+  <string>12.0</string>
+  <key>LSApplicationCategoryType</key>
+  <string>public.app-category.music</string>
 </dict>
 </plist>
 ''';
@@ -201,6 +238,56 @@ const _entitlements = '''
   <true/>
   <key>com.apple.security.device.camera</key>
   <true/>
+  <key>com.apple.security.network.client</key>
+  <true/>
+  <key>com.apple.security.network.server</key>
+  <true/>
+  <key>keychain-access-groups</key>
+  <array>
+    <string>ABCDE12345.io.soundspan.app</string>
+  </array>
+</dict>
+</plist>
+''';
+
+const _privacy = '''
+<?xml version="1.0" encoding="UTF-8"?>
+<plist version="1.0">
+<dict>
+  <key>NSPrivacyTracking</key>
+  <false/>
+  <key>NSPrivacyTrackingDomains</key>
+  <array/>
+  <key>NSPrivacyCollectedDataTypes</key>
+  <array/>
+  <key>NSPrivacyAccessedAPITypes</key>
+  <array>
+    <dict>
+      <key>NSPrivacyAccessedAPIType</key>
+      <string>NSPrivacyAccessedAPICategoryFileTimestamp</string>
+      <key>NSPrivacyAccessedAPITypeReasons</key>
+      <array>
+        <string>C617.1</string>
+      </array>
+    </dict>
+    <dict>
+      <key>NSPrivacyAccessedAPIType</key>
+      <string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+      <key>NSPrivacyAccessedAPITypeReasons</key>
+      <array>
+        <string>CA92.1</string>
+      </array>
+    </dict>
+    <dict>
+      <key>NSPrivacyAccessedAPIType</key>
+      <string>NSPrivacyAccessedAPICategoryDiskSpace</string>
+      <key>NSPrivacyAccessedAPITypeReasons</key>
+      <array>
+        <string>E174.1</string>
+        <string>85F4.1</string>
+      </array>
+    </dict>
+  </array>
 </dict>
 </plist>
 ''';
@@ -224,6 +311,22 @@ const _requiredFeature =
 
 const _cameraDescription =
     'NSCameraUsageDescription "Scan a soundspan link code."';
+
+const _missingLocalNetwork =
+    'missing NSLocalNetworkUsageDescription '
+    '"Connect to a soundspan server on your network."';
+
+const _missingUserDefaults =
+    'missing NSPrivacyAccessedAPITypes '
+    'NSPrivacyAccessedAPICategoryUserDefaults with reasons CA92.1';
+
+const _unexpectedBootTime =
+    'unexpected NSPrivacyAccessedAPITypes '
+    'NSPrivacyAccessedAPICategorySystemBootTime';
+
+const _missingFileTimestamp =
+    'missing NSPrivacyAccessedAPITypes '
+    'NSPrivacyAccessedAPICategoryFileTimestamp with reasons C617.1';
 
 late Directory _dir;
 
@@ -463,18 +566,29 @@ void main() {
     });
   });
 
-  for (final target in ['iOS', 'macOS']) {
+  for (final (target, plist, check) in [
+    ('iOS', _iosPlist, checkIosPlist),
+    ('macOS', _macosPlist, checkMacosPlist),
+  ]) {
     group('$target Info.plist', () {
-      test('passes with CFBundleURLTypes', () {
-        expect(checkPlist(_write('Info.plist', _plist)), isEmpty);
+      List<String> violations(String content) {
+        final path = _write('Info.plist', content);
+        return [
+          for (final v in check(path)) v.toString().replaceFirst('$path: ', ''),
+        ];
+      }
+
+      test('the complete fixture passes', () {
+        expect(violations(plist), isEmpty);
+        expect(checkPlist(_write('Info.plist', plist)), isEmpty);
       });
 
       test('fails naming the file and entry without the scheme', () {
         final path = _write(
           'Info.plist',
-          _plist.replaceFirst('<string>soundspan</string>', ''),
+          plist.replaceFirst('<string>soundspan</string>', ''),
         );
-        expect(checkPlist(path).map((v) => v.toString()), [
+        expect(check(path).map((v) => v.toString()), [
           '$path: missing CFBundleURLTypes with CFBundleURLSchemes soundspan',
         ]);
       });
@@ -484,46 +598,289 @@ void main() {
           '',
           '<key>NSCameraUsageDescription</key>\n  <string></string>',
         ]) {
-          final path = _write(
-            'Info.plist',
-            _plist.replaceFirst(
-              '<key>NSCameraUsageDescription</key>\n'
-              '  <string>Scan a soundspan link code.</string>',
-              replacement,
+          expect(
+            violations(
+              plist.replaceFirst(
+                '<key>NSCameraUsageDescription</key>\n'
+                '  <string>Scan a soundspan link code.</string>',
+                replacement,
+              ),
             ),
+            ['missing $_cameraDescription'],
+            reason: replacement,
           );
-          expect(checkPlist(path).map((v) => v.toString()), [
-            '$path: missing $_cameraDescription',
-          ], reason: replacement);
         }
+      });
+
+      test('fails without the local network usage description', () {
+        expect(
+          violations(
+            plist.replaceFirst(
+              '<string>Connect to a soundspan server on your network.</string>',
+              '<string>Local network</string>',
+            ),
+          ),
+          [_missingLocalNetwork],
+        );
+      });
+
+      test('fails without local networking in ATS', () {
+        expect(
+          violations(
+            plist.replaceFirst(
+              '<key>NSAllowsLocalNetworking</key>\n    <true/>',
+              '<key>NSAllowsLocalNetworking</key>\n    <false/>',
+            ),
+          ),
+          ['missing NSAppTransportSecurity with NSAllowsLocalNetworking true'],
+        );
+      });
+
+      test('fails with NSAllowsArbitraryLoads', () {
+        expect(
+          violations(
+            plist.replaceFirst(
+              '<key>NSAllowsLocalNetworking</key>',
+              '<key>NSAllowsArbitraryLoads</key>\n    <true/>\n'
+                  '    <key>NSAllowsLocalNetworking</key>',
+            ),
+          ),
+          ['unexpected NSAllowsArbitraryLoads in NSAppTransportSecurity'],
+        );
       });
     });
   }
 
-  group('macOS entitlements', () {
-    test('pass with the camera entitlement', () {
+  group('iOS-only Info.plist keys', () {
+    List<String> violations(String content) {
+      final path = _write('Info.plist', content);
+      return [
+        for (final v in checkIosPlist(path))
+          v.toString().replaceFirst('$path: ', ''),
+      ];
+    }
+
+    test('fails with a background mode other than audio', () {
       expect(
-        checkMacosEntitlements(_write('a.entitlements', _entitlements)),
+        violations(
+          _iosPlist.replaceFirst(
+            '<string>audio</string>',
+            '<string>audio</string>\n    <string>fetch</string>',
+          ),
+        ),
+        ['unexpected UIBackgroundModes fetch'],
+      );
+    });
+
+    test('fails without the audio background mode', () {
+      expect(
+        violations(
+          _iosPlist.replaceFirst(
+            '<string>audio</string>',
+            '<string>processing</string>',
+          ),
+        ),
+        [
+          'missing UIBackgroundModes [audio]',
+          'unexpected UIBackgroundModes processing',
+        ],
+      );
+    });
+
+    for (final (key, from, to) in [
+      ('ITSAppUsesNonExemptEncryption false', '<false/>', '<true/>'),
+      (
+        'UIApplicationSupportsIndirectInputEvents true',
+        '<key>UIApplicationSupportsIndirectInputEvents</key>\n  <true/>',
+        '',
+      ),
+      (
+        'UISupportsDocumentBrowser false',
+        '<key>UISupportsDocumentBrowser</key>\n  <false/>',
+        '<key>UISupportsDocumentBrowser</key>\n  <true/>',
+      ),
+    ]) {
+      test('fails naming $key', () {
+        expect(violations(_iosPlist.replaceFirst(from, to)), ['missing $key']);
+      });
+    }
+
+    test('fails with LSApplicationQueriesSchemes', () {
+      expect(
+        violations(
+          _iosPlist.replaceFirst(
+            '</dict>\n</plist>',
+            '  <key>LSApplicationQueriesSchemes</key>\n  <array/>\n'
+                '</dict>\n</plist>',
+          ),
+        ),
+        ['unexpected LSApplicationQueriesSchemes'],
+      );
+    });
+  });
+
+  group('macOS-only Info.plist keys', () {
+    List<String> violations(String content) {
+      final path = _write('Info.plist', content);
+      return [
+        for (final v in checkMacosPlist(path))
+          v.toString().replaceFirst('$path: ', ''),
+      ];
+    }
+
+    test('accepts the deployment-target build setting', () {
+      expect(
+        violations(
+          _macosPlist.replaceFirst(
+            '<string>12.0</string>',
+            r'<string>$(MACOSX_DEPLOYMENT_TARGET)</string>',
+          ),
+        ),
         isEmpty,
       );
     });
 
-    test('fail without the camera entitlement or with it false', () {
+    test('fails with another minimum system version', () {
+      expect(
+        violations(
+          _macosPlist.replaceFirst(
+            '<string>12.0</string>',
+            '<string>10.15</string>',
+          ),
+        ),
+        ['missing LSMinimumSystemVersion 12.0'],
+      );
+    });
+
+    test('fails without the music category', () {
+      expect(
+        violations(
+          _macosPlist.replaceFirst(
+            'public.app-category.music',
+            'public.app-category.utilities',
+          ),
+        ),
+        ['missing LSApplicationCategoryType public.app-category.music'],
+      );
+    });
+  });
+
+  group('macOS entitlements', () {
+    test('pass with every entitlement', () {
+      final path = _write('a.entitlements', _entitlements);
+      expect(checkMacosEntitlements(path), isEmpty);
+      expect(checkMacosEntitlements(path, release: true), isEmpty);
+    });
+
+    for (final entitlement in [
+      'com.apple.security.app-sandbox',
+      'com.apple.security.network.client',
+      'com.apple.security.network.server',
+      'com.apple.security.device.camera',
+    ]) {
+      test('fail without $entitlement or with it false', () {
+        for (final replacement in ['', '<key>$entitlement</key>\n  <false/>']) {
+          final path = _write(
+            'a.entitlements',
+            _entitlements.replaceFirst(
+              '<key>$entitlement</key>\n  <true/>',
+              replacement,
+            ),
+          );
+          expect(checkMacosEntitlements(path).map((v) => v.toString()), [
+            '$path: missing <key>$entitlement</key><true/>',
+          ], reason: replacement);
+        }
+      });
+    }
+
+    test('release fails without a keychain access group', () {
       for (final replacement in [
         '',
-        '<key>com.apple.security.device.camera</key>\n  <false/>',
+        '<key>keychain-access-groups</key>\n  <array/>',
       ]) {
         final path = _write(
           'a.entitlements',
           _entitlements.replaceFirst(
-            '<key>com.apple.security.device.camera</key>\n  <true/>',
+            '<key>keychain-access-groups</key>\n  <array>\n'
+            '    <string>ABCDE12345.io.soundspan.app</string>\n  </array>',
             replacement,
           ),
         );
-        expect(checkMacosEntitlements(path).map((v) => v.toString()), [
-          '$path: missing <key>com.apple.security.device.camera</key><true/>',
-        ], reason: replacement);
+        expect(checkMacosEntitlements(path), isEmpty, reason: replacement);
+        expect(
+          checkMacosEntitlements(path, release: true).map((v) => v.toString()),
+          ['$path: missing keychain-access-groups with a group'],
+          reason: replacement,
+        );
       }
+    });
+  });
+
+  group('iOS privacy manifest', () {
+    List<String> violations(String content) {
+      final path = _write('PrivacyInfo.xcprivacy', content);
+      return [
+        for (final v in checkIosPrivacyManifest(path))
+          v.toString().replaceFirst('$path: ', ''),
+      ];
+    }
+
+    test('the complete fixture passes', () {
+      expect(violations(_privacy), isEmpty);
+    });
+
+    test('fails with tracking true', () {
+      expect(
+        violations(
+          _privacy.replaceFirst(
+            '<key>NSPrivacyTracking</key>\n  <false/>',
+            '<key>NSPrivacyTracking</key>\n  <true/>',
+          ),
+        ),
+        ['missing NSPrivacyTracking false'],
+      );
+    });
+
+    test('fails with a tracking domain or collected data type', () {
+      for (final key in [
+        'NSPrivacyTrackingDomains',
+        'NSPrivacyCollectedDataTypes',
+      ]) {
+        expect(
+          violations(
+            _privacy.replaceFirst(
+              '<key>$key</key>\n  <array/>',
+              '<key>$key</key>\n  <array><string>x</string></array>',
+            ),
+          ),
+          ['missing $key as an empty array'],
+          reason: key,
+        );
+      }
+    });
+
+    test('fails without a category or with other reasons', () {
+      expect(
+        violations(
+          _privacy.replaceFirst(
+            'NSPrivacyAccessedAPICategoryUserDefaults',
+            'NSPrivacyAccessedAPICategorySystemBootTime',
+          ),
+        ),
+        [_missingUserDefaults, _unexpectedBootTime],
+      );
+      expect(violations(_privacy.replaceFirst('<string>C617.1</string>', '')), [
+        _missingFileTimestamp,
+      ]);
+    });
+
+    test('a missing manifest is reported', () {
+      final path = p.join(_dir.path, 'PrivacyInfo.xcprivacy');
+      expect(
+        checkIosPrivacyManifest(path).single.toString(),
+        '$path: missing the file',
+      );
     });
   });
 
@@ -561,11 +918,13 @@ void main() {
       '--macos-entitlements=${[_write('d.entitlements', _entitlements), _write('r.entitlements', _entitlements)].join(',')}',
       '--android-manifest=${_write('m.xml', _manifest)}',
       '--ios-plist',
-      _write('ios.plist', _plist),
-      '--macos-plist=${_write('macos.plist', _plist.replaceFirst('<string>soundspan</string>', ''))}',
+      _write('ios.plist', _iosPlist),
+      '--macos-plist=${_write('macos.plist', _macosPlist.replaceFirst('<string>soundspan</string>', ''))}',
       '--linux-desktop=${_write('a.desktop', _desktop)}',
       '--android-res',
       _res(),
+      '--macos-release-entitlements=${_write('built.entitlements', _entitlements)}',
+      '--ios-privacy-manifest=${_write('p.xcprivacy', _privacy)}',
     ]);
     final violations = checkPlatformConfig(paths);
     expect(violations.map((v) => p.basename(v.path)), ['macos.plist']);

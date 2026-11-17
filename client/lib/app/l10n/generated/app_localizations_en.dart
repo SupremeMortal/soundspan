@@ -1446,6 +1446,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get nowPlayingQueue => 'Queue';
 
   @override
+  String get nowPlayingAudioOutput => 'Audio output';
+
+  @override
   String get nowPlayingExpand => 'Show now playing';
 
   @override
@@ -3125,6 +3128,9 @@ class AppLocalizationsEnXa extends AppLocalizationsEn {
 
   @override
   String get nowPlayingQueue => '[Qûéûé one]';
+
+  @override
+  String get nowPlayingAudioOutput => '[Åûðîö öûţþûţ one two]';
 
   @override
   String get nowPlayingExpand => '[Šĥöŵ ñöŵ þļåýîñĝ one two]';

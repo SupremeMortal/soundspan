@@ -65,13 +65,13 @@ root
 | `UIApplicationSupportsIndirectInputEvents`, `UISupportsDocumentBrowser = false` | Defaults |
 | `LSApplicationQueriesSchemes` | none |
 
-**Audio session:** category `.playback`, mode `.default` (music) or `.spokenAudio` (episodes), set through `audio_session`. Remote command centre and Now Playing info through `audio_service`. Route picker: `AVRoutePickerView` wrapped in a platform view on the now-playing screen.
+**Audio session:** category `.playback`, mode `.default` (music) or `.spokenAudio` (episodes), set through `audio_session`. Remote command centre and Now Playing info through `audio_service`. Route picker: `AVRoutePickerView` wrapped in a platform view (`io.soundspan.app/route_picker`, registered in `AppDelegate.swift`, tints from the creation parameters) on the now-playing screen; `lib/platform/route_picker/` returns an empty box on every other platform.
 
 **Downloads:** background `URLSession` identifier `io.soundspan.app.downloads`; `application(_:handleEventsForBackgroundURLSession:completionHandler:)` forwarded by the plugin.
 
 **Files:** `profiles/*/media` gets `isExcludedFromBackup`. Secure storage accessibility `first_unlock_this_device`.
 
-**App Store notes:** privacy manifest (`PrivacyInfo.xcprivacy`) declaring no tracking and the required-reason APIs used by plugins (file timestamps, user defaults, disk space). App Privacy answers: no data collected (the app sends no crash reports or analytics). The review build needs a reachable demo server and account, which R-01 provides.
+**App Store notes:** privacy manifest (`PrivacyInfo.xcprivacy`, in the Runner target's resources) declaring no tracking, no tracking domains, no collected data types, and the required-reason APIs used by plugins: file timestamps (`C617.1`), user defaults (`CA92.1`), disk space (`E174.1`, `85F4.1`). App Privacy answers: no data collected (the app sends no crash reports or analytics). The review build needs a reachable demo server and account, which R-01 provides.
 
 ## macOS
 
@@ -85,7 +85,9 @@ Entitlements (release):
 | `com.apple.security.network.client` | Outgoing connections |
 | `com.apple.security.network.server` | The player's loopback proxy listens on localhost |
 | `com.apple.security.device.camera` | QR scanner |
-| `keychain-access-groups` | Secure storage |
+| `keychain-access-groups` | Secure storage (`$(AppIdentifierPrefix)io.soundspan.app`) |
+
+`DebugProfile.entitlements` (debug and profile builds) has the first four and `com.apple.security.cs.allow-jit`, which the Dart VM needs; it leaves out `keychain-access-groups`, which needs a provisioning profile that the ad-hoc signed debug builds of the device tests do not have. Hardened runtime is on for the Release configuration.
 
 `Info.plist`: URL scheme, `NSCameraUsageDescription`, `NSLocalNetworkUsageDescription`, `NSAppTransportSecurity` as on iOS, `LSMinimumSystemVersion`, `LSApplicationCategoryType = public.app-category.music`.
 

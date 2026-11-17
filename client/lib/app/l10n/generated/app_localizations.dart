@@ -2417,6 +2417,12 @@ abstract class AppLocalizations {
   /// **'Queue'**
   String get nowPlayingQueue;
 
+  /// Accessibility label of the system audio output picker (AirPlay) on the now-playing screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Audio output'**
+  String get nowPlayingAudioOutput;
+
   /// Tooltip of the player bar button that shows large artwork of the playing item over the content area.
   ///
   /// In en, this message translates to:

@@ -20,6 +20,8 @@ import 'package:soundspan/features/player/ui/player_item.dart';
 import 'package:soundspan/features/player/ui/queue_sheet.dart';
 import 'package:soundspan/features/player/ui/queue_view.dart';
 import 'package:soundspan/features/player/ui/seek_bar.dart';
+import 'package:soundspan/platform/capabilities/capabilities.dart';
+import 'package:soundspan/platform/route_picker/route_picker.dart';
 import 'package:soundspan/shared/domain/queue_item.dart';
 import 'package:soundspan/shared/widgets/artwork.dart';
 import 'package:soundspan/shared/widgets/backdrop.dart';
@@ -34,8 +36,10 @@ import 'package:soundspan/shared/widgets/quality_badge.dart';
 /// to the artist page when the track has one); the [SeekBar] with the
 /// elapsed and remaining time; shuffle, previous, a [playButtonSize]
 /// play/pause circle, next and repeat (for an episode skip back, the
-/// circle, skip forward and the speed); and a row with the [QualityBadge]
-/// and the lyrics and queue buttons, which open the lyrics and the queue
+/// circle, skip forward and the speed); and a row with the [QualityBadge],
+/// the system audio output picker where the platform has one (AirPlay on
+/// iOS, `PlatformCapabilities.hasSystemRoutePicker`) and the lyrics and
+/// queue buttons, which open the lyrics and the queue
 /// as sheets. A landscape window wider than compact shows the [QueueView]
 /// beside the controls instead, with the [LyricsView] in a second tab. The
 /// lyrics are not offered for an episode. The background is the artwork's
@@ -55,6 +59,10 @@ class NowPlayingScreen extends ConsumerWidget {
 
   /// The key of the queue shown beside the controls.
   static const Key sideQueueKey = Key('nowPlaying.sideQueue');
+
+  /// The key of the [Sizes.touchTarget] square holding the system audio
+  /// output picker.
+  static const Key routePickerKey = Key('nowPlaying.routePicker');
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -219,6 +227,8 @@ class _Controls extends ConsumerWidget {
         Row(
           children: [
             if (quality != null) QualityBadge(info: quality),
+            if (ref.watch(platformCapabilitiesProvider).hasSystemRoutePicker)
+              const _RoutePicker(),
             const Spacer(),
             if (showQueueButton && current is! EpisodeQueueItem)
               IconButton(
@@ -237,6 +247,27 @@ class _Controls extends ConsumerWidget {
           ],
         ),
       ],
+    );
+  }
+}
+
+/// The system audio output picker in a [Sizes.touchTarget] square,
+/// labelled for screen readers.
+class _RoutePicker extends ConsumerWidget {
+  const new();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors = context.colors;
+    final build = ref.watch(routePickerBuilderProvider);
+    return Semantics(
+      key: NowPlayingScreen.routePickerKey,
+      container: true,
+      label: AppLocalizations.of(context).nowPlayingAudioOutput,
+      child: SizedBox.square(
+        dimension: Sizes.touchTarget,
+        child: build(tint: colors.contentSecondary, activeTint: colors.accent),
+      ),
     );
   }
 }

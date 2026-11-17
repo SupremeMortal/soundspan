@@ -180,7 +180,7 @@ Header: artwork (140 compact, 192 medium, 232 expanded), overline type label, ti
 
 ### Now Playing, Queue, Lyrics (M1)
 
-- **Compact:** drag handle and "NOW PLAYING" overline; artwork (max 360, radius 12); title, artist (tappable), like; `SeekBar` with elapsed and remaining; transport (shuffle, previous, play/pause 64 px, next, repeat); a row with quality badge, output (Android, iOS system picker), queue, lyrics. Queue and Lyrics open as sheets over the same screen.
+- **Compact:** drag handle and "NOW PLAYING" overline; artwork (max 360, radius 12); title, artist (tappable), like; `SeekBar` with elapsed and remaining; transport (shuffle, previous, play/pause 64 px, next, repeat); a row with quality badge, output (the iOS system picker, 48 × 48, labelled "Audio output", where `PlatformCapabilities.hasSystemRoutePicker` is true; Android has no output control), queue, lyrics. Queue and Lyrics open as sheets over the same screen.
 - **Expanded:** now playing is the right panel plus the player bar; an "expand" control shows a large-artwork overlay over the content area with lyrics beside it.
 - **Queue:** "Now playing", "Next up" (reorderable, swipe or button to remove), "Clear". In a Listen Together group the header shows the group and member count.
 - **Lyrics:** synced lyrics scroll with the current line in `content` at `title` size, other lines in `contentSecondary`; tapping a line seeks. Plain lyrics scroll freely. "No lyrics found" otherwise. LRC parsing (`[mm:ss.xx]`) is a pure function with tests.

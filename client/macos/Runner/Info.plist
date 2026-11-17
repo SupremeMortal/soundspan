@@ -46,5 +46,9 @@
 	</dict>
 	<key>NSCameraUsageDescription</key>
 	<string>Scan a soundspan link code.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Connect to a soundspan server on your network.</string>
+	<key>LSApplicationCategoryType</key>
+	<string>public.app-category.music</string>
 </dict>
 </plist>

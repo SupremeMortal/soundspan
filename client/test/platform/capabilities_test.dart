@@ -14,6 +14,7 @@ Map<String, bool> flags(PlatformCapabilities c) => {
   'isDesktop': c.isDesktop,
   'allowsPublicCleartextHttp': c.allowsPublicCleartextHttp,
   'hasMobileData': c.hasMobileData,
+  'hasSystemRoutePicker': c.hasSystemRoutePicker,
 };
 
 void main() {
@@ -36,10 +37,11 @@ void main() {
       'isDesktop': false,
       'allowsPublicCleartextHttp': true,
       'hasMobileData': true,
+      'hasSystemRoutePicker': false,
     });
   });
 
-  test('iOS blocks public cleartext HTTP', () {
+  test('iOS blocks public cleartext HTTP and has the route picker', () {
     expect(on(TargetPlatform.iOS), {
       'canDownload': true,
       'canScanQr': true,
@@ -49,6 +51,7 @@ void main() {
       'isDesktop': false,
       'allowsPublicCleartextHttp': false,
       'hasMobileData': true,
+      'hasSystemRoutePicker': true,
     });
   });
 
@@ -62,6 +65,7 @@ void main() {
       'isDesktop': true,
       'allowsPublicCleartextHttp': false,
       'hasMobileData': false,
+      'hasSystemRoutePicker': false,
     });
   });
 
@@ -76,6 +80,7 @@ void main() {
         'isDesktop': true,
         'allowsPublicCleartextHttp': true,
         'hasMobileData': false,
+        'hasSystemRoutePicker': false,
       });
     });
   }
@@ -90,6 +95,7 @@ void main() {
       'isDesktop': false,
       'allowsPublicCleartextHttp': true,
       'hasMobileData': false,
+      'hasSystemRoutePicker': false,
     });
   });
 }
