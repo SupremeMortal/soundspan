@@ -25,6 +25,7 @@ import 'package:soundspan/shared/widgets/empty_state.dart';
 import 'package:soundspan/shared/widgets/media_card.dart';
 import 'package:soundspan/shared/widgets/media_grid_layout.dart';
 import 'package:soundspan/shared/widgets/offline_banner.dart';
+import 'package:soundspan/shared/widgets/refresh_target.dart';
 import 'package:soundspan/shared/widgets/track_row.dart';
 
 /// Explore (`/explore`, pushed inside the current branch; doc 09, Shell by
@@ -131,7 +132,7 @@ class _ExploreBody extends ConsumerWidget {
     final allEmpty =
         settled && !shown(playlist) && !shown(recommended) && !shown(popular);
 
-    return RefreshIndicator(
+    return AppRefreshIndicator(
       onRefresh: onRefresh,
       child: CustomScrollView(
         physics: const AlwaysScrollableScrollPhysics(),

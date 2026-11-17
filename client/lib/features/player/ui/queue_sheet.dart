@@ -12,7 +12,12 @@ import 'package:soundspan/features/player/ui/queue_view.dart';
 /// Now Playing, Queue, Lyrics). The sheet reads the providers of
 /// [context]'s scope, so it shows the profile's queue although its route
 /// sits above the profile scope.
-Future<void> showQueueSheet(BuildContext context) {
+///
+/// [closeActivator] closes the sheet again, as the shortcut that opened it.
+Future<void> showQueueSheet(
+  BuildContext context, {
+  ShortcutActivator? closeActivator,
+}) {
   final container = ProviderScope.containerOf(context);
   return showModalBottomSheet<void>(
     context: context,
@@ -20,10 +25,21 @@ Future<void> showQueueSheet(BuildContext context) {
     useSafeArea: true,
     showDragHandle: true,
     backgroundColor: context.colors.surface,
-    builder: (_) => UncontrolledProviderScope(
-      container: container,
-      child: const QueueSheet(),
-    ),
+    builder: (sheetContext) {
+      Widget sheet = UncontrolledProviderScope(
+        container: container,
+        child: const QueueSheet(),
+      );
+      if (closeActivator != null) {
+        sheet = CallbackShortcuts(
+          bindings: {
+            closeActivator: () => Navigator.of(sheetContext).maybePop(),
+          },
+          child: Focus(autofocus: true, child: sheet),
+        );
+      }
+      return sheet;
+    },
   );
 }
 

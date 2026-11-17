@@ -1542,6 +1542,112 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get actionAddToPlaylist => 'Add to playlist';
+
+  @override
+  String get screenSettingsDesktop => 'Desktop';
+
+  @override
+  String get settingsShortcutsTitle => 'Keyboard shortcuts';
+
+  @override
+  String get shortcutPlayPause => 'Play or pause';
+
+  @override
+  String get shortcutNext => 'Next track';
+
+  @override
+  String get shortcutPrevious => 'Previous track';
+
+  @override
+  String shortcutSeekForward(int seconds) {
+    return 'Seek forward $seconds seconds';
+  }
+
+  @override
+  String shortcutSeekBack(int seconds) {
+    return 'Seek back $seconds seconds';
+  }
+
+  @override
+  String get shortcutVolumeUp => 'Volume up';
+
+  @override
+  String get shortcutVolumeDown => 'Volume down';
+
+  @override
+  String get shortcutShuffle => 'Shuffle on or off';
+
+  @override
+  String get shortcutRepeat => 'Change repeat';
+
+  @override
+  String get shortcutLike => 'Like or remove like of the current track';
+
+  @override
+  String get shortcutSearch => 'Search';
+
+  @override
+  String shortcutGoTo(String destination) {
+    return 'Go to $destination';
+  }
+
+  @override
+  String get shortcutQueue => 'Show or hide the queue';
+
+  @override
+  String get shortcutPlayRow => 'Play the selected tracks';
+
+  @override
+  String get shortcutPlayRowNext => 'Play the selected tracks next';
+
+  @override
+  String get shortcutRemoveRow =>
+      'Remove the selected tracks from the playlist';
+
+  @override
+  String get shortcutMenu => 'Open the menu of the focused item';
+
+  @override
+  String get shortcutRefresh => 'Refresh';
+
+  @override
+  String get shortcutNextArea => 'Next area';
+
+  @override
+  String get shortcutPreviousArea => 'Previous area';
+
+  @override
+  String get keyCtrl => 'Ctrl';
+
+  @override
+  String get keyCmd => 'Cmd';
+
+  @override
+  String get keyShift => 'Shift';
+
+  @override
+  String get keyAlt => 'Alt';
+
+  @override
+  String get keyOption => 'Option';
+
+  @override
+  String get keySpace => 'Space';
+
+  @override
+  String get keyEnter => 'Enter';
+
+  @override
+  String get keyDelete => 'Delete';
+
+  @override
+  String get keyMenu => 'Menu';
+
+  @override
+  String get keyMouseBack => 'Mouse back button';
+
+  @override
+  String get keyMouseForward => 'Mouse forward button';
 }
 
 /// The translations for English (`en_XA`).
@@ -3118,4 +3224,113 @@ class AppLocalizationsEnXa extends AppLocalizationsEn {
 
   @override
   String get actionAddToPlaylist => '[Åðð ţö þļåýļîšţ one two]';
+
+  @override
+  String get screenSettingsDesktop => '[Ðéšķţöþ one]';
+
+  @override
+  String get settingsShortcutsTitle => '[Ķéýböåŕð šĥöŕţçûţš one two]';
+
+  @override
+  String get shortcutPlayPause => '[Þļåý öŕ þåûšé one two]';
+
+  @override
+  String get shortcutNext => '[Ñéxţ ţŕåçķ one]';
+
+  @override
+  String get shortcutPrevious => '[Þŕévîöûš ţŕåçķ one two]';
+
+  @override
+  String shortcutSeekForward(int seconds) {
+    return '[Šééķ föŕŵåŕð $seconds šéçöñðš one two three]';
+  }
+
+  @override
+  String shortcutSeekBack(int seconds) {
+    return '[Šééķ båçķ $seconds šéçöñðš one two]';
+  }
+
+  @override
+  String get shortcutVolumeUp => '[Vöļûmé ûþ one]';
+
+  @override
+  String get shortcutVolumeDown => '[Vöļûmé ðöŵñ one two]';
+
+  @override
+  String get shortcutShuffle => '[Šĥûffļé öñ öŕ öff one two]';
+
+  @override
+  String get shortcutRepeat => '[Çĥåñĝé ŕéþéåţ one two]';
+
+  @override
+  String get shortcutLike =>
+      '[Ļîķé öŕ ŕémövé ļîķé öf ţĥé çûŕŕéñţ ţŕåçķ one two three four]';
+
+  @override
+  String get shortcutSearch => '[Šéåŕçĥ one]';
+
+  @override
+  String shortcutGoTo(String destination) {
+    return '[Ĝö ţö $destination one]';
+  }
+
+  @override
+  String get shortcutQueue => '[Šĥöŵ öŕ ĥîðé ţĥé qûéûé one two three]';
+
+  @override
+  String get shortcutPlayRow => '[Þļåý ţĥé šéļéçţéð ţŕåçķš one two three]';
+
+  @override
+  String get shortcutPlayRowNext =>
+      '[Þļåý ţĥé šéļéçţéð ţŕåçķš ñéxţ one two three]';
+
+  @override
+  String get shortcutRemoveRow =>
+      '[Ŕémövé ţĥé šéļéçţéð ţŕåçķš fŕöm ţĥé þļåýļîšţ one two three four]';
+
+  @override
+  String get shortcutMenu =>
+      '[Öþéñ ţĥé méñû öf ţĥé föçûšéð îţém one two three]';
+
+  @override
+  String get shortcutRefresh => '[Ŕéfŕéšĥ one]';
+
+  @override
+  String get shortcutNextArea => '[Ñéxţ åŕéå one]';
+
+  @override
+  String get shortcutPreviousArea => '[Þŕévîöûš åŕéå one two]';
+
+  @override
+  String get keyCtrl => '[Çţŕļ one]';
+
+  @override
+  String get keyCmd => '[Çmð one]';
+
+  @override
+  String get keyShift => '[Šĥîfţ one]';
+
+  @override
+  String get keyAlt => '[Åļţ one]';
+
+  @override
+  String get keyOption => '[Öþţîöñ one]';
+
+  @override
+  String get keySpace => '[Šþåçé one]';
+
+  @override
+  String get keyEnter => '[Éñţéŕ one]';
+
+  @override
+  String get keyDelete => '[Ðéļéţé one]';
+
+  @override
+  String get keyMenu => '[Méñû one]';
+
+  @override
+  String get keyMouseBack => '[Möûšé båçķ bûţţöñ one two]';
+
+  @override
+  String get keyMouseForward => '[Möûšé föŕŵåŕð bûţţöñ one two]';
 }

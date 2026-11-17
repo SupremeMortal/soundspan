@@ -16,6 +16,7 @@ import 'package:soundspan/shared/providers/playlist_list.dart';
 import 'package:soundspan/shared/widgets/built_range_reporter.dart';
 import 'package:soundspan/shared/widgets/error_view.dart';
 import 'package:soundspan/shared/widgets/mosaic_artwork.dart';
+import 'package:soundspan/shared/widgets/refresh_target.dart';
 
 /// The Playlists tab: Liked Songs pinned first and "New playlist", which
 /// names, creates and opens a playlist, then the user's playlists
@@ -134,7 +135,7 @@ class _PlaylistsTabState extends ConsumerState<PlaylistsTab> {
       );
     }
 
-    return RefreshIndicator(
+    return AppRefreshIndicator(
       onRefresh: _refresh,
       child: CustomScrollView(
         physics: const AlwaysScrollableScrollPhysics(),

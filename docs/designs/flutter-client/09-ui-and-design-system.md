@@ -148,7 +148,7 @@ Described in [04](04-auth-and-server-profiles.md). Layout: centred column, max w
 
 ### Home (M0; M4 additions)
 
-Greeting (`headline`), then shelves in this order, each hidden when empty or disabled: Continue Listening (`/library/recently-listened`), Recently Added (`/library/recently-added`), Made For You (Liked Songs + `/mixes`; `autoPlaylists`), Your Playlists, Popular Podcasts (`/podcasts/discover/top`). M4 adds Recommended For You and Popular Artists (`discovery`) and the Explore entry. Banners (offline, link expiring) sit above the greeting. Pull to refresh on touch; F5 on desktop.
+Greeting (`headline`), then shelves in this order, each hidden when empty or disabled: Continue Listening (`/library/recently-listened`), Recently Added (`/library/recently-added`), Made For You (Liked Songs + `/mixes`; `autoPlaylists`), Your Playlists, Popular Podcasts (`/podcasts/discover/top`). M4 adds Recommended For You and Popular Artists (`discovery`) and the Explore entry. Banners (offline, link expiring) sit above the greeting. Pull to refresh on touch; F5 or Ctrl+Shift+R on desktop (Ctrl+R cycles repeat).
 
 ### Search (M0)
 
@@ -198,7 +198,7 @@ Subscribed grid (the Library grid's columns); Top Podcasts shelf, hidden when em
 | Playback | Quality on Wi-Fi / mobile data (one "Streaming quality" row where `PlatformCapabilities.hasMobileData` is false), applied from the next resolved source; volume levelling mode (server setting `loudnessMode`: shown at once and posted, restored with a snackbar on failure, disabled with a tooltip while the server is not reachable, a skeleton until a value is known); skip interval (5, 10, 15, 30, 45 or 60 s) and default speed (0.5×–3×) for podcasts, the speed applied at once to a playing episode. Each row opens a single-choice list: a sheet on touch, a menu on pointer |
 | Storage | Download quality, Wi-Fi only, device limit, usage breakdown, clear cache, remove downloads |
 | Appearance | Theme mode, language |
-| Desktop | Close to tray, start minimised, global media keys |
+| Desktop | Listed on desktop platforms and the web: the keyboard shortcuts, one line per binding with the key names of the platform (Cmd and Option on macOS); close to tray, start minimised, global media keys |
 | About | Version, licences (`LicenseRegistry`, including the bundled fonts), export logs, pending changes count |
 
 The client has no admin or acquisition actions. "Open server admin" opens `<server address>/admin` in the browser and is the only link of its kind; content screens show no delete, download, or request actions. Account security, integrations, and API-key management are reached from that web page.
@@ -209,20 +209,22 @@ The client has no admin or acquisition actions. "Open server admin" opens `<serv
 |---|---|
 | Space | Play / pause (when no text field has focus) |
 | Ctrl+Right / Ctrl+Left | Next / previous |
-| Shift+Right / Shift+Left | Seek ±10 s |
-| Ctrl+Up / Ctrl+Down | Volume ±5 % |
+| Shift+Right / Shift+Left | Seek ±10 s, clamped to the item |
+| Ctrl+Up / Ctrl+Down | Volume ±5 %, clamped to 0–100 % |
 | Ctrl+S / Ctrl+R | Shuffle / cycle repeat |
-| Ctrl+L | Like current track |
-| Ctrl+K or / | Focus search |
+| Ctrl+L | Like current track (nothing for an episode) |
+| Ctrl+K or / | Focus search (opening Search when its field is not on screen); `/` only when no text field has focus |
 | Ctrl+1 … Ctrl+4 | Home, Search, Library, Podcasts |
-| Ctrl+Q (panel) | Toggle queue panel |
+| Ctrl+Q (Ctrl on macOS too) | Toggle the queue panel (expanded); open or close the queue sheet (compact, medium) |
 | Alt+Left / Alt+Right, mouse back/forward | Navigate back / forward |
 | Ctrl+, | Settings |
-| Enter on a row | Play; Shift+Enter: play next |
-| Delete on a selected playlist row | Remove from playlist |
+| Enter on a row | Play; Shift+Enter: play next (the selection when there is one) |
+| Delete on a selected playlist row | Remove from playlist (owner only) |
+| Menu key / Shift+F10 | Open the menu of the focused row or card |
 | F5 / Ctrl+Shift+R | Refresh current screen |
+| F6 / Shift+F6 | Next / previous focus group |
 
-Implemented with `Shortcuts`/`Actions` at the shell so they are discoverable to assistive technology, and listed in `Settings → Desktop`.
+Implemented with `Shortcuts`/`Actions` at the shell so they are discoverable to assistive technology, and listed in `Settings → Desktop`. One data table, `shortcutBindings` (`lib/app/shell/shortcuts/`: intent, key combinations, label), drives both. The shortcuts are active on desktop platforms and on the web at every window class. A shortcut whose action has no target (Space with an empty queue, Back at a branch root, Ctrl+L on an episode) does nothing and leaves the key to the widgets above; arrows, Space, Enter, Delete and `/` are left to a focused text field. The queue toggle is Ctrl+Q on macOS too, because Cmd+Q quits the app ([10](10-platform-integration.md)). Refresh calls the shown screen's own refresh, the one its pull to refresh runs. A focus anchor in the shell takes focus back when it falls above the shell, so keys keep reaching the shortcuts after navigation.
 
 - **Selection:** click selects, Ctrl/Shift extend, in track lists on pointer devices. Context menu and drag act on the selection.
 - **Drag and drop:** drag tracks or an album onto a sidebar playlist (add) or onto the queue panel (insert at the drop position).

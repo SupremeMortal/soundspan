@@ -2,6 +2,7 @@
 
 import 'package:material_ui/material_ui.dart';
 import 'package:soundspan/app/l10n/generated/app_localizations.dart';
+import 'package:soundspan/app/shell/shortcuts/shell_focus_groups.dart';
 import 'package:soundspan/app/shell/window_class.dart';
 import 'package:soundspan/app/theme/dimens.dart';
 import 'package:soundspan/app/theme/extensions.dart';
@@ -51,6 +52,10 @@ enum ShellDestination {
 /// wide, and a [contentOverlay] covers the content area. While the right
 /// panel is open on a window narrower than [wideWidth] the sidebar collapses
 /// to a [railWidth] rail of the destinations.
+///
+/// The navigation, the content (with its overlay), the right panel and the
+/// player are each a focus traversal group, put in [focusGroups] when given
+/// so F6 can move between them (doc 09, Accessibility).
 class AdaptiveShell extends StatefulWidget {
   /// Creates the shell around [child].
   const new({
@@ -65,6 +70,7 @@ class AdaptiveShell extends StatefulWidget {
     this.onExplore,
     this.rightPanel,
     this.contentOverlay,
+    this.focusGroups,
     super.key,
   });
 
@@ -125,6 +131,9 @@ class AdaptiveShell extends StatefulWidget {
   /// What covers the content area (expanded); null leaves it uncovered.
   final Widget? contentOverlay;
 
+  /// The focus groups the shell's areas join; null leaves them out.
+  final ShellFocusGroups? focusGroups;
+
   @override
   State<AdaptiveShell> createState() => _AdaptiveShellState();
 }
@@ -138,9 +147,7 @@ class _AdaptiveShellState extends State<AdaptiveShell> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final windowClass = windowClassOf(constraints.biggest);
-        final content = FocusTraversalGroup(
-          child: KeyedSubtree(key: _contentKey, child: widget.child),
-        );
+        final content = KeyedSubtree(key: _contentKey, child: widget.child);
         return WindowClassScope(
           windowClass: windowClass,
           child: switch (windowClass) {
@@ -162,8 +169,15 @@ class _AdaptiveShellState extends State<AdaptiveShell> {
   Widget _navigation(BuildContext context, Widget child) => Semantics(
     container: true,
     label: AppLocalizations.of(context).navMainLabel,
-    child: FocusTraversalGroup(child: child),
+    child: ShellFocusGroup(group: widget.focusGroups?.navigation, child: child),
   );
+
+  Widget _contentGroup(Widget content) =>
+      ShellFocusGroup(group: widget.focusGroups?.content, child: content);
+
+  Widget? _player(Widget? player) => player == null
+      ? null
+      : ShellFocusGroup(group: widget.focusGroups?.player, child: player);
 
   Widget _compact(BuildContext context, Widget content) {
     final l10n = AppLocalizations.of(context);
@@ -172,8 +186,8 @@ class _AdaptiveShellState extends State<AdaptiveShell> {
         bottom: false,
         child: Column(
           children: [
-            Expanded(child: content),
-            ?widget.miniPlayer,
+            Expanded(child: _contentGroup(content)),
+            ?_player(widget.miniPlayer),
           ],
         ),
       ),
@@ -242,11 +256,11 @@ class _AdaptiveShellState extends State<AdaptiveShell> {
                       ],
                     ),
                   ),
-                  Expanded(child: content),
+                  Expanded(child: _contentGroup(content)),
                 ],
               ),
             ),
-            ?widget.miniPlayer,
+            ?_player(widget.miniPlayer),
           ],
         ),
       ),
@@ -337,16 +351,18 @@ class _AdaptiveShellState extends State<AdaptiveShell> {
                     Expanded(
                       child: ClipRRect(
                         borderRadius: panelRadius,
-                        child: Stack(
-                          fit: StackFit.expand,
-                          children: [
-                            content,
-                            if (overlay != null)
-                              FocusTraversalGroup(
-                                key: AdaptiveShell.contentOverlayKey,
-                                child: overlay,
-                              ),
-                          ],
+                        child: _contentGroup(
+                          Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              content,
+                              if (overlay != null)
+                                FocusTraversalGroup(
+                                  key: AdaptiveShell.contentOverlayKey,
+                                  child: overlay,
+                                ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -364,7 +380,10 @@ class _AdaptiveShellState extends State<AdaptiveShell> {
                             borderRadius: panelRadius,
                             child: Material(
                               type: MaterialType.transparency,
-                              child: FocusTraversalGroup(child: rightPanel),
+                              child: ShellFocusGroup(
+                                group: widget.focusGroups?.rightPanel,
+                                child: rightPanel,
+                              ),
                             ),
                           ),
                         ),
@@ -374,7 +393,7 @@ class _AdaptiveShellState extends State<AdaptiveShell> {
                 ),
               ),
             ),
-            ?widget.playerBar,
+            ?_player(widget.playerBar),
           ],
         ),
       ),

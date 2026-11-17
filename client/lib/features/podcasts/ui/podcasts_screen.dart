@@ -21,6 +21,7 @@ import 'package:soundspan/shared/widgets/empty_state.dart';
 import 'package:soundspan/shared/widgets/error_view.dart';
 import 'package:soundspan/shared/widgets/media_card.dart';
 import 'package:soundspan/shared/widgets/media_grid_layout.dart';
+import 'package:soundspan/shared/widgets/refresh_target.dart';
 import 'package:soundspan/shared/widgets/shelf.dart';
 
 /// The Podcasts destination (`/podcasts`; doc 09, Podcasts).
@@ -87,7 +88,7 @@ class PodcastsScreen extends ConsumerWidget {
         appBar: windowClass == WindowClass.compact
             ? AppBar(actions: const [AvatarButton()])
             : null,
-        body: RefreshIndicator(
+        body: AppRefreshIndicator(
           onRefresh: () => _refresh(ref),
           child: CustomScrollView(
             physics: const AlwaysScrollableScrollPhysics(),

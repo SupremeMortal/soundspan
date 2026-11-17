@@ -19,6 +19,7 @@ class TopBar extends StatefulWidget {
     required this.onSearch,
     required this.avatar,
     this.onSearchChanged,
+    this.searchFocusNode,
     super.key,
   });
 
@@ -48,6 +49,10 @@ class TopBar extends StatefulWidget {
 
   /// The avatar button.
   final Widget avatar;
+
+  /// The focus node of the search field, which the search shortcut
+  /// focuses; null lets the field make its own.
+  final FocusNode? searchFocusNode;
 
   @override
   State<TopBar> createState() => _TopBarState();
@@ -122,6 +127,7 @@ class _TopBarState extends State<TopBar> {
                   child: TextField(
                     key: TopBar.searchFieldKey,
                     controller: _query,
+                    focusNode: widget.searchFocusNode,
                     textInputAction: TextInputAction.search,
                     onChanged: _changed,
                     onSubmitted: _submit,

@@ -12,6 +12,7 @@ import 'package:soundspan/shared/domain/domain.dart';
 import 'package:soundspan/shared/providers/repositories.dart';
 import 'package:soundspan/shared/widgets/empty_state.dart';
 import 'package:soundspan/shared/widgets/error_view.dart';
+import 'package:soundspan/shared/widgets/refresh_target.dart';
 
 /// The page gutter of [windowClass].
 double gutterOf(WindowClass windowClass) => switch (windowClass) {
@@ -244,7 +245,7 @@ class _PagedLibraryViewState<T> extends ConsumerState<PagedLibraryView<T>> {
           ),
         ),
         Expanded(
-          child: RefreshIndicator(
+          child: AppRefreshIndicator(
             onRefresh: _refresh,
             child: CustomScrollView(
               controller: _scroll,

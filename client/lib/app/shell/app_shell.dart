@@ -1,12 +1,20 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:soundspan/app/router/routes.dart';
 import 'package:soundspan/app/shell/adaptive_shell.dart';
 import 'package:soundspan/app/shell/avatar_menu.dart';
 import 'package:soundspan/app/shell/player_slots.dart';
+import 'package:soundspan/app/shell/shortcuts/search_focus.dart';
+import 'package:soundspan/app/shell/shortcuts/shell_focus_groups.dart';
+import 'package:soundspan/app/shell/shortcuts/shell_shortcuts.dart';
 import 'package:soundspan/app/shell/sidebar_playlists.dart';
 import 'package:soundspan/app/shell/top_bar.dart';
+import 'package:soundspan/app/shell/window_class.dart';
 import 'package:soundspan/features/player/player.dart';
 
 /// The [AdaptiveShell] with its slots filled: the [TopBar] on expanded
@@ -18,7 +26,10 @@ import 'package:soundspan/features/player/player.dart';
 ///
 /// On compact windows the avatar sits in each branch root's app bar, which
 /// the branch screens build.
-class AppShell extends ConsumerWidget {
+///
+/// The [ShellShortcuts] wrap it on desktop and the web, with focus groups
+/// for F6.
+class AppShell extends ConsumerStatefulWidget {
   /// Creates the shell around [child].
   const new({
     required this.selectedIndex,
@@ -63,29 +74,68 @@ class AppShell extends ConsumerWidget {
   final Widget child;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) => AdaptiveShell(
-    selectedIndex: selectedIndex,
-    onDestinationSelected: onDestinationSelected,
-    topBar: TopBar(
-      onBack: onBack,
-      onForward: onForward,
-      onSearch: onSearch,
-      onSearchChanged: onSearchChanged,
-      avatar: const AvatarButton(),
+  ConsumerState<AppShell> createState() => _AppShellState();
+}
+
+class _AppShellState extends ConsumerState<AppShell> {
+  final ShellFocusGroups _focusGroups = ShellFocusGroups();
+  final FocusNode _searchFocus = FocusNode(debugLabel: 'shell.search');
+
+  @override
+  void dispose() {
+    _focusGroups.dispose();
+    _searchFocus.dispose();
+    super.dispose();
+  }
+
+  void _focusSearch() {
+    if (windowClassOf(MediaQuery.sizeOf(context)) == WindowClass.expanded) {
+      _searchFocus.requestFocus();
+      return;
+    }
+    ref.read(searchFocusRequestProvider.notifier).request();
+    if (widget.selectedIndex != ShellDestination.search.index) {
+      widget.onDestinationSelected(ShellDestination.search.index);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => ShellShortcuts(
+    focusGroups: _focusGroups,
+    onDestinationSelected: widget.onDestinationSelected,
+    onFocusSearch: _focusSearch,
+    onOpenSettings: () =>
+        unawaited(GoRouter.of(context).push<void>(RoutePaths.settings)),
+    onBack: widget.onBack,
+    onForward: widget.onForward,
+    child: AdaptiveShell(
+      selectedIndex: widget.selectedIndex,
+      onDestinationSelected: widget.onDestinationSelected,
+      focusGroups: _focusGroups,
+      topBar: TopBar(
+        onBack: widget.onBack,
+        onForward: widget.onForward,
+        onSearch: widget.onSearch,
+        onSearchChanged: widget.onSearchChanged,
+        searchFocusNode: _searchFocus,
+        avatar: const AvatarButton(),
+      ),
+      railTrailing: const AvatarButton(),
+      miniPlayer: const MiniPlayerSlot(),
+      playerBar: const PlayerBarSlot(),
+      sidebarPlaylists: SidebarPlaylists(
+        selectedPlaylistId: widget.openPlaylistId,
+      ),
+      onExplore: widget.onExplore,
+      rightPanel: switch (ref.watch(rightPanelProvider)) {
+        RightPanel.queue => const QueuePanel(),
+        RightPanel.lyrics => const LyricsPanel(),
+        RightPanel.none => null,
+      },
+      contentOverlay: ref.watch(nowPlayingOverlayProvider)
+          ? const NowPlayingOverlay()
+          : null,
+      child: widget.child,
     ),
-    railTrailing: const AvatarButton(),
-    miniPlayer: const MiniPlayerSlot(),
-    playerBar: const PlayerBarSlot(),
-    sidebarPlaylists: SidebarPlaylists(selectedPlaylistId: openPlaylistId),
-    onExplore: onExplore,
-    rightPanel: switch (ref.watch(rightPanelProvider)) {
-      RightPanel.queue => const QueuePanel(),
-      RightPanel.lyrics => const LyricsPanel(),
-      RightPanel.none => null,
-    },
-    contentOverlay: ref.watch(nowPlayingOverlayProvider)
-        ? const NowPlayingOverlay()
-        : null,
-    child: child,
   );
 }

@@ -9,6 +9,7 @@ import 'package:soundspan/app/l10n/generated/app_localizations.dart';
 import 'package:soundspan/app/router/placeholder_screen.dart';
 import 'package:soundspan/app/router/routes.dart';
 import 'package:soundspan/app/shell/avatar_menu.dart';
+import 'package:soundspan/app/shell/shortcuts/search_focus.dart';
 import 'package:soundspan/app/shell/window_class.dart';
 import 'package:soundspan/app/theme/dimens.dart';
 import 'package:soundspan/app/theme/extensions.dart';
@@ -54,10 +55,25 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   late final TextEditingController _field = TextEditingController(
     text: widget.query ?? '',
   );
+  final FocusNode _fieldFocus = FocusNode(debugLabel: 'search.field');
   Timer? _debounce;
   late String _query = (widget.query ?? '').trim();
   SearchScope _scope = SearchScope.all;
   final Set<SearchSectionKind> _expanded = {};
+
+  @override
+  void initState() {
+    super.initState();
+    // The search shortcut opened Search: focus the field once it is built.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _takeFocusRequest());
+  }
+
+  void _takeFocusRequest() {
+    if (!mounted) return;
+    if (ref.read(searchFocusRequestProvider.notifier).take()) {
+      _fieldFocus.requestFocus();
+    }
+  }
 
   @override
   void didUpdateWidget(SearchScreen oldWidget) {
@@ -74,6 +90,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   void dispose() {
     _debounce?.cancel();
     _field.dispose();
+    _fieldFocus.dispose();
     super.dispose();
   }
 
@@ -128,6 +145,14 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     final l10n = AppLocalizations.of(context);
     final windowClass = WindowClass.of(context);
     final gutter = _gutter(windowClass);
+    ref.listen(searchFocusRequestProvider, (_, requested) {
+      // After the frame that shows Search, when it was hidden.
+      if (requested) {
+        WidgetsBinding.instance
+          ..addPostFrameCallback((_) => _takeFocusRequest())
+          ..scheduleFrame();
+      }
+    });
     return RouteTitle(
       screen: l10n.navSearch,
       child: Scaffold(
@@ -168,6 +193,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     return TextField(
       key: SearchScreen.fieldKey,
       controller: _field,
+      focusNode: _fieldFocus,
       autofocus: windowClass == WindowClass.compact,
       textInputAction: TextInputAction.search,
       onChanged: _onChanged,

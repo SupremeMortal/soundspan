@@ -2600,6 +2600,204 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add to playlist'**
   String get actionAddToPlaylist;
+
+  /// Title of the Desktop settings section, which lists the keyboard shortcuts.
+  ///
+  /// In en, this message translates to:
+  /// **'Desktop'**
+  String get screenSettingsDesktop;
+
+  /// Heading of the list of keyboard shortcuts in Settings → Desktop.
+  ///
+  /// In en, this message translates to:
+  /// **'Keyboard shortcuts'**
+  String get settingsShortcutsTitle;
+
+  /// What the Space shortcut does, as listed in Settings → Desktop.
+  ///
+  /// In en, this message translates to:
+  /// **'Play or pause'**
+  String get shortcutPlayPause;
+
+  /// What the next-track shortcut does, as listed in Settings → Desktop.
+  ///
+  /// In en, this message translates to:
+  /// **'Next track'**
+  String get shortcutNext;
+
+  /// What the previous-track shortcut does, as listed in Settings → Desktop.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous track'**
+  String get shortcutPrevious;
+
+  /// What the seek-forward shortcut does, as listed in Settings → Desktop.
+  ///
+  /// In en, this message translates to:
+  /// **'Seek forward {seconds} seconds'**
+  String shortcutSeekForward(int seconds);
+
+  /// What the seek-back shortcut does, as listed in Settings → Desktop.
+  ///
+  /// In en, this message translates to:
+  /// **'Seek back {seconds} seconds'**
+  String shortcutSeekBack(int seconds);
+
+  /// What the volume-up shortcut does, as listed in Settings → Desktop.
+  ///
+  /// In en, this message translates to:
+  /// **'Volume up'**
+  String get shortcutVolumeUp;
+
+  /// What the volume-down shortcut does, as listed in Settings → Desktop.
+  ///
+  /// In en, this message translates to:
+  /// **'Volume down'**
+  String get shortcutVolumeDown;
+
+  /// What the shuffle shortcut does, as listed in Settings → Desktop.
+  ///
+  /// In en, this message translates to:
+  /// **'Shuffle on or off'**
+  String get shortcutShuffle;
+
+  /// What the repeat shortcut does (off, all, one), as listed in Settings → Desktop.
+  ///
+  /// In en, this message translates to:
+  /// **'Change repeat'**
+  String get shortcutRepeat;
+
+  /// What the like shortcut does, as listed in Settings → Desktop.
+  ///
+  /// In en, this message translates to:
+  /// **'Like or remove like of the current track'**
+  String get shortcutLike;
+
+  /// What the search shortcut does (focus the search field), as listed in Settings → Desktop.
+  ///
+  /// In en, this message translates to:
+  /// **'Search'**
+  String get shortcutSearch;
+
+  /// What a navigation shortcut does, as listed in Settings → Desktop.
+  ///
+  /// In en, this message translates to:
+  /// **'Go to {destination}'**
+  String shortcutGoTo(String destination);
+
+  /// What the queue shortcut does, as listed in Settings → Desktop.
+  ///
+  /// In en, this message translates to:
+  /// **'Show or hide the queue'**
+  String get shortcutQueue;
+
+  /// What Enter on a track row does, as listed in Settings → Desktop.
+  ///
+  /// In en, this message translates to:
+  /// **'Play the selected tracks'**
+  String get shortcutPlayRow;
+
+  /// What Shift+Enter on a track row does, as listed in Settings → Desktop.
+  ///
+  /// In en, this message translates to:
+  /// **'Play the selected tracks next'**
+  String get shortcutPlayRowNext;
+
+  /// What Delete on a row of a playlist the user owns does, as listed in Settings → Desktop.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove the selected tracks from the playlist'**
+  String get shortcutRemoveRow;
+
+  /// What the Menu key and Shift+F10 do, as listed in Settings → Desktop.
+  ///
+  /// In en, this message translates to:
+  /// **'Open the menu of the focused item'**
+  String get shortcutMenu;
+
+  /// What the refresh shortcut does, as listed in Settings → Desktop.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh'**
+  String get shortcutRefresh;
+
+  /// What F6 does (move focus to the next area of the window), as listed in Settings → Desktop.
+  ///
+  /// In en, this message translates to:
+  /// **'Next area'**
+  String get shortcutNextArea;
+
+  /// What Shift+F6 does (move focus to the previous area of the window), as listed in Settings → Desktop.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous area'**
+  String get shortcutPreviousArea;
+
+  /// Name of the Control key in a shortcut.
+  ///
+  /// In en, this message translates to:
+  /// **'Ctrl'**
+  String get keyCtrl;
+
+  /// Name of the Command key in a shortcut on macOS.
+  ///
+  /// In en, this message translates to:
+  /// **'Cmd'**
+  String get keyCmd;
+
+  /// Name of the Shift key in a shortcut.
+  ///
+  /// In en, this message translates to:
+  /// **'Shift'**
+  String get keyShift;
+
+  /// Name of the Alt key in a shortcut.
+  ///
+  /// In en, this message translates to:
+  /// **'Alt'**
+  String get keyAlt;
+
+  /// Name of the Option key in a shortcut on macOS.
+  ///
+  /// In en, this message translates to:
+  /// **'Option'**
+  String get keyOption;
+
+  /// Name of the space bar in a shortcut.
+  ///
+  /// In en, this message translates to:
+  /// **'Space'**
+  String get keySpace;
+
+  /// Name of the Enter key in a shortcut.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter'**
+  String get keyEnter;
+
+  /// Name of the Delete key in a shortcut.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get keyDelete;
+
+  /// Name of the Menu (context menu) key in a shortcut.
+  ///
+  /// In en, this message translates to:
+  /// **'Menu'**
+  String get keyMenu;
+
+  /// The mouse's back button, listed beside the Back shortcut.
+  ///
+  /// In en, this message translates to:
+  /// **'Mouse back button'**
+  String get keyMouseBack;
+
+  /// The mouse's forward button, listed beside the Forward shortcut.
+  ///
+  /// In en, this message translates to:
+  /// **'Mouse forward button'**
+  String get keyMouseForward;
 }
 
 class _AppLocalizationsDelegate

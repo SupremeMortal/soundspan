@@ -5,4 +5,5 @@
 library;
 
 export 'ui/about/licenses_screen.dart' show LicenseDetailScreen, LicensesScreen;
+export 'ui/desktop_section.dart' show DesktopSection;
 export 'ui/settings_screen.dart' show SettingsScreen, SettingsSection;

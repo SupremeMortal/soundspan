@@ -2008,5 +2008,155 @@
   "actionAddToPlaylist": "[Åðð ţö þļåýļîšţ one two]",
   "@actionAddToPlaylist": {
     "description": "Tooltip and accessibility label of the Add to playlist button of an album or playlist page."
+  },
+  "screenSettingsDesktop": "[Ðéšķţöþ one]",
+  "@screenSettingsDesktop": {
+    "description": "Title of the Desktop settings section, which lists the keyboard shortcuts."
+  },
+  "settingsShortcutsTitle": "[Ķéýböåŕð šĥöŕţçûţš one two]",
+  "@settingsShortcutsTitle": {
+    "description": "Heading of the list of keyboard shortcuts in Settings → Desktop."
+  },
+  "shortcutPlayPause": "[Þļåý öŕ þåûšé one two]",
+  "@shortcutPlayPause": {
+    "description": "What the Space shortcut does, as listed in Settings → Desktop."
+  },
+  "shortcutNext": "[Ñéxţ ţŕåçķ one]",
+  "@shortcutNext": {
+    "description": "What the next-track shortcut does, as listed in Settings → Desktop."
+  },
+  "shortcutPrevious": "[Þŕévîöûš ţŕåçķ one two]",
+  "@shortcutPrevious": {
+    "description": "What the previous-track shortcut does, as listed in Settings → Desktop."
+  },
+  "shortcutSeekForward": "[Šééķ föŕŵåŕð {seconds} šéçöñðš one two three]",
+  "@shortcutSeekForward": {
+    "description": "What the seek-forward shortcut does, as listed in Settings → Desktop.",
+    "placeholders": {
+      "seconds": {
+        "type": "int",
+        "example": "10"
+      }
+    }
+  },
+  "shortcutSeekBack": "[Šééķ båçķ {seconds} šéçöñðš one two]",
+  "@shortcutSeekBack": {
+    "description": "What the seek-back shortcut does, as listed in Settings → Desktop.",
+    "placeholders": {
+      "seconds": {
+        "type": "int",
+        "example": "10"
+      }
+    }
+  },
+  "shortcutVolumeUp": "[Vöļûmé ûþ one]",
+  "@shortcutVolumeUp": {
+    "description": "What the volume-up shortcut does, as listed in Settings → Desktop."
+  },
+  "shortcutVolumeDown": "[Vöļûmé ðöŵñ one two]",
+  "@shortcutVolumeDown": {
+    "description": "What the volume-down shortcut does, as listed in Settings → Desktop."
+  },
+  "shortcutShuffle": "[Šĥûffļé öñ öŕ öff one two]",
+  "@shortcutShuffle": {
+    "description": "What the shuffle shortcut does, as listed in Settings → Desktop."
+  },
+  "shortcutRepeat": "[Çĥåñĝé ŕéþéåţ one two]",
+  "@shortcutRepeat": {
+    "description": "What the repeat shortcut does (off, all, one), as listed in Settings → Desktop."
+  },
+  "shortcutLike": "[Ļîķé öŕ ŕémövé ļîķé öf ţĥé çûŕŕéñţ ţŕåçķ one two three four]",
+  "@shortcutLike": {
+    "description": "What the like shortcut does, as listed in Settings → Desktop."
+  },
+  "shortcutSearch": "[Šéåŕçĥ one]",
+  "@shortcutSearch": {
+    "description": "What the search shortcut does (focus the search field), as listed in Settings → Desktop."
+  },
+  "shortcutGoTo": "[Ĝö ţö {destination} one]",
+  "@shortcutGoTo": {
+    "description": "What a navigation shortcut does, as listed in Settings → Desktop.",
+    "placeholders": {
+      "destination": {
+        "type": "String",
+        "example": "Library"
+      }
+    }
+  },
+  "shortcutQueue": "[Šĥöŵ öŕ ĥîðé ţĥé qûéûé one two three]",
+  "@shortcutQueue": {
+    "description": "What the queue shortcut does, as listed in Settings → Desktop."
+  },
+  "shortcutPlayRow": "[Þļåý ţĥé šéļéçţéð ţŕåçķš one two three]",
+  "@shortcutPlayRow": {
+    "description": "What Enter on a track row does, as listed in Settings → Desktop."
+  },
+  "shortcutPlayRowNext": "[Þļåý ţĥé šéļéçţéð ţŕåçķš ñéxţ one two three]",
+  "@shortcutPlayRowNext": {
+    "description": "What Shift+Enter on a track row does, as listed in Settings → Desktop."
+  },
+  "shortcutRemoveRow": "[Ŕémövé ţĥé šéļéçţéð ţŕåçķš fŕöm ţĥé þļåýļîšţ one two three four]",
+  "@shortcutRemoveRow": {
+    "description": "What Delete on a row of a playlist the user owns does, as listed in Settings → Desktop."
+  },
+  "shortcutMenu": "[Öþéñ ţĥé méñû öf ţĥé föçûšéð îţém one two three]",
+  "@shortcutMenu": {
+    "description": "What the Menu key and Shift+F10 do, as listed in Settings → Desktop."
+  },
+  "shortcutRefresh": "[Ŕéfŕéšĥ one]",
+  "@shortcutRefresh": {
+    "description": "What the refresh shortcut does, as listed in Settings → Desktop."
+  },
+  "shortcutNextArea": "[Ñéxţ åŕéå one]",
+  "@shortcutNextArea": {
+    "description": "What F6 does (move focus to the next area of the window), as listed in Settings → Desktop."
+  },
+  "shortcutPreviousArea": "[Þŕévîöûš åŕéå one two]",
+  "@shortcutPreviousArea": {
+    "description": "What Shift+F6 does (move focus to the previous area of the window), as listed in Settings → Desktop."
+  },
+  "keyCtrl": "[Çţŕļ one]",
+  "@keyCtrl": {
+    "description": "Name of the Control key in a shortcut."
+  },
+  "keyCmd": "[Çmð one]",
+  "@keyCmd": {
+    "description": "Name of the Command key in a shortcut on macOS."
+  },
+  "keyShift": "[Šĥîfţ one]",
+  "@keyShift": {
+    "description": "Name of the Shift key in a shortcut."
+  },
+  "keyAlt": "[Åļţ one]",
+  "@keyAlt": {
+    "description": "Name of the Alt key in a shortcut."
+  },
+  "keyOption": "[Öþţîöñ one]",
+  "@keyOption": {
+    "description": "Name of the Option key in a shortcut on macOS."
+  },
+  "keySpace": "[Šþåçé one]",
+  "@keySpace": {
+    "description": "Name of the space bar in a shortcut."
+  },
+  "keyEnter": "[Éñţéŕ one]",
+  "@keyEnter": {
+    "description": "Name of the Enter key in a shortcut."
+  },
+  "keyDelete": "[Ðéļéţé one]",
+  "@keyDelete": {
+    "description": "Name of the Delete key in a shortcut."
+  },
+  "keyMenu": "[Méñû one]",
+  "@keyMenu": {
+    "description": "Name of the Menu (context menu) key in a shortcut."
+  },
+  "keyMouseBack": "[Möûšé båçķ bûţţöñ one two]",
+  "@keyMouseBack": {
+    "description": "The mouse's back button, listed beside the Back shortcut."
+  },
+  "keyMouseForward": "[Möûšé föŕŵåŕð bûţţöñ one two]",
+  "@keyMouseForward": {
+    "description": "The mouse's forward button, listed beside the Forward shortcut."
   }
 }

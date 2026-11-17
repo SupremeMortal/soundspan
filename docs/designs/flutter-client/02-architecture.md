@@ -189,6 +189,7 @@ Playback restore (showing the last queue, paused) reads only `state.db`, so the 
 ├── /settings/playback
 ├── /settings/storage
 ├── /settings/appearance
+├── /settings/desktop            Listed on desktop platforms and the web
 └── /settings/about
 ```
 

@@ -6,6 +6,7 @@ import 'package:soundspan/app/l10n/generated/app_localizations.dart';
 import 'package:soundspan/app/shell/window_class.dart';
 import 'package:soundspan/shared/widgets/detail_header.dart';
 import 'package:soundspan/shared/widgets/error_view.dart';
+import 'package:soundspan/shared/widgets/refresh_target.dart';
 import 'package:soundspan/shared/widgets/track_row.dart';
 
 /// Builds the slivers of a detail page from its loaded [value].
@@ -96,7 +97,7 @@ class _DetailPageState<T> extends State<DetailPage<T>> {
   Widget build(BuildContext context) {
     final value = widget.value;
     if (value.hasValue) {
-      return RefreshIndicator(
+      return AppRefreshIndicator(
         onRefresh: _refresh,
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),

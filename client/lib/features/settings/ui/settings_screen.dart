@@ -7,11 +7,13 @@ import 'package:material_ui/material_ui.dart';
 import 'package:soundspan/app/l10n/generated/app_localizations.dart';
 import 'package:soundspan/app/router/placeholder_screen.dart';
 import 'package:soundspan/app/router/routes.dart';
+import 'package:soundspan/app/shell/shortcuts/shortcut_bindings.dart';
 import 'package:soundspan/app/shell/window_class.dart';
 import 'package:soundspan/app/theme/dimens.dart';
 import 'package:soundspan/core/profile/profile_scope.dart';
 import 'package:soundspan/features/settings/ui/about/about_section.dart';
 import 'package:soundspan/features/settings/ui/appearance_section.dart';
+import 'package:soundspan/features/settings/ui/desktop_section.dart';
 import 'package:soundspan/features/settings/ui/playback_settings_screen.dart';
 import 'package:soundspan/features/settings/ui/servers_section.dart';
 
@@ -26,6 +28,9 @@ enum SettingsSection {
   /// Theme and language.
   appearance(Icons.palette_rounded),
 
+  /// The keyboard shortcuts; listed on desktop platforms and the web.
+  desktop(Icons.keyboard_rounded),
+
   /// Licences.
   about(Icons.info_outline_rounded);
 
@@ -33,6 +38,13 @@ enum SettingsSection {
 
   /// The section's icon in the list.
   final IconData icon;
+
+  /// The sections listed on this platform: [desktop] only on a desktop
+  /// platform or the web.
+  static List<SettingsSection> get listed => [
+    for (final section in values)
+      if (section != desktop || shortcutsActive()) section,
+  ];
 
   /// The section's location: `/settings/<name>`.
   String get path => '${RoutePaths.settings}/$name';
@@ -42,6 +54,7 @@ enum SettingsSection {
     servers => l10n.screenSettingsServers,
     playback => l10n.screenSettingsPlayback,
     appearance => l10n.screenSettingsAppearance,
+    desktop => l10n.screenSettingsDesktop,
     about => l10n.screenSettingsAbout,
   };
 }
@@ -126,6 +139,7 @@ class SettingsScreen extends StatelessWidget {
       child: PlaybackSettingsScreen(),
     ),
     SettingsSection.appearance => const AppearanceSection(),
+    SettingsSection.desktop => const DesktopSection(),
     SettingsSection.about => const AboutSection(),
   };
 }
@@ -142,7 +156,7 @@ class _SectionList extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.symmetric(vertical: Spacing.x8),
       children: [
-        for (final section in SettingsSection.values)
+        for (final section in SettingsSection.listed)
           ListTile(
             leading: Icon(section.icon),
             title: Text(section.title(l10n)),

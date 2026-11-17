@@ -28,6 +28,7 @@ import 'package:soundspan/shared/widgets/empty_state.dart';
 import 'package:soundspan/shared/widgets/error_view.dart';
 import 'package:soundspan/shared/widgets/media_card.dart';
 import 'package:soundspan/shared/widgets/offline_banner.dart';
+import 'package:soundspan/shared/widgets/refresh_target.dart';
 import 'package:soundspan/shared/widgets/shelf.dart';
 
 /// Home (doc 09, Home): the offline, link-expiry and server notices, a greeting and the user's
@@ -95,7 +96,7 @@ class HomeScreen extends ConsumerWidget {
                   const ExpiryBanner(),
                   const _VersionNoticeBanner(),
                   Expanded(
-                    child: RefreshIndicator(
+                    child: AppRefreshIndicator(
                       onRefresh: () => refreshHome(ref),
                       child: CustomScrollView(
                         physics: const AlwaysScrollableScrollPhysics(),
