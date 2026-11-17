@@ -141,6 +141,19 @@ void main() {
       expect(notes, contains('no iOS build'));
     });
 
+    test('says the MSIX is unsigned and points to the setup program', () {
+      final notes = _notes();
+
+      expect(
+        notes,
+        contains(
+          'The Windows MSIX package is unsigned and installs only where '
+          'unsigned packages are allowed; most users should use the Windows '
+          'setup program.',
+        ),
+      );
+    });
+
     test('shows the server range from BuildConfig', () {
       expect(
         _notes(),

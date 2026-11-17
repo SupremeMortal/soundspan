@@ -15,6 +15,8 @@ const _expected = [
   'soundspan-0.1.0-linux-x64-unsigned.tar.gz',
   'soundspan-0.1.0-macos-universal-unsigned.zip',
   'soundspan-0.1.0-web.tar.gz',
+  'soundspan-0.1.0-windows-x64-unsigned-setup.exe',
+  'soundspan-0.1.0-windows-x64-unsigned.msix',
   'soundspan-0.1.0-windows-x64-unsigned.zip',
 ];
 
@@ -71,6 +73,28 @@ void main() {
 
     expect(result.ok, isFalse);
     expect(result.lines.join('\n'), contains(_expected.first));
+    expect(sums().existsSync(), isFalse);
+  });
+
+  test('the set includes the Windows MSIX and setup program', () {
+    expect(
+      expectedArtifactNames(_version),
+      containsAll(<String>[
+        'soundspan-0.1.0-windows-x64-unsigned.msix',
+        'soundspan-0.1.0-windows-x64-unsigned-setup.exe',
+      ]),
+    );
+  });
+
+  test('a set without the MSIX fails and names it', () {
+    writeFullSet();
+    const msix = 'soundspan-0.1.0-windows-x64-unsigned.msix';
+    File(p.join(dir.path, msix)).deleteSync();
+
+    final result = run(writeSums: true);
+
+    expect(result.ok, isFalse);
+    expect(result.lines, contains('missing: $msix'));
     expect(sums().existsSync(), isFalse);
   });
 

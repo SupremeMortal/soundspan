@@ -120,7 +120,10 @@ Distribution: `.app` in a `.dmg`, Developer ID signed and notarised (`notarytool
 | Thumbnail toolbar | Out of scope for v1 |
 | Runtime | The MSVC runtime DLLs are shipped app-local in the installer |
 
-Packaging: MSIX (for winget and optional Store) and an Inno Setup `.exe` (per-user install, no admin). Unsigned builds trigger SmartScreen; release notes say so. Code signing is deferred.
+Packaging, both unsigned and built by `build-windows` in `client-build.yml` ([11](11-testing-and-ci.md)); code signing is deferred:
+
+- **Inno Setup** (`client/windows/packaging/soundspan.iss`): `soundspan-<version>-windows-x64-unsigned-setup.exe`, a per-user install with no elevation (`PrivilegesRequired=lowest`) into `{localappdata}\Programs\soundspan`, with a fixed `AppId` GUID, `AppVersion` from `/DAppVersion=`, a Start-menu shortcut carrying the app user model id `io.soundspan.app`, an optional desktop shortcut and an uninstaller. It installs the whole `Release` directory with the app-local `msvcp140.dll`, `vcruntime140.dll` and `vcruntime140_1.dll`, and writes `HKCU\Software\Classes\soundspan` (default `URL:soundspan`, an empty `URL Protocol`, `shell\open\command` = `"<install dir>\soundspan.exe" "%1"`), which the uninstaller removes. Unsigned, it triggers SmartScreen; the release notes say so.
+- **MSIX** (the `msix` dev dependency and `msix_config` in `client/pubspec.yaml`): `soundspan-<version>-windows-x64-unsigned.msix`, identity `io.soundspan.app`, display and publisher display name `soundspan`, the placeholder publisher `CN=soundspan-unsigned`, the logo from `windows/msix_assets/Square310x310Logo.png`, capabilities `internetClient` and `privateNetworkClientServer`, the `soundspan` protocol, x64, version `<version>.0`. Unsigned, it installs only where unsigned packages are allowed; the release notes point users to the setup program. It is the base for winget and an optional Store listing once it is signed.
 
 ## Linux
 

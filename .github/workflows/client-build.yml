@@ -195,12 +195,90 @@ jobs:
           New-Item -ItemType Directory -Force -Path dist | Out-Null
           Compress-Archive -Path client\build\windows\x64\runner\Release -DestinationPath "dist\soundspan-$env:VERSION-windows-x64-unsigned.zip"
 
+      # Inno Setup at one pinned version, unless the runner image has it.
+      - name: Set up Inno Setup
+        shell: pwsh
+        env:
+          INNO_URL: https://github.com/jrsoftware/issrc/releases/download/is-6_7_4/innosetup-6.7.4.exe
+          INNO_SHA256: a549929319f9120716677c685535ca4671e4b937b5fdc87e2585f32d8eb30e8c
+        run: |
+          $iscc = Get-Command iscc.exe -ErrorAction SilentlyContinue
+          if (-not $iscc) {
+            $default = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+            if (Test-Path $default) { $iscc = Get-Item $default }
+          }
+          if ($iscc) {
+            $path = if ($iscc.Source) { $iscc.Source } else { $iscc.FullName }
+          } else {
+            $setup = Join-Path $env:RUNNER_TEMP 'innosetup.exe'
+            Invoke-WebRequest -Uri $env:INNO_URL -OutFile $setup
+            $hash = (Get-FileHash -Algorithm SHA256 $setup).Hash.ToLowerInvariant()
+            if ($hash -ne $env:INNO_SHA256) { throw "Inno Setup checksum mismatch: $hash" }
+            $dir = Join-Path $env:RUNNER_TEMP 'innosetup'
+            Start-Process -FilePath $setup -Wait -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/SP-', '/CURRENTUSER', "/DIR=$dir"
+            $path = Join-Path $dir 'ISCC.exe'
+            if (-not (Test-Path $path)) { throw "ISCC.exe not installed at $path" }
+          }
+          Write-Output "ISCC at $path"
+          "ISCC=$path" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Build the Inno Setup installer
+        shell: pwsh
+        run: |
+          & $env:ISCC "/DAppVersion=$env:VERSION" "/O$(Resolve-Path dist)" client\windows\packaging\soundspan.iss
+          if ($LASTEXITCODE -ne 0) { throw "iscc exited with $LASTEXITCODE" }
+
+      # Last, because msix:create removes the runtime DLLs it put in Release.
+      - name: Build the MSIX package
+        working-directory: client
+        shell: pwsh
+        run: |
+          dart run msix:create --build-windows false --version "$env:VERSION.0" --output-path "$(Resolve-Path ..\dist)" --output-name "soundspan-$env:VERSION-windows-x64-unsigned"
+          if ($LASTEXITCODE -ne 0) { throw "msix:create exited with $LASTEXITCODE" }
+          Get-ChildItem ..\dist
+
       - name: Upload artifact
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: client-build-windows
           path: dist/*
           if-no-files-found: error
+          retention-days: 7
+
+  # Installs both Windows packages on a runner that never built the app
+  # (doc 11, client-build.yml).
+  smoke-windows:
+    name: smoke-windows
+    needs: build-windows
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.ref }}
+          sparse-checkout: client/windows/packaging
+
+      - name: Download the Windows packages
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: client-build-windows
+          path: dist
+
+      - name: Install, launch and uninstall
+        shell: powershell
+        run: >-
+          powershell -NoProfile -ExecutionPolicy Bypass
+          -File client\windows\packaging\smoke.ps1
+          -Dist dist -Version $env:VERSION -LogOut smoke-logs
+
+      - name: Upload the app log
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: client-smoke-windows-logs
+          path: smoke-logs
+          if-no-files-found: ignore
           retention-days: 7
 
   build-macos:
@@ -291,7 +369,7 @@ jobs:
 
   checksums:
     name: checksums
-    needs: [build-android, build-linux, build-windows, build-macos, build-web]
+    needs: [build-android, build-linux, build-windows, smoke-windows, build-macos, build-web]
     # Runs after a skipped build-macos too; any failed or cancelled build
     # still skips it.
     if: ${{ !cancelled() && !failure() }}

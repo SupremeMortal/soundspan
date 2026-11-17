@@ -73,12 +73,27 @@ dev_dependencies:
   integration_test: { sdk: flutter }
   json_serializable: ^6.15.0
   mocktail: ^1.0.5
+  msix: ^3.18.0                  # Windows MSIX package (client-build.yml, msix_config below)
   patrol: ^4.11.0
   riverpod_generator: ^4.0.0
   shelf: ^1.4.2                  # integration_test/support/tone_server.dart
   very_good_analysis: ^11.0.0
   xml: ^7.0.0                    # tool/check_platform_config.dart
   yaml: ^3.1.0                   # tool/license_audit.dart
+
+# Unsigned MSIX of the Windows release build (doc 10, Windows). The version
+# comes from the build: `dart run msix:create --version <version>.0`.
+msix_config:
+  display_name: soundspan
+  publisher_display_name: soundspan
+  identity_name: io.soundspan.app
+  publisher: CN=soundspan-unsigned
+  logo_path: windows/msix_assets/Square310x310Logo.png
+  capabilities: internetClient,privateNetworkClientServer
+  protocol_activation: soundspan
+  architecture: x64
+  sign_msix: false
+  install_certificate: false
 
 # Patrol (doc 11, Integration (mobile)); run with patrol_cli 4.9.0.
 patrol:
