@@ -8,6 +8,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart' show immutable, visibleForTesting;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:soundspan/core/connectivity/reachability.dart';
+import 'package:soundspan/core/downloads/collection_upkeep.dart';
 import 'package:soundspan/core/downloads/download_artwork.dart';
 import 'package:soundspan/core/downloads/download_controller.dart';
 import 'package:soundspan/core/downloads/download_keys.dart';
@@ -716,7 +717,7 @@ final Provider<DownloadScheduler> downloadSchedulerProvider =
 /// The post-first-frame task of downloads (doc 02, Bootstrap Sequence,
 /// step 8): creates the [DownloadController] and starts the
 /// [DownloadScheduler], then the [DownloadArtwork], then the
-/// [DownloadReconciler], of each profile the
+/// [DownloadReconciler], then the [CollectionUpkeep], of each profile the
 /// [ProfileRuntime] under [root] activates, now and later, on targets that
 /// can download.
 Future<void> startDownloads(ProviderContainer root) async {
@@ -741,6 +742,9 @@ Future<void> startDownloads(ProviderContainer root) async {
           // Reconciliation scans the files at once and asks the server
           // when online (doc 07, Reconciliation).
           .then((_) => container.read(downloadReconcilerProvider).start())
+          // Pinned albums and playlists follow the server from here on
+          // (doc 07, Keeping Collections Current).
+          .then((_) => container.read(collectionUpkeepProvider).start())
           .catchError(
             (Object error, StackTrace stackTrace) => DownloadScheduler._log
                 .severe('Downloads did not start', const {}, error, stackTrace),

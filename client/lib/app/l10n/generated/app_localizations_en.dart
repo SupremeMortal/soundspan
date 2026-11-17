@@ -1892,6 +1892,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get menuRetryDownload => 'Retry download';
 
   @override
+  String get menuCheckForChanges => 'Check for changes';
+
+  @override
   String get downloadRemoveTitle => 'Remove download?';
 
   @override
@@ -1993,6 +1996,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get downloadsWaitingForConnection => 'Waiting for connection';
+
+  @override
+  String get downloadsSourceGone => 'No longer on the server';
 
   @override
   String get downloadsKindAlbum => 'Album';
@@ -4122,6 +4128,9 @@ class AppLocalizationsEnXa extends AppLocalizationsEn {
   String get menuRetryDownload => '[Ŕéţŕý ðöŵñļöåð one two]';
 
   @override
+  String get menuCheckForChanges => '[Çĥéçķ föŕ çĥåñĝéš one two]';
+
+  @override
   String get downloadRemoveTitle => '[Ŕémövé ðöŵñļöåð? one two]';
 
   @override
@@ -4226,6 +4235,9 @@ class AppLocalizationsEnXa extends AppLocalizationsEn {
   @override
   String get downloadsWaitingForConnection =>
       '[Ŵåîţîñĝ föŕ çöññéçţîöñ one two three]';
+
+  @override
+  String get downloadsSourceGone => '[Ñö ļöñĝéŕ öñ ţĥé šéŕvéŕ one two three]';
 
   @override
   String get downloadsKindAlbum => '[Åļbûm one]';

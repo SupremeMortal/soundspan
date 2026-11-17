@@ -2498,6 +2498,10 @@
   "@menuRetryDownload": {
     "description": "Menu entry that tries a failed download again."
   },
+  "menuCheckForChanges": "Check for changes",
+  "@menuCheckForChanges": {
+    "description": "Menu entry on a downloaded album or playlist that asks the server for changes to it now, so the download follows them."
+  },
   "downloadRemoveTitle": "Remove download?",
   "@downloadRemoveTitle": {
     "description": "Title of the dialog confirming that a download is removed."
@@ -2639,6 +2643,10 @@
   "downloadsWaitingForConnection": "Waiting for connection",
   "@downloadsWaitingForConnection": {
     "description": "Shown on a Downloads tab row that waits for the server to be reachable."
+  },
+  "downloadsSourceGone": "No longer on the server",
+  "@downloadsSourceGone": {
+    "description": "Shown on a Downloads tab row whose album or playlist was deleted on the server; the downloaded files stay on this device."
   },
   "downloadsKindAlbum": "Album",
   "@downloadsKindAlbum": {

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 
+import 'package:soundspan/core/downloads/pinned_playlist_listener.dart';
 import 'package:soundspan/core/sync/outbox/optimistic_overlay.dart';
 import 'package:soundspan/core/sync/outbox/outbox.dart';
 import 'package:soundspan/core/sync/outbox/outbox_op.dart';
@@ -30,10 +31,15 @@ const String _likedId = 'liked';
 /// Edits enqueue into [_outbox]; the handlers of
 /// `playlist_outbox_handlers.dart` are the only callers of the playlist
 /// write endpoints. Without an outbox every edit throws [StateError].
+///
+/// After every successful detail fetch, and after every add, remove or
+/// reorder with the detail as it now reads, [_pinned] learns the
+/// playlist's tracks, so a downloaded playlist follows them (doc 07,
+/// Keeping Collections Current).
 class CachedPlaylistRepository implements PlaylistRepository {
   /// A repository reading [_remote] into [_store] through [_swr] and
-  /// [_pages], overlaid with the ops [_pending] answers, and editing
-  /// through [_outbox].
+  /// [_pages], overlaid with the ops [_pending] answers, editing through
+  /// [_outbox] and telling [_pinned] about track changes.
   new(
     this._remote,
     this._store,
@@ -41,6 +47,7 @@ class CachedPlaylistRepository implements PlaylistRepository {
     this._pages, {
     this._pending = noPendingOps,
     this._outbox,
+    this._pinned,
   });
 
   final PlaylistRemoteSource _remote;
@@ -49,6 +56,7 @@ class CachedPlaylistRepository implements PlaylistRepository {
   final PagedSources _pages;
   final PendingOps _pending;
   final Outbox? _outbox;
+  final PinnedPlaylistListener? _pinned;
 
   @override
   Stream<Cached<PlaylistDetail>> playlist(String id) => overlay(
@@ -99,7 +107,36 @@ class CachedPlaylistRepository implements PlaylistRepository {
     },
   );
 
-  Future<void> _fetch(String id) => fetchPlaylistInto(_remote, _store, id);
+  Future<void> _fetch(String id) async {
+    final detail = await fetchPlaylistInto(_remote, _store, id);
+    await _notifyPinned(id, detail);
+  }
+
+  /// Tells [_pinned] the tracks of playlist [id]: those of [detail], or
+  /// the cached detail with the pending edits applied.
+  Future<void> _notifyPinned(String id, [PlaylistDetail? detail]) async {
+    final pinned = _pinned;
+    if (pinned == null) return;
+    if (pinned is PinnedPlaylistRelay && !pinned.isListening) return;
+    var current = detail;
+    if (current == null) {
+      final cached = await _store
+          .watchBlob(
+            'playlist:$id',
+            (json) => PlaylistDetail.fromJson(json! as Map<String, Object?>),
+          )
+          .first;
+      if (cached == null) return;
+      final ops = await _pending(playlistEditOps).first;
+      current = applyPlaylistEdits(cached.value, ops);
+    }
+    await pinned.onPlaylistTracksChanged(
+      id,
+      [for (final item in current.items) item.track],
+      title: current.summary.name,
+      artworkRef: current.summary.coverRefs.firstOrNull,
+    );
+  }
 
   @override
   Future<String> create(String name) async {
@@ -161,6 +198,7 @@ class CachedPlaylistRepository implements PlaylistRepository {
       );
       added++;
     }
+    if (added > 0) await _notifyPinned(id);
     return added;
   }
 
@@ -180,7 +218,10 @@ class CachedPlaylistRepository implements PlaylistRepository {
         playbackId: playbackId.value,
       ),
     );
-    if (seq != null) return;
+    if (seq != null) {
+      await _notifyPinned(id);
+      return;
+    }
     // The add was cancelled; a pending reorder must not name its track.
     final pending = await outbox
         .watchPending(opTypes: {PlaylistReorderOp.type})
@@ -200,6 +241,7 @@ class CachedPlaylistRepository implements PlaylistRepository {
         );
       }
     }
+    await _notifyPinned(id);
   }
 
   @override
@@ -211,6 +253,7 @@ class CachedPlaylistRepository implements PlaylistRepository {
         playbackIds: [for (final playbackId in order) playbackId.value],
       ),
     );
+    await _notifyPinned(id);
   }
 
   @override

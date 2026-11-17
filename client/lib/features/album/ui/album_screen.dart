@@ -96,6 +96,11 @@ class AlbumScreen extends ConsumerWidget {
           onRefresh: () async {
             final repository = await ref.read(libraryRepositoryProvider.future);
             await repository.refreshAlbum(albumId);
+            await refreshDownloadedCollection(
+              ref,
+              CollectionKind.album,
+              albumId,
+            );
           },
           onRetry: () => ref.invalidate(albumDetailProvider(albumId)),
           builder: (context, detail) => _slivers(context, ref, detail),

@@ -487,6 +487,10 @@ class DownloadStore {
   Future<void> setWaitingFor(DownloadItemKey key, DownloadWaitReason? reason) =>
       _writeItem(key, DownloadItemsCompanion(waitingFor: Value(reason?.name)));
 
+  /// Replaces the metadata snapshot of item [key].
+  Future<void> setItemMeta(DownloadItemKey key, String metaJson) =>
+      _writeItem(key, DownloadItemsCompanion(metaJson: Value(metaJson)));
+
   /// Records that item [key] was played [at].
   Future<void> touchLastPlayed(DownloadItemKey key, DateTime at) =>
       _writeItem(key, DownloadItemsCompanion(lastPlayedAt: Value(at)));
@@ -507,6 +511,51 @@ class DownloadStore {
           refId: refId,
           itemKey: key.encode(),
           position: position,
+        ),
+      );
+
+  /// The items of collection [kind]/[refId], in membership order.
+  Future<List<DownloadItemKey>> memberKeysOf(
+    DownloadCollectionKind kind,
+    String refId,
+  ) =>
+      (_db.select(_db.downloadMembership)
+            ..where((m) => m.kind.equals(kind.name) & m.refId.equals(refId))
+            ..orderBy([(m) => OrderingTerm.asc(m.position)]))
+          .map((m) => DownloadItemKey.decode(m.itemKey))
+          .get();
+
+  /// Removes item [key] from collection [kind]/[refId] and answers whether
+  /// the item is left with no membership.
+  Future<bool> removeMembership(
+    DownloadCollectionKind kind,
+    String refId,
+    DownloadItemKey key,
+  ) => _db.transaction(() async {
+    await (_db.delete(_db.downloadMembership)..where(
+          (m) =>
+              m.kind.equals(kind.name) &
+              m.refId.equals(refId) &
+              m.itemKey.equals(key.encode()),
+        ))
+        .go();
+    return await membershipCount(key) == 0;
+  });
+
+  /// Replaces the title and metadata of collection [kind]/[refId], keeping
+  /// its status; an unknown collection is ignored.
+  Future<void> setCollectionMeta(
+    DownloadCollectionKind kind,
+    String refId, {
+    required String title,
+    required String metaJson,
+  }) =>
+      (_db.update(
+        _db.downloadCollections,
+      )..where((c) => _collection(c, kind, refId))).write(
+        DownloadCollectionsCompanion(
+          title: Value(title),
+          metaJson: Value(metaJson),
         ),
       );
 

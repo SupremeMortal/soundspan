@@ -146,9 +146,19 @@ Two independent limits apply.
 
 ## Keeping Collections Current
 
-- **Playlists:** when a pinned playlist's detail is refreshed and its track list differs from the membership set, the controller re-runs `POST /offline/items { kind: playlist }` and diffs: new items are queued, removed ones are unpinned. A local edit to a pinned playlist triggers the same pass.
-- **Albums:** re-resolved at most once a day and on manual refresh.
-- **Podcasts:** no auto-download in v1; episodes are pinned individually.
+`CollectionUpkeep` (`lib/core/downloads/collection_upkeep.dart`, one per profile, started by `startDownloads` after the reconciler) decides when a pinned collection is resolved again; `DownloadController.refreshCollection(kind, refId, {snapshot})` applies the difference in the controller's call order, reusing the pin's item upsert and the unpin's removal:
+
+- New downloadable items are queued and gain a membership, as in step 5. Items the server no longer returns lose their membership; one left with no membership is cancelled, deleted with its files and reported in an `offlineDelete` batch, as `unpin` does.
+- A refused item that is `queued`, `failedRetryable`, `failedPermanent` or `unavailable` becomes `unavailable` with the server's reason; a `completed` one (and one in transfer) is left in place, since revocation belongs to Reconciliation. An `unavailable` item the server now accepts is queued.
+- The membership order is rewritten to the server's order; an item whose `metaJson` title is empty is filled from the snapshot or `cache.db`; a snapshot replaces the collection's title and metadata. Then the device limit pass runs and the scheduler is pumped. `resolvedAt` records the time of the last successful resolve.
+- `CACHE_LIMIT_EXCEEDED` and `SOURCE_DOWNLOADS_DISABLED` block the collection as `pin` does, keeping its files. `NotFound` (deleted on the server) keeps the collection and its files with status `ready` and `{"sourceGone": true}` in `detailJson` (`CollectionDownloadState.sourceGone`); the Downloads tab shows "No longer on the server", and the next successful resolve clears it. Nothing is deleted automatically. `Offline`, `ServerError`, `Upstream` and `RateLimited` change nothing. The answer is an `UpkeepResult` (`notPinned`, `refreshed`, `blocked`, `sourceGone`, `unchanged`).
+
+Triggers:
+
+- **Playlists:** `CachedPlaylistRepository` tells a `PinnedPlaylistListener` (declared in `core/downloads`; the profile's `PinnedPlaylistRelay` forwards to the upkeep once downloads start) the playlist's tracks after every successful detail fetch and after every local add, remove or reorder, with the cached detail and its pending edits. When the playlist is pinned and its `playbackId`s, in order, differ from the membership, the upkeep resolves it after a 2 s debounce per playlist, so a burst of edits makes one request. A refresh asked for while reachability is not `online` is remembered (in memory) and runs when it returns to `online`.
+- **Albums:** `runDailyAlbumPass` runs at start, after reconciliation, and then every 24 hours while the profile is active, only when `online`; it resolves, one after another, each album whose `resolvedAt` is 24 hours old or older.
+- **Manual:** pull-to-refresh or F5 on a pinned album's or playlist's detail screen, and "Check for changes" in an album's or playlist's menu on the Downloads tab, call `refresh` whatever the age.
+- **Single tracks** are resolved again only by the scheduler's `ReResolveCollection` effect. **Podcasts:** no auto-download in v1; episodes are pinned individually.
 
 ## Reconciliation
 

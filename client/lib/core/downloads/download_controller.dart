@@ -8,8 +8,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:drift/drift.dart' show Value;
-import 'package:flutter/foundation.dart'
-    show immutable, listEquals, visibleForTesting;
+import 'package:flutter/foundation.dart' show listEquals, visibleForTesting;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
 import 'package:soundspan/core/connectivity/reachability.dart';
@@ -18,6 +17,7 @@ import 'package:soundspan/core/downloads/download_quota.dart';
 import 'package:soundspan/core/downloads/download_scheduler.dart';
 import 'package:soundspan/core/downloads/download_state_machine.dart';
 import 'package:soundspan/core/downloads/download_store.dart';
+import 'package:soundspan/core/downloads/download_values.dart';
 import 'package:soundspan/core/downloads/offline_complete_queue.dart';
 import 'package:soundspan/core/downloads/offline_delete_queue.dart';
 import 'package:soundspan/core/downloads/offline_models.dart';
@@ -38,344 +38,7 @@ import 'package:soundspan/shared/domain/track.dart';
 import 'package:soundspan/shared/providers/cache.dart';
 import 'package:soundspan_api/soundspan_api.dart' as api;
 
-/// The `device_settings` key of the download quality:
-/// `serverDefault`, `original`, `high`, `medium` or `low` (doc 05).
-const String downloadQualityKey = 'quality.download';
-
-/// Why the server will not let this device download an item, as stored in
-/// an `unavailable` item's `failureCode`, with the l10n id of the message
-/// the UI shows for it (doc 07, Requesting a Download). No message names a
-/// source.
-enum DownloadUnavailableReason {
-  /// "Downloads are turned off on this server".
-  downloadsDisabled('SOURCE_DOWNLOADS_DISABLED', 'downloadUnavailableDisabled'),
-
-  /// "No longer available".
-  trackUnavailable('TRACK_UNAVAILABLE', 'downloadUnavailableGone'),
-
-  /// "Not available for your account".
-  sourceUnavailable('SOURCE_UNAVAILABLE', 'downloadUnavailableAccount');
-
-  new(this.code, this.messageId);
-
-  /// The server's `reason`, stored as the item's `failureCode`.
-  final String code;
-
-  /// The l10n id of the message the UI shows.
-  final String messageId;
-
-  /// The reason stored as [code], or null for a code this client does not
-  /// know.
-  static DownloadUnavailableReason? fromCode(String? code) {
-    for (final reason in values) {
-      if (reason.code == code) return reason;
-    }
-    return null;
-  }
-}
-
-/// The `failureCode` of an item the server refused for a reason this
-/// client does not know.
-const String unknownUnavailableCode = 'UNKNOWN';
-
-/// What the caller already shows of a collection it pins: the album or
-/// playlist detail, or the single track. It is the source of each item's
-/// metadata, because the server's answer carries none.
-@immutable
-final class CollectionSnapshot {
-  /// Creates the snapshot.
-  const new({
-    required this.title,
-    required this.tracks,
-    this.subtitle,
-    this.artworkRef,
-  });
-
-  /// The collection's title.
-  final String title;
-
-  /// The line under the title, such as the artist, if any.
-  final String? subtitle;
-
-  /// The value to pass to the cover-art endpoint, if any.
-  final String? artworkRef;
-
-  /// The tracks shown, in order.
-  final List<Track> tracks;
-}
-
-/// A collection's download state for the UI, derived from its row and its
-/// items.
-@immutable
-final class CollectionDownloadState {
-  /// Creates the state.
-  const new({
-    required this.status,
-    required this.itemCount,
-    required this.completedCount,
-    required this.unavailableCount,
-    required this.receivedBytes,
-    required this.totalBytes,
-    this.activeCount = 0,
-    this.failedCount = 0,
-    this.pausedCount = 0,
-    this.blockedReason,
-    this.blockedDetail,
-    this.quotaShortfall,
-  });
-
-  /// Where the collection is.
-  final DownloadCollectionStatus status;
-
-  /// Why it is blocked, when it is.
-  final CollectionBlock? blockedReason;
-
-  /// The number of items, unavailable ones included.
-  final int itemCount;
-
-  /// The number of `completed` items.
-  final int completedCount;
-
-  /// The number of `unavailable` items.
-  final int unavailableCount;
-
-  /// The number of items still to download: `queued`, `running`,
-  /// `verifying`, `paused` or `missing`.
-  final int activeCount;
-
-  /// The number of `failedRetryable` or `failedPermanent` items.
-  final int failedCount;
-
-  /// The number of active items the user paused or holds.
-  final int pausedCount;
-
-  /// Bytes on disk: the size of completed items plus the bytes received of
-  /// the others.
-  final int receivedBytes;
-
-  /// Bytes the collection takes when complete: the size of completed items
-  /// plus the expected size of the others that can be downloaded; unknown
-  /// sizes count as zero.
-  final int totalBytes;
-
-  /// The detail of a block, such as the three byte values of a server
-  /// quota refusal (`limitBytes`, `usedBytes`, `estimatedBytes`).
-  final Map<String, Object?>? blockedDetail;
-
-  /// Set while some of its items wait for space, on the device limit or on
-  /// the disk: what they need and what is free for them.
-  final QuotaShortfall? quotaShortfall;
-
-  @override
-  bool operator ==(Object other) =>
-      other is CollectionDownloadState &&
-      other.quotaShortfall == quotaShortfall &&
-      other.status == status &&
-      other.blockedReason == blockedReason &&
-      other.itemCount == itemCount &&
-      other.completedCount == completedCount &&
-      other.unavailableCount == unavailableCount &&
-      other.activeCount == activeCount &&
-      other.failedCount == failedCount &&
-      other.pausedCount == pausedCount &&
-      other.receivedBytes == receivedBytes &&
-      other.totalBytes == totalBytes &&
-      _sameDetail(other.blockedDetail, blockedDetail);
-
-  @override
-  int get hashCode => Object.hash(
-    status,
-    blockedReason,
-    itemCount,
-    completedCount,
-    unavailableCount,
-    activeCount,
-    failedCount,
-    pausedCount,
-    receivedBytes,
-    totalBytes,
-    quotaShortfall,
-  );
-
-  @override
-  String toString() =>
-      'CollectionDownloadState($status, block: $blockedReason, '
-      '$completedCount/$itemCount, unavailable: $unavailableCount, '
-      'active: $activeCount, failed: $failedCount, paused: $pausedCount, '
-      '$receivedBytes/$totalBytes bytes, shortfall: $quotaShortfall)';
-
-  static bool _sameDetail(Map<String, Object?>? a, Map<String, Object?>? b) {
-    if (a == null || b == null) return a == b;
-    return listEquals(a.keys.toList(), b.keys.toList()) &&
-        a.keys.every((k) => a[k] == b[k]);
-  }
-}
-
-/// One pinned collection as the Downloads tab lists it: what it is, what
-/// the caller showed of it when pinning, and its download state.
-@immutable
-final class DownloadCollectionEntry {
-  /// Creates the entry.
-  const new({
-    required this.kind,
-    required this.refId,
-    required this.title,
-    required this.state,
-    this.subtitle,
-    this.artworkRef,
-    this.albumId,
-  });
-
-  /// The collection's kind.
-  final CollectionKind kind;
-
-  /// The album or playlist id, or the playback id of a single track.
-  final String refId;
-
-  /// The title of the snapshot it was pinned with; empty when none was
-  /// given.
-  final String title;
-
-  /// The line under the title, if any.
-  final String? subtitle;
-
-  /// The cover's artwork ref, if any.
-  final String? artworkRef;
-
-  /// The album of a single track, from its stored metadata, if known.
-  final String? albumId;
-
-  /// Its download state.
-  final CollectionDownloadState state;
-
-  @override
-  bool operator ==(Object other) =>
-      other is DownloadCollectionEntry &&
-      other.kind == kind &&
-      other.refId == refId &&
-      other.title == title &&
-      other.subtitle == subtitle &&
-      other.artworkRef == artworkRef &&
-      other.albumId == albumId &&
-      other.state == state;
-
-  @override
-  int get hashCode =>
-      Object.hash(kind, refId, title, subtitle, artworkRef, albumId, state);
-}
-
-/// An item of a collection the server will not let this device download:
-/// its title from the stored metadata and the reason, null for a reason
-/// this client does not know.
-@immutable
-final class UnavailableDownload {
-  /// Creates the value.
-  const new({required this.title, this.reason});
-
-  /// The track's title; empty when unknown.
-  final String title;
-
-  /// Why it cannot be downloaded.
-  final DownloadUnavailableReason? reason;
-}
-
-/// One item's download state for the UI.
-@immutable
-final class ItemDownloadState {
-  /// Creates the state.
-  const new({
-    required this.status,
-    required this.receivedBytes,
-    this.expectedBytes,
-    this.sizeBytes,
-    this.failureCode,
-    this.waitingFor,
-  });
-
-  /// Where the item is.
-  final DownloadStatus status;
-
-  /// Bytes received so far.
-  final int receivedBytes;
-
-  /// The size the server announced, if any.
-  final int? expectedBytes;
-
-  /// The size of the file on disk, once completed.
-  final int? sizeBytes;
-
-  /// Why it failed or is unavailable; for `unavailable` see
-  /// [DownloadUnavailableReason.fromCode].
-  final String? failureCode;
-
-  /// Why a queued or paused item does not run.
-  final DownloadWaitReason? waitingFor;
-
-  @override
-  bool operator ==(Object other) =>
-      other is ItemDownloadState &&
-      other.status == status &&
-      other.receivedBytes == receivedBytes &&
-      other.expectedBytes == expectedBytes &&
-      other.sizeBytes == sizeBytes &&
-      other.failureCode == failureCode &&
-      other.waitingFor == waitingFor;
-
-  @override
-  int get hashCode => Object.hash(
-    status,
-    receivedBytes,
-    expectedBytes,
-    sizeBytes,
-    failureCode,
-    waitingFor,
-  );
-
-  @override
-  String toString() =>
-      'ItemDownloadState($status, $receivedBytes/$expectedBytes, '
-      'failure: $failureCode, waiting: $waitingFor)';
-}
-
-/// Something the [DownloadController] did that others react to, such as
-/// pinning artwork (doc 05, Image Cache).
-sealed class DownloadControllerEvent {
-  const new();
-}
-
-/// Item [key] reached `completed`: its file is verified and in place.
-final class DownloadItemCompleted extends DownloadControllerEvent {
-  /// Creates the event.
-  const new(this.key);
-
-  /// The item.
-  final DownloadItemKey key;
-}
-
-/// Collection [kind]/[refId] resolved to `ready`.
-final class DownloadCollectionReady extends DownloadControllerEvent {
-  /// Creates the event.
-  const new(this.kind, this.refId);
-
-  /// The collection's kind.
-  final DownloadCollectionKind kind;
-
-  /// The collection's id.
-  final String refId;
-}
-
-/// Collection [kind]/[refId] was removed with the items left in no
-/// collection.
-final class DownloadCollectionRemoved extends DownloadControllerEvent {
-  /// Creates the event.
-  const new(this.kind, this.refId);
-
-  /// The collection's kind.
-  final DownloadCollectionKind kind;
-
-  /// The collection's id.
-  final String refId;
-}
+export 'package:soundspan/core/downloads/download_values.dart';
 
 /// Looks up a track in the profile's `cache.db` by its playback id.
 typedef CachedTrackLookup = Future<Track?> Function(PlaybackId playbackId);
@@ -551,6 +214,45 @@ class DownloadController {
     String refId, {
     CollectionSnapshot? snapshot,
   }) => _serial(() => _pin(kind, refId, snapshot: snapshot));
+
+  /// Resolves the pinned collection [kind]/[refId] again and applies the
+  /// difference (doc 07, Keeping Collections Current): new items are
+  /// queued, items the server no longer lists leave the collection (and
+  /// are removed when they belong to no other), refused items that are not
+  /// on disk become `unavailable`, accepted `unavailable` items are queued,
+  /// the membership order follows the server, and empty metadata is filled
+  /// from [snapshot] or `cache.db`.
+  ///
+  /// Unlike [pin], a deleted album or playlist keeps its files and is
+  /// marked [CollectionDownloadState.sourceGone], and an unreachable
+  /// server changes nothing.
+  Future<UpkeepResult> refreshCollection(
+    CollectionKind kind,
+    String refId, {
+    CollectionSnapshot? snapshot,
+  }) => _serial(() => _refresh(kind, refId, snapshot: snapshot));
+
+  /// The playback ids of the pinned collection [kind]/[refId] in membership
+  /// order, or null when it is not pinned.
+  Future<List<PlaybackId>?> pinnedTrackIds(
+    CollectionKind kind,
+    String refId,
+  ) async {
+    final storeKind = _kindOf(kind);
+    if (await _store.collection(storeKind, refId) == null) return null;
+    return [
+      for (final key in await _store.memberKeysOf(storeKind, refId))
+        if (key case TrackItemKey(:final playbackId)) PlaybackId(playbackId),
+    ];
+  }
+
+  /// The pinned albums and when each last resolved (null when never), in
+  /// request order.
+  Future<List<({String refId, DateTime? resolvedAt})>> pinnedAlbums() async => [
+    for (final row in await _store.collections())
+      if (row.kind == DownloadCollectionKind.album.name)
+        (refId: row.refId, resolvedAt: row.resolvedAt),
+  ];
 
   /// Removes the collection [kind]/[refId]; an unknown one is ignored.
   ///
@@ -831,25 +533,10 @@ class DownloadController {
         quality: quality,
       );
     } on api.CacheLimitExceeded catch (error) {
-      await _store.setCollectionStatus(
-        storeKind,
-        refId,
-        DownloadCollectionStatus.blocked,
-        block: CollectionBlock.serverQuota,
-        detail: {
-          'limitBytes': error.limitBytes,
-          'usedBytes': error.usedBytes,
-          'estimatedBytes': error.estimatedBytes,
-        },
-      );
+      await _block(storeKind, refId, error);
       return;
-    } on api.DownloadsDisabled {
-      await _store.setCollectionStatus(
-        storeKind,
-        refId,
-        DownloadCollectionStatus.blocked,
-        block: CollectionBlock.disabledByServer,
-      );
+    } on api.DownloadsDisabled catch (error) {
+      await _block(storeKind, refId, error);
       return;
     } on api.NotFound {
       await _unpin(storeKind, refId);
@@ -897,16 +584,164 @@ class DownloadController {
     _scheduler.pump();
   }
 
+  /// Blocks collection [kind]/[refId] for the server's quota refusal or
+  /// admin switch; its items and files stay.
+  Future<void> _block(
+    DownloadCollectionKind kind,
+    String refId,
+    api.ApiException error,
+  ) => switch (error) {
+    api.CacheLimitExceeded(
+      :final limitBytes,
+      :final usedBytes,
+      :final estimatedBytes,
+    ) =>
+      _store.setCollectionStatus(
+        kind,
+        refId,
+        DownloadCollectionStatus.blocked,
+        block: CollectionBlock.serverQuota,
+        detail: {
+          'limitBytes': limitBytes,
+          'usedBytes': usedBytes,
+          'estimatedBytes': estimatedBytes,
+        },
+      ),
+    _ => _store.setCollectionStatus(
+      kind,
+      refId,
+      DownloadCollectionStatus.blocked,
+      block: CollectionBlock.disabledByServer,
+    ),
+  };
+
+  Future<UpkeepResult> _refresh(
+    CollectionKind kind,
+    String refId, {
+    CollectionSnapshot? snapshot,
+  }) async {
+    final storeKind = _kindOf(kind);
+    final existing = await _store.collection(storeKind, refId);
+    if (existing == null) return UpkeepResult.notPinned;
+    if (!_reachability.isOnline) return UpkeepResult.unchanged;
+    final quality = await _downloadQuality();
+
+    final OfflineResolution resolution;
+    try {
+      resolution = await _offline.resolve(
+        kind,
+        refId,
+        deviceId: _deviceId,
+        quality: quality,
+      );
+    } on api.CacheLimitExceeded catch (error) {
+      await _block(storeKind, refId, error);
+      return UpkeepResult.blocked;
+    } on api.DownloadsDisabled catch (error) {
+      await _block(storeKind, refId, error);
+      return UpkeepResult.blocked;
+    } on api.NotFound {
+      // Nothing is deleted automatically: the files stay playable.
+      await _store.setCollectionStatus(
+        storeKind,
+        refId,
+        DownloadCollectionStatus.ready,
+        detail: const {collectionSourceGoneKey: true},
+      );
+      return UpkeepResult.sourceGone;
+    } on api.Offline catch (_) {
+      return UpkeepResult.unchanged;
+    } on api.ServerError catch (_) {
+      return UpkeepResult.unchanged;
+    } on api.Upstream catch (_) {
+      return UpkeepResult.unchanged;
+    } on api.RateLimited catch (_) {
+      return UpkeepResult.unchanged;
+    }
+
+    final now = _clock.now();
+    final byPlaybackId = {
+      for (final track in snapshot?.tracks ?? const <Track>[])
+        ?track.playbackId: track,
+    };
+    final (:queued, :orphaned) = await _store.transaction(() async {
+      final queued = <DownloadItemKey>[];
+      final returned = <DownloadItemKey>{};
+      for (final (position, item) in resolution.items.indexed) {
+        final key = TrackItemKey(item.playbackId.value);
+        returned.add(key);
+        if (await _recordItem(key, item, byPlaybackId, now, refresh: true)) {
+          queued.add(key);
+        }
+        await _fillMeta(key, byPlaybackId);
+        await _store.addMembership(storeKind, refId, key, position);
+      }
+      final orphaned = <DownloadItemKey>[];
+      for (final key in await _store.memberKeysOf(storeKind, refId)) {
+        if (returned.contains(key)) continue;
+        if (await _store.removeMembership(storeKind, refId, key)) {
+          orphaned.add(key);
+        }
+      }
+      if (snapshot != null) {
+        await _store.setCollectionMeta(
+          storeKind,
+          refId,
+          title: snapshot.title,
+          metaJson: jsonEncode({
+            'subtitle': snapshot.subtitle,
+            'artworkRef': snapshot.artworkRef,
+          }),
+        );
+      }
+      await _store.setCollectionStatus(
+        storeKind,
+        refId,
+        DownloadCollectionStatus.ready,
+        resolvedAt: now,
+      );
+      return (queued: queued, orphaned: orphaned);
+    });
+    await _removeItems(orphaned);
+    _emit(DownloadCollectionReady(storeKind, refId));
+    if (queued.isNotEmpty || orphaned.isNotEmpty) await _applyDeviceLimit();
+    _scheduler.pump();
+    return UpkeepResult.refreshed;
+  }
+
+  /// Fills the metadata of item [key] when its title is empty, from
+  /// [snapshotTracks] or `cache.db`.
+  Future<void> _fillMeta(
+    DownloadItemKey key,
+    Map<PlaybackId, Track> snapshotTracks,
+  ) async {
+    if (key is! TrackItemKey) return;
+    final row = await _store.item(key);
+    if (row == null) return;
+    final title = _decodeObject(row.metaJson)['title'];
+    if (title is String && title.isNotEmpty) return;
+    final meta = await _metaJson(PlaybackId(key.playbackId), snapshotTracks);
+    if ((_decodeObject(meta)['title'] as String?)?.isEmpty ?? true) return;
+    await _store.setItemMeta(key, meta);
+  }
+
   /// Records the item of [key] for [item] and answers whether it was
-  /// queued for a transfer.
+  /// queued for a transfer. On a [refresh] a refused item becomes
+  /// `unavailable` only while nothing of it is on disk or in transfer.
   Future<bool> _recordItem(
     TrackItemKey key,
     OfflineItem item,
     Map<PlaybackId, Track> snapshotTracks,
-    DateTime now,
-  ) async {
+    DateTime now, {
+    bool refresh = false,
+  }) async {
     final existing = await _store.item(key);
     if (!item.downloadable) {
+      if (refresh &&
+          existing != null &&
+          !_refreshMarksUnavailable.contains(existing.status)) {
+        return false;
+      }
       await _store.upsertItem(
         key,
         DownloadItemsCompanion(
@@ -944,6 +779,15 @@ class DownloadController {
     );
     return true;
   }
+
+  /// The statuses a refresh turns `unavailable` when the server now
+  /// refuses the item; a completed file is left to reconciliation.
+  static const Set<DownloadStatus> _refreshMarksUnavailable = {
+    DownloadStatus.queued,
+    DownloadStatus.failedRetryable,
+    DownloadStatus.failedPermanent,
+    DownloadStatus.unavailable,
+  };
 
   /// The statuses whose item a pin leaves as it is.
   static const Set<DownloadStatus> _keeps = {
@@ -1381,6 +1225,10 @@ class DownloadController {
           ? null
           : DownloadStore.detailOf(row.collection),
       quotaShortfall: shortfall,
+      sourceGone:
+          block == null &&
+          DownloadStore.detailOf(row.collection)[collectionSourceGoneKey] ==
+              true,
     );
   }
 

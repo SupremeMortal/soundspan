@@ -5,6 +5,7 @@ import 'dart:async';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:soundspan/core/connectivity/reachability.dart';
+import 'package:soundspan/core/downloads/pinned_playlist_listener.dart';
 import 'package:soundspan/core/logging/app_logger.dart';
 import 'package:soundspan/core/storage/cache/cache_database.dart';
 import 'package:soundspan/core/storage/state/state_database.dart';
@@ -39,6 +40,23 @@ Track _track(String id) => Track(
   playbackId: PlaybackId(id),
 );
 
+/// Records what the playlist repository tells downloads.
+final class _PinnedLog implements PinnedPlaylistListener {
+  /// Each call as `id: track ids (title)`.
+  final List<String> calls = [];
+
+  @override
+  Future<void> onPlaylistTracksChanged(
+    String playlistId,
+    List<Track> tracks, {
+    required String title,
+    String? artworkRef,
+  }) async {
+    final ids = [for (final track in tracks) ?track.playbackId?.value];
+    calls.add('$playlistId: ${ids.join(',')} ($title)');
+  }
+}
+
 /// A profile's outbox, cache and playlist repository over in-memory
 /// databases, with [FakePlaylistsClient] as the server.
 final class _Rig {
@@ -68,8 +86,12 @@ final class _Rig {
       PagedSources(cache, clock, reachability),
       pending: (opTypes) => store.watchPending(opTypes: opTypes),
       outbox: Outbox(store, worker),
+      pinned: pinned,
     );
   }
+
+  /// What downloads learn of playlist changes.
+  final _PinnedLog pinned = _PinnedLog();
 
   final StateDatabase state;
   final CacheDatabase cacheDb;
@@ -603,5 +625,38 @@ void main() {
       for (final entry in await rig.store.pending())
         if (entry.op is! PlaylistCreateOp) entry,
     ], isEmpty);
+  });
+
+  group('downloads learn of track changes', () {
+    test('after a detail refresh, with the server list', () async {
+      final id = await rig.seedPlaylist('Road', playbackIds: ['a', 'b']);
+      rig.pinned.calls.clear();
+
+      await rig.repository.refreshPlaylist(id);
+
+      expect(rig.pinned.calls, ['$id: a,b (Road)']);
+    });
+
+    test('after an add, a remove and a reorder, with the list as it now '
+        'reads', () async {
+      final id = await rig.seedPlaylist('Road', playbackIds: ['a', 'b']);
+      rig.offline();
+      rig.pinned.calls.clear();
+      final detail = watchDetail(id);
+      await rig.settle();
+
+      await rig.repository.addTracks(id, [_track('c')]);
+      await rig.repository.removeItem(id, detail.latest.items.first);
+      await rig.repository.reorder(id, const [
+        PlaybackId('c'),
+        PlaybackId('b'),
+      ]);
+
+      expect(rig.pinned.calls, [
+        '$id: a,b,c (Road)',
+        '$id: b,c (Road)',
+        '$id: c,b (Road)',
+      ]);
+    });
   });
 }

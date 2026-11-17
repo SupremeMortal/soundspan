@@ -8,9 +8,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:soundspan/app/l10n/generated/app_localizations.dart';
 import 'package:soundspan/app/theme/extensions.dart';
+import 'package:soundspan/core/downloads/collection_upkeep.dart';
 import 'package:soundspan/core/downloads/download_controller.dart';
 import 'package:soundspan/core/downloads/offline_models.dart';
 import 'package:soundspan/core/logging/app_logger.dart';
+import 'package:soundspan/features/downloads/ui/download_providers.dart';
 import 'package:soundspan/features/downloads/ui/download_sheets.dart';
 import 'package:soundspan/shared/domain/track.dart';
 
@@ -39,6 +41,29 @@ Future<void> pinCollection(
   final state = await controller.watchCollection(kind, refId).first;
   if (state == null || !context.mounted) return;
   await showCollectionDownloadSheet(context, ref, kind, refId, state);
+}
+
+/// Asks the server for changes to the downloaded album or playlist
+/// [kind]/[refId] now, whatever the time of its last check (doc 07,
+/// Keeping Collections Current). Does nothing where nothing can be
+/// downloaded or when the collection is not downloaded; a failure is
+/// logged.
+Future<void> refreshDownloadedCollection(
+  WidgetRef ref,
+  CollectionKind kind,
+  String refId,
+) async {
+  if (!ref.read(downloadsAvailableProvider)) return;
+  try {
+    await ref.read(collectionUpkeepProvider).refresh(kind, refId);
+  } on Object catch (error, stackTrace) {
+    _log.warning(
+      'Could not check a download for changes',
+      const {},
+      error,
+      stackTrace,
+    );
+  }
 }
 
 /// The snapshot of a single [track] for [pinCollection].

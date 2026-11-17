@@ -285,6 +285,7 @@ class DownloadCollectionRow extends ConsumerWidget {
       CollectionKind.track => l10n.downloadsKindTrack,
     };
     final subtitle = switch (state.status) {
+      _ when state.sourceGone => l10n.downloadsSourceGone,
       DownloadCollectionStatus.pendingNetwork =>
         l10n.downloadsWaitingForConnection,
       DownloadCollectionStatus.blocked => switch (state.blockedReason) {
@@ -418,6 +419,15 @@ class DownloadCollectionRow extends ConsumerWidget {
           icon: Icons.play_arrow_rounded,
           onSelected: () =>
               unawaited(controller.resumeCollection(entry.kind, entry.refId)),
+        ),
+      if (entry.kind != CollectionKind.track)
+        MenuEntry(
+          id: 'checkForChanges',
+          label: l10n.menuCheckForChanges,
+          icon: Icons.sync_rounded,
+          onSelected: () => unawaited(
+            refreshDownloadedCollection(ref, entry.kind, entry.refId),
+          ),
         ),
       MenuEntry(
         id: 'remove',

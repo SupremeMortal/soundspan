@@ -11,6 +11,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:soundspan/core/connectivity/reachability.dart';
+import 'package:soundspan/core/downloads/pinned_playlist_listener.dart';
 import 'package:soundspan/core/logging/app_logger.dart';
 import 'package:soundspan/core/profile/profile_context.dart';
 import 'package:soundspan/core/profile/profile_runtime.dart';
@@ -87,6 +88,7 @@ final FutureProvider<PlaylistRepository> playlistRepositoryProvider =
         await ref.watch(pagedSourcesProvider.future),
         pending: ref.watch(pendingOpsProvider),
         outbox: ref.watch(outboxProvider),
+        pinned: ref.watch(pinnedPlaylistRelayProvider),
       ),
       dependencies: [
         playlistRemoteSourceProvider,
@@ -95,6 +97,7 @@ final FutureProvider<PlaylistRepository> playlistRepositoryProvider =
         pagedSourcesProvider,
         pendingOpsProvider,
         outboxProvider,
+        pinnedPlaylistRelayProvider,
       ],
     );
 

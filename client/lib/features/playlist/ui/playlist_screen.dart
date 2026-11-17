@@ -175,6 +175,7 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
       onRefresh: () async {
         final repository = await ref.read(playlistRepositoryProvider.future);
         await repository.refreshPlaylist(id);
+        await refreshDownloadedCollection(ref, CollectionKind.playlist, id);
       },
       onRetry: () => ref.invalidate(playlistDetailProvider(id)),
       builder: _playlistSlivers,

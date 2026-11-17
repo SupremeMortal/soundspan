@@ -3177,6 +3177,12 @@ abstract class AppLocalizations {
   /// **'Retry download'**
   String get menuRetryDownload;
 
+  /// Menu entry on a downloaded album or playlist that asks the server for changes to it now, so the download follows them.
+  ///
+  /// In en, this message translates to:
+  /// **'Check for changes'**
+  String get menuCheckForChanges;
+
   /// Title of the dialog confirming that a download is removed.
   ///
   /// In en, this message translates to:
@@ -3332,6 +3338,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Waiting for connection'**
   String get downloadsWaitingForConnection;
+
+  /// Shown on a Downloads tab row whose album or playlist was deleted on the server; the downloaded files stay on this device.
+  ///
+  /// In en, this message translates to:
+  /// **'No longer on the server'**
+  String get downloadsSourceGone;
 
   /// Kind of a downloaded collection, on a Downloads tab row.
   ///

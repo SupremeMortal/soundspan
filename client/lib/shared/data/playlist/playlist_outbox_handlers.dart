@@ -18,7 +18,7 @@ typedef PlaylistCacheAccess = Future<CacheStore> Function();
 /// Fetches the playlist [id] from [remote] and stores it in [store]: the
 /// detail as the blob `playlist:<id>`, the row with its detail time and
 /// the items' tracks as the list `playlist:<id>`, in one transaction.
-Future<void> fetchPlaylistInto(
+Future<PlaylistDetail> fetchPlaylistInto(
   PlaylistRemoteSource remote,
   CacheStore store,
   String id,
@@ -35,6 +35,7 @@ Future<void> fetchPlaylistInto(
     );
     await store.putBlob('playlist:$id', detail);
   });
+  return detail;
 }
 
 /// Delivers one kind of playlist op and applies its outcome to the cache
