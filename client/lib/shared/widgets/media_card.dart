@@ -34,8 +34,13 @@ class MediaCard extends StatefulWidget {
     this.onTap,
     this.onPlay,
     this.onMenu,
+    this.selected = false,
     super.key,
   });
+
+  /// Whether the card is the selected item of a two-pane list: it then sits
+  /// on `surfaceActive`.
+  final bool selected;
 
   /// Opens the item's menu, at the global pointer position for a secondary
   /// click; null leaves the gestures out.
@@ -163,6 +168,7 @@ class _MediaCardState extends State<MediaCard> {
         return Semantics(
           container: true,
           button: onTap != null,
+          selected: widget.selected ? true : null,
           label: '${widget.title}, ${widget.subtitle}',
           customSemanticsActions: onMenu == null
               ? null
@@ -198,7 +204,11 @@ class _MediaCardState extends State<MediaCard> {
                   children: [
                     DecoratedBox(
                       decoration: BoxDecoration(
-                        color: highlighted ? colors.surfaceHover : null,
+                        color: widget.selected
+                            ? colors.surfaceActive
+                            : highlighted
+                            ? colors.surfaceHover
+                            : null,
                         borderRadius: BorderRadius.circular(Radii.small),
                       ),
                       child: content,

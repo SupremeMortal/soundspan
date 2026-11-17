@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:soundspan/app/l10n/generated/app_localizations.dart';
 import 'package:soundspan/app/router/routes.dart';
+import 'package:soundspan/app/shell/two_pane.dart';
 import 'package:soundspan/features/library/ui/library_controls.dart';
 import 'package:soundspan/features/library/ui/library_queries.dart';
 import 'package:soundspan/features/library/ui/paged_media_grid.dart';
@@ -55,6 +56,11 @@ class AlbumsTab extends ConsumerWidget {
           ? null
           : (album) => album.title,
       itemBuilder: (context, album) => MediaCard(
+        selected: TwoPaneSelection.isSelected(
+          context,
+          DetailKind.album.name,
+          album.id,
+        ),
         title: album.title,
         subtitle: album.artistName,
         artworkRef: album.artworkRef,

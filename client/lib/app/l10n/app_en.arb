@@ -1006,6 +1006,10 @@
   "@libraryAlbumsEmpty": {
     "description": "Shown in place of the albums list when the library holds no albums."
   },
+  "twoPaneSelectItem": "Select an item",
+  "@twoPaneSelectItem": {
+    "description": "Shown in the empty detail pane of the two-pane layout of a tablet in landscape until an item of the list beside it is selected."
+  },
   "libraryArtistsEmpty": "No artists yet",
   "@libraryArtistsEmpty": {
     "description": "Shown in place of the artists list when the library holds no artists."

@@ -10,6 +10,7 @@ import 'package:soundspan/app/router/guards.dart';
 import 'package:soundspan/app/router/placeholder_screen.dart';
 import 'package:soundspan/app/router/shell_route.dart';
 import 'package:soundspan/app/shell/shell_history.dart';
+import 'package:soundspan/app/shell/two_pane.dart';
 import 'package:soundspan/app/shell/window_class.dart';
 import 'package:soundspan/core/auth/probe/server_probe.dart';
 import 'package:soundspan/core/profile/profile_runtime.dart';
@@ -200,7 +201,9 @@ Uri? branchBaseOf(Uri location) {
 ///
 /// From a branch root the detail replaces the branch's location
 /// (`/<branch root>/<kind>/<id>`); from a detail it is pushed onto the
-/// branch's stack, so Back returns to the detail it was opened from.
+/// branch's stack, so Back returns to the detail it was opened from. From
+/// the list pane of a two-pane layout it always replaces the open detail,
+/// so Back clears the selection.
 abstract final class DetailNavigation {
   /// Opens album [id].
   static void openAlbum(BuildContext context, String id) =>
@@ -236,8 +239,14 @@ abstract final class DetailNavigation {
     }
   }
 
-  static void _open(BuildContext context, DetailKind kind, String id) =>
-      openLocation(GoRouter.of(context), _location(kind, id));
+  static void _open(BuildContext context, DetailKind kind, String id) {
+    final router = GoRouter.of(context);
+    if (TwoPaneSelection.inListPane(context)) {
+      router.go(_location(kind, id));
+    } else {
+      openLocation(router, _location(kind, id));
+    }
+  }
 
   static String _location(DetailKind kind, String id) =>
       '/${kind.name}/${Uri.encodeComponent(id)}';

@@ -2,6 +2,7 @@
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:soundspan/app/shell/two_pane.dart';
 import 'package:soundspan/features/podcasts/podcasts.dart';
 import 'package:soundspan/shared/widgets/empty_state.dart';
 import 'package:soundspan/shared/widgets/media_card.dart';
@@ -38,6 +39,48 @@ FakePodcastRepository _subscribed(int count) => FakePodcastRepository()
   ..subscribedList = [for (var n = 1; n <= count; n++) fixturePodcast('pc-$n')];
 
 void main() {
+  testWidgets('a landscape medium window shows the grid in the list pane '
+      'with the open podcast highlighted', (tester) async {
+    final repositories = FakeRepositories();
+    await pumpPodcasts(
+      tester,
+      const PodcastsScreen(selected: ['pc-2']),
+      initialLocation: '/podcasts',
+      podcasts: _subscribed(3),
+      repositories: repositories,
+      size: const Size(800, 600),
+    );
+
+    expect(find.byKey(TwoPaneList.emptyKey), findsOneWidget);
+    MediaCard card(String id) =>
+        tester.widget<MediaCard>(find.byKey(PodcastsScreen.cardKey(id)));
+    expect(card('pc-2').selected, isTrue);
+    expect(card('pc-1').selected, isFalse);
+    expect(
+      tester.getTopRight(find.byKey(PodcastsScreen.cardKey('pc-1'))).dx,
+      lessThanOrEqualTo(TwoPane.listWidth),
+    );
+    await expectMeetsGuidelines(tester);
+  });
+
+  testWidgets('a portrait medium window has no list pane', (tester) async {
+    await pumpPodcasts(
+      tester,
+      const PodcastsScreen(selected: ['pc-2']),
+      initialLocation: '/podcasts',
+      podcasts: _subscribed(3),
+      size: TestSizes.medium,
+    );
+
+    expect(find.byKey(TwoPaneList.emptyKey), findsNothing);
+    expect(
+      tester
+          .widget<MediaCard>(find.byKey(PodcastsScreen.cardKey('pc-2')))
+          .selected,
+      isFalse,
+    );
+  });
+
   testWidgets('the grid shows the subscribed podcasts', (tester) async {
     await _pump(tester, _subscribed(2));
 

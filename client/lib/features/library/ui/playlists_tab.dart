@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:soundspan/app/l10n/generated/app_localizations.dart';
 import 'package:soundspan/app/router/routes.dart';
+import 'package:soundspan/app/shell/two_pane.dart';
 import 'package:soundspan/app/shell/window_class.dart';
 import 'package:soundspan/app/theme/dimens.dart';
 import 'package:soundspan/app/theme/extensions.dart';
@@ -123,6 +124,11 @@ class _PlaylistsTabState extends ConsumerState<PlaylistsTab> {
           final playlist = snapshot?.itemAt(index);
           if (playlist == null) return const _PlaylistRowSkeleton();
           return PlaylistRow(
+            selected: TwoPaneSelection.isSelected(
+              context,
+              DetailKind.playlist.name,
+              playlist.id,
+            ),
             name: playlist.name,
             subtitle: l10n.libraryPlaylistTrackCount(playlist.trackCount),
             artwork: MosaicArtwork(
@@ -153,6 +159,11 @@ class _PlaylistsTabState extends ConsumerState<PlaylistsTab> {
                   child: SizedBox(
                     height: extent,
                     child: PlaylistRow(
+                      selected: TwoPaneSelection.isSelected(
+                        context,
+                        DetailKind.playlist.name,
+                        'liked',
+                      ),
                       name: l10n.libraryLikedSongs,
                       artwork: const LikedSongsArtwork(
                         size: PlaylistsTab.artworkSize,
@@ -242,7 +253,8 @@ class _NewPlaylistArtwork extends StatelessWidget {
 }
 
 /// One playlist in the Library's list: [artwork], [name] and an optional
-/// [subtitle], opening the playlist on tap.
+/// [subtitle], opening the playlist on tap. The [selected] row of a
+/// two-pane list sits on `surfaceActive`.
 class PlaylistRow extends StatelessWidget {
   /// Creates the row of the playlist [name].
   const new({
@@ -250,8 +262,12 @@ class PlaylistRow extends StatelessWidget {
     required this.artwork,
     required this.onTap,
     this.subtitle,
+    this.selected = false,
     super.key,
   });
+
+  /// Whether the row is the selected item of a two-pane list.
+  final bool selected;
 
   /// The playlist name, in `body`.
   final String name;
@@ -270,43 +286,53 @@ class PlaylistRow extends StatelessWidget {
     final colors = context.colors;
     final typography = context.typography;
     final subtitle = this.subtitle;
-    return InkWell(
-      onTap: onTap,
-      hoverColor: colors.surfaceHover,
-      borderRadius: BorderRadius.circular(Radii.small),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: Spacing.x8,
-          vertical: Spacing.x4,
+    final radius = BorderRadius.circular(Radii.small);
+    return Semantics(
+      selected: selected ? true : null,
+      child: Ink(
+        decoration: BoxDecoration(
+          color: selected ? colors.surfaceActive : null,
+          borderRadius: radius,
         ),
-        child: Row(
-          children: [
-            artwork,
-            const SizedBox(width: Spacing.x12),
-            Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: typography.body.copyWith(color: colors.content),
-                  ),
-                  if (subtitle != null)
-                    Text(
-                      subtitle,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: typography.bodySmall.copyWith(
-                        color: colors.contentSecondary,
-                      ),
-                    ),
-                ],
-              ),
+        child: InkWell(
+          onTap: onTap,
+          hoverColor: colors.surfaceHover,
+          borderRadius: radius,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: Spacing.x8,
+              vertical: Spacing.x4,
             ),
-          ],
+            child: Row(
+              children: [
+                artwork,
+                const SizedBox(width: Spacing.x12),
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: typography.body.copyWith(color: colors.content),
+                      ),
+                      if (subtitle != null)
+                        Text(
+                          subtitle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: typography.bodySmall.copyWith(
+                            color: colors.contentSecondary,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

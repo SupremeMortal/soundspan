@@ -7,6 +7,7 @@ import 'package:soundspan/app/l10n/generated/app_localizations.dart';
 import 'package:soundspan/app/router/placeholder_screen.dart';
 import 'package:soundspan/app/router/routes.dart';
 import 'package:soundspan/app/shell/avatar_menu.dart';
+import 'package:soundspan/app/shell/two_pane.dart';
 import 'package:soundspan/app/shell/window_class.dart';
 import 'package:soundspan/app/theme/dimens.dart';
 import 'package:soundspan/app/theme/extensions.dart';
@@ -34,9 +35,17 @@ import 'package:soundspan/shared/widgets/shelf.dart';
 /// load shows an [ErrorView], and an empty list an [EmptyState] above the
 /// shelf. The shelf is hidden when it is empty or fails. Pull to refresh
 /// fetches both again.
+///
+/// In a two-pane window the screen is a [TwoPaneList]: it takes the list
+/// pane, the podcast page opens beside it, and the open podcast's card,
+/// [selected], is highlighted.
 class PodcastsScreen extends ConsumerWidget {
   /// Creates the screen.
-  const new({super.key});
+  const new({this.selected = const [], super.key});
+
+  /// The location segments of the open detail after `/podcasts`, such as
+  /// `['<podcast id>']`; empty when none is open.
+  final List<String> selected;
 
   /// The key of the grid card of subscribed podcast [id].
   static Key cardKey(String id) => ValueKey('PodcastsScreen.card.$id');
@@ -84,37 +93,40 @@ class PodcastsScreen extends ConsumerWidget {
 
     return RouteTitle(
       screen: l10n.navPodcasts,
-      child: Scaffold(
-        appBar: windowClass == WindowClass.compact
-            ? AppBar(actions: const [AvatarButton()])
-            : null,
-        body: AppRefreshIndicator(
-          onRefresh: () => _refresh(ref),
-          child: CustomScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            slivers: [
-              SliverPadding(
-                padding: EdgeInsets.fromLTRB(
-                  gutter,
-                  Spacing.x24,
-                  gutter,
-                  Spacing.x8,
-                ),
-                sliver: SliverToBoxAdapter(
-                  child: Semantics(
-                    header: true,
-                    child: Text(
-                      l10n.navPodcasts,
-                      style: context.typography.headline.copyWith(
-                        color: context.colors.content,
+      child: TwoPaneList(
+        selected: selected,
+        list: Scaffold(
+          appBar: windowClass == WindowClass.compact
+              ? AppBar(actions: const [AvatarButton()])
+              : null,
+          body: AppRefreshIndicator(
+            onRefresh: () => _refresh(ref),
+            child: CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
+                SliverPadding(
+                  padding: EdgeInsets.fromLTRB(
+                    gutter,
+                    Spacing.x24,
+                    gutter,
+                    Spacing.x8,
+                  ),
+                  sliver: SliverToBoxAdapter(
+                    child: Semantics(
+                      header: true,
+                      child: Text(
+                        l10n.navPodcasts,
+                        style: context.typography.headline.copyWith(
+                          color: context.colors.content,
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-              ...body,
-              const SliverToBoxAdapter(child: SizedBox(height: Spacing.x32)),
-            ],
+                ...body,
+                const SliverToBoxAdapter(child: SizedBox(height: Spacing.x32)),
+              ],
+            ),
           ),
         ),
       ),
@@ -185,6 +197,7 @@ class _PodcastGrid extends StatelessWidget {
                 title: podcast.title,
                 subtitle: podcast.author ?? '',
                 artworkRef: podcast.artworkRef,
+                selected: TwoPaneSelection.isSelected(context, '', podcast.id),
                 onTap: () => _open(context, podcast.id),
               );
             }, childCount: podcasts?.length ?? PodcastsScreen.skeletonTiles),

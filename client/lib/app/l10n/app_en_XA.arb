@@ -1013,6 +1013,10 @@
   "@libraryAlbumsEmpty": {
     "description": "Shown in place of the albums list when the library holds no albums."
   },
+  "twoPaneSelectItem": "[Šéļéçţ åñ îţém one two]",
+  "@twoPaneSelectItem": {
+    "description": "Shown in the empty detail pane of the two-pane layout of a tablet in landscape until an item of the list beside it is selected."
+  },
   "libraryArtistsEmpty": "[Ñö åŕţîšţš ýéţ one two]",
   "@libraryArtistsEmpty": {
     "description": "Shown in place of the artists list when the library holds no artists."

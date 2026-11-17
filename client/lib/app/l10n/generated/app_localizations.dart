@@ -1349,6 +1349,12 @@ abstract class AppLocalizations {
   /// **'No albums yet'**
   String get libraryAlbumsEmpty;
 
+  /// Shown in the empty detail pane of the two-pane layout of a tablet in landscape until an item of the list beside it is selected.
+  ///
+  /// In en, this message translates to:
+  /// **'Select an item'**
+  String get twoPaneSelectItem;
+
   /// Shown in place of the artists list when the library holds no artists.
   ///
   /// In en, this message translates to:

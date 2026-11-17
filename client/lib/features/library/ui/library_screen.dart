@@ -6,6 +6,7 @@ import 'package:soundspan/app/l10n/generated/app_localizations.dart';
 import 'package:soundspan/app/router/placeholder_screen.dart';
 import 'package:soundspan/app/router/routes.dart';
 import 'package:soundspan/app/shell/avatar_menu.dart';
+import 'package:soundspan/app/shell/two_pane.dart';
 import 'package:soundspan/app/shell/window_class.dart';
 import 'package:soundspan/features/library/ui/albums_tab.dart';
 import 'package:soundspan/features/library/ui/artists_tab.dart';
@@ -27,12 +28,20 @@ String libraryTabLabel(AppLocalizations l10n, LibraryTab tab) => switch (tab) {
 /// The selected tab is [tab], the route's parameter; selecting another tab
 /// goes to its location. Each tab is built when first shown and keeps its
 /// state, scroll position included, while the screen is alive.
+///
+/// In a two-pane window the Playlists, Artists and Albums tabs are a
+/// [TwoPaneList]: the screen takes the list pane and the item whose detail
+/// is open, [selected], is highlighted.
 class LibraryScreen extends StatefulWidget {
   /// Creates the screen showing [tab].
-  const new({required this.tab, super.key});
+  const new({required this.tab, this.selected = const [], super.key});
 
   /// The selected tab.
   final LibraryTab tab;
+
+  /// The location segments of the open detail after the tab, such as
+  /// `['album', '42']`; empty when none is open.
+  final List<String> selected;
 
   @override
   State<LibraryScreen> createState() => _LibraryScreenState();
@@ -74,43 +83,47 @@ class _LibraryScreenState extends State<LibraryScreen>
     final compact = WindowClass.of(context) == WindowClass.compact;
     return RouteTitle(
       screen: l10n.navLibrary,
-      child: Scaffold(
-        appBar: AppBar(
-          title: compact ? Text(l10n.navLibrary) : null,
-          toolbarHeight: compact ? kToolbarHeight : 0,
-          actions: compact ? const [AvatarButton()] : null,
-          bottom: TabBar(
-            controller: _tabs,
-            isScrollable: true,
-            tabAlignment: TabAlignment.start,
-            onTap: _select,
-            tabs: [
-              for (final tab in LibraryTab.values)
-                Tab(text: libraryTabLabel(l10n, tab)),
+      child: TwoPaneList(
+        enabled: widget.tab != LibraryTab.songs,
+        selected: widget.selected,
+        list: Scaffold(
+          appBar: AppBar(
+            title: compact ? Text(l10n.navLibrary) : null,
+            toolbarHeight: compact ? kToolbarHeight : 0,
+            actions: compact ? const [AvatarButton()] : null,
+            bottom: TabBar(
+              controller: _tabs,
+              isScrollable: true,
+              tabAlignment: TabAlignment.start,
+              onTap: _select,
+              tabs: [
+                for (final tab in LibraryTab.values)
+                  Tab(text: libraryTabLabel(l10n, tab)),
+              ],
+            ),
+          ),
+          body: Column(
+            children: [
+              const OfflineBanner(),
+              Expanded(
+                child: IndexedStack(
+                  index: widget.tab.index,
+                  children: [
+                    for (final tab in LibraryTab.values)
+                      if (!_built.contains(tab))
+                        const SizedBox.shrink()
+                      else
+                        switch (tab) {
+                          LibraryTab.playlists => const PlaylistsTab(),
+                          LibraryTab.artists => const ArtistsTab(),
+                          LibraryTab.albums => const AlbumsTab(),
+                          LibraryTab.songs => const SongsTab(),
+                        },
+                  ],
+                ),
+              ),
             ],
           ),
-        ),
-        body: Column(
-          children: [
-            const OfflineBanner(),
-            Expanded(
-              child: IndexedStack(
-                index: widget.tab.index,
-                children: [
-                  for (final tab in LibraryTab.values)
-                    if (!_built.contains(tab))
-                      const SizedBox.shrink()
-                    else
-                      switch (tab) {
-                        LibraryTab.playlists => const PlaylistsTab(),
-                        LibraryTab.artists => const ArtistsTab(),
-                        LibraryTab.albums => const AlbumsTab(),
-                        LibraryTab.songs => const SongsTab(),
-                      },
-                ],
-              ),
-            ),
-          ],
         ),
       ),
     );

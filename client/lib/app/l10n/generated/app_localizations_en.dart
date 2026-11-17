@@ -779,6 +779,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get libraryAlbumsEmpty => 'No albums yet';
 
   @override
+  String get twoPaneSelectItem => 'Select an item';
+
+  @override
   String get libraryArtistsEmpty => 'No artists yet';
 
   @override
@@ -2445,6 +2448,9 @@ class AppLocalizationsEnXa extends AppLocalizationsEn {
 
   @override
   String get libraryAlbumsEmpty => '[Ñö åļbûmš ýéţ one two]';
+
+  @override
+  String get twoPaneSelectItem => '[Šéļéçţ åñ îţém one two]';
 
   @override
   String get libraryArtistsEmpty => '[Ñö åŕţîšţš ýéţ one two]';
