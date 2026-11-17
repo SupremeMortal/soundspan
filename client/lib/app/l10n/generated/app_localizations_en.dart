@@ -1611,6 +1611,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get lyricsNone => 'No lyrics found';
 
   @override
+  String lyricsSeekHint(String time) {
+    return 'Seek to $time';
+  }
+
+  @override
+  String get lyricsInstrumental => 'Instrumental';
+
+  @override
+  String get lyricsResumeAutoScroll => 'Resume auto-scroll';
+
+  @override
   String get queueTitle => 'Queue';
 
   @override
@@ -4029,6 +4040,17 @@ class AppLocalizationsEnXa extends AppLocalizationsEn {
 
   @override
   String get lyricsNone => '[Ñö ļýŕîçš föûñð one two]';
+
+  @override
+  String lyricsSeekHint(String time) {
+    return '[Šééķ ţö $time one]';
+  }
+
+  @override
+  String get lyricsInstrumental => '[Îñšţŕûméñţåļ one two]';
+
+  @override
+  String get lyricsResumeAutoScroll => '[Ŕéšûmé åûţö-šçŕöļļ one two]';
 
   @override
   String get queueTitle => '[Qûéûé one]';

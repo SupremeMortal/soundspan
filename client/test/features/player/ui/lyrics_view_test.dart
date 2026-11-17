@@ -109,16 +109,14 @@ void main() {
     expect(styleOf(tester, 'Third line').color, colors.contentSecondary);
     expect(
       tester.getSemantics(find.text('Second line')),
-      matchesSemantics(
-        label: 'Second line',
-        hasSelectedState: true,
-        isSelected: true,
-      ),
+      isSemantics(label: 'Second line', isSelected: true, isButton: true),
     );
     await rig.close(tester);
   });
 
-  testWidgets('the list scrolls to centre the current line', (tester) async {
+  testWidgets('the list scrolls the current line to 35 % of the view', (
+    tester,
+  ) async {
     lyrics.byTitle['Song a'] = _long;
     final rig = await pumpView(tester, play: true);
     expect(scrollPosition(tester).pixels, 0);
@@ -134,7 +132,7 @@ void main() {
     expect(settled, greaterThan(midway));
     final line = tester.getRect(find.text('Line 28'));
     final view = tester.getRect(find.byType(LyricsView));
-    expect((line.center.dy - view.center.dy).abs(), lessThan(line.height));
+    expect((line.center.dy - view.top) / view.height, closeTo(0.35, 0.05));
     await rig.close(tester);
   });
 

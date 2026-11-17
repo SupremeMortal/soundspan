@@ -251,6 +251,42 @@ void main() {
   );
 
   goldenMatrix(
+    'lyrics_sheet',
+    builder: (_) => _withController(const NowPlayingScreen()),
+    sizes: const [TestSizes.compact],
+    themes: const [ThemeMode.dark],
+    textScales: const [2.0],
+    overrides: [..._overrides, ..._lyrics],
+    act: (tester) async {
+      await tester.tap(find.byTooltip('Lyrics'));
+      await tester.pumpAndSettle();
+    },
+  );
+
+  goldenMatrix(
+    'now_playing_lyrics_landscape',
+    builder: (_) => _withController(const NowPlayingScreen()),
+    sizes: const [_mediumLandscape],
+    overrides: [..._overrides, ..._lyrics],
+    act: (tester) async {
+      await tester.tap(find.widgetWithText(Tab, 'Lyrics'));
+      await tester.pumpAndSettle();
+    },
+  );
+
+  goldenMatrix(
+    'lyrics_overlay',
+    builder: (_) => _shell(),
+    sizes: const [TestSizes.expanded],
+    overrides: [
+      ..._overrides,
+      ..._lyrics,
+      initialActiveProfileIdProvider.overrideWithValue(null),
+      nowPlayingOverlayProvider.overrideWith(_OverlayShown.new),
+    ],
+  );
+
+  goldenMatrix(
     'now_playing_overlay',
     builder: (_) => _shell(),
     sizes: const [TestSizes.expanded],

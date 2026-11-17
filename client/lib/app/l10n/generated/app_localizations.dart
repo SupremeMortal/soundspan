@@ -2657,6 +2657,24 @@ abstract class AppLocalizations {
   /// **'No lyrics found'**
   String get lyricsNone;
 
+  /// Screen-reader hint of a synced lyrics line: activating it moves playback to the time the line starts.
+  ///
+  /// In en, this message translates to:
+  /// **'Seek to {time}'**
+  String lyricsSeekHint(String time);
+
+  /// Screen-reader label of a synced lyrics line without words (an instrumental gap), drawn as a ♪ marker.
+  ///
+  /// In en, this message translates to:
+  /// **'Instrumental'**
+  String get lyricsInstrumental;
+
+  /// Button shown over the synced lyrics after the user scrolls them by hand; it makes the lyrics follow the current line again.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume auto-scroll'**
+  String get lyricsResumeAutoScroll;
+
   /// Title of the play queue panel and sheet.
   ///
   /// In en, this message translates to:
