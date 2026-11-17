@@ -55,6 +55,13 @@ abstract interface class RemoteDriver {
 /// A failed current item is retried, skipped or stops playback by the
 /// [FailurePolicy]; a 401 renews the credential through [_session] once.
 ///
+/// A downloaded file is played whenever one exists. While the server is
+/// out of reach, items without one are skipped; when no item of the queue
+/// can play, playback stops with [PlaybackErrorKind.notAvailableOffline]
+/// and the cursor goes back to where the skipping started. A downloaded
+/// file the engine cannot open is queued to be downloaded again and the
+/// item is resolved once more at the same position.
+///
 /// With a [QueuePersistence], [restore] reads the queue this device stored
 /// and the persistence follows the snapshots from then on. When none is
 /// stored, the queue comes from the remote restore when one is given (the
@@ -109,12 +116,25 @@ class PlaybackController {
   bool _playIntent = false;
   PlaybackError? _error;
   EngineSource? _currentSource;
+
+  /// The downloaded file the current source plays; null for a stream.
+  LocalDownload? _currentLocal;
   bool _disposed = false;
+
+  /// The entry that last resolved to a source since the user last chose
+  /// what to play; where the cursor returns when nothing after it can be
+  /// played offline.
+  String? _lastPlayable;
+
+  /// Where the cursor returns when the run of items that cannot be played
+  /// offline ends without a playable one.
+  String? _offlineOrigin;
 
   /// The id of the entry last handed to the engine as next; null when the
   /// slot is empty.
   String? _nextId;
   EngineSource? _nextSource;
+  LocalDownload? _nextLocal;
   int _nextRequest = 0;
   Future<void> _nextSync = Future<void>.value();
 
@@ -542,7 +562,7 @@ class PlaybackController {
     switch (command) {
       case PlayItemsCommand(:final items, :final startIndex, :final context):
         _playIntent = await _mayStart();
-        _failures.resetCount();
+        _onUserChoice();
         await _reduce(
           ReplaceAll(items, startIndex: startIndex, context: context),
         );
@@ -568,7 +588,7 @@ class PlaybackController {
         await _reduce(Previous(_engineState.position));
       case JumpToCommand(:final queueItemId):
         _playIntent = await _mayStart();
-        _failures.resetCount();
+        _onUserChoice();
         await _reduce(JumpTo(queueItemId));
       case PlayNextCommand(:final items):
         await _reduce(PlayNext(items));
@@ -593,6 +613,13 @@ class PlaybackController {
         await _applyVolume();
         await _storeVolume();
     }
+  }
+
+  /// The user chose what to play: failure runs start over.
+  void _onUserChoice() {
+    _failures.resetCount();
+    _lastPlayable = null;
+    _offlineOrigin = null;
   }
 
   /// Records who issued [command] when it is a transport command.
@@ -684,6 +711,7 @@ class PlaybackController {
     _cancelRetry();
     _clearNextSlot();
     _currentSource = null;
+    _currentLocal = null;
     await _engine.stop();
   }
 
@@ -694,6 +722,7 @@ class PlaybackController {
     final item = _queue.current;
     _clearNextSlot();
     _currentSource = null;
+    _currentLocal = null;
     _error = null;
     if (!retry) _onItemChanged(item);
     if (item == null) return;
@@ -702,9 +731,16 @@ class PlaybackController {
         : _pendingStartAt;
     _pendingStartAt = Duration.zero;
     _lastPosition = startAt;
-    final EngineSource source;
+    final ResolvedSource resolved;
     try {
-      source = await _resolver.resolve(item, startAt: startAt);
+      resolved = await _resolver.resolveSource(item, startAt: startAt);
+    } on NotAvailableOffline {
+      _offlineOrigin ??= _lastPlayable ?? item.queueItemId;
+      await _onCurrentItemFailed(
+        _failures.onNotAvailableOffline(_queue.playOrder.length),
+        item,
+      );
+      return;
     } on NotPlayable {
       await _onCurrentItemFailed(_failures.onNotPlayable(), item);
       return;
@@ -718,12 +754,39 @@ class PlaybackController {
       await _onCurrentItemFailed(_failures.onResolveError(), item);
       return;
     }
+    final source = resolved.source;
     _currentSource = source;
+    _currentLocal = resolved.download;
+    _onPlayable(item);
     _failureHandled = false;
-    _fetchQuality(item, source);
+    _fetchQuality(item, resolved);
     _publish();
     await _engine.load(source, autoPlay: _playIntent);
+    if (!retry) await _markPlayed(resolved.download);
     await _applySpeedFor(item);
+  }
+
+  /// [item] resolved to a source: a run of items that cannot be played
+  /// offline is over.
+  void _onPlayable(QueueItem item) {
+    _failures.onPlayable();
+    _lastPlayable = item.queueItemId;
+    _offlineOrigin = null;
+  }
+
+  /// Records that the downloaded file [download] started playing.
+  Future<void> _markPlayed(LocalDownload? download) async {
+    if (download == null) return;
+    try {
+      await _resolver.markPlayed(download);
+    } on Object catch (error, stackTrace) {
+      _log.warning(
+        'Recording the play of a download failed',
+        const {},
+        error,
+        stackTrace,
+      );
+    }
   }
 
   /// Where [item] starts when nothing else says: an episode at its saved
@@ -803,10 +866,17 @@ class PlaybackController {
   }
 
   /// Fetches the stream info of [item] once while it is current, when it
-  /// is a streamed track (doc 06, Quality badge).
-  void _fetchQuality(QueueItem item, EngineSource source) {
+  /// is a streamed track; a downloaded file shows the quality it was
+  /// downloaded at instead (doc 06, Quality badge).
+  void _fetchQuality(QueueItem item, ResolvedSource resolved) {
+    if (resolved.download case final download?) {
+      _qualityOf = item.queueItemId;
+      _quality = StreamQualityInfo.downloaded(quality: download.quality);
+      return;
+    }
     if (_qualityOf == item.queueItemId) return;
-    if (item is! TrackQueueItem || source.uri.isScheme('file')) return;
+    if (item is! TrackQueueItem) return;
+    final source = resolved.source;
     final playbackId = item.track.playbackId;
     if (playbackId == null) return;
     _qualityOf = item.queueItemId;
@@ -866,13 +936,35 @@ class PlaybackController {
         _notices.add(ItemSkipped(id, kind));
         _publish();
         await _skipFailed();
+      case SkipUnavailableOffline():
+        _error = PlaybackError(
+          PlaybackErrorKind.notAvailableOffline,
+          queueItemId: id,
+        );
+        _publish();
+        await _skipFailed();
       case StopPlayback(:final kind):
         _endCurrent();
         await _stopEngine();
         _error = PlaybackError(kind, queueItemId: id);
+        if (kind == PlaybackErrorKind.notAvailableOffline) {
+          _returnToOfflineOrigin();
+        }
         _notices.add(PlaybackStopped(kind));
         _publish();
     }
+  }
+
+  /// Ends a run of items that cannot be played offline with nothing
+  /// playable found: the cursor goes back to where the run started (the
+  /// last item that played, or the one the user chose).
+  void _returnToOfflineOrigin() {
+    final origin = _offlineOrigin;
+    _offlineOrigin = null;
+    _error = const PlaybackError(PlaybackErrorKind.notAvailableOffline);
+    if (origin == null || origin == _queue.current?.queueItemId) return;
+    if (!_queue.items.any((item) => item.queueItemId == origin)) return;
+    _queue = _reducer.reduce(_queue, JumpTo(origin)).state;
   }
 
   /// Loads the current item again at [position], keeping the play intent.
@@ -892,6 +984,9 @@ class PlaybackController {
       final error = _error;
       await _stopEngine();
       _error = error;
+      if (error?.kind == PlaybackErrorKind.notAvailableOffline) {
+        _returnToOfflineOrigin();
+      }
       _publish();
       return;
     }
@@ -915,6 +1010,7 @@ class PlaybackController {
   Future<void> _onAdvanced(String queueItemId) async {
     final finished = _queue.current?.queueItemId;
     final preloaded = _nextSource;
+    final preloadedLocal = _nextLocal;
     _clearNextSlot();
     if (finished != null) {
       _ended.add(EntryEnded(finished, natural: true));
@@ -923,9 +1019,17 @@ class PlaybackController {
       if (_queue.current?.queueItemId == queueItemId) {
         _onItemChanged(_queue.current);
         _currentSource = preloaded;
+        _currentLocal = preloaded == null ? null : preloadedLocal;
         _failureHandled = false;
         _lastPosition = Duration.zero;
-        if (preloaded != null) _fetchQuality(_queue.current!, preloaded);
+        if (preloaded != null) {
+          _onPlayable(_queue.current!);
+          _fetchQuality(
+            _queue.current!,
+            ResolvedSource(preloaded, download: preloadedLocal),
+          );
+          await _markPlayed(_currentLocal);
+        }
         await _applySpeedFor(_queue.current);
       } else {
         await _applyEffect(
@@ -948,11 +1052,39 @@ class PlaybackController {
     if (isCurrent) {
       if (_failureHandled) return;
       _failureHandled = true;
+      final local = _currentLocal;
+      if (local != null &&
+          (error.kind == EngineErrorKind.decode ||
+              error.kind == EngineErrorKind.notFound)) {
+        await _onLocalFileFailed(local);
+        return;
+      }
       await _onCurrentItemFailed(_failures.onEngineError(error), current!);
     } else if (_nextId == queueItemId) {
       _nextSource = null;
+      _nextLocal = null;
       _nextSync = _engine.setNext(null);
     }
+  }
+
+  /// The engine cannot open the current item's downloaded file [download]:
+  /// the download is queued again and the item resolved once more at the
+  /// same position, streamed when the server can be reached and skipped by
+  /// the offline rule when it cannot.
+  Future<void> _onLocalFileFailed(LocalDownload download) async {
+    try {
+      await _resolver.markMissing(download);
+    } on Object catch (error, stackTrace) {
+      _log.warning(
+        'Queuing a missing download again failed',
+        const {},
+        error,
+        stackTrace,
+      );
+    }
+    _qualityOf = null;
+    _quality = null;
+    await _reload(_lastPosition);
   }
 
   /// Emits [EntryEnded] for the current entry, if there is one.
@@ -966,6 +1098,7 @@ class PlaybackController {
   void _clearNextSlot() {
     _nextId = null;
     _nextSource = null;
+    _nextLocal = null;
     _nextRequest++;
   }
 
@@ -987,15 +1120,18 @@ class PlaybackController {
       await _engine.setNext(null);
       return;
     }
-    EngineSource? source;
+    ResolvedSource? resolved;
     try {
-      source = await _resolver.resolve(item);
+      resolved = await _resolver.resolveSource(item);
     } on Object catch (error) {
+      // NotAvailableOffline included: the item is skipped when its turn
+      // comes.
       _log.fine('The next item cannot be resolved', {'error': '$error'});
     }
     if (request != _nextRequest || _disposed) return;
-    _nextSource = source;
-    await _engine.setNext(source);
+    _nextSource = resolved?.source;
+    _nextLocal = resolved?.download;
+    await _engine.setNext(resolved?.source);
   }
 
   /// Reads the stored user volume; 1.0 when none is stored or it does not
@@ -1072,7 +1208,7 @@ class PlaybackController {
         duration: state.duration,
         quality: _quality,
         error: _error,
-        isLocalFile: _currentSource?.uri.isScheme('file') ?? false,
+        isLocalFile: _currentLocal != null,
         speed: _speed,
         skipInterval: _skipInterval,
         remoteAttached: _driver != null,

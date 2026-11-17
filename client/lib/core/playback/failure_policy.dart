@@ -35,6 +35,13 @@ final class SkipItem extends FailureDecision {
   final PlaybackErrorKind kind;
 }
 
+/// Skip an item that cannot be played offline, as `Next` would, without a
+/// retry and without counting it as a failed item.
+final class SkipUnavailableOffline extends FailureDecision {
+  /// Creates the decision.
+  const new();
+}
+
 /// Stop playback with [kind]; the queue is kept.
 final class StopPlayback extends FailureDecision {
   /// Creates the decision.
@@ -47,6 +54,9 @@ final class StopPlayback extends FailureDecision {
 /// The failure policy of one controller: one retry per item for network
 /// errors and HTTP 5xx, one credential renewal per item for 401, and a stop
 /// after [maxConsecutiveFailedItems] failed items in a row.
+///
+/// Items that cannot be played offline are skipped outside that count; a
+/// full pass over the play order without a playable item stops playback.
 final class FailurePolicy {
   /// Creates a policy with no failures counted.
   new();
@@ -58,6 +68,7 @@ final class FailurePolicy {
   static const int maxConsecutiveFailedItems = 3;
 
   int _failedItems = 0;
+  int _offlineSkips = 0;
   bool _retried = false;
   bool _refreshed = false;
 
@@ -69,7 +80,25 @@ final class FailurePolicy {
 
   /// An item played, or the user chose what to play: the run of failed items
   /// is over.
-  void resetCount() => _failedItems = 0;
+  void resetCount() {
+    _failedItems = 0;
+    _offlineSkips = 0;
+  }
+
+  /// The current item resolved to a source: the run of items that cannot
+  /// be played offline is over.
+  void onPlayable() => _offlineSkips = 0;
+
+  /// The current item cannot be played offline (`NotAvailableOffline`) in
+  /// a play order of [playOrderLength] items: it is skipped, unless every
+  /// item of one full pass was skipped.
+  FailureDecision onNotAvailableOffline(int playOrderLength) {
+    _offlineSkips++;
+    if (_offlineSkips >= playOrderLength) {
+      return const StopPlayback(PlaybackErrorKind.notAvailableOffline);
+    }
+    return const SkipUnavailableOffline();
+  }
 
   /// The engine reported [error] for the current item.
   FailureDecision onEngineError(EngineError error) {

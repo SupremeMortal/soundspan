@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:soundspan/core/auth/profile_repository.dart';
 import 'package:soundspan/core/auth/session_controller.dart';
+import 'package:soundspan/core/downloads/download_keys.dart';
 import 'package:soundspan/core/playback/data/playback_info_repository.dart';
 import 'package:soundspan/core/playback/engines/fake_engine.dart';
 import 'package:soundspan/core/playback/engines/player_engine.dart';
@@ -138,8 +139,20 @@ class FakeResolver implements SourceResolver {
   /// returning a source.
   final Map<String, Exception> errors = {};
 
+  /// Every downloaded file reported as played.
+  final List<LocalDownload> played = [];
+
+  /// Every downloaded file reported as missing.
+  final List<LocalDownload> missing = [];
+
   @override
   Future<EngineSource> resolve(
+    QueueItem item, {
+    Duration startAt = Duration.zero,
+  }) async => (await resolveSource(item, startAt: startAt)).source;
+
+  @override
+  Future<ResolvedSource> resolveSource(
     QueueItem item, {
     Duration startAt = Duration.zero,
   }) async {
@@ -149,20 +162,32 @@ class FakeResolver implements SourceResolver {
     if (unplayable.contains(id)) throw NotPlayable(id);
     if (errors[id] case final error?) throw error;
     if (local.contains(id)) {
-      return EngineSource(
-        queueItemId: id,
-        uri: Uri.parse('file:///music/$id.flac'),
-        startAt: startAt,
+      return ResolvedSource(
+        EngineSource(
+          queueItemId: id,
+          uri: Uri.parse('file:///music/$id.flac'),
+          startAt: startAt,
+        ),
+        download: LocalDownload(key: TrackItemKey(id)),
       );
     }
-    return EngineSource(
-      queueItemId: id,
-      uri: uriOf(id),
-      headers: headers?.call() ?? const {},
-      startAt: startAt,
-      streamQuality: item is TrackQueueItem ? quality : null,
+    return ResolvedSource(
+      EngineSource(
+        queueItemId: id,
+        uri: uriOf(id),
+        headers: headers?.call() ?? const {},
+        startAt: startAt,
+        streamQuality: item is TrackQueueItem ? quality : null,
+      ),
     );
   }
+
+  @override
+  Future<void> markPlayed(LocalDownload download) async => played.add(download);
+
+  @override
+  Future<void> markMissing(LocalDownload download) async =>
+      missing.add(download);
 }
 
 /// A controller over a [RecordingEngine] whose sources are scripted for the
@@ -170,6 +195,8 @@ class FakeResolver implements SourceResolver {
 /// [FakeClock].
 class ControllerHarness {
   /// Creates the harness; [reducer] defaults to a plain one. The
+  /// controller resolves sources with [sourceResolver] when one is given,
+  /// else with [resolver]. The
   /// controller persists its queue through [persistence] when one is given.
   /// It keeps its volume in [deviceSettings] when one is given, and asks
   /// [remoteRestore] for a queue when [persistence] has none stored.
@@ -181,6 +208,7 @@ class ControllerHarness {
     DeviceSettingsDao? deviceSettings,
     Future<RestoredQueue?> Function()? remoteRestore,
     this.playAny = false,
+    SourceResolver? sourceResolver,
   }) : clock = clock ?? FakeClock() {
     for (final id in ids) {
       fake.sources[uriOf(id)] = const FakeSource(duration: trackLength);
@@ -225,7 +253,7 @@ class ControllerHarness {
     });
     controller = PlaybackController(
       engine: engine,
-      resolver: resolver,
+      resolver: sourceResolver ?? resolver,
       info: PlaybackInfoRepository(playbackClient),
       session: session,
       clock: this.clock,

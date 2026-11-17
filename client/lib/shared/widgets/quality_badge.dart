@@ -12,8 +12,10 @@ import 'package:soundspan/core/playback/stream_quality_info.dart';
 /// never varies by where the track comes from.
 ///
 /// With a bit depth it reads "FLAC · 24/96 kHz", else with a bit rate
-/// "AAC · 256 kbps", else the codec alone. It renders nothing for null
-/// [info] or info without a codec.
+/// "AAC · 256 kbps", else the codec alone. A downloaded file reads
+/// "Downloaded", followed by the stored quality's label ("Downloaded ·
+/// High") when it has one. It renders nothing for null [info] or streamed
+/// info without a codec.
 class QualityBadge extends StatelessWidget {
   /// Creates the badge of [info].
   const new({required this.info, super.key});
@@ -23,6 +25,12 @@ class QualityBadge extends StatelessWidget {
 
   /// The badge text of [info], or null when there is nothing to show.
   static String? textOf(AppLocalizations l10n, StreamQualityInfo? info) {
+    if (info != null && info.downloaded) {
+      final label = _qualityLabel(l10n, info.quality);
+      return label == null
+          ? l10n.qualityBadgeDownloaded
+          : l10n.qualityBadgeDownloadedQuality(label);
+    }
     final codec = info?.codec?.trim().toUpperCase();
     if (info == null || codec == null || codec.isEmpty) return null;
     final bitDepth = info.bitDepth;
@@ -40,6 +48,17 @@ class QualityBadge extends StatelessWidget {
     }
     return codec;
   }
+
+  /// The label the playback settings use for [quality], or null for none
+  /// or a value this client does not know.
+  static String? _qualityLabel(AppLocalizations l10n, String? quality) =>
+      switch (quality) {
+        'original' => l10n.settingsPlaybackQualityOriginal,
+        'high' => l10n.settingsPlaybackQualityHigh,
+        'medium' => l10n.settingsPlaybackQualityMedium,
+        'low' => l10n.settingsPlaybackQualityLow,
+        _ => null,
+      };
 
   /// [value] without a trailing `.0`, at most one decimal.
   static String _number(num value) {

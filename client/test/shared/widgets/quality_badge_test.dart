@@ -64,6 +64,33 @@ void main() {
     });
   }
 
+  for (final (quality, text) in [
+    ('high', 'Downloaded · High'),
+    ('original', 'Downloaded · Original'),
+    (null, 'Downloaded'),
+    ('lossless-next', 'Downloaded'),
+  ]) {
+    testWidgets('a downloaded file stored at $quality shows "$text"', (
+      tester,
+    ) async {
+      final semantics = tester.ensureSemantics();
+      await tester.pumpApp(
+        Center(
+          child: QualityBadge(
+            info: StreamQualityInfo.downloaded(quality: quality),
+          ),
+        ),
+      );
+
+      expect(find.text(text), findsOneWidget);
+      expect(tester.getSemantics(find.text(text)).label, text);
+      final context = tester.element(find.byType(QualityBadge));
+      final label = tester.widget<Text>(find.text(text));
+      expect(label.style?.color, context.colors.contentSecondary);
+      semantics.dispose();
+    });
+  }
+
   testWidgets('null renders nothing', (tester) async {
     await tester.pumpApp(const Center(child: QualityBadge(info: null)));
 

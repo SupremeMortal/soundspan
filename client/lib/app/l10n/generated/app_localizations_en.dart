@@ -1514,6 +1514,14 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get qualityBadgeDownloaded => 'Downloaded';
+
+  @override
+  String qualityBadgeDownloadedQuality(String quality) {
+    return 'Downloaded · $quality';
+  }
+
+  @override
   String get menuPlayNow => 'Play now';
 
   @override
@@ -3207,6 +3215,14 @@ class AppLocalizationsEnXa extends AppLocalizationsEn {
   @override
   String qualityBadgeBitrate(String codec, String bitrate) {
     return '[$codec · $bitrate ķbþš one]';
+  }
+
+  @override
+  String get qualityBadgeDownloaded => '[Ðöŵñļöåðéð one]';
+
+  @override
+  String qualityBadgeDownloadedQuality(String quality) {
+    return '[Ðöŵñļöåðéð · $quality one two]';
   }
 
   @override

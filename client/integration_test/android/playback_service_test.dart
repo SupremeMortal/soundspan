@@ -48,6 +48,18 @@ final class _ToneResolver implements SourceResolver {
     Duration startAt = Duration.zero,
   }) async =>
       EngineSource(queueItemId: item.queueItemId, uri: _uri, startAt: startAt);
+
+  @override
+  Future<ResolvedSource> resolveSource(
+    QueueItem item, {
+    Duration startAt = Duration.zero,
+  }) async => ResolvedSource(await resolve(item, startAt: startAt));
+
+  @override
+  Future<void> markPlayed(LocalDownload download) async {}
+
+  @override
+  Future<void> markMissing(LocalDownload download) async {}
 }
 
 /// Waits up to [timeout] for [condition], polling.

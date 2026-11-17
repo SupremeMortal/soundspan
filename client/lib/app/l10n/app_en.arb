@@ -1931,6 +1931,17 @@
       "bitrate": {"type": "String", "example": "256"}
     }
   },
+  "qualityBadgeDownloaded": "Downloaded",
+  "@qualityBadgeDownloaded": {
+    "description": "Quality badge of an item playing from a file downloaded to this device, when no download quality was stored."
+  },
+  "qualityBadgeDownloadedQuality": "Downloaded · {quality}",
+  "@qualityBadgeDownloadedQuality": {
+    "description": "Quality badge of an item playing from a file downloaded to this device: the word Downloaded and the quality it was downloaded at, one of the stream quality choices (Original, High, Medium, Low).",
+    "placeholders": {
+      "quality": {"type": "String", "example": "High"}
+    }
+  },
   "menuPlayNow": "Play now",
   "@menuPlayNow": {
     "description": "Menu entry that replaces the queue with the list and plays this item."

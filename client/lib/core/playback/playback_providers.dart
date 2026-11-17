@@ -6,6 +6,8 @@ import 'package:flutter/widgets.dart'
     show AppLifecycleListener, AppLifecycleState, WidgetsBinding;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:soundspan/core/connectivity/reachability.dart';
+import 'package:soundspan/core/downloads/download_scheduler.dart';
+import 'package:soundspan/core/downloads/download_store.dart';
 import 'package:soundspan/core/logging/app_logger.dart';
 import 'package:soundspan/core/playback/audio_focus.dart';
 import 'package:soundspan/core/playback/data/playback_info_repository.dart';
@@ -21,6 +23,7 @@ import 'package:soundspan/core/playback/state_sync_binding.dart';
 import 'package:soundspan/core/playback/stream_quality_policy.dart';
 import 'package:soundspan/core/profile/api_provider.dart';
 import 'package:soundspan/core/profile/capabilities.dart';
+import 'package:soundspan/core/profile/profile_context.dart';
 import 'package:soundspan/core/profile/profile_disposer.dart';
 import 'package:soundspan/core/profile/profile_providers.dart';
 import 'package:soundspan/core/profile/profile_runtime.dart';
@@ -34,7 +37,9 @@ import 'package:soundspan/core/sync/play_session_store.dart';
 import 'package:soundspan/core/sync/playback_state_sync.dart';
 import 'package:soundspan/core/sync/sync_providers.dart';
 import 'package:soundspan/platform/audio_session/audio_session_gateway.dart';
+import 'package:soundspan/platform/capabilities/capabilities.dart';
 import 'package:soundspan/platform/device_info/device_info.dart';
+import 'package:soundspan/platform/media_files/media_files.dart';
 import 'package:soundspan/platform/notifications/local_notifications.dart';
 import 'package:soundspan/platform/stream_auth/stream_auth.dart';
 import 'package:soundspan/shared/clock.dart';
@@ -62,20 +67,32 @@ final Provider<StreamQualityPolicy> streamQualityPolicyProvider =
       dependencies: [deviceSettingsDaoProvider],
     );
 
-/// The [SourceResolver] of the profile scope: stream URLs on the profile's
-/// server, credentials from its session controller, and the platform's
-/// [StreamAuth].
+/// The [SourceResolver] of the profile scope: the profile's downloaded
+/// files where the platform can download, stream URLs on the profile's
+/// server, credentials from its session controller, the platform's
+/// [StreamAuth], and the root [reachabilityProvider]. A download found
+/// missing is handed to the profile's [DownloadScheduler].
 final Provider<SourceResolver> sourceResolverProvider =
     Provider<SourceResolver>(
       (ref) {
         final session = ref.watch(sessionControllerProvider);
         // The API attaches the session's refresher; watch it so it exists.
         ref.watch(soundspanApiProvider);
+        final canDownload =
+            ref.watch(platformCapabilitiesProvider).canDownload &&
+            ref.watch(profileContextProvider).paths != null;
         return SourceResolver(
           ensureFresh: session.ensureFresh,
           urls: StreamUrls(ref.watch(apiConfigProvider).baseUrl),
           quality: ref.watch(streamQualityPolicyProvider),
           auth: ref.watch(streamAuthProvider),
+          downloads: canDownload ? ref.watch(downloadStoreProvider) : null,
+          files: ref.watch(mediaFilesProvider),
+          reachability: ref.watch(reachabilityProvider),
+          clock: ref.watch(clockProvider),
+          onRequeued: canDownload
+              ? () => ref.read(downloadSchedulerProvider).pump()
+              : null,
         );
       },
       dependencies: [
@@ -83,6 +100,9 @@ final Provider<SourceResolver> sourceResolverProvider =
         soundspanApiProvider,
         apiConfigProvider,
         streamQualityPolicyProvider,
+        profileContextProvider,
+        downloadStoreProvider,
+        downloadSchedulerProvider,
       ],
     );
 

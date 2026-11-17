@@ -197,10 +197,12 @@ After every reducer step the controller compares the new `upNext` with what the 
 
 ## Source Resolution
 
-`SourceResolver.resolve(QueueItem) → Future<EngineSource>`:
+`SourceResolver.resolveSource(QueueItem) → Future<ResolvedSource>`: the `EngineSource` and, when it plays a downloaded file, a `LocalDownload` (the item's key and stored quality), so the controller never inspects the URI scheme. `resolve` returns the `EngineSource` alone. On web, and wherever `PlatformCapabilities.canDownload` is false, step 1 is skipped.
 
 1. `DownloadStore.completedFile(itemKey)` → the absolute path of a `completed` item's file (a path, because `dart:io` stays under `lib/platform/`), played as a `file://` URI with no headers. The file's existence is checked; a missing file marks the download `missing` and falls through.
 2. Offline (forced or unreachable) and no file → throws `NotAvailableOffline`; the controller skips the item.
+
+The choice is by file presence only, never by where a track comes from. A missing file is sent through the state machine as `FileMissing` (the item is queued again and the scheduler pumped).
 3. Otherwise a stream URL:
    - Track: `StreamUrls.track(playbackId, quality: q, reportPlay: false)` where `q` is `quality.wifi` or `quality.cellular` from device settings according to the current connection type, or null for "server default".
    - Episode: `StreamUrls.episode(podcastId, episodeId)`.
@@ -229,6 +231,8 @@ class PlaybackSnapshot {
 - Widgets read snapshots through two providers: `playbackSnapshotProvider` (every snapshot, for the seek bar and the mini player's progress line) and `playbackStateProvider` (only snapshots that change more than the position and buffered range, for everything else), so the player bar does not rebuild as the position moves. The user volume is a `ValueListenable<double>` on the controller (`volumeListenable`), because it is not part of the snapshot. The shell's player slots show the players once the profile's controller exists and never create it themselves; the controller is created by the first command that reads it.
 - **Failure policy:** on `Failed` for the current item, retry once after 1 s (network and HTTP 5xx kinds only). If it fails again, mark the item failed in the snapshot, show a snackbar, and advance. Three consecutive failed items stop playback with "Can't reach the server" instead of skipping through the whole queue.
 - **`SourceUnavailable` / `notFound`:** no retry; skip with a per-item message.
+- **Offline skip rule:** `NotAvailableOffline` for the item becoming current skips to the next item in play order, without the 1 s retry, without a per-item message and without counting toward the three consecutive failed items. When one full pass over the play order, or the run of skips up to the end of the queue, finds no playable item, playback stops paused with "Not available offline" (`PlaybackErrorKind.notAvailableOffline`) and the cursor goes back to where the run started: the last item that played, or the item the user chose, so `repeat all` cannot loop. `NotAvailableOffline` for the preloaded next source leaves the next slot empty; the skip happens when that item's turn comes.
+- **Downloaded files:** an item that starts playing from a file records `lastPlayedAt` once. A file the engine rejects (`decode` or `notFound`) is marked missing (`FileMissing`) and the item is resolved again at the same position: streamed when online, skipped by the offline rule when not.
 - **Connection type change** (Wi-Fi → mobile data) does not interrupt the current item; the quality setting applies from the next resolved source.
 - **Quality badge:** when an item becomes current and is streamed, `GET /playback/stream-info/:id` is fetched once, at the quality the source was built with (`EngineSource.streamQuality`; cached per `playbackId` + quality for the session) and shown as e.g. "FLAC · 24/96 kHz". For a downloaded file the badge shows "Downloaded" plus the stored quality. The badge has one neutral style; it does not vary by source.
 

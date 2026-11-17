@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:soundspan/core/playback/engines/fake_engine.dart';
 import 'package:soundspan/core/playback/engines/player_engine.dart';
 import 'package:soundspan/core/playback/queue/queue_state.dart';
+import 'package:soundspan/core/playback/stream_quality_info.dart';
 import 'package:soundspan/shared/domain/domain.dart';
 
 import 'controller/controller_harness.dart';
@@ -105,7 +106,8 @@ void main() {
     expect(h.controller.snapshot.quality?.quality, 'low');
   });
 
-  test('a local file does not fetch quality info', () async {
+  test('a local file shows the downloaded quality without fetching quality '
+      'info', () async {
     final h = ControllerHarness();
     h.resolver.local.add('a');
     h.fake.sources[Uri.parse('file:///music/a.flac')] = const FakeSource(
@@ -117,7 +119,7 @@ void main() {
 
     expect(h.controller.snapshot.isLocalFile, isTrue);
     expect(h.infoRequests, isEmpty);
-    expect(h.controller.snapshot.quality, isNull);
+    expect(h.controller.snapshot.quality, StreamQualityInfo.downloaded());
   });
 
   test('repeat one keeps the info of the same entry', () async {

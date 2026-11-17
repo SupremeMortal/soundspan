@@ -383,6 +383,19 @@ class DownloadStore {
         await applyTransition(key, transition);
       });
 
+  /// Applies [FileMissing] to item [key] at [now]: a `completed` item
+  /// whose file is gone is queued again; any other item, or none, is left
+  /// as it is.
+  Future<void> markFileMissing(DownloadItemKey key, DateTime now) =>
+      _db.transaction(() async {
+        final row = await item(key);
+        if (row == null) return;
+        final state = stateOf(row);
+        final transition = reduce(state, const FileMissing(), now: now);
+        if (transition.next == state) return;
+        await applyTransition(key, transition);
+      });
+
   /// Records [receivedBytes] of item [key]'s transfer.
   Future<void> updateProgress(DownloadItemKey key, int receivedBytes) =>
       _writeItem(

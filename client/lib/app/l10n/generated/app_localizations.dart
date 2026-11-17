@@ -2541,6 +2541,18 @@ abstract class AppLocalizations {
   /// **'{codec} · {bitrate} kbps'**
   String qualityBadgeBitrate(String codec, String bitrate);
 
+  /// Quality badge of an item playing from a file downloaded to this device, when no download quality was stored.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloaded'**
+  String get qualityBadgeDownloaded;
+
+  /// Quality badge of an item playing from a file downloaded to this device: the word Downloaded and the quality it was downloaded at, one of the stream quality choices (Original, High, Medium, Low).
+  ///
+  /// In en, this message translates to:
+  /// **'Downloaded · {quality}'**
+  String qualityBadgeDownloadedQuality(String quality);
+
   /// Menu entry that replaces the queue with the list and plays this item.
   ///
   /// In en, this message translates to:

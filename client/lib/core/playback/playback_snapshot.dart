@@ -19,6 +19,10 @@ enum PlaybackErrorKind {
 
   /// Three items in a row failed, so playback stopped.
   serverUnreachable,
+
+  /// The item has no downloaded file and the server cannot be reached; when
+  /// no item of the queue can play, playback stops with it.
+  notAvailableOffline,
 }
 
 /// Why the current item is not playing.

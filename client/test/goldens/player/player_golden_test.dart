@@ -46,6 +46,19 @@ final PlaybackSnapshot _snapshot = () {
   );
 }();
 
+/// [_snapshot] playing from a file downloaded at high quality.
+final PlaybackSnapshot _downloadedSnapshot = PlaybackSnapshot(
+  queue: _snapshot.queue,
+  current: _snapshot.current,
+  status: _snapshot.status,
+  playing: _snapshot.playing,
+  position: _snapshot.position,
+  buffered: _snapshot.buffered,
+  duration: _snapshot.duration,
+  quality: StreamQualityInfo.downloaded(quality: 'high'),
+  isLocalFile: true,
+);
+
 /// A paused episode at 12:30 of 48:00, at 1.5× with a 30-second skip.
 final PlaybackSnapshot _episodeSnapshot = () {
   final item = playerEpisode('e');
@@ -261,6 +274,14 @@ void main() {
     builder: (_) => _withController(const NowPlayingScreen()),
     sizes: const [TestSizes.compact],
     overrides: _overridesOf(_episodeSnapshot),
+  );
+
+  goldenMatrix(
+    'player_bar_downloaded',
+    builder: (_) =>
+        _bottom(const Padding(padding: EdgeInsets.all(8), child: PlayerBar())),
+    sizes: const [TestSizes.expanded],
+    overrides: _overridesOf(_downloadedSnapshot),
   );
 
   goldenMatrix(
