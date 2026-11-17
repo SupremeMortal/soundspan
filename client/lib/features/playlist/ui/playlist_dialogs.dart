@@ -16,7 +16,9 @@ import 'package:soundspan/app/router/routes.dart';
 import 'package:soundspan/app/theme/dimens.dart';
 import 'package:soundspan/app/theme/extensions.dart';
 import 'package:soundspan/app/theme/typography.dart';
+import 'package:soundspan/shared/dnd/drag_payload.dart';
 import 'package:soundspan/shared/domain/domain.dart';
+import 'package:soundspan/shared/providers/play_actions.dart';
 import 'package:soundspan/shared/providers/playlist_list.dart';
 import 'package:soundspan/shared/providers/repositories.dart';
 
@@ -318,4 +320,30 @@ Future<int?> addTracksToPlaylist(
     SnackBar(content: Text(l10n.playlistAdded(added, playlist.name))),
   );
   return added;
+}
+
+/// Adds what [payload] carries to [playlist], a drop on a sidebar playlist
+/// (doc 09, Desktop Interaction: Drag and drop): dropped tracks directly,
+/// an album after resolving it to its playable tracks. Confirms with
+/// "Added N to `name`" when anything was added.
+Future<void> dropOnPlaylist(
+  BuildContext context,
+  WidgetRef ref,
+  PlaylistSummary playlist,
+  DragPayload payload,
+) async {
+  final messenger = ScaffoldMessenger.maybeOf(context);
+  final l10n = AppLocalizations.of(context);
+  final tracks = switch (payload) {
+    TracksPayload(:final tracks) => tracks,
+    AlbumPayload(:final albumId) =>
+      await ref.read(playActionsProvider).albumTracks(albumId),
+  };
+  if (tracks.isEmpty) return;
+  final repository = await ref.read(playlistRepositoryProvider.future);
+  final added = await repository.addTracks(playlist.id, tracks);
+  if (added == 0) return;
+  messenger?.showSnackBar(
+    SnackBar(content: Text(l10n.playlistAdded(added, playlist.name))),
+  );
 }

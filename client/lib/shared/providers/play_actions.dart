@@ -122,7 +122,16 @@ class PlayActions {
 
   /// Adds the playable [tracks] at the end of the queue; on an empty queue
   /// they become the queue, paused.
-  Future<void> addToQueue(List<Track> tracks) => _add(tracks, next: false);
+  Future<void> addToQueue(List<Track> tracks) => _add(tracks);
+
+  /// Inserts the playable [tracks], in order, at [playOrderIndex] of the
+  /// play order under [context] (a single track's by default); on an empty
+  /// queue they become the queue, paused.
+  Future<void> insertAt(
+    List<Track> tracks,
+    int playOrderIndex, {
+    QueueContext context = const QueueContext(kind: QueueContextKind.single),
+  }) => _add(tracks, at: playOrderIndex, context: context);
 
   /// Replaces the queue with the playable [tracks] of a collection the
   /// caller already holds, such as a mix, under [context]: from the first,
@@ -278,16 +287,22 @@ class PlayActions {
     );
   }
 
-  Future<void> _add(List<Track> tracks, {required bool next}) async {
+  Future<void> _add(
+    List<Track> tracks, {
+    bool next = false,
+    int? at,
+    QueueContext context = const QueueContext(kind: QueueContextKind.single),
+  }) async {
     final playable = tracks.where(await _playableNow()).toList();
     if (playable.isEmpty) return;
     final queued = _controller.snapshot.queue.items.length;
     if (queued + playable.length > QueueReducer.maxItems) _truncated();
-    final items = _items(
-      playable,
-      const QueueContext(kind: QueueContextKind.single),
-    );
-    await (next ? _controller.playNext(items) : _controller.append(items));
+    final items = _items(playable, context);
+    await switch ((next, at)) {
+      (true, _) => _controller.playNext(items),
+      (false, final int at) => _controller.insertAt(items, at),
+      (false, null) => _controller.append(items),
+    };
   }
 
   List<QueueItem> _items(List<Track> tracks, QueueContext context) => [

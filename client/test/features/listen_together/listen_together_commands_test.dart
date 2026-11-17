@@ -77,6 +77,16 @@ void main() {
           ['queue:insert-next[pb-d]'],
         ),
         (
+          'insertAt after the current item',
+          (rig) => rig.h.controller.insertAt(trackItems(['d']), 1),
+          ['queue:insert-next[pb-d]'],
+        ),
+        (
+          'insertAt further on',
+          (rig) => rig.h.controller.insertAt(trackItems(['d']), 3),
+          ['queue:add[pb-d]'],
+        ),
+        (
           'removeAt',
           (rig) => rig.h.controller.removeAt(groupItem(1, 'b')),
           ['queue:remove#1'],

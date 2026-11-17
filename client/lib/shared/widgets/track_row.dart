@@ -16,6 +16,8 @@ import 'package:soundspan/core/downloads/download_controller.dart';
 import 'package:soundspan/core/downloads/download_keys.dart';
 import 'package:soundspan/core/storage/state/enums.dart';
 import 'package:soundspan/features/downloads/downloads.dart';
+import 'package:soundspan/shared/dnd/drag_payload.dart';
+import 'package:soundspan/shared/dnd/pointer_draggable.dart';
 import 'package:soundspan/shared/domain/playback_id.dart';
 import 'package:soundspan/shared/providers/now_playing.dart';
 import 'package:soundspan/shared/util/duration_format.dart';
@@ -98,6 +100,10 @@ final class TrackRowThumbnail extends TrackRowLeading {
 /// as selected. Enter ([PlayRowIntent]) calls [onTap] unless [rowActions]
 /// handles it; [rowActions] also handles [PlayRowNextIntent] and
 /// [RemoveRowIntent] while the row has focus.
+///
+/// With a [dragPayload] and a [playbackId], dragging the row with a mouse
+/// or trackpad carries the payload to a playlist or the queue (doc 09,
+/// Desktop Interaction: Drag and drop); touch input starts no drag.
 class TrackRow extends ConsumerStatefulWidget {
   /// Creates a row for the track [title] by [artist].
   const new({
@@ -120,8 +126,13 @@ class TrackRow extends ConsumerStatefulWidget {
     this.onSelect,
     this.focusNode,
     this.rowActions = const {},
+    this.dragPayload,
     super.key,
   });
+
+  /// What dragging the row carries: the selection when the row is part of
+  /// it, else the row's track; null, or no [playbackId], starts no drag.
+  final DragPayload? dragPayload;
 
   /// Selects the row on a mouse click with the gesture of the modifiers
   /// held; null keeps click-to-play.
@@ -450,38 +461,43 @@ class _TrackRowState extends ConsumerState<TrackRow> {
       child: child,
     );
 
-    final interactive = FocusableActionDetector(
-      enabled: onTap != null,
-      focusNode: _node,
-      mouseCursor: onTap != null ? SystemMouseCursors.click : MouseCursor.defer,
-      onShowFocusHighlight: (value) => setState(() => _focused = value),
-      actions: {
-        ActivateIntent: CallbackAction<ActivateIntent>(
-          onInvoke: (_) => onTap?.call(),
-        ),
-        PlayRowIntent: CallbackAction<PlayRowIntent>(
-          onInvoke: (_) => onTap?.call(),
-        ),
-        if (onMenu != null)
-          OpenMenuIntent: CallbackAction<OpenMenuIntent>(
-            onInvoke: (_) => _openMenuAtRow(onMenu),
+    final interactive = PointerDraggable(
+      payload: playbackId == null ? null : widget.dragPayload,
+      child: FocusableActionDetector(
+        enabled: onTap != null,
+        focusNode: _node,
+        mouseCursor: onTap != null
+            ? SystemMouseCursors.click
+            : MouseCursor.defer,
+        onShowFocusHighlight: (value) => setState(() => _focused = value),
+        actions: {
+          ActivateIntent: CallbackAction<ActivateIntent>(
+            onInvoke: (_) => onTap?.call(),
           ),
-        ...widget.rowActions,
-      },
-      child: MouseRegion(
-        onEnter: (_) => setState(() => _hovered = true),
-        onExit: (_) => setState(() => _hovered = false),
-        child: GestureDetector(
-          onTapDown: onTap == null
-              ? null
-              : (details) => _tapKind = details.kind,
-          onTap: onTap == null ? null : () => _onTap(onTap),
-          onLongPress: onMenu == null ? null : () => onMenu(null),
-          onSecondaryTapUp: onMenu == null
-              ? null
-              : (details) => onMenu(details.globalPosition),
-          behavior: HitTestBehavior.opaque,
-          child: content,
+          PlayRowIntent: CallbackAction<PlayRowIntent>(
+            onInvoke: (_) => onTap?.call(),
+          ),
+          if (onMenu != null)
+            OpenMenuIntent: CallbackAction<OpenMenuIntent>(
+              onInvoke: (_) => _openMenuAtRow(onMenu),
+            ),
+          ...widget.rowActions,
+        },
+        child: MouseRegion(
+          onEnter: (_) => setState(() => _hovered = true),
+          onExit: (_) => setState(() => _hovered = false),
+          child: GestureDetector(
+            onTapDown: onTap == null
+                ? null
+                : (details) => _tapKind = details.kind,
+            onTap: onTap == null ? null : () => _onTap(onTap),
+            onLongPress: onMenu == null ? null : () => onMenu(null),
+            onSecondaryTapUp: onMenu == null
+                ? null
+                : (details) => onMenu(details.globalPosition),
+            behavior: HitTestBehavior.opaque,
+            child: content,
+          ),
         ),
       ),
     );

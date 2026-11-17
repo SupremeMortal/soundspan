@@ -18,6 +18,7 @@ import 'package:soundspan/features/playlist/playlist.dart';
 import 'package:soundspan/shared/actions/app_menu_commands.dart';
 import 'package:soundspan/shared/actions/track_actions.dart';
 import 'package:soundspan/shared/actions/track_row_selection.dart';
+import 'package:soundspan/shared/dnd/drag_payload.dart';
 import 'package:soundspan/shared/domain/domain.dart';
 import 'package:soundspan/shared/providers/likes.dart';
 import 'package:soundspan/shared/providers/play_actions.dart';
@@ -176,6 +177,11 @@ class AlbumScreen extends ConsumerWidget {
     return [
       DetailHeader(
         artworkRef: album.artworkRef,
+        artworkDragPayload: AlbumPayload(
+          album.id,
+          album.title,
+          album.trackCount,
+        ),
         overline: album.releaseType ?? l10n.albumOverline,
         title: album.title,
         metadata: DetailMetadataLine(
@@ -283,6 +289,7 @@ class AlbumScreen extends ConsumerWidget {
                       focusNode: wiring.focusNode,
                       rowActions: wiring.rowActions,
                       onMenu: wiring.onMenu,
+                      dragPayload: wiring.dragPayload,
                     ),
                   );
                 },
@@ -305,6 +312,11 @@ class AlbumScreen extends ConsumerWidget {
                     subtitle: other.year?.toString() ?? other.artistName,
                     artworkRef: other.artworkRef,
                     onTap: () => DetailNavigation.openAlbum(context, other.id),
+                    dragPayload: AlbumPayload(
+                      other.id,
+                      other.title,
+                      other.trackCount,
+                    ),
                     onPlay: () => unawaited(
                       ref.read(playActionsProvider).playAlbum(other.id),
                     ),

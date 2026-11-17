@@ -43,6 +43,22 @@ final class Append extends QueueCommand {
   final List<QueueItem> items;
 }
 
+/// Inserts [items] at [playOrderIndex] of the play order (doc 06, Queue
+/// Model: Insert at). Unshuffled they go to that canonical index; shuffled
+/// they are appended to the canonical list and their indices placed at
+/// that position of the permutation. The index is clamped into range; on
+/// an empty queue the items become the queue.
+final class InsertAt extends QueueCommand {
+  /// Creates an insert command.
+  const new(this.items, this.playOrderIndex);
+
+  /// The entries to insert, in order.
+  final List<QueueItem> items;
+
+  /// The play index the first entry ends up at.
+  final int playOrderIndex;
+}
+
 /// Removes the entry [queueItemId].
 final class RemoveAt extends QueueCommand {
   /// Creates a remove command.

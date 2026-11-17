@@ -174,8 +174,9 @@ class QueueState {
   final int revision;                   // Incremented on every change
 }
 
-sealed class QueueCommand {}            // ReplaceAll, PlayNext, Append, RemoveAt, Move, JumpTo,
-                                        // Next, Previous, SetShuffle, SetRepeat, Clear, ItemFinished
+sealed class QueueCommand {}            // ReplaceAll, PlayNext, Append, InsertAt, RemoveAt, Move,
+                                        // JumpTo, Next, Previous, SetShuffle, SetRepeat, Clear,
+                                        // ItemFinished
 ```
 
 `QueueReducer.reduce` returns a `QueueTransition`: the next state plus a `QueueEffect` (`none`, `loadCurrent`, `restartCurrent` or `stop`), so the controller applies the engine change the queue rules imply without re-deriving them; a command that changes nothing returns the identical state, and `revision` grows by one exactly when the state changes.
@@ -187,10 +188,11 @@ Rules, each with unit tests:
 - **Shuffle off:** drop `shuffleOrder`; the cursor becomes the current item's canonical index.
 - **Play next:** insert after the current item in canonical order and, when shuffled, at `cursor + 1` in the permutation.
 - **Append:** add at the end of the canonical list and, when shuffled, at a random position after the cursor.
+- **Insert at** a play index (a drop into the queue panel): unshuffled, insert at that canonical index; shuffled, append to the canonical list and place the new indices at that position of the permutation. The current item stays current (the cursor moves when the insert lands at or before it); on an empty queue the items become the queue. In a Listen Together group, whose queue inserts only after the current item or at the end, an insert directly after the current item is sent as play next and any other as an append.
 - **Remove current:** advance to the next item first, then remove. Removing the last item in play order wraps to the first with `repeat == all` and otherwise stops on the new last item.
 - **Previous:** if position > 3 s, seek to zero; otherwise (3 s exactly included) move the cursor back (wrapping only with `repeat == all`). At the first item without wrapping, seek to zero.
 - **Item finished:** `repeat one` → replay; end of queue with `repeat all` → the first item in play order (a single item replays); end of queue with `repeat off` → stop, cursor stays on the last item, position zero. `Next` follows the same wrap with `repeat all`; with `repeat one` it is a user skip and behaves as with `repeat off`.
-- **Maximum size:** 5,000 items. "Play" on a larger collection queues the first 5,000 and says so; when the chosen start item lies beyond them, the 5,000-item window slides forward just far enough to end on it. Shuffle, when on, applies to the window. Play next and Append queue the leading items that fit. `QueueTransition.dropped` reports how many were left out, for the message.
+- **Maximum size:** 5,000 items. "Play" on a larger collection queues the first 5,000 and says so; when the chosen start item lies beyond them, the 5,000-item window slides forward just far enough to end on it. Shuffle, when on, applies to the window. Play next, Append and Insert at queue the leading items that fit. `QueueTransition.dropped` reports how many were left out, for the message.
 - Every `QueueItem` has a client-generated `queueItemId`, so the same track can appear twice and edits address entries, not tracks.
 
 After every reducer step the controller compares the new `upNext` with what the engine has preloaded and calls `setNext` if they differ.

@@ -17,6 +17,7 @@ import 'package:soundspan/core/downloads/downloaded_library.dart';
 import 'package:soundspan/features/downloads/downloads.dart';
 import 'package:soundspan/shared/actions/app_menu_commands.dart';
 import 'package:soundspan/shared/actions/track_actions.dart';
+import 'package:soundspan/shared/dnd/drag_payload.dart';
 import 'package:soundspan/shared/domain/domain.dart';
 import 'package:soundspan/shared/providers/likes.dart';
 import 'package:soundspan/shared/providers/play_actions.dart';
@@ -128,6 +129,11 @@ class ArtistScreen extends ConsumerWidget {
               subtitle: album.year?.toString() ?? album.artistName,
               artworkRef: album.artworkRef,
               onTap: () => DetailNavigation.openAlbum(context, album.id),
+              dragPayload: AlbumPayload(
+                album.id,
+                album.title,
+                album.trackCount,
+              ),
               onPlay: () =>
                   unawaited(ref.read(playActionsProvider).playAlbum(album.id)),
               onMenu: (position) => unawaited(
@@ -343,6 +349,7 @@ class _PopularSectionState extends State<_PopularSection> {
                   liked: track.isLiked,
                   onToggleLike: toggleLikeOf(ref, track),
                   playbackId: track.playbackId,
+                  dragPayload: TracksPayload([track]),
                   onTap: () => unawaited(
                     ref
                         .read(playActionsProvider)

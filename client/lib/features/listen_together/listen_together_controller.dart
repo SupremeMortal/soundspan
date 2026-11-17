@@ -265,6 +265,17 @@ class ListenTogetherController implements RemoteDriver {
         return _add(command, QueueAction.add, items);
       case PlayNextCommand(:final items):
         return _add(command, QueueAction.insertNext, items);
+      case InsertAtCommand(:final items, :final playOrderIndex):
+        // The group queue inserts only after the current item or at the
+        // end: a drop directly after the current item plays next, any
+        // other position appends.
+        final cursor = _playback.snapshot.queue.cursor;
+        final next = cursor == null || playOrderIndex <= cursor + 1;
+        return _add(
+          command,
+          next ? QueueAction.insertNext : QueueAction.add,
+          items,
+        );
       case RemoveAtCommand(:final queueItemId):
         final index = _indexOf(queueItemId);
         if (index == null) return Future<void>.value();

@@ -7,6 +7,8 @@ import 'package:soundspan/app/shell/window_class.dart';
 import 'package:soundspan/app/theme/dimens.dart';
 import 'package:soundspan/app/theme/extensions.dart';
 import 'package:soundspan/app/theme/typography.dart';
+import 'package:soundspan/shared/dnd/drag_payload.dart';
+import 'package:soundspan/shared/dnd/pointer_draggable.dart';
 import 'package:soundspan/shared/widgets/artwork.dart';
 import 'package:soundspan/shared/widgets/backdrop.dart';
 
@@ -35,8 +37,13 @@ class DetailHeader extends ConsumerStatefulWidget {
     this.artworkBuilder,
     this.actions,
     this.slivers = const [],
+    this.artworkDragPayload,
     super.key,
   });
+
+  /// What dragging the header artwork with a mouse or trackpad carries,
+  /// such as an album's [AlbumPayload]; null starts no drag.
+  final DragPayload? artworkDragPayload;
 
   /// The page content under the header. They are part of the header's
   /// sliver group so the app bar stays pinned above them.
@@ -144,16 +151,19 @@ class _DetailHeaderState extends ConsumerState<DetailHeader> {
     final builder = widget.artworkBuilder;
     final actions = widget.actions;
 
-    final artwork = SizedBox.square(
-      key: DetailHeader.artworkKey,
-      dimension: size,
-      child:
-          builder?.call(size) ??
-          Artwork(
-            ref: widget.artworkRef,
-            size: size,
-            shape: widget.artworkShape,
-          ),
+    final artwork = PointerDraggable(
+      payload: widget.artworkDragPayload,
+      child: SizedBox.square(
+        key: DetailHeader.artworkKey,
+        dimension: size,
+        child:
+            builder?.call(size) ??
+            Artwork(
+              ref: widget.artworkRef,
+              size: size,
+              shape: widget.artworkShape,
+            ),
+      ),
     );
     final align = compact ? TextAlign.center : TextAlign.start;
     final text = Column(

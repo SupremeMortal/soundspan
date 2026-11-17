@@ -12,6 +12,7 @@ import 'package:soundspan/features/library/ui/library_controls.dart';
 import 'package:soundspan/features/library/ui/library_queries.dart';
 import 'package:soundspan/features/library/ui/paged_media_grid.dart';
 import 'package:soundspan/shared/actions/app_menu_commands.dart';
+import 'package:soundspan/shared/dnd/drag_payload.dart';
 import 'package:soundspan/shared/domain/domain.dart';
 import 'package:soundspan/shared/providers/play_actions.dart';
 import 'package:soundspan/shared/widgets/media_card.dart';
@@ -70,6 +71,7 @@ class AlbumsTab extends ConsumerWidget {
         subtitle: album.artistName,
         artworkRef: album.artworkRef,
         onTap: () => DetailNavigation.openAlbum(context, album.id),
+        dragPayload: AlbumPayload(album.id, album.title, album.trackCount),
         onPlay: () =>
             unawaited(ref.read(playActionsProvider).playAlbum(album.id)),
         onMenu: (position) =>

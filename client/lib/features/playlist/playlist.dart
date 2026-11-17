@@ -10,7 +10,8 @@ export 'ui/playlist_dialogs.dart'
         DeletePlaylistDialog,
         PlaylistNameDialog,
         addTracksToPlaylist,
-        createPlaylistAndOpen;
+        createPlaylistAndOpen,
+        dropOnPlaylist;
 export 'ui/playlist_screen.dart' show PlaylistScreen, likedPlaylistId;
 export 'ui/playlist_view_model.dart'
     show PlaylistViewModel, playlistViewModelProvider;

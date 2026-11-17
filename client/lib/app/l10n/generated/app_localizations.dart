@@ -1841,6 +1841,12 @@ abstract class AppLocalizations {
   /// **'{count, plural, =1{Added 1 song to {name}} other{Added {count} songs to {name}}}'**
   String playlistAdded(int count, String name);
 
+  /// Label of the chip that follows the pointer while several tracks are dragged.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 track} other{{count} tracks}}'**
+  String dragTrackCount(int count);
+
   /// Tooltip and screen-reader label of the drag handle that moves a song within a playlist.
   ///
   /// In en, this message translates to:

@@ -7,6 +7,8 @@ import 'package:soundspan/app/shell/shortcuts/shortcut_intents.dart';
 import 'package:soundspan/app/theme/dimens.dart';
 import 'package:soundspan/app/theme/extensions.dart';
 import 'package:soundspan/app/theme/typography.dart';
+import 'package:soundspan/shared/dnd/drag_payload.dart';
+import 'package:soundspan/shared/dnd/pointer_draggable.dart';
 import 'package:soundspan/shared/widgets/artwork.dart';
 import 'package:soundspan/shared/widgets/mosaic_artwork.dart';
 
@@ -24,6 +26,10 @@ import 'package:soundspan/shared/widgets/mosaic_artwork.dart';
 /// (at the pointer for the click), the Menu key and Shift+F10
 /// ([OpenMenuIntent]) open it below the focused card, and screen readers
 /// get a "More options" custom action.
+///
+/// With a [dragPayload], dragging the card with a mouse or trackpad
+/// carries it to a playlist or the queue (doc 09, Desktop Interaction: Drag
+/// and drop).
 class MediaCard extends StatefulWidget {
   /// Creates a card titled [title] over [subtitle] with the cover
   /// [artworkRef].
@@ -37,8 +43,13 @@ class MediaCard extends StatefulWidget {
     this.onPlay,
     this.onMenu,
     this.selected = false,
+    this.dragPayload,
     super.key,
   });
+
+  /// What dragging the card carries, an [AlbumPayload] for an album; null
+  /// starts no drag.
+  final DragPayload? dragPayload;
 
   /// Whether the card is the selected item of a two-pane list: it then sits
   /// on `surfaceActive`.
@@ -180,68 +191,76 @@ class _MediaCardState extends State<MediaCard> {
                   ): () =>
                       onMenu(null),
                 },
-          child: FocusableActionDetector(
-            enabled: onTap != null || onPlay != null,
-            mouseCursor: onTap != null
-                ? SystemMouseCursors.click
-                : MouseCursor.defer,
-            onShowFocusHighlight: (value) => setState(() => _focused = value),
-            actions: {
-              ActivateIntent: CallbackAction<ActivateIntent>(
-                onInvoke: (_) => onTap?.call(),
-              ),
-              if (onMenu != null)
-                OpenMenuIntent: CallbackAction<OpenMenuIntent>(
-                  onInvoke: (_) {
-                    final box = context.findRenderObject()! as RenderBox;
-                    onMenu(box.localToGlobal(box.size.bottomLeft(Offset.zero)));
-                    return null;
-                  },
+          child: PointerDraggable(
+            payload: widget.dragPayload,
+            child: FocusableActionDetector(
+              enabled: onTap != null || onPlay != null,
+              mouseCursor: onTap != null
+                  ? SystemMouseCursors.click
+                  : MouseCursor.defer,
+              onShowFocusHighlight: (value) => setState(() => _focused = value),
+              actions: {
+                ActivateIntent: CallbackAction<ActivateIntent>(
+                  onInvoke: (_) => onTap?.call(),
                 ),
-            },
-            child: MouseRegion(
-              onEnter: (_) => setState(() => _hovered = true),
-              onExit: (_) => setState(() => _hovered = false),
-              child: GestureDetector(
-                onTap: onTap,
-                onLongPress: onMenu == null ? null : () => onMenu(null),
-                onSecondaryTapUp: onMenu == null
-                    ? null
-                    : (details) => onMenu(details.globalPosition),
-                behavior: HitTestBehavior.opaque,
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: widget.selected
-                            ? colors.surfaceActive
-                            : highlighted
-                            ? colors.surfaceHover
-                            : null,
-                        borderRadius: BorderRadius.circular(Radii.small),
+                if (onMenu != null)
+                  OpenMenuIntent: CallbackAction<OpenMenuIntent>(
+                    onInvoke: (_) {
+                      final box = context.findRenderObject()! as RenderBox;
+                      onMenu(
+                        box.localToGlobal(box.size.bottomLeft(Offset.zero)),
+                      );
+                      return null;
+                    },
+                  ),
+              },
+              child: MouseRegion(
+                onEnter: (_) => setState(() => _hovered = true),
+                onExit: (_) => setState(() => _hovered = false),
+                child: GestureDetector(
+                  onTap: onTap,
+                  onLongPress: onMenu == null ? null : () => onMenu(null),
+                  onSecondaryTapUp: onMenu == null
+                      ? null
+                      : (details) => onMenu(details.globalPosition),
+                  behavior: HitTestBehavior.opaque,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: widget.selected
+                              ? colors.surfaceActive
+                              : highlighted
+                              ? colors.surfaceHover
+                              : null,
+                          borderRadius: BorderRadius.circular(Radii.small),
+                        ),
+                        child: content,
                       ),
-                      child: content,
-                    ),
-                    if (_focused)
-                      Positioned(
-                        left: -_ringOutset,
-                        top: -_ringOutset,
-                        right: -_ringOutset,
-                        bottom: -_ringOutset,
-                        child: IgnorePointer(
-                          key: MediaCard.focusRingKey,
-                          child: DecoratedBox(
-                            decoration: BoxDecoration(
-                              border: Border.all(color: colors.brand, width: 2),
-                              borderRadius: BorderRadius.circular(
-                                Radii.small + _ringOutset,
+                      if (_focused)
+                        Positioned(
+                          left: -_ringOutset,
+                          top: -_ringOutset,
+                          right: -_ringOutset,
+                          bottom: -_ringOutset,
+                          child: IgnorePointer(
+                            key: MediaCard.focusRingKey,
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                border: Border.all(
+                                  color: colors.brand,
+                                  width: 2,
+                                ),
+                                borderRadius: BorderRadius.circular(
+                                  Radii.small + _ringOutset,
+                                ),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),

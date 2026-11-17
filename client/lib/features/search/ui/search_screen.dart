@@ -19,6 +19,7 @@ import 'package:soundspan/features/search/domain/search_sections.dart';
 import 'package:soundspan/features/search/ui/search_view_model.dart';
 import 'package:soundspan/shared/actions/app_menu_commands.dart';
 import 'package:soundspan/shared/actions/track_actions.dart';
+import 'package:soundspan/shared/dnd/drag_payload.dart';
 import 'package:soundspan/shared/domain/domain.dart';
 import 'package:soundspan/shared/providers/likes.dart';
 import 'package:soundspan/shared/providers/play_actions.dart';
@@ -596,6 +597,7 @@ Widget _songRow(BuildContext context, List<Track> tracks, int index) {
       liked: track.isLiked,
       onToggleLike: toggleLikeOf(ref, track),
       playbackId: track.playbackId,
+      dragPayload: TracksPayload([track]),
       onTap: () => unawaited(
         ref
             .read(playActionsProvider)
@@ -678,6 +680,9 @@ Widget _cardOf(
           ? null
           : () =>
                 onOpened(() => DetailNavigation.openAlbum(context, libraryId)),
+      dragPayload: libraryId == null
+          ? null
+          : AlbumPayload(libraryId, album.title, null),
       onPlay: libraryId == null
           ? null
           : () => unawaited(actions().playAlbum(libraryId)),

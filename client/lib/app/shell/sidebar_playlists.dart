@@ -10,6 +10,7 @@ import 'package:soundspan/app/theme/dimens.dart';
 import 'package:soundspan/app/theme/extensions.dart';
 import 'package:soundspan/app/theme/typography.dart';
 import 'package:soundspan/features/playlist/playlist.dart';
+import 'package:soundspan/shared/dnd/drag_payload.dart';
 import 'package:soundspan/shared/providers/playlist_list.dart';
 import 'package:soundspan/shared/widgets/built_range_reporter.dart';
 
@@ -22,6 +23,11 @@ import 'package:soundspan/shared/widgets/built_range_reporter.dart';
 /// tab. The row
 /// of [selectedPlaylistId] (`liked` for Liked Songs) is drawn selected;
 /// tapping a row opens the playlist in the current branch.
+///
+/// A playlist the user owns accepts dragged tracks and albums (doc 09,
+/// Desktop Interaction: Drag and drop): while a drag hovers it, the row
+/// is drawn in `surfaceActive` with a 2 px `brand` outline, and a drop
+/// adds the tracks. Liked Songs and other users' playlists accept nothing.
 class SidebarPlaylists extends ConsumerStatefulWidget {
   /// Creates the list, marking [selectedPlaylistId] selected.
   const new({this.selectedPlaylistId, super.key});
@@ -34,6 +40,9 @@ class SidebarPlaylists extends ConsumerStatefulWidget {
 
   /// The key of the "New playlist" row.
   static const Key createKey = Key('shell.sidebarPlaylists.new');
+
+  /// The key of the outline of the row a drag hovers.
+  static const Key dropHighlightKey = Key('shell.sidebarPlaylists.drop');
 
   /// The height of a row at the ambient text scale.
   static double extentFor(BuildContext context) {
@@ -110,6 +119,11 @@ class _SidebarPlaylistsState extends ConsumerState<SidebarPlaylists> {
                   selected: selected == playlist.id,
                   onTap: () =>
                       DetailNavigation.openPlaylist(context, playlist.id),
+                  onDrop: playlist.isOwner
+                      ? (payload) => unawaited(
+                          dropOnPlaylist(context, ref, playlist, payload),
+                        )
+                      : null,
                 );
               },
             ),
@@ -126,6 +140,7 @@ class _SidebarPlaylistRow extends StatelessWidget {
     required this.selected,
     required this.onTap,
     this.icon,
+    this.onDrop,
     super.key,
   });
 
@@ -134,13 +149,26 @@ class _SidebarPlaylistRow extends StatelessWidget {
   final VoidCallback onTap;
   final IconData? icon;
 
+  /// Takes a dropped payload; null makes the row no drop target.
+  final ValueChanged<DragPayload>? onDrop;
+
   @override
   Widget build(BuildContext context) {
+    final onDrop = this.onDrop;
+    if (onDrop == null) return _build(context, hovered: false);
+    return DragTarget<DragPayload>(
+      onAcceptWithDetails: (details) => onDrop(details.data),
+      builder: (context, candidates, _) =>
+          _build(context, hovered: candidates.isNotEmpty),
+    );
+  }
+
+  Widget _build(BuildContext context, {required bool hovered}) {
     final colors = context.colors;
-    return Semantics(
+    final row = Semantics(
       selected: selected,
       child: Material(
-        color: selected ? colors.surfaceActive : Colors.transparent,
+        color: selected || hovered ? colors.surfaceActive : Colors.transparent,
         borderRadius: BorderRadius.circular(Radii.small),
         child: InkWell(
           onTap: onTap,
@@ -171,6 +199,23 @@ class _SidebarPlaylistRow extends StatelessWidget {
           ),
         ),
       ),
+    );
+    if (!hovered) return row;
+    return Stack(
+      children: [
+        Positioned.fill(child: row),
+        Positioned.fill(
+          child: IgnorePointer(
+            key: SidebarPlaylists.dropHighlightKey,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                border: Border.all(color: colors.brand, width: 2),
+                borderRadius: BorderRadius.circular(Radii.small),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

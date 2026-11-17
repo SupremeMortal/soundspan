@@ -18,7 +18,9 @@ import 'package:soundspan/features/player/ui/player_item.dart';
 import 'package:soundspan/features/player/ui/queue_context_label.dart';
 import 'package:soundspan/shared/actions/app_menu_commands.dart';
 import 'package:soundspan/shared/actions/track_actions.dart';
+import 'package:soundspan/shared/dnd/drag_payload.dart';
 import 'package:soundspan/shared/domain/domain.dart';
+import 'package:soundspan/shared/providers/play_actions.dart';
 import 'package:soundspan/shared/widgets/empty_state.dart';
 import 'package:soundspan/shared/widgets/group_controls.dart';
 import 'package:soundspan/shared/widgets/track_row.dart';
@@ -36,6 +38,13 @@ import 'package:soundspan/shared/widgets/track_row.dart';
 /// secondary click, over the queue's tracks in play order. The rows have a fixed extent and are built
 /// lazily. An empty queue, and a profile whose controller does not exist
 /// yet, shows an [EmptyState].
+///
+/// Dragged tracks and albums drop into the queue (doc 09, Desktop
+/// Interaction: Drag and drop): at the "Next up" gap nearest the pointer,
+/// shown by a 2 px `brand` insertion line; on the "Now playing" section or
+/// above it directly after the current item; on an empty queue as a new,
+/// paused queue. The list scrolls while the pointer is within
+/// [autoScrollEdge] of its top or bottom edge.
 class QueueView extends ConsumerWidget {
   /// Creates the queue view; [scrollController] drives its scroll view, as
   /// a draggable sheet needs.
@@ -46,6 +55,12 @@ class QueueView extends ConsumerWidget {
 
   /// The key of the "Clear" action.
   static const Key clearKey = Key('queue.clear');
+
+  /// The key of the insertion line shown while a drag hovers the queue.
+  static const Key dropIndicatorKey = Key('queue.dropIndicator');
+
+  /// How close to the top or bottom edge a drag scrolls the list.
+  static const double autoScrollEdge = 48;
 
   /// The key of the row of the entry [queueItemId].
   static Key rowKey(String queueItemId) => Key('queue.row.$queueItemId');
@@ -59,9 +74,11 @@ class QueueView extends ConsumerWidget {
     final current = queue?.current;
     final cursor = queue?.cursor;
     if (queue == null || current == null || cursor == null) {
-      return EmptyState(
-        icon: Icons.queue_music_rounded,
-        message: l10n.queueEmpty,
+      return _QueueDropTarget(
+        builder: (_, _) => EmptyState(
+          icon: Icons.queue_music_rounded,
+          message: l10n.queueEmpty,
+        ),
       );
     }
     final controller = ref.read(playbackControllerProvider);
@@ -69,56 +86,235 @@ class QueueView extends ConsumerWidget {
     final order = queue.playOrder;
     final upNextCount = order.length - cursor - 1;
     final extent = TrackRow.extentFor(context, withThumbnail: true);
-    return CustomScrollView(
-      controller: scrollController,
-      slivers: [
-        const SliverToBoxAdapter(child: ListenTogetherQueueHeader()),
-        if (queueContextLabel(l10n, queue.context) case final label?)
-          SliverToBoxAdapter(child: _ContextLine(label)),
-        SliverToBoxAdapter(
-          child: _SectionHeader(
-            title: l10n.queueNowPlaying,
-            action: TextButton(
-              key: clearKey,
-              onPressed: () => unawaited(controller.clear()),
-              child: Text(l10n.queueClear),
-            ),
-          ),
-        ),
-        SliverPadding(
-          padding: const EdgeInsets.symmetric(horizontal: Spacing.x8),
-          sliver: SliverToBoxAdapter(
-            child: SizedBox(
-              height: extent,
-              child: _QueueRow(
-                key: rowKey(current.queueItemId),
-                item: current,
-                selected: true,
+    return _QueueDropTarget(
+      cursor: cursor,
+      upNextCount: upNextCount,
+      extent: extent,
+      builder: (nowPlayingKey, nextUpKey) => CustomScrollView(
+        controller: scrollController,
+        slivers: [
+          const SliverToBoxAdapter(child: ListenTogetherQueueHeader()),
+          if (queueContextLabel(l10n, queue.context) case final label?)
+            SliverToBoxAdapter(child: _ContextLine(label)),
+          SliverToBoxAdapter(
+            child: _SectionHeader(
+              title: l10n.queueNowPlaying,
+              action: TextButton(
+                key: clearKey,
+                onPressed: () => unawaited(controller.clear()),
+                child: Text(l10n.queueClear),
               ),
             ),
           ),
-        ),
-        if (upNextCount > 0) ...[
-          SliverToBoxAdapter(child: _SectionHeader(title: l10n.queueNextUp)),
           SliverPadding(
-            padding: const EdgeInsets.fromLTRB(
-              Spacing.x8,
-              0,
-              Spacing.x8,
-              Spacing.x16,
-            ),
-            sliver: _NextUpList(
-              queue: queue,
-              order: order,
-              cursor: cursor,
-              count: upNextCount,
-              extent: extent,
-              controller: controller,
-              locked: locked,
+            padding: const EdgeInsets.symmetric(horizontal: Spacing.x8),
+            sliver: SliverToBoxAdapter(
+              child: SizedBox(
+                key: nowPlayingKey,
+                height: extent,
+                child: _QueueRow(
+                  key: rowKey(current.queueItemId),
+                  item: current,
+                  selected: true,
+                ),
+              ),
             ),
           ),
+          if (upNextCount > 0) ...[
+            SliverToBoxAdapter(
+              child: _SectionHeader(key: nextUpKey, title: l10n.queueNextUp),
+            ),
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(
+                Spacing.x8,
+                0,
+                Spacing.x8,
+                Spacing.x16,
+              ),
+              sliver: _NextUpList(
+                queue: queue,
+                order: order,
+                cursor: cursor,
+                count: upNextCount,
+                extent: extent,
+                controller: controller,
+                locked: locked,
+              ),
+            ),
+          ],
         ],
-      ],
+      ),
+    );
+  }
+}
+
+/// The drop target around the queue: works out the play index a drop
+/// inserts at, draws the insertion line and scrolls near the edges.
+class _QueueDropTarget extends ConsumerStatefulWidget {
+  const new({
+    required this.builder,
+    this.cursor,
+    this.upNextCount = 0,
+    this.extent = 0,
+  });
+
+  /// Builds the queue with the keys of the "Now playing" row and the
+  /// "Next up" header.
+  final Widget Function(GlobalKey nowPlayingKey, GlobalKey nextUpKey) builder;
+
+  /// The cursor of the queue; null when it is empty.
+  final int? cursor;
+
+  /// How many "Next up" rows there are.
+  final int upNextCount;
+
+  /// The height of a row.
+  final double extent;
+
+  @override
+  ConsumerState<_QueueDropTarget> createState() => _QueueDropTargetState();
+}
+
+class _QueueDropTargetState extends ConsumerState<_QueueDropTarget> {
+  final GlobalKey _nowPlayingKey = GlobalKey(debugLabel: 'queue.nowPlaying');
+  final GlobalKey _nextUpKey = GlobalKey(debugLabel: 'queue.nextUp');
+
+  /// The insertion line's offset from the top of the target, while a drag
+  /// hovers.
+  double? _lineY;
+
+  /// The last pointer position of the hovering drag.
+  Offset? _pointer;
+
+  /// Scrolls while the pointer is near an edge.
+  Timer? _scrollTimer;
+  double _scrollDirection = 0;
+
+  static const double _scrollStep = 8;
+
+  @override
+  void dispose() {
+    _scrollTimer?.cancel();
+    super.dispose();
+  }
+
+  RenderBox? _boxOf(GlobalKey key) =>
+      key.currentContext?.findRenderObject() as RenderBox?;
+
+  /// The "Next up" gap nearest [global] and the line's offset for it.
+  (int gap, double? lineY) _geometry(Offset global) {
+    final box = context.findRenderObject() as RenderBox?;
+    if (box == null || widget.cursor == null) return (0, null);
+    double bottomOf(RenderBox child) =>
+        box.globalToLocal(child.localToGlobal(Offset(0, child.size.height))).dy;
+    final nextUp = _boxOf(_nextUpKey);
+    if (widget.upNextCount == 0 || nextUp == null) {
+      final nowPlaying = _boxOf(_nowPlayingKey);
+      return (0, nowPlaying == null ? null : bottomOf(nowPlaying));
+    }
+    final top = bottomOf(nextUp);
+    final y = box.globalToLocal(global).dy;
+    final gap = ((y - top) / widget.extent).round().clamp(
+      0,
+      widget.upNextCount,
+    );
+    return (gap, top + gap * widget.extent);
+  }
+
+  void _hover(Offset global) {
+    _pointer = global;
+    setState(() => _lineY = _geometry(global).$2);
+    final box = context.findRenderObject() as RenderBox?;
+    if (box == null) return;
+    final y = box.globalToLocal(global).dy;
+    _scrollDirection = y < QueueView.autoScrollEdge
+        ? -1
+        : y > box.size.height - QueueView.autoScrollEdge
+        ? 1
+        : 0;
+    if (_scrollDirection == 0) {
+      _scrollTimer?.cancel();
+      _scrollTimer = null;
+    } else {
+      _scrollTimer ??= Timer.periodic(
+        const Duration(milliseconds: 16),
+        (_) => _scrollStepped(),
+      );
+    }
+  }
+
+  void _scrollStepped() {
+    final anchor = _nowPlayingKey.currentContext;
+    final position = anchor == null
+        ? null
+        : Scrollable.maybeOf(anchor)?.position;
+    final pointer = _pointer;
+    if (position == null || pointer == null || !mounted) return;
+    final target = (position.pixels + _scrollDirection * _scrollStep).clamp(
+      position.minScrollExtent,
+      position.maxScrollExtent,
+    );
+    if (target == position.pixels) return;
+    position.jumpTo(target);
+    setState(() => _lineY = _geometry(pointer).$2);
+  }
+
+  void _leave() {
+    _scrollTimer?.cancel();
+    _scrollTimer = null;
+    _pointer = null;
+    if (_lineY != null) setState(() => _lineY = null);
+  }
+
+  Future<void> _drop(DragPayload payload, Offset global) async {
+    final cursor = widget.cursor;
+    final at = cursor == null ? 0 : cursor + 1 + _geometry(global).$1;
+    _leave();
+    final actions = ref.read(playActionsProvider);
+    switch (payload) {
+      case TracksPayload(:final tracks):
+        await actions.insertAt(tracks, at);
+      case AlbumPayload(:final albumId, :final title):
+        final tracks = await actions.albumTracks(albumId);
+        await actions.insertAt(
+          tracks,
+          at,
+          context: QueueContext(
+            kind: QueueContextKind.album,
+            id: albumId,
+            title: title,
+          ),
+        );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final lineY = _lineY;
+    return DragTarget<DragPayload>(
+      onMove: (details) => _hover(details.offset),
+      onLeave: (_) => _leave(),
+      onAcceptWithDetails: (details) =>
+          unawaited(_drop(details.data, details.offset)),
+      builder: (context, _, _) => Stack(
+        fit: StackFit.passthrough,
+        children: [
+          widget.builder(_nowPlayingKey, _nextUpKey),
+          if (lineY != null)
+            Positioned(
+              left: Spacing.x8,
+              right: Spacing.x8,
+              top: lineY - 1,
+              height: 2,
+              child: IgnorePointer(
+                key: QueueView.dropIndicatorKey,
+                child: ExcludeSemantics(
+                  child: ColoredBox(color: context.colors.brand),
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }
@@ -310,7 +506,7 @@ class _ContextLine extends StatelessWidget {
 
 /// A section title in `subtitle`, with an optional action at the end.
 class _SectionHeader extends StatelessWidget {
-  const new({required this.title, this.action});
+  const new({required this.title, this.action, super.key});
 
   final String title;
   final Widget? action;

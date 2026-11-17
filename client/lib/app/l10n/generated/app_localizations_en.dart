@@ -1113,6 +1113,17 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String dragTrackCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count tracks',
+      one: '1 track',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get playlistReorderHandle => 'Drag to reorder';
 
   @override
@@ -3396,6 +3407,17 @@ class AppLocalizationsEnXa extends AppLocalizationsEn {
       locale: localeName,
       other: 'Åððéð $count šöñĝš ţö $name one two',
       one: 'Åððéð 1 šöñĝ ţö $name one two',
+    );
+    return '[$_temp0]';
+  }
+
+  @override
+  String dragTrackCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ţŕåçķš one',
+      one: '1 ţŕåçķ one',
     );
     return '[$_temp0]';
   }

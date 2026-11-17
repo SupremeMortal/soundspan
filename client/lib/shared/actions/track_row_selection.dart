@@ -7,6 +7,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:soundspan/app/shell/shortcuts/shortcut_intents.dart';
 import 'package:soundspan/shared/actions/app_menu_commands.dart';
 import 'package:soundspan/shared/actions/track_actions.dart';
+import 'package:soundspan/shared/dnd/drag_payload.dart';
 import 'package:soundspan/shared/domain/domain.dart';
 import 'package:soundspan/shared/widgets/track_row.dart';
 import 'package:soundspan/shared/widgets/track_selection.dart';
@@ -21,7 +22,13 @@ class TrackRowSelection {
     required this.focusNode,
     required this.rowActions,
     required this.onMenu,
+    required this.dragPayload,
   });
+
+  /// [TrackRow.dragPayload]: the playable tracks of the selection when the
+  /// row is part of it, of the row alone otherwise; null when the row
+  /// itself is not playable.
+  final DragPayload? dragPayload;
 
   /// [TrackRow.selected].
   final bool selected;
@@ -60,9 +67,14 @@ Widget selectableTrackRow<T>(
       for (final target in selection.targetsFor(index)) scopeOf(target),
     ];
     MenuCommands commands() => AppMenuCommands(context, ref);
+    final ownScope = scopeOf(item);
+    final selected = selection.isSelected(item);
     return builder(
       TrackRowSelection(
-        selected: selection.isSelected(item),
+        dragPayload: !ownScope.playable
+            ? null
+            : TracksPayload(selected ? _playable(targets()) : [ownScope.track]),
+        selected: selected,
         onSelect: (gesture) => selection.select(index, gesture),
         focusNode: selection.focusNodeFor(item),
         onMenu: (position) => unawaited(

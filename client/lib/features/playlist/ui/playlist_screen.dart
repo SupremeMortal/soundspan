@@ -20,6 +20,7 @@ import 'package:soundspan/features/playlist/ui/playlist_view_model.dart';
 import 'package:soundspan/shared/actions/app_menu_commands.dart';
 import 'package:soundspan/shared/actions/track_actions.dart';
 import 'package:soundspan/shared/actions/track_row_selection.dart';
+import 'package:soundspan/shared/dnd/drag_payload.dart';
 import 'package:soundspan/shared/domain/domain.dart';
 import 'package:soundspan/shared/providers/likes.dart';
 import 'package:soundspan/shared/providers/play_actions.dart';
@@ -606,6 +607,8 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
     onSelect: wiring?.onSelect,
     focusNode: wiring?.focusNode,
     rowActions: wiring?.rowActions ?? const {},
+    dragPayload:
+        wiring?.dragPayload ?? (scope.playable ? TracksPayload([track]) : null),
     onMenu:
         wiring?.onMenu ??
         (position) =>

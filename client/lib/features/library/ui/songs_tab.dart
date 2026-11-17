@@ -15,6 +15,7 @@ import 'package:soundspan/features/library/ui/library_queries.dart';
 import 'package:soundspan/features/library/ui/paged_library_view.dart';
 import 'package:soundspan/shared/actions/app_menu_commands.dart';
 import 'package:soundspan/shared/actions/track_actions.dart';
+import 'package:soundspan/shared/dnd/drag_payload.dart';
 import 'package:soundspan/shared/domain/domain.dart';
 import 'package:soundspan/shared/providers/likes.dart';
 import 'package:soundspan/shared/providers/play_actions.dart';
@@ -144,6 +145,7 @@ class SongsTab extends ConsumerWidget {
               liked: track.isLiked,
               onToggleLike: toggleLikeOf(ref, track),
               playbackId: track.playbackId,
+              dragPayload: TracksPayload([track]),
               onTap: () => _play(ref, snapshot!, index),
               onAddToQueue: addToQueueOf(ref, track),
               onMenu: (position) => unawaited(

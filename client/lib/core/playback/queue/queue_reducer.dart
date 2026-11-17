@@ -74,6 +74,11 @@ class QueueReducer {
           _replaceAll(state, items, startIndex, context),
         PlayNext(:final items) => _playNext(state, items),
         Append(:final items) => _append(state, items),
+        InsertAt(:final items, :final playOrderIndex) => _insertAt(
+          state,
+          items,
+          playOrderIndex,
+        ),
         RemoveAt(:final queueItemId) => _removeAt(state, queueItemId),
         Move(:final queueItemId, :final toPlayIndex) => _move(
           state,
@@ -177,6 +182,50 @@ class QueueReducer {
       state.copyWith(
         items: [...state.items, ...added],
         shuffleOrder: shuffleOrder,
+      ),
+      QueueEffect.none,
+      dropped: dropped,
+    );
+  }
+
+  QueueTransition _insertAt(
+    QueueState state,
+    List<QueueItem> items,
+    int playOrderIndex,
+  ) {
+    final cursor = state.cursor;
+    if (cursor == null || state.items.isEmpty) {
+      return _playNext(state, items);
+    }
+    final added = _fitting(state, items);
+    final dropped = items.length - added.length;
+    if (added.isEmpty) return _none(state, dropped: dropped);
+    _checkUnique(state.items, added);
+    final at = playOrderIndex.clamp(0, state.items.length);
+    // The current entry keeps playing: an insert at or before it moves it.
+    final next = at <= cursor ? cursor + added.length : cursor;
+    final current = state.shuffleOrder;
+    if (current == null) {
+      return _step(
+        state,
+        state.copyWith(
+          items: [...state.items]..insertAll(at, added),
+          cursor: next,
+        ),
+        QueueEffect.none,
+        dropped: dropped,
+      );
+    }
+    return _step(
+      state,
+      state.copyWith(
+        items: [...state.items, ...added],
+        shuffleOrder: [...current]
+          ..insertAll(
+            at,
+            List<int>.generate(added.length, (i) => state.items.length + i),
+          ),
+        cursor: next,
       ),
       QueueEffect.none,
       dropped: dropped,

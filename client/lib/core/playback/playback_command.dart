@@ -103,6 +103,18 @@ final class AppendCommand extends PlaybackCommand {
   final List<QueueItem> items;
 }
 
+/// Inserts [items] at [playOrderIndex] of the play order.
+final class InsertAtCommand extends PlaybackCommand {
+  /// Creates the command.
+  const new(this.items, this.playOrderIndex);
+
+  /// The entries to insert, in order.
+  final List<QueueItem> items;
+
+  /// The play index the first entry ends up at.
+  final int playOrderIndex;
+}
+
 /// Removes the entry [queueItemId].
 final class RemoveAtCommand extends PlaybackCommand {
   /// Creates the command.

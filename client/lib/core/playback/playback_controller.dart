@@ -440,6 +440,11 @@ class PlaybackController {
   /// Adds [items] at the end of the queue.
   Future<void> append(List<QueueItem> items) => dispatch(AppendCommand(items));
 
+  /// Inserts [items] at [playOrderIndex] of the play order; on an empty
+  /// queue they become the queue, paused.
+  Future<void> insertAt(List<QueueItem> items, int playOrderIndex) =>
+      dispatch(InsertAtCommand(items, playOrderIndex));
+
   /// Removes the entry [queueItemId].
   Future<void> removeAt(String queueItemId) =>
       dispatch(RemoveAtCommand(queueItemId));
@@ -601,6 +606,8 @@ class PlaybackController {
         await _reduce(PlayNext(items));
       case AppendCommand(:final items):
         await _reduce(Append(items));
+      case InsertAtCommand(:final items, :final playOrderIndex):
+        await _reduce(InsertAt(items, playOrderIndex));
       case RemoveAtCommand(:final queueItemId):
         await _reduce(RemoveAt(queueItemId));
       case MoveCommand(:final queueItemId, :final toPlayIndex):
@@ -645,6 +652,7 @@ class PlaybackController {
         _pauseOrigin = PauseOrigin.user;
       case PlayNextCommand() ||
           AppendCommand() ||
+          InsertAtCommand() ||
           RemoveAtCommand() ||
           MoveCommand() ||
           SetShuffleCommand() ||

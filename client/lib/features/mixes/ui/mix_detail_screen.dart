@@ -15,6 +15,7 @@ import 'package:soundspan/features/mixes/mixes_providers.dart';
 import 'package:soundspan/features/mixes/ui/mix_view_model.dart';
 import 'package:soundspan/shared/actions/app_menu_commands.dart';
 import 'package:soundspan/shared/actions/track_actions.dart';
+import 'package:soundspan/shared/dnd/drag_payload.dart';
 import 'package:soundspan/shared/domain/domain.dart';
 import 'package:soundspan/shared/providers/likes.dart';
 import 'package:soundspan/shared/providers/play_actions.dart';
@@ -258,6 +259,7 @@ class _MixPage extends ConsumerWidget {
       liked: track.isLiked,
       onToggleLike: toggleLikeOf(ref, track),
       playbackId: track.playbackId,
+      dragPayload: TracksPayload([track]),
       onTap: () => unawaited(
         ref
             .read(playActionsProvider)

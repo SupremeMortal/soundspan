@@ -1496,6 +1496,15 @@
       }
     }
   },
+  "dragTrackCount": "[{count, plural, =1{1 ţŕåçķ one} other{{count} ţŕåçķš one}}]",
+  "@dragTrackCount": {
+    "description": "Label of the chip that follows the pointer while several tracks are dragged.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "playlistReorderHandle": "[Ðŕåĝ ţö ŕéöŕðéŕ one two]",
   "@playlistReorderHandle": {
     "description": "Tooltip and screen-reader label of the drag handle that moves a song within a playlist."
