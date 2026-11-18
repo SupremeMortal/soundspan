@@ -97,4 +97,42 @@ void main() {
     expect(maxBuilt, lessThan(60));
     expect(maxBuilt, greaterThan(0));
   });
+
+  testWidgets('scrolling does not rebuild the rows on screen', (tester) async {
+    final library = FakeLibraryRepository()..trackList = tracks(10000);
+    final harness = await tester.pumpLibrary(
+      tab: LibraryTab.songs,
+      library: library,
+      size: const Size(390, 800),
+    );
+    final position = tester
+        .state<ScrollableState>(
+          find.descendant(
+            of: find.byType(SongsTab),
+            matching: find.byType(Scrollable),
+          ),
+        )
+        .position;
+    final row = find.ancestor(
+      of: find.text('Song 5'),
+      matching: find.byType(TrackRow),
+    );
+    final before = tester.widget<TrackRow>(row);
+    final requested = harness.sources.single.requestedPages.length;
+
+    for (var offset = 1; offset <= 10; offset++) {
+      position.jumpTo(offset * 3.0);
+      await tester.pump();
+      expect(identical(tester.widget<TrackRow>(row), before), isTrue);
+    }
+
+    // The visible range is still followed: scrolling far requests its page.
+    position.jumpTo(position.maxScrollExtent / 2);
+    await tester.pumpAndSettle();
+    expect(
+      harness.sources.single.requestedPages.length,
+      greaterThan(requested),
+    );
+    expect(find.text('Song 5000'), findsOneWidget);
+  });
 }

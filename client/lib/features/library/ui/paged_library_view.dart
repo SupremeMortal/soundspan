@@ -30,7 +30,11 @@ double gutterOf(WindowClass windowClass) => switch (windowClass) {
 /// the current snapshot (null before the source's first state); it shows
 /// a skeleton for each unloaded index and passes the visible range to the
 /// `ensureVisible` it is given, which forwards it to
-/// [PagedSource.ensureVisible] after the frame. A total of 0 shows an
+/// [PagedSource.ensureVisible] after the frame. While the list only
+/// scrolls, the sliver it built last is kept, so the rows on screen are
+/// not rebuilt on every scroll frame (doc 09, Performance Rules); it is
+/// built again when the snapshot, the widget, the viewport size, the text
+/// scale or the theme changes. A total of 0 shows an
 /// [EmptyState] with
 /// [emptyIcon] and [emptyMessage]; a failed load with nothing loaded shows
 /// an [ErrorView] whose Retry refetches; a failed refresh with items
@@ -120,6 +124,11 @@ class _PagedLibraryViewState<T> extends ConsumerState<PagedLibraryView<T>> {
   final ValueNotifier<int> _firstVisible = ValueNotifier(0);
   bool _fastDragging = false;
   Timer? _rest;
+
+  /// The items sliver of the last layout, and what it was built for.
+  Widget? _items;
+  SliverConstraints? _itemsConstraints;
+  Object? _itemsKey;
 
   @override
   void initState() {
@@ -290,9 +299,34 @@ class _PagedLibraryViewState<T> extends ConsumerState<PagedLibraryView<T>> {
         child: ErrorView(error: error, onRetry: _retry),
       );
     } else {
+      // A build of this state may change what the items show.
+      _items = null;
       body = SliverLayoutBuilder(
-        builder: (context, constraints) =>
-            widget.itemsBuilder(context, constraints, snapshot, _ensureVisible),
+        builder: (context, constraints) {
+          final items = widget.itemsBuilder(
+            context,
+            constraints,
+            snapshot,
+            _ensureVisible,
+          );
+          final key = (
+            constraints.crossAxisExtent,
+            constraints.viewportMainAxisExtent,
+            MediaQuery.textScalerOf(context),
+            Theme.of(context),
+          );
+          final previous = _items;
+          // Same constraints means a dependency or the widget changed; new
+          // constraints of the same size and scale mean only a scroll.
+          final scrolledOnly =
+              previous != null &&
+              constraints != _itemsConstraints &&
+              key == _itemsKey;
+          _itemsConstraints = constraints;
+          if (scrolledOnly) return previous;
+          _itemsKey = key;
+          return _items = items;
+        },
       );
     }
 

@@ -238,6 +238,7 @@ Implemented with `Shortcuts`/`Actions` at the shell so they are discoverable to 
 ## Performance Rules
 
 - `ListView.builder` / `SliverList` with `itemExtent` or `prototypeItem` for every long list.
+- A paged list (`PagedLibraryView`) builds its items sliver from the sliver constraints to follow the visible range, and keeps the sliver it built while the list only scrolls (new constraints of the same viewport size, text scale and theme), so the rows on screen are not rebuilt on every scroll frame; a new snapshot, widget or dependency builds it again.
 - `const` constructors by default (lint). Rows take plain values, not providers; only the playing-state indicator watches the playback provider, through a `select` on "is this item current".
 - Position updates repaint only the `SeekBar` (its own `RepaintBoundary` and listenable), never the player bar.
 - Images decode at display size (`memCacheWidth`). Grids precache one screen ahead on idle.
