@@ -4,6 +4,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:dbus/dbus.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter/services.dart';
 import 'package:screen_retriever/screen_retriever.dart';
 import 'package:soundspan/platform/desktop_shell/desktop_shell.dart';
@@ -270,11 +271,23 @@ class WindowManagerDesktopShell implements DesktopShell {
     return true;
   }
 
-  /// Whether a StatusNotifier watcher on the session bus has a host
-  /// registered, so a tray icon is shown.
-  static Future<bool> _hasStatusNotifierHost() async {
-    final client = DBusClient.session();
-    try {
+  /// How long [statusNotifierHostRegistered] waits for the session bus.
+  /// `bootstrap` awaits the tray in step 5, before the first frame, so a
+  /// bus that does not answer must not hold the app up (doc 10).
+  static const Duration statusNotifierTimeout = Duration(seconds: 2);
+
+  static Future<bool> _hasStatusNotifierHost() =>
+      statusNotifierHostRegistered(DBusClient.session());
+
+  /// Whether a StatusNotifier watcher on [client]'s bus has a host
+  /// registered, so a tray icon is shown. A bus that fails, or does not
+  /// answer within [timeout], has none. [client] is closed afterwards.
+  @visibleForTesting
+  static Future<bool> statusNotifierHostRegistered(
+    DBusClient client, {
+    Duration timeout = statusNotifierTimeout,
+  }) async {
+    Future<bool> lookup() async {
       for (final name in _watchers) {
         if (!await client.nameHasOwner(name)) continue;
         final registered = await DBusRemoteObject(
@@ -285,10 +298,15 @@ class WindowManagerDesktopShell implements DesktopShell {
         if (registered is DBusBoolean && registered.value) return true;
       }
       return false;
+    }
+
+    try {
+      return await lookup().timeout(timeout, onTimeout: () => false);
     } on Object {
       return false;
     } finally {
-      await client.close();
+      // A bus that did not answer may not answer the close either.
+      unawaited(client.close().catchError((Object _) {}));
     }
   }
 

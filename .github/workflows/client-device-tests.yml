@@ -391,15 +391,19 @@ jobs:
           pactl set-default-sink null
           sleep 2
 
+      # The shell, playback and tray tests start the app with the real
+      # engine. mpv's PipeWire device probe hangs on the runner;
+      # SPA_PLUGIN_DIR pointing nowhere makes it give up first
+      # (engine-conformance-linux).
       - name: Shell smoke
         working-directory: client
         timeout-minutes: 20
+        env:
+          SPA_PLUGIN_DIR: /nonexistent
         run: |
           set -o pipefail
           flutter test integration_test/desktop/shell_smoke_test.dart -d linux 2>&1 | tee "$LOG_DIR/shell_smoke.log"
 
-      # mpv's PipeWire device probe hangs on the runner; SPA_PLUGIN_DIR
-      # pointing nowhere makes it give up first (engine-conformance-linux).
       - name: Playback smoke
         working-directory: client
         timeout-minutes: 15
@@ -425,6 +429,8 @@ jobs:
       - name: Tray smoke
         working-directory: client
         timeout-minutes: 15
+        env:
+          SPA_PLUGIN_DIR: /nonexistent
         run: |
           set -o pipefail
           flutter test integration_test/desktop/tray_smoke_test.dart -d linux 2>&1 | tee "$LOG_DIR/tray_smoke.log"
