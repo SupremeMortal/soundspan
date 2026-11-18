@@ -1038,7 +1038,8 @@ describe("search route runtime behavior", () => {
                 expect.objectContaining({ type: "track", id: "track-1" }),
                 expect.objectContaining({
                     type: "podcast",
-                    id: 55,
+                    id: "55",
+                    itunesId: 55,
                     name: "Podcast A",
                     coverUrl: "large.jpg",
                 }),
