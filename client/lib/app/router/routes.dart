@@ -1,0 +1,424 @@
+// SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
+
+import 'dart:async';
+
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:material_ui/material_ui.dart';
+import 'package:soundspan/app/l10n/generated/app_localizations.dart';
+import 'package:soundspan/app/router/guards.dart';
+import 'package:soundspan/app/router/shell_route.dart';
+import 'package:soundspan/app/shell/shell_history.dart';
+import 'package:soundspan/app/shell/two_pane.dart';
+import 'package:soundspan/app/shell/window_class.dart';
+import 'package:soundspan/core/auth/probe/server_probe.dart';
+import 'package:soundspan/core/profile/profile_runtime.dart';
+import 'package:soundspan/core/profile/profile_scope.dart';
+import 'package:soundspan/core/profile/version_gate.dart';
+import 'package:soundspan/features/connect/connect.dart';
+import 'package:soundspan/features/player/player.dart';
+import 'package:soundspan/features/settings/settings.dart';
+
+/// The fixed paths of the router (doc 02, Routing).
+abstract final class RoutePaths {
+  /// Add a server: address entry.
+  static const connect = '/connect';
+
+  /// Probe progress and result.
+  static const probe = '/connect/probe';
+
+  /// The QR scanner; redirects to [connect] where the platform cannot scan.
+  static const scan = '/connect/scan';
+
+  /// Sign-in; `?profile=<id>` names a signed-out profile, and with
+  /// `&relink=1` the device-link panel opens to link that profile again.
+  static const signIn = '/connect/sign-in';
+
+  /// The home branch.
+  static const home = '/home';
+
+  /// The search branch; `?q=` carries the query.
+  static const search = '/search';
+
+  /// The library branch; a [LibraryTab] follows.
+  static const library = '/library';
+
+  /// The podcasts branch.
+  static const podcasts = '/podcasts';
+
+  /// Now playing, on the root navigator; compact and medium windows only.
+  static const nowPlaying = '/now-playing';
+
+  /// Explore; redirected into the selected branch like a detail.
+  static const explore = '/explore';
+
+  /// The last segment of Explore inside a branch.
+  static const exploreSegment = 'explore';
+
+  /// Vibe; redirected into the selected branch like a detail.
+  static const vibe = '/vibe';
+
+  /// The last segment of Vibe inside a branch.
+  static const vibeSegment = 'vibe';
+
+  /// Listen Together; redirected into the selected branch like a detail.
+  static const listenTogether = '/listen-together';
+
+  /// The last segment of Listen Together inside a branch.
+  static const listenTogetherSegment = 'listen-together';
+
+  /// Settings, on the root navigator.
+  static const settings = '/settings';
+
+  /// The Servers settings.
+  static const settingsServers = '/settings/servers';
+
+  /// The Playback settings.
+  static const settingsPlayback = '/settings/playback';
+
+  /// The Storage settings.
+  static const settingsStorage = '/settings/storage';
+
+  /// The Appearance settings.
+  static const settingsAppearance = '/settings/appearance';
+
+  /// The About settings.
+  static const settingsAbout = '/settings/about';
+
+  /// The open-source licences, opened from the About settings.
+  static const settingsAboutLicenses = '/settings/about/licenses';
+}
+
+/// The re-link flow of profile [profileId] (doc 04, API-Key Expiry):
+/// `/connect/sign-in?profile=<id>&relink=1`.
+String relinkLocation(String profileId) => Uri(
+  path: RoutePaths.signIn,
+  queryParameters: {'profile': profileId, 'relink': '1'},
+).toString();
+
+/// The location of the page of podcast [podcastId] in the Podcasts branch:
+/// `/podcasts/<podcastId>`.
+String podcastLocation(String podcastId) =>
+    '${RoutePaths.podcasts}/${Uri.encodeComponent(podcastId)}';
+
+/// The tabs of `/library/:tab`.
+enum LibraryTab {
+  /// Playlists; the default tab.
+  playlists,
+
+  /// Artists.
+  artists,
+
+  /// Albums.
+  albums,
+
+  /// Songs.
+  songs,
+
+  /// Downloads; only where the platform downloads.
+  downloads;
+
+  /// The tab named [segment], or null when there is none.
+  static LibraryTab? tryParse(String segment) {
+    for (final tab in values) {
+      if (tab.name == segment) return tab;
+    }
+    return null;
+  }
+}
+
+/// The detail screens that open inside the selected branch.
+enum DetailKind {
+  /// `album/:albumId`.
+  album,
+
+  /// `artist/:artistId`.
+  artist,
+
+  /// `playlist/:playlistId`.
+  playlist,
+
+  /// `mix/:mixId`: a generated mix of Made For You.
+  mix;
+
+  /// The path parameter carrying the id.
+  String get parameter => '${name}Id';
+
+  /// The localized screen name.
+  String title(AppLocalizations l10n) => switch (this) {
+    album => l10n.screenAlbum,
+    artist => l10n.screenArtist,
+    playlist => l10n.screenPlaylist,
+    mix => l10n.screenMix,
+  };
+}
+
+/// Remembers the location of the branch the shell shows, so a top-level
+/// detail path (`/album/42`) can be sent into it.
+class ShellLocation {
+  Uri _base = Uri(path: RoutePaths.home);
+
+  /// The root location of the selected branch: `/home`, `/search` with its
+  /// query, `/library/<tab>` or `/podcasts`. `/home` before any branch
+  /// was shown.
+  Uri get base => _base;
+
+  /// Records [location] when it is inside a branch.
+  void update(Uri location) {
+    final base = branchBaseOf(location);
+    if (base != null) _base = base;
+  }
+
+  /// The location of the [kind] detail [id] inside the selected branch.
+  String detail(DetailKind kind, String id) => _inBranch([kind.name, id]);
+
+  /// The location of Explore inside the selected branch.
+  String explore() => _inBranch(const [RoutePaths.exploreSegment]);
+
+  /// The location of Vibe inside the selected branch.
+  String vibe() => _inBranch(const [RoutePaths.vibeSegment]);
+
+  /// The location of Listen Together inside the selected branch.
+  String listenTogether() =>
+      _inBranch(const [RoutePaths.listenTogetherSegment]);
+
+  String _inBranch(List<String> segments) => _base
+      .replace(
+        pathSegments: [..._base.pathSegments, ...segments],
+        queryParameters: _base.queryParameters.isEmpty
+            ? null
+            : _base.queryParameters,
+      )
+      .toString();
+}
+
+/// The id of the playlist [location] shows (`…/playlist/<id>` as its last
+/// two segments), or null when it shows none.
+String? openPlaylistIdOf(Uri location) {
+  final segments = location.pathSegments;
+  if (segments.length < 2) return null;
+  if (segments[segments.length - 2] != DetailKind.playlist.name) return null;
+  return segments.last;
+}
+
+/// The root location of the branch [location] is in, or null when it is in
+/// none.
+Uri? branchBaseOf(Uri location) {
+  final segments = location.pathSegments;
+  if (segments.isEmpty) return null;
+  return switch (segments.first) {
+    'home' => Uri(path: RoutePaths.home),
+    'search' => Uri(
+      path: RoutePaths.search,
+      queryParameters: location.queryParameters['q'] == null
+          ? null
+          : {'q': location.queryParameters['q']},
+    ),
+    'library' => Uri(
+      path:
+          '${RoutePaths.library}/'
+          '${(segments.length > 1 ? LibraryTab.tryParse(segments[1]) : null)?.name ?? LibraryTab.playlists.name}',
+    ),
+    'podcasts' => Uri(path: RoutePaths.podcasts),
+    _ => null,
+  };
+}
+
+/// Opens detail screens inside the selected branch, so screens never build
+/// detail paths themselves.
+///
+/// From a branch root the detail replaces the branch's location
+/// (`/<branch root>/<kind>/<id>`); from a detail it is pushed onto the
+/// branch's stack, so Back returns to the detail it was opened from. From
+/// the list pane of a two-pane layout it always replaces the open detail,
+/// so Back clears the selection.
+abstract final class DetailNavigation {
+  /// Opens album [id].
+  static void openAlbum(BuildContext context, String id) =>
+      _open(context, DetailKind.album, id);
+
+  /// Opens artist [id].
+  static void openArtist(BuildContext context, String id) =>
+      _open(context, DetailKind.artist, id);
+
+  /// Opens playlist [id].
+  static void openPlaylist(BuildContext context, String id) =>
+      _open(context, DetailKind.playlist, id);
+
+  /// Opens playlist [id] in [router]'s selected branch, for callers whose
+  /// context may have left the tree, such as a snackbar action.
+  static void openPlaylistIn(GoRouter router, String id) =>
+      openLocation(router, _location(DetailKind.playlist, id));
+
+  /// Opens the generated mix [id].
+  static void openMix(BuildContext context, String id) =>
+      _open(context, DetailKind.mix, id);
+
+  /// Opens artist [id] in [router]'s selected branch, for callers whose
+  /// context leaves the tree first, such as a route that closes.
+  static void openArtistIn(GoRouter router, String id) =>
+      openLocation(router, _location(DetailKind.artist, id));
+
+  /// Opens Explore.
+  static void openExplore(BuildContext context) =>
+      openLocation(GoRouter.of(context), RoutePaths.explore);
+
+  /// Opens Vibe.
+  static void openVibe(BuildContext context) =>
+      openLocation(GoRouter.of(context), RoutePaths.vibe);
+
+  /// Opens Listen Together.
+  static void openListenTogether(BuildContext context) =>
+      openLocation(GoRouter.of(context), RoutePaths.listenTogether);
+
+  /// Opens the top-level detail [location] (`/album/42`, the form deep links
+  /// use) in [router]'s selected branch, pushing it when that branch already
+  /// shows a detail.
+  static void openLocation(GoRouter router, String location) {
+    final current = router.routerDelegate.currentConfiguration.uri;
+    final base = branchBaseOf(current);
+    if (base != null && base.path != current.path) {
+      unawaited(router.push<void>(location));
+    } else {
+      router.go(location);
+    }
+  }
+
+  static void _open(BuildContext context, DetailKind kind, String id) {
+    final router = GoRouter.of(context);
+    if (TwoPaneSelection.inListPane(context)) {
+      router.go(_location(kind, id));
+    } else {
+      openLocation(router, _location(kind, id));
+    }
+  }
+
+  static String _location(DetailKind kind, String id) =>
+      '/${kind.name}/${Uri.encodeComponent(id)}';
+}
+
+/// Builds the app's router over [gate]. [initialLocation] is where it
+/// starts before the guards run.
+GoRouter createRouter(
+  AuthGateState gate, {
+  String initialLocation = RoutePaths.home,
+}) {
+  // A detail pushed onto a branch's stack is what the window shows, so the
+  // browser URL follows it (doc 02, Routing).
+  GoRouter.optionURLReflectsImperativeAPIs = true;
+  final location = ShellLocation();
+  final history = ShellHistory();
+  return GoRouter(
+    initialLocation: initialLocation,
+    refreshListenable: gate,
+    redirect: (context, state) {
+      final guarded = guardRedirect(
+        state.uri,
+        gate.state,
+        signedOut: gate.signedOut,
+        belowMin: gate.belowMin,
+      );
+      if (guarded != null) return guarded;
+      location.update(state.uri);
+      return null;
+    },
+    routes: [
+      GoRoute(path: '/', redirect: (_, _) => RoutePaths.home),
+      GoRoute(
+        path: RoutePaths.connect,
+        builder: (_, state) => AddressScreen.fromExtra(state.extra),
+        routes: [
+          GoRoute(
+            path: 'probe',
+            // The request is lost on a web reload: start again at /connect.
+            // `?profile=<id>` instead says that profile's server is too old.
+            redirect: (_, state) =>
+                state.extra is ProbeRequest ||
+                    state.uri.queryParameters.containsKey('profile')
+                ? null
+                : RoutePaths.connect,
+            builder: (_, state) => switch (state.extra) {
+              final ProbeRequest request => ProbeScreen(request: request),
+              _ => ServerTooOldScreen(
+                profileId: state.uri.queryParameters['profile']!,
+              ),
+            },
+          ),
+          GoRoute(
+            path: 'scan',
+            redirect: ScanScreen.redirect,
+            builder: (_, _) => const ScanScreen(),
+          ),
+          GoRoute(
+            path: 'sign-in',
+            builder: (_, state) => SignInScreen(
+              result: switch (state.extra) {
+                final ProbeResult result => result,
+                _ => null,
+              },
+              profileId: state.uri.queryParameters['profile'],
+              relink: state.uri.queryParameters['relink'] == '1',
+            ),
+          ),
+        ],
+      ),
+      for (final kind in DetailKind.values)
+        GoRoute(
+          path: '/${kind.name}/:${kind.parameter}',
+          redirect: (_, state) =>
+              location.detail(kind, state.pathParameters[kind.parameter]!),
+        ),
+      GoRoute(path: RoutePaths.explore, redirect: (_, _) => location.explore()),
+      GoRoute(path: RoutePaths.vibe, redirect: (_, _) => location.vibe()),
+      GoRoute(
+        path: RoutePaths.listenTogether,
+        redirect: (_, _) => location.listenTogether(),
+      ),
+      GoRoute(
+        path: RoutePaths.nowPlaying,
+        // Expanded windows show now playing in the shell: the player bar,
+        // the right panel and the overlay.
+        redirect: (context, _) {
+          final size = MediaQuery.maybeSizeOf(context);
+          return size != null && windowClassOf(size) == WindowClass.expanded
+              ? location.base.toString()
+              : null;
+        },
+        builder: (_, _) => const ProfileScope(child: NowPlayingScreen()),
+      ),
+      GoRoute(
+        path: RoutePaths.settings,
+        builder: (context, _) => const SettingsScreen(),
+        routes: [
+          for (final section in SettingsSection.values)
+            GoRoute(
+              path: section.name,
+              builder: (context, _) => SettingsScreen(section: section),
+              routes: [
+                if (section == SettingsSection.about)
+                  GoRoute(
+                    path: 'licenses',
+                    builder: (context, _) => const LicensesScreen(),
+                  ),
+              ],
+            ),
+        ],
+      ),
+      buildShellRoute(location, history),
+    ],
+  );
+}
+
+/// The app's router, following the [ProfileRuntime].
+final Provider<GoRouter> routerProvider = Provider<GoRouter>((ref) {
+  final gate = AuthGateState(
+    ref.watch(profileRuntimeProvider),
+    ref.watch(versionGateProvider),
+  );
+  final router = createRouter(gate);
+  ref.onDispose(() {
+    router.dispose();
+    gate.dispose();
+  });
+  return router;
+});

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 12 and later: neither a cloud backup nor a device transfer
+     carries the profiles (downloads, state.db, artwork), the profile list
+     in app.db, or the credentials of flutter_secure_storage (doc 10,
+     android:dataExtractionRules; doc 05, Files on Disk). The cache
+     directory is never backed up. -->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="file" path="profiles/"/>
+        <exclude domain="file" path="app.db"/>
+        <exclude domain="file" path="app.db-wal"/>
+        <exclude domain="file" path="app.db-shm"/>
+        <exclude domain="file" path="app.db-journal"/>
+        <exclude domain="sharedpref" path="FlutterSecureStorage.xml"/>
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="file" path="profiles/"/>
+        <exclude domain="file" path="app.db"/>
+        <exclude domain="file" path="app.db-wal"/>
+        <exclude domain="file" path="app.db-shm"/>
+        <exclude domain="file" path="app.db-journal"/>
+        <exclude domain="sharedpref" path="FlutterSecureStorage.xml"/>
+    </device-transfer>
+</data-extraction-rules>

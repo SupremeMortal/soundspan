@@ -36,6 +36,10 @@ to {{VERSION}}. Complete the 2.0.0 breaking changes first. See
 
 {{ACCESSIBILITY_ITEMS}}
 
+## Client
+
+{{CLIENT_ITEMS}}
+
 ## Admin/Operations
 
 {{ADMIN_ITEMS}}

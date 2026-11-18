@@ -205,8 +205,9 @@ export default function DeviceLinkPage() {
                         client to link your device
                     </p>
                     <p className="text-gray-400 text-sm mt-2">
-                        Mobile direction is PWA-first. For native mobile
-                        clients, use Subsonic-compatible apps.
+                        On a phone, use the soundspan app, install this web app,
+                        or connect a Subsonic-compatible app with an app
+                        password.
                     </p>
                 </div>
 

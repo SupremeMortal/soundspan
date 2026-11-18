@@ -1,0 +1,119 @@
+name: Client Contract
+
+# The contract suite of the Flutter client against a real server
+# (docs/designs/flutter-client/11-testing-and-ci.md, Contract Suite). Called
+# by client-quality.yml as client-contract with the backend of the checked-out
+# commit, and by client-nightly.yml over the version matrix with server_ref.
+
+on:
+  workflow_call:
+    inputs:
+      server_ref:
+        description: >-
+          The git ref whose backend the contract server is built from; empty
+          builds the backend of the checked-out commit.
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    name: contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: client/contract_test
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # The server under test, checked out beside the client; compose builds
+      # the backend from it through a second compose file.
+      - name: Checkout the server at ${{ inputs.server_ref }}
+        if: inputs.server_ref != ''
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.server_ref }}
+          path: server-under-test
+
+      # docker compose reads its files from COMPOSE_FILE.
+      - name: Choose the compose files
+        env:
+          SERVER_REF: ${{ inputs.server_ref }}
+          SERVER_DIR: ${{ github.workspace }}/server-under-test
+        run: |
+          if [[ -z "$SERVER_REF" ]]; then
+            echo "COMPOSE_FILE=compose.yaml" >> "$GITHUB_ENV"
+            exit 0
+          fi
+          cat > "$RUNNER_TEMP/server-ref.compose.yaml" <<EOF
+          services:
+            backend:
+              build:
+                context: $SERVER_DIR/backend
+                additional_contexts:
+                  media-metadata-contract: $SERVER_DIR/packages/media-metadata-contract
+          EOF
+          echo "COMPOSE_FILE=compose.yaml:$RUNNER_TEMP/server-ref.compose.yaml" >> "$GITHUB_ENV"
+
+      - name: Set up Flutter
+        uses: ./.github/actions/client-flutter
+
+      - name: Setup Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+
+      - name: Install ffmpeg
+        run: |
+          sudo "$GITHUB_WORKSPACE/scripts/ci/ensure-ubuntu-apt-sources.sh"
+          sudo apt-get install -y --no-install-recommends ffmpeg
+
+      - name: Generate the fixture library
+        run: fixtures/generate.sh
+
+      - name: Start the contract server
+        run: docker compose up -d --build --wait
+
+      - name: Seed the contract server
+        run: node seed.ts
+
+      - name: Contract tests
+        run: dart test --tags contract
+
+      - name: Capture decode smoke fixtures
+        run: dart run tool/capture_fixtures.dart --out "$RUNNER_TEMP/client-captured-fixtures"
+
+      - name: Upload captured fixtures
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: client-captured-fixtures${{ inputs.server_ref != '' && format('-{0}', inputs.server_ref) || '' }}
+          path: ${{ runner.temp }}/client-captured-fixtures
+          if-no-files-found: warn
+
+      - name: Destructive contract tests
+        # Exit code 79 means no test matched: an empty selection passes.
+        run: |
+          status=0
+          dart test --tags contract-destructive || status=$?
+          if [[ "$status" -ne 0 && "$status" -ne 79 ]]; then exit "$status"; fi
+
+      - name: Collect server logs
+        if: failure()
+        run: docker compose logs --no-color > compose-logs.txt 2>&1 || true
+
+      - name: Upload server logs
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: client-contract-logs${{ inputs.server_ref != '' && format('-{0}', inputs.server_ref) || '' }}
+          path: client/contract_test/compose-logs.txt
+          if-no-files-found: warn
+
+      - name: Tear down the contract server
+        if: always()
+        run: docker compose down -v --remove-orphans

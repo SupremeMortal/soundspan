@@ -155,6 +155,7 @@ spec:
             "FEATURE_REQUESTS" true
             "FEDERATION_ENABLED" true
             "SCAN_FILE_CONCURRENCY" true
+            "OPENAPI_VALIDATE_RESPONSES" true
             "CATALOG_PERSISTENCE" true
             "CATALOG_RETENTION_DAYS" true
             "REQUESTS_DENIED_COOLDOWN_DAYS" true
@@ -475,6 +476,13 @@ spec:
             {{- else if not (kindIs "invalid" .Values.config.scanFileConcurrency) }}
             - name: SCAN_FILE_CONCURRENCY
               value: {{ .Values.config.scanFileConcurrency | quote }}
+            {{- end }}
+            {{- if hasKey $backendEnv "OPENAPI_VALIDATE_RESPONSES" }}
+            - name: OPENAPI_VALIDATE_RESPONSES
+              value: {{ index $backendEnv "OPENAPI_VALIDATE_RESPONSES" | quote }}
+            {{- else if not (kindIs "invalid" .Values.config.openapiValidateResponses) }}
+            - name: OPENAPI_VALIDATE_RESPONSES
+              value: {{ .Values.config.openapiValidateResponses | quote }}
             {{- end }}
             {{- if hasKey $backendEnv "CATALOG_PERSISTENCE" }}
             - name: CATALOG_PERSISTENCE

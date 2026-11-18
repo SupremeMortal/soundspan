@@ -1,0 +1,38 @@
+[
+  {
+    "title": "Montserrat",
+    "file": "fonts/Montserrat.txt",
+    "spdx": "OFL-1.1",
+    "platforms": ["android", "ios", "macos", "windows", "linux", "web"]
+  },
+  {
+    "title": "Turret Road",
+    "file": "fonts/TurretRoad.txt",
+    "spdx": "OFL-1.1",
+    "platforms": ["android", "ios", "macos", "windows", "linux", "web"]
+  },
+  {
+    "title": "mpv",
+    "file": "mpv-NOTICE.txt",
+    "spdx": "LGPL-2.1-or-later",
+    "platforms": ["windows", "linux"]
+  },
+  {
+    "title": "FFmpeg",
+    "file": "FFmpeg-NOTICE.txt",
+    "spdx": "LGPL-2.1-or-later",
+    "platforms": ["windows", "linux"]
+  },
+  {
+    "title": "AndroidX Media3",
+    "file": "AndroidX-Media3-NOTICE.txt",
+    "spdx": "Apache-2.0",
+    "platforms": ["android"]
+  },
+  {
+    "title": "SQLite",
+    "file": "SQLite-NOTICE.txt",
+    "spdx": "blessing",
+    "platforms": ["android", "ios", "macos", "windows", "linux", "web"]
+  }
+]

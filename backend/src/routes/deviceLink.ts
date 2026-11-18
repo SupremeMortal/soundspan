@@ -100,35 +100,6 @@ router.post(
     },
 );
 
-/**
- * @openapi
- * /api/device-link/verify:
- *   post:
- *     summary: Verify a device link code and receive an API key
- *     tags: [Device Link]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - code
- *             properties:
- *               code:
- *                 type: string
- *                 description: 6-character device link code
- *               deviceName:
- *                 type: string
- *                 description: Name for the linked device
- *     responses:
- *       200:
- *         description: API key issued for the device
- *       400:
- *         description: Code already used or expired
- *       404:
- *         description: Invalid code
- */
 // Thrown inside the verify transaction when the link code is claimed by a
 // concurrent request between the findUnique fast-path and the atomic claim, so
 // the whole transaction rolls back (no API key is minted) and the handler can

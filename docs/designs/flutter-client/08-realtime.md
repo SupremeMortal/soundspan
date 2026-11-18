@@ -15,6 +15,7 @@ final socket = io(
       .setPath('${basePathPrefix}/socket.io/listen-together')   // Keeps a reverse-proxy sub-path
       .setTransports(['websocket'])                             // Server default allows websocket only
       .disableAutoConnect()
+      .enableForceNew()                                         // Own manager; never the package's per-origin cache
       .enableReconnection()
       .setReconnectionDelay(1000)
       .setReconnectionDelayMax(30000)
@@ -24,7 +25,9 @@ final socket = io(
 );
 ```
 
-- `_authPayload()` returns exactly one of `{ token: <access JWT> }` or `{ apiKey: <key> }`. Sending both is rejected by the server. For JWT sessions it calls `ensureFresh` first so a reconnect after a long sleep does not present an expired token.
+- `_authPayload()` returns exactly one of `{ token: <access JWT> }` or `{ apiKey: <key> }`. Sending both is rejected by the server. For JWT sessions it calls `ensureFresh(minRemaining: 1 min)` first so a reconnect after a long sleep does not present an expired token; the token is checked only at the handshake.
+- `socket_client.dart`, `socket_models.dart` and `socket_exceptions.dart` import nothing from Flutter (the app lifecycle, reachability, timers and logging are injected), so the contract suite imports them by path. The provider wiring lives in `realtime_providers.dart`.
+- socket_io_client leaves some futures unawaited (closing a WebSocket the server already closed); the client runs the socket in its own zone and logs those errors instead of letting them reach the app's error handler.
 - The namespace URL is built from the origin, and the path from the profile's prefix, because socket.io treats the URL path as the namespace.
 - Connection errors: `Invalid token` or `Token expired` → refresh once and reconnect; a second failure, or `User not found`, is handed to `SessionController.onUnauthenticated`. A server-initiated disconnect of an API-key socket (key revoked) is treated the same way after one confirming REST call (`GET /auth/me`).
 
@@ -37,7 +40,9 @@ final socket = io(
 | Mobile app backgrounded, in a group and playing | Stay connected (the audio background mode or foreground service keeps the process alive) |
 | Resume | Reconnect; rejoin the group; refetch presence over REST |
 | Reachability not `online` | Reconnection attempts pause; resume on `online` |
-| Profile switch or sign-out | Dispose |
+| Profile switch or sign-out | Dispose. Sign-out registers a `SignOutParticipant` that leaves the joined group (2 s budget, errors ignored) and then disposes |
+
+"Opened lazily" is a lease count: `acquire(reason)` returns a `SocketLease`; the socket connects while at least one is held and disconnects when the last is released. "In a group and playing" is a predicate Listen Together supplies; until then nothing keeps the socket alive in the background. On every reconnection after the first connection the client sends `join-group` again for the group it was in and publishes a `reconnected` event so callers refetch over REST.
 
 ### Typed Events
 
@@ -64,7 +69,7 @@ Future<int> ping();                                   // lt-ping → serverTime
 
 Queue additions always send `tracks: [{ playbackId, metadata }]`. The legacy `trackIds` form and the source-specific fields of `SyncQueueItem` (`streamSource`, `provider`, `tidalTrackId`, …) are not declared in the client's models.
 
-Error acknowledgements `{ error, code?, transient?, retryable?, retryAfterMs? }` map to `SocketCommandException`; a `retryable` conflict is retried once after `retryAfterMs`.
+Error acknowledgements `{ error, code?, transient?, retryable?, retryAfterMs? }` map to `SocketCommandException`; a `retryable` conflict is retried once after `retryAfterMs` (250 ms when absent). Emitting while disconnected fails at once with `SocketNotConnected`; no acknowledgement within 5 s fails with `SocketAckTimeout`. `group:availability` is not subscribed. Unknown `syncState` and `groupType` strings decode to `unknown`; a payload that does not decode is logged and dropped. A queue entry without `playbackId` is not playable.
 
 ## Listen Together
 
@@ -76,6 +81,8 @@ Error acknowledgements `{ error, code?, transient?, retryable?, retryAfterMs? }`
 2. Save the local queue and position in memory so leaving can restore them.
 3. Connect the socket if needed; `join-group { groupId }`; the server emits `group:state`.
 4. Attach the driver. The controller's queue becomes the group's queue.
+
+A failure at any step undoes the earlier ones: the socket lease is released, the REST membership is left, and the local queue keeps playing, since nothing was replaced yet. Joining while in a group leaves that group first. A group created from the current queue starts with the queue's track entries from the current one on, in play order (episodes and entries without a `playbackId` left out, at most 500), with `currentTimeMs` and `isPlaying`; `queueTrackIds` and `currentTrackId` are never sent. After attaching, `setRemoteCanControl` is false for a member other than the host of a `host-follower` group. `ListenTogetherController` lives at the root of `lib/features/listen_together/` (doc 02), and supplies the socket's background keep-alive predicate, "in a group and playing". Closing the profile while in a group leaves it within 2 s and then drops the local state.
 
 ### Clock Synchronisation
 
@@ -90,7 +97,7 @@ on connect, then every 30 s while in a group:
     offset = sample with the smallest rtt
 ```
 
-`serverNow() = monotonicNow() + offset`. A monotonic clock (`Stopwatch`) is used so wall-clock adjustments on the device do not disturb sync.
+`serverNow() = monotonicNow() + offset`. A monotonic clock (`Stopwatch`) is used so wall-clock adjustments on the device do not disturb sync. A round also runs on every reconnection. A ping that fails or times out is skipped; when all five fail the previous offset is kept. The code is `lib/core/realtime/clock_sync.dart`.
 
 ### Applying State
 
@@ -109,7 +116,15 @@ expectedPositionMs(state) = state.isPlaying
 | `group:playback-delta` | Apply play/pause; correct position (below) |
 | `group:ended`, `membership-revoked` | Detach the driver; restore the saved local queue, paused; show why |
 
-Messages carry `stateVersion`; one older than the last applied is ignored.
+Messages carry `stateVersion`; one older than the last applied is ignored, and one equal to it is applied again (the handlers are idempotent). `group:waiting` carries no version and is always applied. The first `group:state` after a join or a reconnection is always applied and resets the watermark, so a server restart cannot wedge the client.
+
+Details of the table:
+
+- Queue entries become single-track queue items whose id is built from the entry's index and `playbackId`, so an entry that stays at the same index with the same `playbackId` keeps playing across a `group:queue-delta`; any other current entry is loaded at the expected position, playing when the group plays. An empty queue stops playback.
+- `group:state` with `syncState` `playing` plays after the load; `paused` and `idle` stay paused; `waiting` behaves as `group:waiting`. It also replaces the member list, the host and whether this device may control playback. Member events update the member list (and the host, when one leaves) and never touch playback.
+- `group:playback-delta` naming another `currentIndex` moves the cursor and loads that item at the expected position.
+- A scheduled `play-at` start is cancelled by a newer `play-at`, a pause, a `group:waiting` or a `group:state`.
+- If the current item fails to load or play (`onCurrentItemFailed`, doc 06), the client sends `track:playback-failed` with its queue index and waits for the server's next message.
 
 ### Drift Correction
 
@@ -122,13 +137,26 @@ drift = enginePosition − expectedPositionMs
 |drift| ≥ 1500 ms           → seek to expected immediately
 ```
 
+No correction is made while the engine is loading or buffering, while a `play-at` start is scheduled, or within 1 s after a seek or load the controller issued. Every time used here comes from the monotonic clock and the measured offset. The arithmetic is `lib/features/listen_together/group_sync.dart`, which imports nothing so the contract suite can use it.
+
 Rate nudging (playing slightly faster or slower) is not used: engine speed changes are audible on some backends.
 
 ### Commands From This Device
 
 While attached, UI transport and queue commands are sent to the server and **not** applied locally; the UI updates when the resulting delta arrives. Buttons show a pending state for up to 5 s (the ack timeout), then an error.
 
-- Host-follower groups: followers see transport controls disabled, with "The host controls playback". Volume, lyrics, and liking stay local.
+| Command | Socket call |
+|---|---|
+| Play, Pause, Next, Previous | `playback(play \| pause \| next \| previous)`; TogglePlayPause sends play or pause by the group's playing flag, Stop sends pause |
+| Seek | `playback(seek, positionMs, stateVersion: last applied)` |
+| JumpTo | `playback(set-track, index)` |
+| Append, PlayNext | `queue(add \| insert-next, tracks: [{ playbackId, metadata }])` |
+| RemoveAt, Move, Clear | `queue(remove \| reorder \| clear)` with indices in group-queue order |
+| PlayItems (replace all) | `queue(clear)`, `queue(add)`, then `playback(set-track)` when the start item is not the first shared one; only when this device may control playback |
+| SetShuffle, SetRepeat | Not sent: the group has neither |
+
+- `ListenTogetherActive.pending` holds the commands awaiting an acknowledgement. A command leaves it on the acknowledgement, on an error, or after 5 s. Failures are never thrown: they are published as `ListenTogetherActive.lastCommandError` (`GroupCommandRejected`, `GroupCommandTimedOut`, `GroupCommandOffline`, `HostControlsPlayback`, `RemoteCommandUnsupported`, or `ItemsNotShareable` when episodes and tracks without a `playbackId` were left out of an addition).
+- Host-follower groups: followers see transport controls disabled, with "The host controls playback"; a transport command or a replace-all from a follower is refused locally without being sent. Queue additions, removals, moves and clears are sent and the server decides. Volume, lyrics, and liking stay local.
 - If the current item fails to load on this device: `track:playback-failed { queueIndex }`.
 - Play reporting, loudness, and downloads behave as in solo playback. A downloaded file is used when present; sync works on position, not on bytes.
 
@@ -141,11 +169,13 @@ While attached, UI transport and queue commands are sent to the server and **not
 - **Heartbeat:** `POST /api/social/presence/heartbeat` every 25 s while the app is in the foreground (the web cadence). Stopped in the background and while offline. Playback state posts ([06](06-playback.md)) already publish what is playing.
 - **Reading presence:** `GET /api/social/online` when the presence panel opens. While it is open the socket is connected and each `social:presence-updated` event schedules a debounced (1 s) refetch. The event names only a user id, so the list is always re-read over REST.
 - **UI:** an "Activity" panel on expanded layouts (toggled from the top bar) and a sheet from the avatar menu elsewhere, listing users with Playing/Paused/Idle and the current track. Federation peers appear in a second section when the server has `federation` enabled.
-- Presence is off until the user opens the panel once per session; it is not needed for playback.
+- Presence is off until the user opens the panel once per session; it is not needed for playback. From the first opening until the profile closes the heartbeat runs (foreground and `online` only, an immediate beat on each resume); the socket lease and the roster requests last only while the panel or sheet is open, and the last roster is kept for the next opening. A heartbeat answered with `FeatureDisabled` or `Forbidden` stops for the session; any other failure is logged and the cadence goes on.
+- The current user is left out of the roster. `peers` is not declared in the client-surface spec, so `PresenceRepository` reads it from the response's additional properties (`peerName`, and per user `username`, `displayName`, `status` and an optional `track` of title, artist and album) and leaves out entries of another shape.
+- The code is `lib/core/realtime/presence_repository.dart`, `presence_controller.dart` (profile-scoped) and `lib/features/social/ui/activity_view.dart`.
 
 ## Testing
 
-- `SocketClient` against a local `socket_io` test server in `dart test`: handshake payloads for both credential kinds, reconnect with a refreshed token, ack timeout, error mapping.
+- `SocketClient` against a local socket.io server in `flutter test` (plain `test()`, real sockets): handshake payloads for both credential kinds, reconnect with a refreshed token, ack timeout, error mapping, leases, lifecycle and sign-out. No maintained Dart socket.io v4 server exists, so the server is a small Node script, `client/test/support/socket_server/server.mjs` (the backend's `socket.io` version, scriptable over `POST /__control`), started by `test/helpers/socket_test_server.dart`. The `client-test` job installs it with `npm ci`; a missing `node` fails the tests.
 - `ListenTogetherController` with `FakeEngine`, a fake clock, and a scripted event stream: each row of the "Applying State" table, drift thresholds, stale `stateVersion`, leave restores the queue.
 - Contract suite: two API clients (JWT and API key) join one group on the real server; a queue add by `playbackId` from one is observed by the other.
 - Manual: two physical devices in one room, playing the same group; audible offset below 100 ms on the same network.

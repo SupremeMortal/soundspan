@@ -58,6 +58,7 @@ jest.mock("../../../utils/logger", () => ({
 import type { Request, Response } from "express";
 import { getPlaybackStreamInfo } from "../playbackStreamInfo";
 import type { ResolvedPlayback } from "../resolvePlayback";
+import { expectClientSurfaceResponse } from "../../../routes/__tests__/helpers/expectClientSurfaceResponse";
 
 const MW = { ytMusicStreamLimiter: false, ytMusicEnabledCheck: false };
 
@@ -85,6 +86,8 @@ async function run(playback: ResolvedPlayback, playbackId: string) {
         req,
         res,
     });
+    // Every body, success or error, must match the getStreamInfo operation.
+    expectClientSurfaceResponse("getStreamInfo", res);
     return res;
 }
 
@@ -303,6 +306,7 @@ describe("getPlaybackStreamInfo", () => {
             kind: "t",
             trackId: "trk1",
             quality,
+            recordPlay: true,
             libraryQuality: quality,
             middleware: MW,
         });

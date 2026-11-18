@@ -19,56 +19,6 @@ const getRequestUserId = (req: any): string | null => {
     return req.user?.id || null;
 };
 
-/**
- * @openapi
- * /api/mixes:
- *   get:
- *     summary: Get all programmatic mixes
- *     description: Returns all auto-generated mixes (era-based, genre-based, top tracks, rediscover, artist similar, random discovery)
- *     tags: [Mixes]
- *     security:
- *       - apiKeyAuth: []
- *     responses:
- *       200:
- *         description: List of programmatic mixes
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 type: object
- *                 properties:
- *                   id:
- *                     type: string
- *                     example: "era-2000"
- *                   type:
- *                     type: string
- *                     enum: [era, genre, top-tracks, rediscover, artist-similar, random-discovery]
- *                   name:
- *                     type: string
- *                     example: "Your 2000s Mix"
- *                   description:
- *                     type: string
- *                     example: "Music from the 2000s in your library"
- *                   trackIds:
- *                     type: array
- *                     items:
- *                       type: string
- *                   coverUrls:
- *                     type: array
- *                     items:
- *                       type: string
- *                     description: Album covers for mosaic display (up to 4)
- *                   trackCount:
- *                     type: integer
- *                     example: 42
- *       401:
- *         description: Not authenticated
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- */
 router.get("/", async (req, res) => {
     try {
         const userId = getRequestUserId(req);
@@ -920,64 +870,6 @@ router.post("/:id/save", async (req, res) => {
     }
 });
 
-/**
- * @openapi
- * /api/mixes/{id}:
- *   get:
- *     summary: Get a specific mix with full track details
- *     tags: [Mixes]
- *     security:
- *       - apiKeyAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: Mix ID (e.g., "era-2000", "genre-rock", "top-tracks")
- *     responses:
- *       200:
- *         description: Mix with full track details
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 id:
- *                   type: string
- *                 type:
- *                   type: string
- *                 name:
- *                   type: string
- *                 description:
- *                   type: string
- *                 trackIds:
- *                   type: array
- *                   items:
- *                     type: string
- *                 coverUrls:
- *                   type: array
- *                   items:
- *                     type: string
- *                 trackCount:
- *                   type: integer
- *                 tracks:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/Track'
- *       404:
- *         description: Mix not found
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *       401:
- *         description: Not authenticated
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- */
 router.get("/:id", async (req, res) => {
     try {
         const userId = getRequestUserId(req);

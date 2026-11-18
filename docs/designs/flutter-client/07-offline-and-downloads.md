@@ -12,7 +12,7 @@ Native targets only. On web `PlatformCapabilities.canDownload` is false and ever
 
 ## Requesting a Download
 
-`DownloadController.pin(kind, refId)`:
+`DownloadController.pin(kind, refId, {snapshot})` (`lib/core/downloads/download_controller.dart`, one per profile, created by `startDownloads`). `snapshot` (`CollectionSnapshot`: title, subtitle, artwork ref, tracks) is what the caller already shows; the server's answer carries no metadata. Calls run one at a time:
 
 1. Insert the collection row with status `resolving`. The UI shows it immediately.
 2. `POST /api/offline/items { kind, id, deviceId, quality? }`. `quality` is the `quality.download` device setting, omitted for "server default".
@@ -22,12 +22,26 @@ Native targets only. On web `PlatformCapabilities.canDownload` is false and ever
    - `downloadable: false` → membership recorded with the item in status `unavailable` and the server's `reason`. Shown greyed out, without source wording: `SOURCE_DOWNLOADS_DISABLED` → "Downloads are turned off on this server", `TRACK_UNAVAILABLE` → "No longer available", `SOURCE_UNAVAILABLE` → "Not available for your account".
    - `downloadable: true` and the item is already `completed` at the same quality → add the membership only.
    - Otherwise upsert the item as `queued` with `downloadUrl`, `expectedBytes`, `quality`, and a metadata snapshot.
-6. Check the local quota (below). Items that do not fit stay `queued` with `waitingFor: space`.
+6. Check the local quota (below, Device limit pass). Items that do not fit stay `queued` with `waitingFor: space`.
 7. Hand queued items to the scheduler.
 
 Offline at step 2: the collection stays `resolving(pendingNetwork)` and is retried when the server is reachable. Nothing is added to the outbox; the collection row is the pending work.
 
+- Pinning a pinned collection runs the steps again (the refresh path): rows are upserted, never duplicated, and the collection keeps its `requestedAt`, title and metadata when no snapshot is given.
+- An item's `metaJson` is the `TrackMeta` plus `albumId`, `artistId`, `loudness`, `discNumber` and `trackNumber` of the snapshot track with the same `playbackId`, else of the `cache.db` `tracks` row, else a meta with empty strings for the upkeep pass to fill.
+- An item already `completed` gains the membership only, whatever its quality: a file at another quality is kept (no re-download in v1). An item already `queued`, `running`, `verifying`, `paused` or `failedRetryable` also keeps its transfer and gains the membership only.
+- An unavailable item's `failureCode` is the server's `reason` (`UNKNOWN` for a reason the client does not know). `DownloadUnavailableReason` maps each code to the l10n id of its message (`downloadUnavailableDisabled`, `downloadUnavailableGone`, `downloadUnavailableAccount`).
+- Step 2 failures other than the two 409s: `Offline`, `ServerError`, `Upstream` and `RateLimited` (and a call while reachability is not `online`, which sends nothing) leave the collection `pendingNetwork`. `NotFound` removes the collection as `unpin` does and reaches the caller. Any other error also leaves it `pendingNetwork` and reaches the caller, so no collection stays `resolving`.
+- `retryPendingCollections()` runs step 2 onward for every `pendingNetwork` collection when reachability returns to `online`. The scheduler's `ReResolveCollection` effect runs `pin` again for each collection the failed item belongs to.
+- `watchCollection(kind, refId)` (`CollectionDownloadState`: status, block and its detail, item, completed, unavailable, active, failed and user-paused counts, received and total bytes), `watchItem(key)` and `watchItems()` (`ItemDownloadState`, one item or every item by key) and `watchCollectionEntries()` (every track, album, playlist and episode collection in request order with its snapshot title, subtitle and artwork ref, the album of a single track, and its state) are what the UI reads; `unavailableItems(kind, refId)` lists the title and `DownloadUnavailableReason` of each unavailable item.
+- User actions on transfers: `retry(key)` delivers `RetryPressed` to a failed item; `retryCollection(kind, refId)` does so for each failed item of the collection, or pins a `blocked` or `pendingNetwork` collection again; `pauseCollection` / `resumeCollection` and `pauseAll` / `resumeAll` delegate to the scheduler's user pause. `deviceLimitToFitAll()` answers the device limit at which every queued item fits (the committed bytes, queued items included), or null when free disk space is the bound; "Raise limit" passes it to `raiseDeviceLimit`.
+
 Podcast episodes do not use `/api/offline/items` (the unified offline API covers tracks only). An episode download uses the episode stream URL directly, with no server-side accounting; everything else below applies.
+
+- `pinEpisode(podcast, episode)` makes no server call. In one transaction it records the collection (`CollectionKind.episode`, `refId` `<podcastId>:<episodeId>`, the episode title, the podcast title as subtitle, the episode or podcast cover), the item (`EpisodeItemKey`, `mediaType: episode`, `queued`, no `downloadUrl`, size or quality, and an `EpisodeDownloadMeta` as `metaJson`: episode and podcast ids and titles, duration, publication date, artwork ref, description and the latest local position) and the membership; then the device limit applies (unknown size counts 8 MB) and the scheduler pumps. Offline the item waits for the scheduler's reachability rule. Episode collections are single items (first priority class) and always `ready`.
+- `DownloadRequestBuilder` requests `StreamUrls.episode(podcastId, episodeId)` for an episode item, with the same headers and 12-hour credential rule. Verification takes the `expectedBytes == null` branch: the response `Content-Length` when present, else any non-empty file.
+- `CollectionKind.episode` never reaches `OfflineRepository` (`resolve` asserts it): `pin` refuses it, retries and re-resolution skip episode collections, `refreshCollection` leaves them unchanged, `SendComplete` and `unpinEpisode` report nothing, and a 404 leaves the item `failedPermanent` with nothing re-resolved. `serverConfirmed` stays false.
+- `recordEpisodePosition` keeps the latest position the `EpisodeProgressReporter` saves (zero once finished) in the item's `metaJson`, so an offline start after a restart resumes there when no cached podcast detail holds a progress. `watchDownloadedEpisodes()` lists the metadata of the completed episode downloads; the podcast pages show those, built from `metaJson`, when nothing of the podcast list or detail is cached.
 
 ## Item State Machine
 
@@ -47,10 +61,10 @@ Podcast episodes do not use `/api/offline/items` (the unified offline API covers
 | Transition | Trigger | Action |
 |---|---|---|
 | `queued → running` | Scheduler slot free, constraints met | Enqueue a `DownloadTask`; store `taskId` |
-| `running → verifying` | Transfer reports complete | See Verification |
+| `running → verifying` | Transfer reports complete | `VerifyFile` effect; see Verification |
 | `verifying → completed` | Size check passes | Atomic rename `.part` → final path; set `sizeBytes`, `completedAt` |
 | `completed → confirmed` | `POST /api/offline/items/complete` succeeds | `serverConfirmed = true` (a flag on the completed row, not a separate status) |
-| `running → paused` | User pause, Wi-Fi-only and not on Wi-Fi, disk full | Pause the task if resumable, else cancel and keep `.part` |
+| `running → paused` | User pause, Wi-Fi-only and not on Wi-Fi, disk full | Cancel the task; the item restarts from byte zero when it runs again (Resume Rule) |
 | `running → failed(retryable)` | Network error, 5xx, 429, 401 | Backoff 5 s × 3^attempts, cap 1 h; 401 refreshes credentials first |
 | `running → failed(permanent)` | 400, 404, 409 | No retry. 404/409 re-resolve the collection once (the server may now say `downloadable: false`) |
 | `completed → missing` | File absent at play time or at the start-up scan | Re-queue |
@@ -74,25 +88,27 @@ DownloadTask(
   updates: Updates.statusAndProgress,
   requiresWiFi: settings.downloadsWifiOnly,
   retries: 0,                                  // The state machine owns retries
-  allowPause: true,
+  allowPause: false,                           // Resume Rule: transfers restart from zero
   metaData: item.itemKey,
 );
 ```
 
 - **Concurrency:** 2 active transfers per profile. The controller's scheduler releases the next `queued` item when a slot frees; it does not hand the whole queue to the OS, so priorities and pausing stay under app control. Order: user-initiated single tracks first, then collections in request order, then items inside a collection in track order.
-- **Android:** transfers run in WorkManager. Batches estimated above 50 MB run as a foreground service with a progress notification (channel "Downloads"), because long expedited work is otherwise deferred. `POST_NOTIFICATIONS` is requested the first time a download starts.
+- **Android:** transfers run in WorkManager. Batches estimated above 50 MB run as a foreground service with a progress notification (channel "Downloads"), because long expedited work is otherwise deferred. `POST_NOTIFICATIONS` is requested the first time a download starts. The policy is `planFor` (`lib/core/downloads/download_notification_policy.dart`), applied by `DownloadBatchNotices` through the `DownloadNotifier` seam ([10](10-platform-integration.md), Downloads notification).
 - **iOS:** background `URLSession`. The OS decides when to run discretionary transfers; user-initiated downloads are marked high priority. After the app is killed and relaunched by the OS for session events, the root-scope handler records results in the right profile's `state.db` ([04](04-auth-and-server-profiles.md), Multiple Profiles).
+- **Inactive profiles:** `BackgroundDownloadRouter` (`lib/core/downloads/background_download_router.dart`, root scope) is started by `startDownloads` before any scheduler and starts the `Downloader` itself, so the events it delivers at start-up are routed. Events of the profile whose scheduler is running are that scheduler's. For any other existing profile, `Completed` (→ `verifying`), `Failed` and `Paused` are applied through `reduce` and `DownloadStore` on that profile's `state.db`, opened through `DatabaseOpener` for one batch (events arriving within 250 ms) and closed; batches of one profile run one after another; progress and response events are dropped; effects are left to that profile's scheduler, which verifies `verifying` rows and re-arms retries when it starts. An event for a profile id that no longer exists cancels the task and deletes its `.part` file.
 - **Desktop:** in-process transfers; they stop when the app quits and resume on next start.
-- **Start-up:** `FileDownloader().start()` re-attaches to OS tasks; `resumeFromBackground()` delivers events that arrived while the app was dead. Then the controller reconciles `download_items` in `running` with the plugin's task records: a `running` row with no live task goes back to `queued`.
+- **Start-up:** `FileDownloader().start()` re-attaches to OS tasks; `resumeFromBackground()` delivers events that arrived while the app was dead. Then the controller reconciles `download_items` in `running` with the plugin's task records: a `running` row with no live task goes back to `queued`; then each `verifying` row (a transfer that finished but was never checked, because the app died in between) is handed to the controller with a `VerifyFile` effect that carries no content type, so its final file gets the `bin` extension, and verification passes or fails as in Verification (a missing `.part` with no final-named file is a `VerificationFailed`, retried after the backoff); and each `failedRetryable` row's retry is re-armed from its stored `nextAttemptAt`.
+- **Scheduler:** `DownloadScheduler` (`lib/core/downloads/download_scheduler.dart`, one per profile, started by `startDownloads` in bootstrap step 8) owns the slots, the order and the constraints. It enqueues one task per free slot after checking, in turn: reachability is `online` (otherwise nothing starts and running tasks finish or fail on their own); with `downloads.wifiOnly` the connection is Wi-Fi or another non-cellular kind such as Ethernet (otherwise running tasks are paused with `waitingFor: wifi` and resume when the connection allows); and `DiskSpace.freeBytes(media) − 500 MB` covers the item's remaining bytes (otherwise it stays `queued` with `waitingFor: space`; unknown free space skips this check). A `waitingFor: space` marker the scheduler did not set itself belongs to the device limit and is skipped until cleared. A downloader `noSpace` failure pauses the item for space without counting an attempt; a `cancelled` one it did not ask for is `TaskLost`. It pumps on start, on every terminal event, on a return to `online`, on a connection-type change (`ReachabilityController.connectionTypeChanges`), on a change of `downloads.wifiOnly`, and when the controller calls `pump()`. It runs `EnqueueTask`, `PauseOrCancelKeepingPart`, `ScheduleRetry` and `RefreshCredentials` (`SessionController.refreshNow`) itself and emits the other effects for the controller; it adds the response `Content-Type` it saw to `VerifyFile` (kept in memory only, so a completion delivered after a restart has none and the file gets the `bin` extension). The controller hands its results back with `deliver(key, event)`, which runs in turn with the scheduler's own steps, and sets or clears the device-limit markers with `applyDeviceLimit(fitting, waiting)`. A user pause holds a queued item with `waitingFor: user`.
 - **Credentials in queued tasks:** headers are fixed at enqueue time. JWT sessions call `ensureFresh(minRemaining: 12 h)` before each enqueue. A transfer that still gets 401 is retried with fresh headers.
 
 ### Resume Rule
 
 The server contract (`unified-playback-api.md`, P4) is: resume with `Range` and `If-Range: <ETag>`; `206` continues the file; `200` means restart from byte zero.
 
-- The plugin's own pause/resume records the `ETag` and sends `Range` and `If-Range`. Spike S5 verifies both halves against the real server: that a `206` appends, and that a `200` to a ranged request truncates the partial file before writing instead of appending.
-- If S5 shows the plugin appends on `200`, the fallback is to never use plugin resume for items whose first response had no strong `ETag`: those are cancelled and restarted from zero, and only strong-`ETag` items are resumed.
-- The item row stores `etag` from the first response for diagnostics and for the fallback rule.
+- The plugin's own resume sends `Range` without `If-Range` (Spike S5 finding), so it does not follow that contract and is not used.
+- A paused or interrupted transfer is always cancelled and restarted from byte zero: tasks are created with `allowPause: false`, and an item that runs again gets a new transfer of the whole file.
+- The item row stores `etag` from the first response for diagnostics.
 
 ### Verification
 
@@ -100,7 +116,9 @@ The server contract (`unified-playback-api.md`, P4) is: resume with `Range` and 
 - If `expectedBytes` is null, compare with the response `Content-Length` when present; otherwise accept.
 - A zero-byte file is always a failure.
 - No checksum: the server offers none.
-- After the rename, `POST /api/offline/items/complete { deviceId, playbackId, quality, sizeBytes }` is sent directly when online, or as an outbox operation otherwise.
+- The controller checks the `.part` file through the `MediaFiles` seam (`length`). A `Content-Length` sent where the server announced no size is stored as `expectedBytes` when the response arrives, so one comparison covers both rules.
+- A pass renames `.part` to `DownloadPaths.finalFile(hash, contentType)` (`MediaFiles.replace`: same directory, an existing target is replaced) and then delivers `VerificationPassed(sizeBytes, relativePath)`, which sets `completedAt`; the `RenamePartToFinal` effect it emits has nothing left to do. A rename that throws is a `VerificationFailed`, whose `DeleteFile` effect deletes the `.part` file. A crash between the rename and the row update is repaired by whichever runs first at start-up, with the same rule; there is no journal. Verification adopts it: when the `.part` file is missing and a final-named file `media/<hh>/<hash>.<ext>` exists (found with `MediaFiles.listFiles` of the fan-out directory), that file is checked against `expectedBytes` (any non-empty size when unknown) and passes with its existing path, or is deleted and the item receives `VerificationFailed`. The local scan (Reconciliation) adopts it when it runs while the row is still `verifying` or `running`.
+- After the rename, `POST /api/offline/items/complete { deviceId, playbackId, quality, sizeBytes }` is sent directly when online, or as an outbox operation otherwise. A direct call that fails with `Offline`, `ServerError`, `Upstream` or `RateLimited` also goes to the outbox (`OfflineCompleteQueue`, an `offlineComplete` op); when the op is delivered its handler marks the item `serverConfirmed`. Any other refusal, 404 and 409 included, leaves the item `completed` and unconfirmed for reconciliation. `quality` is the item's stored quality, else the `quality.download` setting, else `original`. Episodes are not reported.
 
 ## Storage Accounting and Quota
 
@@ -113,18 +131,40 @@ Two independent limits apply.
 
 - Before queuing, the client sums `sizeBytes` of completed items, `expectedBytes` of queued ones (unknown sizes estimated at 8 MB), and compares with the device limit and with free disk space minus a 500 MB reserve.
 - When pinned content would exceed the device limit, the sheet says how much is needed and offers "Raise limit" or "Download what fits".
+- **Device limit pass** (`DownloadController`, pure part in `download_quota.dart`): `evaluateQuota` takes the queued items in schedule order and fits a prefix of them into `min(limit − committed, free − 500 MB)`, where committed is everything but the queued items and free is the disk's free space less the remaining bytes of running and paused transfers (no disk term when free space is unknown). Items past the cut wait with `waitingFor: space`; items within it lose a `space` marker (the scheduler re-checks free disk space by itself); a user hold is kept. The pass runs after each pin, after each unpin, on `raiseDeviceLimit(bytes)` and `recheckSpace()`, at start-up and whenever `downloads.quotaBytes` changes. The default limit is written the first time a pass has queued items to place. "Download what fits" needs no call: it is the state a pin leaves.
+- `CollectionDownloadState.quotaShortfall` (`QuotaShortfall { neededBytes, availableBytes }`) is set while any of the collection's items is queued or paused with `waitingFor: space`, whether the device limit or a full disk (a downloader `noSpace` failure) put it there: the bytes those items still need and the room left for them after the queued items that fit. A server quota refusal is a `blocked(serverQuota)` collection, not a shortfall.
 - **Auto-cache (non-pinned)** is off in v1. The table and eviction order (`lastPlayedAt` ascending) are in place so that "keep recently played tracks" can be added without a migration; `downloads.autoCacheBytes` defaults to 0.
-- `Settings → Storage` shows per-profile totals for downloads, image cache, and database, with "Remove all downloads" and "Clear cache".
+- `Settings → Storage` (`lib/features/settings/ui/storage_settings_screen.dart`) shows per-profile totals for downloads, image cache, and database, with "Remove all downloads" and "Clear cache".
+  - **Usage** (`StorageUsageCalculator` in `lib/shared/storage/storage_usage.dart`; `lib/shared/` because `core/storage` may not import `core/downloads`): downloads are the count and summed `sizeBytes` of `completed` rows, not a directory walk; the image cache is the size of the profile's `images/` directory and the database figure the size of `state.db` and `cache.db` with their `-wal` and `-shm` files, both measured through the `FileSizes` seam off the UI isolate; free space is `DiskSpace.freeBytes`. Without profile paths (web) every figure is zero and the screen leaves the device rows out.
+  - **Download settings** (only where `PlatformCapabilities.canDownload`): `quality.download` (Server default, Original, High, Medium, Low; applies to new downloads), `downloads.wifiOnly`, and `downloads.quotaBytes` on a slider of fixed steps (1, 2, 5, 10, 20, 50, 100, 200 GB and "No limit", stored as 2⁵⁰ bytes) offering the steps up to free space plus what downloads use; an unset limit shows the default above. A change of the limit is stored and followed by `DownloadController.recheckSpace()`.
+  - **Wi-Fi only default:** while `downloads.wifiOnly` is unset it is on where the device can be on mobile data (`PlatformCapabilities.hasMobileData`: Android and iOS) and off elsewhere; `wifiOnlyFromStored` holds the rule for both the scheduler and the screen.
+  - **Server figures:** "Used on the server: X of Y" and "From this device: Z" from `OfflineRepository.stats`, read-only; left out while offline or when the request fails.
+  - **Clear cache** (`StorageActions.clearCache`, `lib/shared/storage/storage_actions.dart`): empties the image cache through its `CacheManager`, closes `cache.db`, deletes it through the `DatabaseOpener` and invalidates the provider so the next reader opens it empty. `state.db`, `media/` and `art/` are untouched, so downloads keep playing.
+  - **Remove all downloads** (`StorageActions.removeAllDownloads`): `DownloadController.unpinAll()` unpins every collection, tracks and episodes, as `unpin` does (transfers cancelled, files deleted, track `playbackId`s sent as `offlineDelete` operations, episodes not reported), then everything left under `media/` is deleted: with no row left, every file there is an orphan.
 
 ## Removing Downloads
 
-`unpin(kind, refId)`: delete the membership rows; for each item left with no membership, delete the file, delete the row, and add its `playbackId` to a batched `DELETE /api/offline/items { deviceId, playbackIds }` (≤ 500 per request; outbox operation when offline). Removing an item that is currently playing lets playback finish from the open file handle on POSIX systems; on Windows the delete is deferred until the engine releases the file.
+`unpin(kind, refId)`: delete the collection and its membership rows; for each item left with no membership, cancel its transfer (`DownloadScheduler.cancelItem`), delete its `.part` and final files through the `MediaFiles` seam, delete the row, and add its `playbackId` to a batched `DELETE /api/offline/items { deviceId, playbackIds }` (≤ 500 per request). The batches always go through the outbox as `offlineDelete` operations, which drain at once when online; the outbox handler, bound in `lib/shared/data/downloads/` because `downloads` and `sync` may not import each other, calls `OfflineRepository.delete`. Unavailable items are removed with their membership and not reported. Removing an item that is currently playing lets playback finish from the open file handle on POSIX systems; on Windows the delete fails while the engine holds the file, the error is ignored, and the start-up scan (Reconciliation, step 5) removes the orphaned file.
+
+### Artwork
+
+`DownloadArtwork` (`lib/core/downloads/download_artwork.dart`, one per profile, started by `startDownloads` after the scheduler) keeps the covers of downloaded items and their collections in `profiles/<id>/art/<sha1(ref)>.img` (the lower-case hex SHA-1 of the artwork ref, which is hashed and never parsed), so offline rows, the Downloads tab and the Android Auto Downloads root show covers with no network and no credentials. It fetches the 512-pixel cover through the profile's image cache (`lib/core/storage/artwork_fetcher.dart`, shared with `now-playing.img`) and writes it through the `ArtworkStore` seam. It reacts to the `DownloadController.events`: an item reaching `completed` pins its own ref and those of its collections; a collection resolving to `ready` pins its ref at once; a removed collection runs `removeUnreferenced`, which deletes every `<sha1>.img` no item or collection `metaJson` references and never touches `now-playing.img`. The first time reachability is `online` after start, refs of `completed` items and `ready` collections with no file are pinned one after another, at most four fetches a second. A failed fetch is logged at `fine` and repaired at the next start; it never fails an item. Offline, nothing is fetched. Pins of one ref share one fetch, and an existing file is answered without a request. `pin` and `fileFor` answer absolute paths, because `dart:io` stays under `lib/platform/`. The UI shows such a file through `artworkFileImage(path)` of the `ArtworkStore` seam (null on web). Where `PlatformCapabilities.canDownload` is false the provider is `NoDownloadArtwork`. Artwork does not count toward the device limit.
 
 ## Keeping Collections Current
 
-- **Playlists:** when a pinned playlist's detail is refreshed and its track list differs from the membership set, the controller re-runs `POST /offline/items { kind: playlist }` and diffs: new items are queued, removed ones are unpinned. A local edit to a pinned playlist triggers the same pass.
-- **Albums:** re-resolved at most once a day and on manual refresh.
-- **Podcasts:** no auto-download in v1; episodes are pinned individually.
+`CollectionUpkeep` (`lib/core/downloads/collection_upkeep.dart`, one per profile, started by `startDownloads` after the reconciler) decides when a pinned collection is resolved again; `DownloadController.refreshCollection(kind, refId, {snapshot})` applies the difference in the controller's call order, reusing the pin's item upsert and the unpin's removal:
+
+- New downloadable items are queued and gain a membership, as in step 5. Items the server no longer returns lose their membership; one left with no membership is cancelled, deleted with its files and reported in an `offlineDelete` batch, as `unpin` does.
+- A refused item that is `queued`, `failedRetryable`, `failedPermanent` or `unavailable` becomes `unavailable` with the server's reason; a `completed` one (and one in transfer) is left in place, since revocation belongs to Reconciliation. An `unavailable` item the server now accepts is queued.
+- The membership order is rewritten to the server's order; an item whose `metaJson` title is empty is filled from the snapshot or `cache.db`; a snapshot replaces the collection's title and metadata. Then the device limit pass runs and the scheduler is pumped. `resolvedAt` records the time of the last successful resolve.
+- `CACHE_LIMIT_EXCEEDED` and `SOURCE_DOWNLOADS_DISABLED` block the collection as `pin` does, keeping its files. `NotFound` (deleted on the server) keeps the collection and its files with status `ready` and `{"sourceGone": true}` in `detailJson` (`CollectionDownloadState.sourceGone`); the Downloads tab shows "No longer on the server", and the next successful resolve clears it. Nothing is deleted automatically. `Offline`, `ServerError`, `Upstream` and `RateLimited` change nothing. The answer is an `UpkeepResult` (`notPinned`, `refreshed`, `blocked`, `sourceGone`, `unchanged`).
+
+Triggers:
+
+- **Playlists:** `CachedPlaylistRepository` tells a `PinnedPlaylistListener` (declared in `core/downloads`; the profile's `PinnedPlaylistRelay` forwards to the upkeep once downloads start) the playlist's tracks after every successful detail fetch and after every local add, remove or reorder, with the cached detail and its pending edits. When the playlist is pinned and its `playbackId`s, in order, differ from the membership, the upkeep resolves it after a 2 s debounce per playlist, so a burst of edits makes one request. A refresh asked for while reachability is not `online` is remembered (in memory) and runs when it returns to `online`.
+- **Albums:** `runDailyAlbumPass` runs at start, after reconciliation, and then every 24 hours while the profile is active, only when `online`; it resolves, one after another, each album whose `resolvedAt` is 24 hours old or older.
+- **Manual:** pull-to-refresh or F5 on a pinned album's or playlist's detail screen, and "Check for changes" in an album's or playlist's menu on the Downloads tab, call `refresh` whatever the age.
+- **Single tracks** are resolved again only by the scheduler's `ReResolveCollection` effect. **Podcasts:** no auto-download in v1; episodes are pinned individually.
 
 ## Reconciliation
 
@@ -134,19 +174,39 @@ Runs at start-up when online, after sign-in, and at most every 6 hours.
 2. Server item with `revoked: true` → delete the local file and row, then include it in `DELETE /offline/items`.
 3. Local `completed` item unknown to the server → re-send `complete` (this happens after a failed confirmation or a server restore).
 4. Server item unknown locally (reinstall with the same `deviceId` is impossible because `deviceId` is regenerated; this occurs after "Clear local state") → `DELETE /offline/items` for it.
-5. Local scan: every `completed` row's file must exist with the recorded size; otherwise `missing`. Files in `media/` with no row (and `.part` files with no live task) are deleted.
+5. Local scan: every `completed` row's file must exist with the recorded size; otherwise `missing`. Files in `media/` with no row (and `.part` files with no live task) are deleted, and `DownloadArtwork.removeUnreferenced` removes pinned covers nothing references.
+
+`DownloadReconciler` (`lib/core/downloads/download_reconciler.dart`, one per profile, started by `startDownloads` after the scheduler and the artwork) implements it:
+
+- **Server pass** (`runServerPass`, rules 1 to 4) compares by `playbackId` with the local track items; episodes are never part of it. A revoked item with a local row has its transfer cancelled (`DownloadScheduler.cancelItem`) and receives `Revoked`, whose `DeleteFile` and `DeleteRow` effects the controller runs in that order (the row's memberships go with it by cascade). Revoked and unknown server items go into `offlineDelete` outbox operations of at most 500 ids. A completed item the server does not list is reported again through `DownloadController.resendComplete` (direct, or an `offlineComplete` operation on a retryable failure), even when it was confirmed before; one it lists, not revoked, becomes `serverConfirmed`. A collection whose items were all revoked stays, with no items, so the user sees why it is empty. Any `ApiException` from the listing aborts the pass before anything changes locally; the next trigger retries.
+- **Local scan** (`runLocalScan`, rule 5) lists `media/` off the UI isolate (`MediaFiles.listFiles`). A `completed` row whose file is absent or whose length differs from `sizeBytes` receives `FileMissing` and the scheduler is pumped. A file that is no `completed` row's `relativePath` is deleted, except a `.part` file whose hash is the `taskId` of a `queued`, `running`, `paused` or `verifying` row with a live task (`Downloader.liveTaskIds`), and except a final-named file whose row is `verifying` or `running` (a crash between rename and row update, when start-up verification has not already adopted it): it is adopted when its size equals `expectedBytes` (any non-empty size when that is unknown) by delivering `VerificationPassed`, which also reports it to the server; otherwise it is deleted and a `verifying` row receives `VerificationFailed`. Then `DownloadArtwork.removeUnreferenced` runs and empty fan-out directories are removed (`MediaFiles.removeEmptyDirectories`).
+- **Triggers:** `start` runs the local scan, then the server pass when reachability is `online`, regardless of the interval; signing in activates the profile afresh, so it reconciles the same way. Afterwards `runIfDue` runs the pass when reachability returns to `online` and on a timer armed for six hours after the last successful pass, both only when that pass is older than six hours (`force` skips this check). The time of the last successful pass is the `downloads.lastReconciledAt` device setting. Calls made while a pass runs share it. Nothing runs where `PlatformCapabilities.canDownload` is false.
 
 ## Reachability and Offline Mode
 
 `ReachabilityController` (root scope, per active profile) produces one of `online`, `serverUnreachable`, `noNetwork`, `forcedOffline`.
+It also reports `connectionType` (`wifi`, `cellular`, `other`, `none`), from which the stream quality setting is chosen (doc 06, Source Resolution).
 
 - Inputs: `connectivity_plus` (interface up/down and type), the outcome of real API calls (any `Offline` exception counts as a failure, any response as a success), and the `offline.forced` setting.
-- After 2 consecutive failures within 30 s the state becomes `serverUnreachable`. A probe of `GET /api/health/live` then runs with backoff 5 s, 15 s, 30 s, 60 s (cap) and on every connectivity change; one success returns to `online`.
+- Call outcomes come from `Swr` and `PagedSource` ([05](05-local-data.md#read-policy-stale-while-revalidate)) and from the probe.
+- The rules, in priority order: `offline.forced` set is `forcedOffline`; no interface is `noNetwork`; 2 consecutive failures less than 30 s apart, with no success between them, are `serverUnreachable`; anything else is `online`. With an interface up, the state starts `online`. Call outcomes are ignored in `forcedOffline` and `noNetwork`.
+- While `serverUnreachable`, a probe of `GET /api/health` (anonymous, in the client surface) runs 5 s, 15 s, 30 s, then every 60 s, at once on every connectivity change, and at once on the banner's Retry. Any HTTP response is a success and returns to `online`; an `Offline` failure keeps the state and advances the backoff. Any other successful call also returns to `online`.
+- Leaving `noNetwork` (an interface appears) or `forcedOffline` (the setting is cleared) enters `serverUnreachable` and probes at once.
 - `connectivity_plus` alone is never trusted to mean "online": a captive portal or a VPN-only server looks connected.
+- One controller lives in the root scope. `startReachability` (bootstrap step 8) starts it and binds it to each active profile: the profile's API runs the probe, its `state.db` supplies `offline.forced`, and a return to `online` runs its capability refresh when one is due (none has succeeded yet, or the last success is more than an hour old). Switching profiles starts the controller afresh for the next profile.
+- Home (above the greeting) and Library (above the tabs' content) show `OfflineBanner` in every non-online state: "You're offline. Showing what's saved on this device." (`noNetwork`), "Can't reach the server. Showing what's saved on this device." with a Retry action (`serverUnreachable`), and "Offline mode is on." (`forcedOffline`), which in the Library has the action "Go online" (clears `offline.forced`). It is an `AppBanner` of kind `offline` (a `warning` icon), announced as a live region, and it collapses over 150 ms when the state returns to `online`, at once with reduced motion.
 - In any non-online state:
   - Repositories serve the cache and skip refreshes.
-  - Library gains an "Offline" banner and a "Downloaded only" filter that is on by default; rows without a local file are disabled.
+  - Home and Library show the offline banner; Library gains a "Downloaded only" filter that is on by default; rows without a local file are disabled.
   - Search queries the local cache and downloads (`title`/`name` `LIKE`), labelled "Results from this device".
+
+  The "Downloaded only" filter (`downloadedOnlyProvider`, profile-scoped, not persisted) turns on whenever the state becomes non-online and off whenever it returns to `online`; the user can toggle its chip in either state, and the choice holds until the next such change. The chip sits in the chip row of the Playlists, Artists, Albums and Songs tabs: always while offline, and online only while the profile has at least one download collection; never where `canDownload` is false. With the filter on, the tabs list from `state.db` (`DownloadedLibrary`): Songs are the `completed` track items by title, Albums the album collections plus every album with a `completed` item, Artists the distinct artists of `completed` items, Playlists the playlist collections (Liked Songs only when pinned). An album, artist or playlist opened with the filter on shows its cached detail when there is one, otherwise a detail built from its downloaded items.
+
+  A `TrackRow` whose track has no `completed` file is disabled while offline (40 % opacity, not playable) with the reason "Not available offline", whatever screen it is on; online no row is disabled by this rule. While offline, Play, Shuffle, Play next and Add to queue queue only the tracks with a file on this device.
+
+  The "Offline mode" switch sits in the account menu under the server switcher, only where `canDownload` is true, and writes `offline.forced`.
+
+  Offline search runs one local query and makes no request: `LIKE '%text%'` (with `%`, `_` and `\` escaped) over `tracks.title`, `albums.title`, `artists.name` and `playlists.name` in `cache.db`, united with the `completed` download items whose title, artist or album contains the text, downloads first and each track once by `playbackId`. The Discover and Podcasts chips are hidden while offline; on web only the cache is searched.
   - Writes go to the outbox.
 - Returning to `online` triggers: outbox replay, playback-state post, capability refresh if due, reconciliation if due, and resolution of `resolving(pendingNetwork)` collections.
 
@@ -171,7 +231,15 @@ A durable, ordered queue of writes in `state.db`. Every user-visible write goes 
 | `offlineComplete` | `POST /offline/items/complete` | `oc:<playbackId>` | Last write wins |
 | `offlineDelete` | `DELETE /offline/items` | `od:<batchUuid>` | Batches merge up to 500 ids |
 
-A playlist created offline has a temporary id (`tmp_<uuid>`). When `playlistCreate` succeeds, the worker rewrites the id in later pending operations and in `cache.db` in the same transaction.
+Coalescing happens when an op is enqueued, in the same transaction as the insert (`OutboxStore`, `lib/core/sync/outbox/`):
+
+- A last-write-wins op deletes the pending ops with the same `opType` and `entityKey` and is inserted with a new `seq` at the tail and no attempts, so a reorder enqueued after an add stays after it.
+- `playlistDelete` deletes every pending rename, add, remove, reorder and delete of the playlist. If a `playlistCreate` with that temporary id is still pending, it is deleted too and nothing is stored: the playlist never reached the server.
+- A `playlistRemove` whose `opUuid` matches a pending `playlistAdd` of the same playlist deletes the add and is not stored. The caller passes the add's `opUuid` when removing an item that has not been sent, and a fresh uuid otherwise.
+- `offlineDelete` merges into the device's newest pending batch while it holds fewer than 500 ids and no `offlineComplete` of the device follows it, so a removal never moves ahead of a completion. Ids are deduplicated; the merged batch keeps its `batchUuid` and moves to the tail with a new `seq`, so a send already in flight never loses the added ids. Ids beyond 500 go into new batches with new `batchUuid`s.
+- Ops are compared and stored by value; `metadata` holds the JSON form of `TrackMeta`. A row that does not decode is logged at `severe` and deleted when read.
+
+A playlist created offline has a temporary id (`tmp_<uuid>`). When `playlistCreate` succeeds, the worker (`TempIdRewriter`) deletes the create op and rewrites the id in the payload and `entityKey` of every pending operation in one `state.db` transaction, then rewrites the `playlists` row, the `playlist:<id>` list and blob, and the list entries pointing at the playlist in one `cache.db` transaction, and emits `TempIdResolved(tempId, realId)`. The two databases cannot share a transaction, so `state.db` commits first; `cache.db` rows with a `tmp_` id and no pending create are deleted when the worker starts (the cache is disposable).
 
 ### Worker
 
@@ -181,18 +249,40 @@ A playlist created offline has a temporary id (`tmp_<uuid>`). When `playlistCrea
 
 | Result | Action |
 |---|---|
-| 2xx | Delete the op; update the cache from the response |
+| 2xx | Update the cache from the response (`OutboxHandler.onSuccess`), then delete the op |
 | `Offline`, 5xx, `Upstream` | Stop the pass; `nextAttemptAt` = backoff 5 s × 2^attempts, cap 15 min |
 | `RateLimited` | Stop the pass; retry after the given delay |
 | `Unauthenticated` | Stop; ops are kept across re-sign-in to the same `(baseUrl, userId)` |
-| 404 on the target (playlist or track gone) | Drop the op; one grouped snackbar: "Some changes couldn't be saved because the item no longer exists" |
-| 409 | Drop the op; refetch the entity; snackbar |
+| 404 on the target (playlist or track gone) | Drop the op; one grouped snackbar: "Some changes couldn't be saved because the item no longer exists" (none for `offlineComplete`, which the user never made) |
+| 409 | Drop the op; refetch the entity; snackbar (none for `offlineComplete`) |
 | 400 | Drop the op; log at `severe` (a client bug) |
 
+- The cache is updated before the op is deleted, so an overlay never falls back to the value from before the write between the two steps. An op replaced by coalescing while in flight needs no special case: deleting or recording a failure of a missing `seq` does nothing.
+- Results the table does not list: `Forbidden` is handled as 400, `FeatureDisabled` as 404, `NotSoundspan` as `Offline`; `InvalidResponse` and `Unexpected` (the write reached the server) as 2xx with no response, logged at `severe`. An error that is not an `ApiException` (a client bug) backs off like `Offline` and is logged at `severe`. An op whose type has no handler stops the pass and is kept.
+- Each `opType` has an `OutboxHandler` (`send`, `onSuccess`, `onDropped`) beside the repository it calls, contributed to the `OutboxHandlerRegistry` through a provider. Notices (`OutboxItemsGone(count)`, `OutboxConflict`) are grouped per pass and shown as snackbars by the shell.
 - Optimistic state: repositories overlay pending ops on cached data when reading (a liked track shows liked before the server confirms). Dropping an op removes the overlay, which is the rollback.
+- Likes: every read that yields tracks (library songs, liked songs, album, artist and playlist detail, search) shows the state of a pending `preference` op of the track's `playbackId`, and album reads the state of a pending `albumPreference` op; the liked list also puts a track liked while pending at its top and leaves out one unliked while pending. A list whose rows are re-read more slowly than the outbox reports the op gone keeps showing a removed op until the list emits again or 250 ms pass, so a confirmed like never flickers and a dropped one is rolled back after that. On success the `preference` handler writes the answered state into the track's row and every cached blob holding the track and marks the `liked` list stale; the `albumPreference` handler does the same for the album. On a 409 the track's album, or the album, is fetched again.
+- Playlists: `PlaylistRepository` (`lib/shared/data/playlist/`) only enqueues. `create` stores the playlist under its temporary id as a cache row and an empty detail, and the detail of a temporary id is read from the cache alone. The playlists list shows pending creates first (newest first), pending renames and leaves out pending deletes; a playlist detail applies its pending rename, adds (appended, marked with their `opUuid`), removes and reorder in `seq` order, a reorder ordering the items it lists and leaving the others and later adds after them. Both keep a removed op for 250 ms like likes. Removing an item that is only a pending add cancels the add, and a pending reorder that still names its track is enqueued again without it. Reorder is offered only when every item has a `playbackId`. On success a handler writes the edit into the cached detail with a fetch time of the epoch and marks the `playlists` list stale, so the next read of either fetches it; a create puts the playlist first in the cached `playlists` list under its server id, and a delete removes it from the cache. A dropped create removes its cached rows; a 409 on any other op fetches the playlist again, and a 404 removes it from the cache.
 - Plays older than 14 days are dropped unsent: scrobbling services reject old timestamps.
 - `Settings → About` shows the pending count; a non-empty outbox blocks "Remove this server" behind a confirmation.
 
 ## Android Auto and Offline
 
 The Android Auto browse tree (M2) includes a "Downloads" root backed by `download_collections`, so the car UI works with no network. Artwork there comes from the pinned `art/` directory through a `content://` URI served by a small `FileProvider`.
+
+## Spike S5 finding
+
+A minimal Flutter app created download tasks like the `DownloadTask` sketch above, but with `allowPause: true` (`retries: 0`, `updates: Updates.statusAndProgress`, a `.part` file name, an `Authorization` header). A `dart:io` pass-through proxy inside the test process trickled every response body over about 10 seconds and recorded each request's `Range` and `If-Range` and each response's status, `ETag` and `Content-Range`. Reference bytes were fetched with `dart:io` `HttpClient`, without the plugin. Questions 1 to 3 ran on Linux (`ubuntu-latest`, under Xvfb), where the plugin transfers in a Dart isolate; question 4 ran on an Android emulator (API 34, x86_64, `google_apis`), where it transfers in WorkManager.
+
+| Question | Answer | Evidence |
+|---|---|---|
+| 1. Resume sends `Range` and `If-Range: <ETag>` | **No** | Real server (the contract server and seed), 30-second fixture track from `GET /api/playback/stream/<playbackId>?quality=original&report=0` through the proxy, paused at 49 %. First request: no `Range`; `200`, `ETag: "cc435de536b8dc26cf7208a107349e58"`, `Content-Length: 370783`. Resume request: `Range: bytes=180224-` (the paused offset) and no `If-Range`. |
+| 2. Appends on `206` | Yes | The resume answered `206`, `Content-Range: bytes 180224-370782/370783`, the same `ETag`; the task completed and the file is byte-identical to the reference (370783 bytes, SHA-256 `3bfcb3c5…6c237106`). |
+| 3. Restarts cleanly on `200` to a ranged request | Yes | Local server that answers every request with `200` and a fixed 2 MB body (2097152 bytes) and `Accept-Ranges: bytes`, paused at 43 %. With `ETag: "s5-fixed-body"` and without an `ETag`: the resume sent `Range: bytes=901120-` and no `If-Range`, got `200`, and the finished file is the 2097152-byte body, byte-identical (SHA-256 `018d7874…7673d75db`), not partial-plus-full. |
+| 4. Re-attaches after process death on Android | Yes, 3/3 | Slow 2 MB download (40 s) from the CI host at `10.0.2.2`; the process was killed with `kill -9` (after `adb root`) at 20–21 % and relaunched; the app called `FileDownloader().start()` and `resumeFromBackground()`. On relaunch the plugin's record said `running` and `allTasks` listed `s5-q4`; 14 to 17 seconds after the relaunch WorkManager ran the task again under its original id `s5-q4`, from byte 0 (a new request without `Range`), and it completed with the reference SHA-256 in each run. |
+| 5. Re-attaches after process death on iOS | Not answerable on CI | A simulator does not relaunch an app for background `URLSession` events. The design (background `URLSession`, Start-up reconciliation) stands; it is a human checklist row. |
+
+- The plugin protects a resume in the client instead of with `If-Range`: when the resume answer is `206`, it compares the answer's `ETag` with the one stored at pause and fails the task with "Cannot resume: ETag is not identical, or is weak" when they differ or the stored one is weak. The Android implementation has the same check. The contract of `unified-playback-api.md` P4 is stated in terms of `If-Range`, so the Resume Rule does not rely on this check.
+- On Linux the plugin listens to connectivity through NetworkManager on the system bus. Where NetworkManager is absent (the CI runners), that listener fails asynchronously with `org.freedesktop.DBus.Error.ServiceUnknown` and the plugin does not handle the error; it then keeps its default "connected". Code that creates the plugin on Linux has to expect this error.
+- The plugin's task store on Linux lives under the XDG documents directory, resolved with `xdg-user-dir`.
+- Package versions: Flutter 3.50.0, `background_downloader` 9.6.6.

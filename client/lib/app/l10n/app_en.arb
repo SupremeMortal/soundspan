@@ -1,0 +1,3178 @@
+{
+  "@@locale": "en",
+  "appTitle": "soundspan",
+  "@appTitle": {
+    "description": "The application name, shown as the window and task-switcher title and on the start screen."
+  },
+  "windowTitle": "{screen} · soundspan",
+  "@windowTitle": {
+    "description": "The window or browser tab title: the current screen's name followed by the application name.",
+    "placeholders": {
+      "screen": {
+        "type": "String",
+        "example": "Home"
+      }
+    }
+  },
+  "navHome": "Home",
+  "@navHome": {
+    "description": "Navigation destination and screen name: the home screen."
+  },
+  "navSearch": "Search",
+  "@navSearch": {
+    "description": "Navigation destination and screen name: the search screen."
+  },
+  "navLibrary": "Library",
+  "@navLibrary": {
+    "description": "Navigation destination and screen name: the user's library."
+  },
+  "navPodcasts": "Podcasts",
+  "@navPodcasts": {
+    "description": "Navigation destination and screen name: podcasts."
+  },
+  "navMainLabel": "Main navigation",
+  "@navMainLabel": {
+    "description": "Accessibility label of the group holding the main navigation destinations."
+  },
+  "screenConnect": "Add server",
+  "@screenConnect": {
+    "description": "Screen name: entering the address of a server to add."
+  },
+  "screenConnectScan": "Scan QR code",
+  "@screenConnectScan": {
+    "description": "Screen name: scanning the QR code from the web UI's device page with the camera."
+  },
+  "screenConnectProbe": "Checking server",
+  "@screenConnectProbe": {
+    "description": "Screen name: the app is contacting the server the user entered."
+  },
+  "screenSignIn": "Sign in",
+  "@screenSignIn": {
+    "description": "Screen name: signing in to a server."
+  },
+  "screenSettings": "Settings",
+  "@screenSettings": {
+    "description": "Screen name: the settings screen."
+  },
+  "screenSettingsServers": "Servers",
+  "@screenSettingsServers": {
+    "description": "Screen name: the settings page listing the user's servers."
+  },
+  "screenSettingsPlayback": "Playback",
+  "@screenSettingsPlayback": {
+    "description": "Screen name: the playback settings page."
+  },
+  "playbackNotificationChannelName": "Playback",
+  "@playbackNotificationChannelName": {
+    "description": "Name of the Android notification channel of the playback notification, shown in the system's notification settings for the app."
+  },
+  "androidAutoRecent": "Recent",
+  "@androidAutoRecent": {
+    "description": "Title of the Android Auto browse folder listing recently listened tracks."
+  },
+  "androidAutoPlaylists": "Playlists",
+  "@androidAutoPlaylists": {
+    "description": "Title of the Android Auto browse folder listing the user's playlists."
+  },
+  "androidAutoAlbums": "Albums",
+  "@androidAutoAlbums": {
+    "description": "Title of the Android Auto browse folder listing the library's albums."
+  },
+  "androidAutoDownloads": "Downloads",
+  "@androidAutoDownloads": {
+    "description": "Title of the Android Auto browse folder listing what is downloaded to this device; it works with no connection."
+  },
+  "androidAutoDownloadsSubtitle": "{kind} · {completed}",
+  "@androidAutoDownloadsSubtitle": {
+    "description": "Subtitle of a downloaded album, playlist, song or episode in the Android Auto Downloads folder: its kind and how many of its tracks are downloaded.",
+    "placeholders": {
+      "kind": {
+        "type": "String",
+        "example": "Album"
+      },
+      "completed": {
+        "type": "int",
+        "example": "12"
+      }
+    }
+  },
+  "downloadsNotificationTitle": "{count, plural, =1{Downloading 1 item} other{Downloading {count} items}}",
+  "@downloadsNotificationTitle": {
+    "description": "Title of the system notification shown while downloads run on Android: how many items the current batch holds. It never names a track or a source.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "12"
+      }
+    }
+  },
+  "downloadsNotificationFinished": "Downloads finished",
+  "@downloadsNotificationFinished": {
+    "description": "Text of the system notification on Android once every download of the batch has finished."
+  },
+  "androidAutoKindEpisode": "Podcast episode",
+  "@androidAutoKindEpisode": {
+    "description": "Kind of a downloaded podcast episode, in the Android Auto Downloads folder."
+  },
+  "screenSettingsStorage": "Storage",
+  "@screenSettingsStorage": {
+    "description": "Screen name: the storage settings page."
+  },
+  "screenSettingsAppearance": "Appearance",
+  "@screenSettingsAppearance": {
+    "description": "Screen name: the appearance settings page."
+  },
+  "screenSettingsAbout": "About",
+  "@screenSettingsAbout": {
+    "description": "Screen name: the about page."
+  },
+  "screenAlbum": "Album",
+  "@screenAlbum": {
+    "description": "Screen name: the detail screen of one album."
+  },
+  "screenArtist": "Artist",
+  "@screenArtist": {
+    "description": "Screen name: the detail screen of one artist."
+  },
+  "screenPlaylist": "Playlist",
+  "@screenPlaylist": {
+    "description": "Screen name: the detail screen of one playlist."
+  },
+  "screenMix": "Mix",
+  "@screenMix": {
+    "description": "Screen name: the detail screen of one generated mix of Made For You."
+  },
+  "shellBack": "Back",
+  "@shellBack": {
+    "description": "Top bar button: go back in the current navigation destination."
+  },
+  "shellForward": "Forward",
+  "@shellForward": {
+    "description": "Top bar button: re-open the screen most recently left with Back."
+  },
+  "shellSearchHint": "Search",
+  "@shellSearchHint": {
+    "description": "Placeholder and accessibility label of the search field in the top bar."
+  },
+  "shellAccountMenu": "Account and servers",
+  "@shellAccountMenu": {
+    "description": "Tooltip and accessibility label of the avatar button that opens the account menu with the server switcher."
+  },
+  "shellMenuServers": "Servers",
+  "@shellMenuServers": {
+    "description": "Heading of the server list in the account menu."
+  },
+  "shellMenuCurrentServer": "Current server",
+  "@shellMenuCurrentServer": {
+    "description": "Accessibility label of the mark next to the server the app is showing, in the account menu and in the Servers settings."
+  },
+  "shellMenuAddServer": "Add server",
+  "@shellMenuAddServer": {
+    "description": "Account menu entry: add another server."
+  },
+  "shellMenuSettings": "Settings",
+  "@shellMenuSettings": {
+    "description": "Account menu entry: open the settings."
+  },
+  "shellActivity": "Activity",
+  "@shellActivity": {
+    "description": "Top bar button tooltip: show or hide the Activity panel listing who is online."
+  },
+  "shellMenuActivity": "Activity",
+  "@shellMenuActivity": {
+    "description": "Account menu entry: open the Activity sheet listing who is online."
+  },
+  "activityTitle": "Activity",
+  "@activityTitle": {
+    "description": "Heading of the Activity panel and sheet, which list who is online."
+  },
+  "activityOnThisServer": "On this server",
+  "@activityOnThisServer": {
+    "description": "Activity section heading: users of the server the app is signed in to."
+  },
+  "activityOnConnectedServers": "On connected servers",
+  "@activityOnConnectedServers": {
+    "description": "Activity section heading: users of other servers this server is connected to."
+  },
+  "activityStatusPlaying": "Playing",
+  "@activityStatusPlaying": {
+    "description": "Activity row status: the user is playing music."
+  },
+  "activityStatusPaused": "Paused",
+  "@activityStatusPaused": {
+    "description": "Activity row status: the user has paused playback."
+  },
+  "activityStatusIdle": "Idle",
+  "@activityStatusIdle": {
+    "description": "Activity row status: the user is online but not playing."
+  },
+  "activityPeerStatus": "{status} on {server}",
+  "@activityPeerStatus": {
+    "description": "Activity row status of a user of a connected server.",
+    "placeholders": {
+      "status": {
+        "type": "String",
+        "example": "Playing"
+      },
+      "server": {
+        "type": "String",
+        "example": "North"
+      }
+    }
+  },
+  "activityTrack": "{title} · {artist}",
+  "@activityTrack": {
+    "description": "Activity row second line: the track the user plays and its artist.",
+    "placeholders": {
+      "title": {
+        "type": "String",
+        "example": "Blue Monday"
+      },
+      "artist": {
+        "type": "String",
+        "example": "New Order"
+      }
+    }
+  },
+  "activityEmpty": "Nobody else is online",
+  "@activityEmpty": {
+    "description": "Activity empty state: no other user is online."
+  },
+  "activityRowPlaying": "{name}, playing {title} by {artist}",
+  "@activityRowPlaying": {
+    "description": "Screen reader label of an Activity row: the user plays a track.",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "Ana"
+      },
+      "title": {
+        "type": "String",
+        "example": "Blue Monday"
+      },
+      "artist": {
+        "type": "String",
+        "example": "New Order"
+      }
+    }
+  },
+  "activityRowPaused": "{name}, paused on {title} by {artist}",
+  "@activityRowPaused": {
+    "description": "Screen reader label of an Activity row: the user paused a track.",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "Ana"
+      },
+      "title": {
+        "type": "String",
+        "example": "Blue Monday"
+      },
+      "artist": {
+        "type": "String",
+        "example": "New Order"
+      }
+    }
+  },
+  "activityRowStatus": "{name}, {status}",
+  "@activityRowStatus": {
+    "description": "Screen reader label of an Activity row without a track; status is the row status text.",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "Ana"
+      },
+      "status": {
+        "type": "String",
+        "example": "Idle"
+      }
+    }
+  },
+  "activityRowPeer": "{label}, on {server}",
+  "@activityRowPeer": {
+    "description": "Screen reader label of an Activity row of a connected server: the row label and the server name.",
+    "placeholders": {
+      "label": {
+        "type": "String",
+        "example": "Ana, idle"
+      },
+      "server": {
+        "type": "String",
+        "example": "North"
+      }
+    }
+  },
+  "settingsThemeTitle": "Theme",
+  "@settingsThemeTitle": {
+    "description": "Heading of the theme choice in the Appearance settings."
+  },
+  "settingsThemeSystem": "System",
+  "@settingsThemeSystem": {
+    "description": "Theme choice: follow the device’s light or dark setting."
+  },
+  "settingsThemeDark": "Dark",
+  "@settingsThemeDark": {
+    "description": "Theme choice: always dark."
+  },
+  "settingsThemeLight": "Light",
+  "@settingsThemeLight": {
+    "description": "Theme choice: always light."
+  },
+  "settingsLanguageTitle": "Language",
+  "@settingsLanguageTitle": {
+    "description": "Heading of the language choice in the Appearance settings."
+  },
+  "settingsLanguageSystem": "System default",
+  "@settingsLanguageSystem": {
+    "description": "Language choice: use the device’s language."
+  },
+  "settingsLanguageName": "English",
+  "@settingsLanguageName": {
+    "description": "The name of this language written in this language, shown in the language choice."
+  },
+  "settingsPlaybackQualityWifi": "Quality on Wi-Fi",
+  "@settingsPlaybackQualityWifi": {
+    "description": "Playback settings row: the stream quality used on Wi-Fi and other connections that are not mobile data."
+  },
+  "settingsPlaybackQualityCellular": "Quality on mobile data",
+  "@settingsPlaybackQualityCellular": {
+    "description": "Playback settings row: the stream quality used on a mobile data connection."
+  },
+  "settingsPlaybackQualitySingle": "Streaming quality",
+  "@settingsPlaybackQualitySingle": {
+    "description": "Playback settings row on devices without mobile data: the stream quality on every connection."
+  },
+  "settingsPlaybackQualityCaption": "Quality changes apply from the next item that starts.",
+  "@settingsPlaybackQualityCaption": {
+    "description": "Caption under the quality rows: the playing item is not reloaded."
+  },
+  "settingsPlaybackQualityServerDefault": "Server default",
+  "@settingsPlaybackQualityServerDefault": {
+    "description": "Stream quality choice: use the quality saved on the server."
+  },
+  "settingsPlaybackQualityServerDefaultCaption": "The quality saved on the server applies.",
+  "@settingsPlaybackQualityServerDefaultCaption": {
+    "description": "Caption of the Server default quality choice."
+  },
+  "settingsPlaybackQualityOriginal": "Original",
+  "@settingsPlaybackQualityOriginal": {
+    "description": "Stream quality choice: the original file, not transcoded."
+  },
+  "settingsPlaybackQualityHigh": "High",
+  "@settingsPlaybackQualityHigh": {
+    "description": "Stream quality choice: high."
+  },
+  "settingsPlaybackQualityMedium": "Medium",
+  "@settingsPlaybackQualityMedium": {
+    "description": "Stream quality choice: medium."
+  },
+  "settingsPlaybackQualityLow": "Low",
+  "@settingsPlaybackQualityLow": {
+    "description": "Stream quality choice: low."
+  },
+  "settingsPlaybackLevelling": "Volume levelling",
+  "@settingsPlaybackLevelling": {
+    "description": "Playback settings row: the loudness levelling mode, saved on the server."
+  },
+  "settingsPlaybackLevellingOff": "Off",
+  "@settingsPlaybackLevellingOff": {
+    "description": "Volume levelling choice: no levelling."
+  },
+  "settingsPlaybackLevellingTrack": "Track",
+  "@settingsPlaybackLevellingTrack": {
+    "description": "Volume levelling choice: each track is levelled on its own."
+  },
+  "settingsPlaybackLevellingAlbum": "Album",
+  "@settingsPlaybackLevellingAlbum": {
+    "description": "Volume levelling choice: tracks are levelled on their album's loudness."
+  },
+  "settingsPlaybackLevellingAuto": "Automatic",
+  "@settingsPlaybackLevellingAuto": {
+    "description": "Volume levelling choice: album levelling while an album plays, track levelling otherwise."
+  },
+  "settingsPlaybackLevellingUnknown": "Unknown",
+  "@settingsPlaybackLevellingUnknown": {
+    "description": "Volume levelling value the server holds that this app does not know."
+  },
+  "settingsPlaybackLevellingOffline": "Available when the server can be reached",
+  "@settingsPlaybackLevellingOffline": {
+    "description": "Tooltip of the disabled volume levelling row while the server cannot be reached."
+  },
+  "settingsPlaybackLevellingFailed": "Couldn’t change volume levelling",
+  "@settingsPlaybackLevellingFailed": {
+    "description": "Snackbar when saving the volume levelling mode failed."
+  },
+  "settingsPlaybackSkipInterval": "Skip interval (podcasts)",
+  "@settingsPlaybackSkipInterval": {
+    "description": "Playback settings row: how far the skip buttons move in an episode."
+  },
+  "settingsPlaybackSpeed": "Default speed (podcasts)",
+  "@settingsPlaybackSpeed": {
+    "description": "Playback settings row: the speed episodes play at."
+  },
+  "settingsPlaybackSkipSeconds": "{seconds, plural, =1{1 second} other{{seconds} seconds}}",
+  "@settingsPlaybackSkipSeconds": {
+    "description": "A skip interval choice or value, in seconds.",
+    "placeholders": {
+      "seconds": {"type": "int", "example": "15"}
+    }
+  },
+  "settingsPlaybackSpeedValue": "{speed}×",
+  "@settingsPlaybackSpeedValue": {
+    "description": "A playback speed choice or value, such as 1.25×.",
+    "placeholders": {
+      "speed": {"type": "double", "format": "decimalPattern", "example": "1.25"}
+    }
+  },
+  "settingsServersAdd": "Add server",
+  "@settingsServersAdd": {
+    "description": "Servers settings action: add another server."
+  },
+  "settingsServersSwitch": "Switch",
+  "@settingsServersSwitch": {
+    "description": "Servers settings action: make this server the one the app shows."
+  },
+  "settingsServersRename": "Rename",
+  "@settingsServersRename": {
+    "description": "Servers settings action: change the name shown for this server."
+  },
+  "settingsServersOpenAdmin": "Open server admin",
+  "@settingsServersOpenAdmin": {
+    "description": "Servers settings action, shown to administrators: open the server’s administration page in the browser."
+  },
+  "settingsServersStateActive": "Active",
+  "@settingsServersStateActive": {
+    "description": "State of a server profile: signed in."
+  },
+  "settingsServersStateSignedOut": "Signed out",
+  "@settingsServersStateSignedOut": {
+    "description": "State of a server profile: signed out; its data is kept."
+  },
+  "settingsServersAccount": "{username} on {host}",
+  "@settingsServersAccount": {
+    "description": "The user name and server host of a server profile.",
+    "placeholders": {
+      "username": {
+        "type": "String",
+        "example": "ada"
+      },
+      "host": {
+        "type": "String",
+        "example": "music.example.com"
+      }
+    }
+  },
+  "settingsServersVersion": "Server version {version}",
+  "@settingsServersVersion": {
+    "description": "The server version seen when the app last checked.",
+    "placeholders": {
+      "version": {
+        "type": "String",
+        "example": "1.4.0"
+      }
+    }
+  },
+  "settingsServersVersionUnknown": "Server version not known yet",
+  "@settingsServersVersionUnknown": {
+    "description": "Shown instead of the server version before the app has checked it."
+  },
+  "settingsServersLinkExpires": "Link expires {date}",
+  "@settingsServersLinkExpires": {
+    "description": "When the API key of a device-linked server profile expires.",
+    "placeholders": {
+      "date": {
+        "type": "DateTime",
+        "format": "yMMMd",
+        "example": "2026-06-01"
+      }
+    }
+  },
+  "settingsServersLinkExpiryUnknown": "Link expiry unknown",
+  "@settingsServersLinkExpiryUnknown": {
+    "description": "Shown for a server profile signed in with an API key whose expiry date is not known."
+  },
+  "settingsServersRenameTitle": "Rename server",
+  "@settingsServersRenameTitle": {
+    "description": "Title of the dialog that renames a server."
+  },
+  "settingsServersRenameLabel": "Name",
+  "@settingsServersRenameLabel": {
+    "description": "Label of the name field in the rename dialog."
+  },
+  "settingsServersRenameSave": "Save",
+  "@settingsServersRenameSave": {
+    "description": "Rename dialog button: store the new name."
+  },
+  "settingsServersSignOut": "Sign out",
+  "@settingsServersSignOut": {
+    "description": "Servers settings action: sign out of this server; its downloads and cached data stay on this device."
+  },
+  "settingsServersRemove": "Remove this server",
+  "@settingsServersRemove": {
+    "description": "Servers settings action: sign out and delete everything stored for this server on this device."
+  },
+  "settingsServersSignOutTitle": "Sign out of {server}?",
+  "@settingsServersSignOutTitle": {
+    "description": "Title of the dialog that confirms signing out of a server.",
+    "placeholders": {
+      "server": {
+        "type": "String",
+        "example": "music.example.com"
+      }
+    }
+  },
+  "settingsServersSignOutBody": "Downloads, cached data and changes not yet sent stay on this device. Sign in again to use this server.",
+  "@settingsServersSignOutBody": {
+    "description": "Body of the sign-out dialog."
+  },
+  "settingsServersSignOutRemoveDownloads": "{count, plural, =1{Also remove downloads (1 item, {size})} other{Also remove downloads ({count} items, {size})}}",
+  "@settingsServersSignOutRemoveDownloads": {
+    "description": "Sign-out dialog checkbox: delete this server's downloaded music from this device too; with how many items and how much space they take.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "12"
+      },
+      "size": {
+        "type": "String",
+        "example": "340 MB"
+      }
+    }
+  },
+  "settingsServersRemoveTitle": "Remove {server}?",
+  "@settingsServersRemoveTitle": {
+    "description": "Title of the dialog that confirms removing a server.",
+    "placeholders": {
+      "server": {
+        "type": "String",
+        "example": "music.example.com"
+      }
+    }
+  },
+  "settingsServersRemoveBody": "This signs out and deletes everything this app stores for {server} on this device, downloads included.",
+  "@settingsServersRemoveBody": {
+    "description": "Body of the dialog that confirms removing a server.",
+    "placeholders": {
+      "server": {
+        "type": "String",
+        "example": "music.example.com"
+      }
+    }
+  },
+  "settingsServersRemovePending": "{count, plural, =1{1 change has not been sent to the server and will be lost.} other{{count} changes have not been sent to the server and will be lost.}}",
+  "@settingsServersRemovePending": {
+    "description": "Remove-server dialog: how many changes made on this device would be lost.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "settingsServersRemoveDownloads": "Downloads on this device for this server will be deleted.",
+  "@settingsServersRemoveDownloads": {
+    "description": "Remove-server dialog: shown when this server has downloaded music on this device."
+  },
+  "settingsServersRemoveConfirm": "Remove",
+  "@settingsServersRemoveConfirm": {
+    "description": "Remove-server dialog button: remove the server."
+  },
+  "settingsServersRemoveAnyway": "Remove anyway",
+  "@settingsServersRemoveAnyway": {
+    "description": "Remove-server dialog button when changes have not been sent: remove the server and lose them."
+  },
+  "settingsServersSigningOut": "Signing out…",
+  "@settingsServersSigningOut": {
+    "description": "Shown in the sign-out dialog while the app signs out."
+  },
+  "settingsServersRemoving": "Removing…",
+  "@settingsServersRemoving": {
+    "description": "Shown in the remove-server dialog while the app removes the server."
+  },
+  "settingsServersExitFailed": "The sign-in details on this device could not be deleted. Try again.",
+  "@settingsServersExitFailed": {
+    "description": "Shown in the sign-out and remove-server dialogs when the device's secure storage failed."
+  },
+  "commonCancel": "Cancel",
+  "@commonCancel": {
+    "description": "Dialog button: close without changing anything."
+  },
+  "localDataTooNewTitle": "This data was written by a newer version of the app",
+  "@localDataTooNewTitle": {
+    "description": "Title of the screen shown when this server’s data on the device was written by a newer app version."
+  },
+  "localDataTooNewBody": "Update the app to keep using this data, reset this server’s local data, or switch to another server.",
+  "@localDataTooNewBody": {
+    "description": "Explanation on the screen shown when this server’s data on the device was written by a newer app version."
+  },
+  "localDataTooNewReset": "Reset this server’s local data",
+  "@localDataTooNewReset": {
+    "description": "Button: delete this server’s data on the device and start fresh, after a confirmation."
+  },
+  "localDataTooNewSwitch": "Switch server",
+  "@localDataTooNewSwitch": {
+    "description": "Button: open the server list to show another server."
+  },
+  "localDataTooNewConfirmTitle": "Reset local data?",
+  "@localDataTooNewConfirmTitle": {
+    "description": "Title of the confirmation before this server’s data on the device is deleted."
+  },
+  "localDataTooNewConfirmBody": "The queue, pending changes and downloads of this server are deleted from this device. Your library on the server is not changed.",
+  "@localDataTooNewConfirmBody": {
+    "description": "Body of the confirmation before this server’s data on the device is deleted."
+  },
+  "localDataTooNewConfirmReset": "Reset",
+  "@localDataTooNewConfirmReset": {
+    "description": "Confirmation button: delete this server’s data on the device."
+  },
+  "storageVolatileNotice": "This browser is not keeping data, so nothing will be remembered after this page is closed.",
+  "@storageVolatileNotice": {
+    "description": "One-time notice on the web when the browser offers no lasting storage, for example in private browsing."
+  },
+  "screenLicenses": "Open-source licences",
+  "@screenLicenses": {
+    "description": "Screen name: the list of the licences of the app, its bundled fonts and libraries, and the packages it uses."
+  },
+  "settingsAboutLicenses": "Licences",
+  "@settingsAboutLicenses": {
+    "description": "Row in Settings → About that opens the open-source licences screen."
+  },
+  "settingsAboutPendingChanges": "Pending changes: {count}",
+  "@settingsAboutPendingChanges": {
+    "description": "Row in Settings → About: how many changes made on this device have not reached the server yet.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "settingsAboutVersion": "Version",
+  "@settingsAboutVersion": {
+    "description": "Row title in Settings → About; the row shows the app's version below it."
+  },
+  "settingsAboutVersionValue": "{version} ({build})",
+  "@settingsAboutVersionValue": {
+    "description": "The app's version and build number under the Version row in Settings → About.",
+    "placeholders": {
+      "version": {
+        "type": "String",
+        "example": "1.2.3"
+      },
+      "build": {
+        "type": "String",
+        "example": "45"
+      }
+    }
+  },
+  "settingsAboutVersionWithChannel": "{version} ({build}) · {channel}",
+  "@settingsAboutVersionWithChannel": {
+    "description": "The app's version, build number and release channel (for example dev) under the Version row in Settings → About, on builds that are not stable releases.",
+    "placeholders": {
+      "version": {
+        "type": "String",
+        "example": "1.2.3"
+      },
+      "build": {
+        "type": "String",
+        "example": "45"
+      },
+      "channel": {
+        "type": "String",
+        "example": "dev"
+      }
+    }
+  },
+  "settingsAboutExportLogs": "Export logs",
+  "@settingsAboutExportLogs": {
+    "description": "Row in Settings → About that saves or shares this device's diagnostic logs, to attach to a bug report."
+  },
+  "settingsAboutExportLogsDone": "Logs exported",
+  "@settingsAboutExportLogsDone": {
+    "description": "Snackbar after the logs were saved, shared or downloaded."
+  },
+  "settingsAboutExportLogsNothing": "No logs to export",
+  "@settingsAboutExportLogsNothing": {
+    "description": "Snackbar when Export logs found no logs on this device."
+  },
+  "settingsAboutExportLogsFailed": "Couldn’t export logs",
+  "@settingsAboutExportLogsFailed": {
+    "description": "Snackbar when Export logs failed."
+  },
+  "outboxItemsGoneMessage": "Some changes couldn’t be saved because the item no longer exists",
+  "@outboxItemsGoneMessage": {
+    "description": "Snackbar: changes made on this device were discarded because the track or playlist they apply to was deleted on the server."
+  },
+  "outboxConflictMessage": "A change couldn’t be saved because it was changed elsewhere",
+  "@outboxConflictMessage": {
+    "description": "Snackbar: a change made on this device was discarded because the same item was changed on another device first."
+  },
+  "licensesSectionBundled": "Fonts and bundled libraries",
+  "@licensesSectionBundled": {
+    "description": "Section heading on the licences screen: the fonts and native libraries shipped inside the app."
+  },
+  "licensesSectionPackages": "Packages",
+  "@licensesSectionPackages": {
+    "description": "Section heading on the licences screen: the software packages the app is built with."
+  },
+  "licensesCount": "{count, plural, =1{1 licence} other{{count} licences}}",
+  "@licensesCount": {
+    "description": "Under a package name on the licences screen: how many licences apply to it.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "2"
+      }
+    }
+  },
+  "licensesLoading": "Loading licences",
+  "@licensesLoading": {
+    "description": "Accessibility label of the progress indicator while the licences are collected."
+  },
+  "licensesLoadFailed": "The licences could not be loaded.",
+  "@licensesLoadFailed": {
+    "description": "Shown on the licences screen when collecting the licences failed."
+  },
+  "licensesRetry": "Try again",
+  "@licensesRetry": {
+    "description": "Button on the licences screen that collects the licences again after a failure."
+  },
+  "connectAddressLabel": "Server address",
+  "@connectAddressLabel": {
+    "description": "Label of the text field where the user types the address of their soundspan server."
+  },
+  "connectAddressHint": "music.example.com or 192.168.1.20:3030",
+  "@connectAddressHint": {
+    "description": "Example addresses shown in the empty server address field."
+  },
+  "connectAddressSubmit": "Connect",
+  "@connectAddressSubmit": {
+    "description": "Primary button that checks the server address the user typed."
+  },
+  "connectAddressBack": "Back",
+  "@connectAddressBack": {
+    "description": "Tooltip of the back control on the address screen, shown when a server is already set up."
+  },
+  "connectAddressEmpty": "Enter the address of your soundspan server.",
+  "@connectAddressEmpty": {
+    "description": "Shown under the address field when it was submitted empty."
+  },
+  "connectAddressUnsupportedScheme": "Use an address that starts with http:// or https://.",
+  "@connectAddressUnsupportedScheme": {
+    "description": "Shown under the address field when the address names another scheme, such as ftp://."
+  },
+  "connectAddressInvalid": "That is not a server address. Check it and try again.",
+  "@connectAddressInvalid": {
+    "description": "Shown under the address field when the address cannot be used."
+  },
+  "connectCleartextTitle": "Connection not encrypted",
+  "@connectCleartextTitle": {
+    "description": "Title of the dialog shown before connecting to a public server over plain http."
+  },
+  "connectCleartextBody": "{address} uses http, so your password and music travel unencrypted and can be read on the way. Use https if the server offers it.",
+  "@connectCleartextBody": {
+    "description": "Body of the dialog shown before connecting to a public server over plain http, on platforms that allow it.",
+    "placeholders": {
+      "address": {
+        "type": "String",
+        "example": "http://music.example.com"
+      }
+    }
+  },
+  "connectCleartextBlockedBody": "{address} uses http. This device blocks unencrypted connections to public servers, so use the server’s https address.",
+  "@connectCleartextBlockedBody": {
+    "description": "Body of the dialog shown when the user enters a public plain-http address on a platform that blocks such connections.",
+    "placeholders": {
+      "address": {
+        "type": "String",
+        "example": "http://music.example.com"
+      }
+    }
+  },
+  "connectCleartextCancel": "Cancel",
+  "@connectCleartextCancel": {
+    "description": "Dialog button that closes the unencrypted-connection warning without connecting."
+  },
+  "connectCleartextConnectAnyway": "Connect anyway",
+  "@connectCleartextConnectAnyway": {
+    "description": "Dialog button that connects to a public server over plain http despite the warning."
+  },
+  "connectProbeResolving": "Connecting to {address}",
+  "@connectProbeResolving": {
+    "description": "Shown while the app contacts the server.",
+    "placeholders": {
+      "address": {
+        "type": "String",
+        "example": "https://music.example.com"
+      }
+    }
+  },
+  "connectProbeStarting": "The server is starting",
+  "@connectProbeStarting": {
+    "description": "Shown when the server answered that it is still starting up."
+  },
+  "connectProbeStartingRetry": "{seconds, plural, =1{Trying again in 1 second} other{Trying again in {seconds} seconds}}",
+  "@connectProbeStartingRetry": {
+    "description": "Countdown to the next attempt while the server is starting.",
+    "placeholders": {
+      "seconds": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "connectProbeCancel": "Cancel",
+  "@connectProbeCancel": {
+    "description": "Button that stops contacting the server and returns to the address screen."
+  },
+  "connectProbeUsing": "Using {address}",
+  "@connectProbeUsing": {
+    "description": "Shown when the server moved the app to another address, which is the one that will be used.",
+    "placeholders": {
+      "address": {
+        "type": "String",
+        "example": "https://music.example.com"
+      }
+    }
+  },
+  "connectProbeConnected": "Connected to {address}",
+  "@connectProbeConnected": {
+    "description": "Shown on the result of a successful check of a server reached without encryption.",
+    "placeholders": {
+      "address": {
+        "type": "String",
+        "example": "http://192.168.1.20:3030"
+      }
+    }
+  },
+  "connectProbeNotEncrypted": "Not encrypted",
+  "@connectProbeNotEncrypted": {
+    "description": "Warning chip on a server reached over plain http on the local network."
+  },
+  "connectProbeContinue": "Continue",
+  "@connectProbeContinue": {
+    "description": "Button that continues to sign-in after the server was found."
+  },
+  "connectProbeEditAddress": "Edit address",
+  "@connectProbeEditAddress": {
+    "description": "Button that returns to the address screen with the typed address kept."
+  },
+  "connectProbeTryAgain": "Try again",
+  "@connectProbeTryAgain": {
+    "description": "Button that contacts the server again."
+  },
+  "connectProbeTried": "Address tried: {address}",
+  "@connectProbeTried": {
+    "description": "The address the app tried, shown on a failure.",
+    "placeholders": {
+      "address": {
+        "type": "String",
+        "example": "https://music.example.com"
+      }
+    }
+  },
+  "connectProbeNeedsSetup": "This server has not been set up yet. Open it in a browser, create the first account there, then try again.",
+  "@connectProbeNeedsSetup": {
+    "description": "Shown when the server has no account yet and must be set up in its web interface."
+  },
+  "connectProbeOpenInBrowser": "Open in browser",
+  "@connectProbeOpenInBrowser": {
+    "description": "Button that opens the server’s web interface in the system browser."
+  },
+  "connectProbeDns": "Address not found",
+  "@connectProbeDns": {
+    "description": "Failure: the server’s host name could not be found."
+  },
+  "connectProbeRefused": "Nothing is listening at that address and port",
+  "@connectProbeRefused": {
+    "description": "Failure: the connection was refused."
+  },
+  "connectProbeTimeout": "The server did not answer",
+  "@connectProbeTimeout": {
+    "description": "Failure: the server did not answer in time."
+  },
+  "connectProbeTls": "The server’s certificate is not trusted by this device",
+  "@connectProbeTls": {
+    "description": "Failure: the secure connection failed because the certificate is not trusted."
+  },
+  "connectProbeBlockedByProxy": "Something in front of the server requires its own login",
+  "@connectProbeBlockedByProxy": {
+    "description": "Failure: a proxy or gateway in front of the server asked for its own login."
+  },
+  "connectProbeNotSoundspan": "That address is not a soundspan server (check the path)",
+  "@connectProbeNotSoundspan": {
+    "description": "Failure: the address answered, but not as a soundspan server."
+  },
+  "connectProbeServerError": "The server reported an error",
+  "@connectProbeServerError": {
+    "description": "Failure: the server answered with an error."
+  },
+  "connectProbeRedirectRefused": "The server redirected to an address this app will not follow",
+  "@connectProbeRedirectRefused": {
+    "description": "Failure: the server redirected too often, to another scheme, or from https to http."
+  },
+  "connectProbeCorsOrNetwork": "The server could not be reached. If it is running, it must allow this app’s address: add the address below to the server’s ALLOWED_ORIGINS setting, restart it and try again.",
+  "@connectProbeCorsOrNetwork": {
+    "description": "Failure in the browser app: the server is unreachable or does not allow this app’s origin. ALLOWED_ORIGINS is a setting name and is not translated."
+  },
+  "connectServerTooOld": "This app needs soundspan {minServer} or newer. This server runs {version}.",
+  "@connectServerTooOld": {
+    "description": "Shown instead of sign-in, or instead of the app, when the server is older than the oldest version this app supports.",
+    "placeholders": {
+      "minServer": {
+        "type": "String",
+        "example": "2.6.1"
+      },
+      "version": {
+        "type": "String",
+        "example": "2.5.0"
+      }
+    }
+  },
+  "connectServerTooOldCheckAgain": "Check again",
+  "@connectServerTooOldCheckAgain": {
+    "description": "Button that asks the signed-in server for its version again."
+  },
+  "connectServerTooOldSwitchServer": "Switch server",
+  "@connectServerTooOldSwitchServer": {
+    "description": "Button that opens the list of servers, to use another one."
+  },
+  "connectProbeOrigin": "This app’s address",
+  "@connectProbeOrigin": {
+    "description": "Label of the read-only field showing the web app’s origin."
+  },
+  "connectProbeCopyOrigin": "Copy",
+  "@connectProbeCopyOrigin": {
+    "description": "Button that copies the web app’s origin to the clipboard."
+  },
+  "mediaCardPlay": "Play",
+  "@mediaCardPlay": {
+    "description": "Tooltip and accessibility label of the play button shown over a hovered or focused album, artist or playlist card."
+  },
+  "shelfShowAll": "Show all",
+  "@shelfShowAll": {
+    "description": "Button in the header of a horizontal row of cards on Home: opens the whole section."
+  },
+  "shelfScrollBack": "Scroll back",
+  "@shelfScrollBack": {
+    "description": "Arrow button in the header of a horizontal row of cards: scrolls the row back by one visible width."
+  },
+  "shelfScrollForward": "Scroll forward",
+  "@shelfScrollForward": {
+    "description": "Arrow button in the header of a horizontal row of cards: scrolls the row forward by one visible width."
+  },
+  "connectSignInHeading": "Sign in to {server}",
+  "@connectSignInHeading": {
+    "description": "Heading of the sign-in form; names the server.",
+    "placeholders": {
+      "server": {
+        "type": "String",
+        "example": "https://music.example.com"
+      }
+    }
+  },
+  "connectSignInBack": "Use a different server",
+  "@connectSignInBack": {
+    "description": "Back control of the sign-in screen; returns to the address screen."
+  },
+  "connectSignInUsername": "User name or email",
+  "@connectSignInUsername": {
+    "description": "Label of the user name field on the sign-in form."
+  },
+  "connectSignInPassword": "Password",
+  "@connectSignInPassword": {
+    "description": "Label of the password field on the sign-in form."
+  },
+  "connectSignInShowPassword": "Show password",
+  "@connectSignInShowPassword": {
+    "description": "Tooltip of the control that reveals the typed password."
+  },
+  "connectSignInHidePassword": "Hide password",
+  "@connectSignInHidePassword": {
+    "description": "Tooltip of the control that hides the typed password again."
+  },
+  "connectSignInSubmit": "Sign in",
+  "@connectSignInSubmit": {
+    "description": "Button that submits the user name and password."
+  },
+  "connectSignInInvalidCredentials": "The user name or password is not correct",
+  "@connectSignInInvalidCredentials": {
+    "description": "Inline error when the server rejected the user name or password."
+  },
+  "connectSignInAuthenticatorPrompt": "Enter the 6-digit code from your authenticator app.",
+  "@connectSignInAuthenticatorPrompt": {
+    "description": "Instruction on the two-factor step in authenticator mode."
+  },
+  "connectSignInRecoveryPrompt": "Enter one of your 8-character recovery codes.",
+  "@connectSignInRecoveryPrompt": {
+    "description": "Instruction on the two-factor step in recovery-code mode."
+  },
+  "connectSignInAuthenticatorCode": "Authenticator code",
+  "@connectSignInAuthenticatorCode": {
+    "description": "Label of the code field in authenticator mode."
+  },
+  "connectSignInRecoveryCode": "Recovery code",
+  "@connectSignInRecoveryCode": {
+    "description": "Label of the code field in recovery-code mode."
+  },
+  "connectSignInUseRecovery": "Use a recovery code instead",
+  "@connectSignInUseRecovery": {
+    "description": "Button that switches the two-factor step to recovery codes."
+  },
+  "connectSignInUseAuthenticator": "Use an authenticator code instead",
+  "@connectSignInUseAuthenticator": {
+    "description": "Button that switches the two-factor step back to authenticator codes."
+  },
+  "connectSignInVerify": "Verify",
+  "@connectSignInVerify": {
+    "description": "Button that submits the two-factor code."
+  },
+  "connectSignInStartOver": "Start over",
+  "@connectSignInStartOver": {
+    "description": "Button that leaves the two-factor step and returns to the user name and password."
+  },
+  "connectSignInInvalidCode": "That code is not correct",
+  "@connectSignInInvalidCode": {
+    "description": "Inline error when the server rejected the two-factor or recovery code."
+  },
+  "connectSignInRateLimited": "{seconds, plural, =1{Too many attempts. Try again in 1 second.} other{Too many attempts. Try again in {seconds} seconds.}}",
+  "@connectSignInRateLimited": {
+    "description": "Shown after too many sign-in attempts, counting down until the next one is allowed.",
+    "placeholders": {
+      "seconds": {
+        "type": "int",
+        "example": "30"
+      }
+    }
+  },
+  "connectSignInFailed": "Could not sign in. Check the connection and try again.",
+  "@connectSignInFailed": {
+    "description": "Inline error when the sign-in request failed for any other reason."
+  },
+  "connectSignInRetry": "Retry",
+  "@connectSignInRetry": {
+    "description": "Button that sends the failed sign-in again."
+  },
+  "connectSignInSecureStorage": "This device has no secure storage service, so the sign-in cannot be kept. On Linux, install and start a Secret Service provider such as GNOME Keyring or KWallet.",
+  "@connectSignInSecureStorage": {
+    "description": "Error when the device cannot store the sign-in securely; nothing was saved."
+  },
+  "connectSignInNoPassword": "This server does not offer password sign-in.",
+  "@connectSignInNoPassword": {
+    "description": "Shown instead of the form when the server has password sign-in turned off."
+  },
+  "trackRowDurationHours": "{count, plural, =1{1 hour} other{{count} hours}}",
+  "@trackRowDurationHours": {
+    "description": "Hours part of a track's length as read by a screen reader, e.g. the '1 hour' of '1 hour 2 minutes 3 seconds'.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trackRowDurationMinutes": "{count, plural, =1{1 minute} other{{count} minutes}}",
+  "@trackRowDurationMinutes": {
+    "description": "Minutes part of a track's length as read by a screen reader, e.g. the '3 minutes' of '3 minutes 41 seconds'.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trackRowDurationSeconds": "{count, plural, =1{1 second} other{{count} seconds}}",
+  "@trackRowDurationSeconds": {
+    "description": "Seconds part of a track's length as read by a screen reader, e.g. the '41 seconds' of '3 minutes 41 seconds'.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "errorViewOffline": "You’re offline",
+  "@errorViewOffline": {
+    "description": "Shown in place of a screen's content when the server could not be reached and nothing is cached."
+  },
+  "errorViewFeatureDisabled": "Not available on this server",
+  "@errorViewFeatureDisabled": {
+    "description": "Shown in place of a screen's content when the server has turned off the feature the screen needs."
+  },
+  "errorViewRateLimited": "Too many requests, try again shortly",
+  "@errorViewRateLimited": {
+    "description": "Shown in place of a screen's content when the server refused the request because too many were sent."
+  },
+  "errorViewServerProblem": "The server ran into a problem",
+  "@errorViewServerProblem": {
+    "description": "Shown in place of a screen's content when the server, or a service it relies on, failed."
+  },
+  "errorViewNotFound": "This item is no longer available",
+  "@errorViewNotFound": {
+    "description": "Shown in place of an album, artist, playlist or other item that no longer exists on the server."
+  },
+  "errorViewGeneric": "Something went wrong",
+  "@errorViewGeneric": {
+    "description": "Shown in place of a screen's content when loading failed for any other reason."
+  },
+  "errorViewRetry": "Retry",
+  "@errorViewRetry": {
+    "description": "Button under a loading error: tries to load the screen again."
+  },
+  "appBannerDismiss": "Dismiss",
+  "@appBannerDismiss": {
+    "description": "Tooltip and accessibility label of the close button of an inline notice at the top of a screen."
+  },
+  "offlineBannerNoNetwork": "You’re offline. Showing what’s saved on this device.",
+  "@offlineBannerNoNetwork": {
+    "description": "Notice at the top of Home and Library when the device has no network connection."
+  },
+  "offlineBannerServerUnreachable": "Can’t reach the server. Showing what’s saved on this device.",
+  "@offlineBannerServerUnreachable": {
+    "description": "Notice at the top of Home and Library when the network is up but the server does not answer."
+  },
+  "offlineBannerForced": "Offline mode is on.",
+  "@offlineBannerForced": {
+    "description": "Notice at the top of Home and Library when the user turned offline mode on."
+  },
+  "offlineBannerRetry": "Retry",
+  "@offlineBannerRetry": {
+    "description": "Button of the server-unreachable notice that asks the server again at once."
+  },
+  "libraryTabPlaylists": "Playlists",
+  "@libraryTabPlaylists": {
+    "description": "Library tab that lists the user's playlists."
+  },
+  "libraryTabArtists": "Artists",
+  "@libraryTabArtists": {
+    "description": "Library tab that lists the artists in the user's library."
+  },
+  "libraryTabAlbums": "Albums",
+  "@libraryTabAlbums": {
+    "description": "Library tab that lists the albums in the user's library."
+  },
+  "libraryTabSongs": "Songs",
+  "@libraryTabSongs": {
+    "description": "Library tab that lists the songs in the user's library."
+  },
+  "librarySort": "Sort",
+  "@librarySort": {
+    "description": "Tooltip and accessibility label of the button above a library list that opens the choice of sort order."
+  },
+  "librarySortNameAsc": "Name (A-Z)",
+  "@librarySortNameAsc": {
+    "description": "Sort order of a library list: by name, A to Z."
+  },
+  "librarySortNameDesc": "Name (Z-A)",
+  "@librarySortNameDesc": {
+    "description": "Sort order of a library list: by name, Z to A."
+  },
+  "librarySortYearNewest": "Year (newest)",
+  "@librarySortYearNewest": {
+    "description": "Sort order of the albums list: newest release year first."
+  },
+  "librarySortMostTracks": "Most tracks",
+  "@librarySortMostTracks": {
+    "description": "Sort order of the artists list: artists with the most tracks first."
+  },
+  "libraryOriginAll": "All",
+  "@libraryOriginAll": {
+    "description": "Filter chip above a library list: shows everything in the library, wherever it lives."
+  },
+  "libraryOriginLocal": "Local",
+  "@libraryOriginLocal": {
+    "description": "Filter chip above a library list: shows only what lives in this server's own music folder."
+  },
+  "libraryOriginPeers": "Peers",
+  "@libraryOriginPeers": {
+    "description": "Filter chip above a library list: shows only what lives on connected peer servers."
+  },
+  "libraryOriginRemote": "Remote",
+  "@libraryOriginRemote": {
+    "description": "Filter chip above a library list: shows only what lives in connected streaming services."
+  },
+  "libraryRefresh": "Refresh",
+  "@libraryRefresh": {
+    "description": "Tooltip and accessibility label of the button above a library list that loads the list again from the server."
+  },
+  "libraryRefreshFailed": "Couldn’t refresh the list",
+  "@libraryRefreshFailed": {
+    "description": "Short message shown at the bottom of the screen when a library list could not be loaded again; the list already shown stays."
+  },
+  "libraryAlbumsEmpty": "No albums yet",
+  "@libraryAlbumsEmpty": {
+    "description": "Shown in place of the albums list when the library holds no albums."
+  },
+  "twoPaneSelectItem": "Select an item",
+  "@twoPaneSelectItem": {
+    "description": "Shown in the empty detail pane of the two-pane layout of a tablet in landscape until an item of the list beside it is selected."
+  },
+  "libraryArtistsEmpty": "No artists yet",
+  "@libraryArtistsEmpty": {
+    "description": "Shown in place of the artists list when the library holds no artists."
+  },
+  "librarySongsEmpty": "No songs yet",
+  "@librarySongsEmpty": {
+    "description": "Shown in place of the songs list when the library holds no tracks."
+  },
+  "libraryLikedSongs": "Liked Songs",
+  "@libraryLikedSongs": {
+    "description": "Name of the pinned row at the top of the playlist list in the Library and the sidebar; it opens the tracks the user liked."
+  },
+  "libraryPlaylistTrackCount": "{count, plural, =1{1 song} other{{count} songs}}",
+  "@libraryPlaylistTrackCount": {
+    "description": "Second line of a playlist row in the Library: how many songs the playlist holds.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "12"
+      }
+    }
+  },
+  "libraryPlaylistsEmptyHint": "Playlists you create appear here",
+  "@libraryPlaylistsEmptyHint": {
+    "description": "One line under Liked Songs in the Library's playlist list when the user has no playlists yet."
+  },
+  "sidebarPlaylistsLabel": "Playlists",
+  "@sidebarPlaylistsLabel": {
+    "description": "Accessibility label of the list of playlists in the sidebar, under the main destinations."
+  },
+  "libraryArtistCardSubtitle": "Artist",
+  "@libraryArtistCardSubtitle": {
+    "description": "Second line of an artist card in the library grid, under the artist's name."
+  },
+  "homeGreetingMorning": "Good morning",
+  "@homeGreetingMorning": {
+    "description": "Greeting at the top of Home before 12:00 local time."
+  },
+  "homeGreetingAfternoon": "Good afternoon",
+  "@homeGreetingAfternoon": {
+    "description": "Greeting at the top of Home from 12:00 to 17:59 local time."
+  },
+  "homeGreetingEvening": "Good evening",
+  "@homeGreetingEvening": {
+    "description": "Greeting at the top of Home from 18:00 local time."
+  },
+  "homeShelfContinueListening": "Continue Listening",
+  "@homeShelfContinueListening": {
+    "description": "Title of the Home row of artists and podcasts the user listened to recently."
+  },
+  "homeShelfRecentlyAdded": "Recently Added",
+  "@homeShelfRecentlyAdded": {
+    "description": "Title of the Home row of artists recently added to the library."
+  },
+  "homeShelfMadeForYou": "Made For You",
+  "@homeShelfMadeForYou": {
+    "description": "Title of the Home row with Liked Songs and the mixes generated for the user."
+  },
+  "homeShelfYourPlaylists": "Your Playlists",
+  "@homeShelfYourPlaylists": {
+    "description": "Title of the Home row of the user's playlists."
+  },
+  "homeShelfPopularPodcasts": "Popular Podcasts",
+  "@homeShelfPopularPodcasts": {
+    "description": "Title of the Home row of podcasts popular in the podcast directory."
+  },
+  "homeLikedSongs": "Liked Songs",
+  "@homeLikedSongs": {
+    "description": "Title of the card that opens the tracks the user liked."
+  },
+  "homeLikedSongsSubtitle": "Playlist",
+  "@homeLikedSongsSubtitle": {
+    "description": "Second line of the Liked Songs card: what kind of item it is."
+  },
+  "homeCardArtist": "Artist",
+  "@homeCardArtist": {
+    "description": "Second line of a card of an artist on Home: what kind of item it is."
+  },
+  "homeCardPodcast": "Podcast",
+  "@homeCardPodcast": {
+    "description": "Second line of a card of a podcast on Home when the podcast has no author."
+  },
+  "homeNoticeNewerThanTested": "This server is newer than this app was tested with",
+  "@homeNoticeNewerThanTested": {
+    "description": "Notice at the top of Home when the server runs a version newer than the newest one this app was tested against."
+  },
+  "homeNoticeVersionUnknown": "This server’s version could not be read",
+  "@homeNoticeVersionUnknown": {
+    "description": "Notice at the top of Home when the server did not say which version it runs."
+  },
+  "homeLinkExpiring": "{days, plural, =1{This device’s link expires today} other{This device’s link expires in {days} days}}",
+  "@homeLinkExpiring": {
+    "description": "Banner at the top of Home when this device's link (its API key) expires within 14 days; 1 means today.",
+    "placeholders": {
+      "days": {
+        "type": "int",
+        "example": "5"
+      }
+    }
+  },
+  "homeLinkExpired": "This device’s link has expired",
+  "@homeLinkExpired": {
+    "description": "Banner at the top of Home when this device's link (its API key) has expired."
+  },
+  "homeLinkAgain": "Link again",
+  "@homeLinkAgain": {
+    "description": "Action of the link-expiry banner: link this device again with a new code."
+  },
+  "keyExpiryNotificationTitle": "This device’s link expires soon",
+  "@keyExpiryNotificationTitle": {
+    "description": "Title of the local notification warning that this device's link (its API key) expires soon."
+  },
+  "keyExpiryNotificationBody": "{days, plural, =1{It expires today. Tap to link it again.} other{It expires in {days} days. Tap to link it again.}}",
+  "@keyExpiryNotificationBody": {
+    "description": "Body of the local notification warning that this device's link expires; 1 means today.",
+    "placeholders": {
+      "days": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "homeEmptyLibrary": "Your library is empty",
+  "@homeEmptyLibrary": {
+    "description": "Shown on Home in place of the rows when every row loaded and none has anything in it."
+  },
+  "homePlaylistSongs": "{count, plural, =1{1 song} other{{count} songs}}",
+  "@homePlaylistSongs": {
+    "description": "Second line of a playlist card on Home: how many songs the playlist has.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "detailDurationMinutes": "{minutes} min",
+  "@detailDurationMinutes": {
+    "description": "Total running time of an album or playlist under an hour, in a detail page's metadata line, e.g. '45 min'.",
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "detailDurationHours": "{hours} hr {minutes} min",
+  "@detailDurationHours": {
+    "description": "Total running time of an album or playlist from an hour, in a detail page's metadata line, e.g. '1 hr 5 min'.",
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "detailSongCount": "{count, plural, =1{1 song} other{{count} songs}}",
+  "@detailSongCount": {
+    "description": "Number of songs in an album or playlist, in a detail page's metadata line.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "detailRefreshFailed": "Couldn’t refresh. Showing saved content.",
+  "@detailRefreshFailed": {
+    "description": "Snackbar when an album or playlist page could not be refreshed and the saved copy stays on screen."
+  },
+  "likeButtonLike": "Like",
+  "@likeButtonLike": {
+    "description": "Tooltip, accessibility label and track-row action of the heart button of a track that is not liked."
+  },
+  "likeButtonRemove": "Remove like",
+  "@likeButtonRemove": {
+    "description": "Tooltip, accessibility label and track-row action of the heart button of a liked track."
+  },
+  "trackNotPlayable": "Not playable",
+  "@trackNotPlayable": {
+    "description": "Tooltip and accessibility reason of a track row that cannot be played."
+  },
+  "trackRowPlayHint": "Play",
+  "@trackRowPlayHint": {
+    "description": "Accessibility hint of a track row: activating it plays the track within its list."
+  },
+  "trackRowPlaying": "now playing",
+  "@trackRowPlaying": {
+    "description": "Read in the accessibility label of the track row that is the current queue item while it plays, after the downloaded and liked words, as in 'Title, Artist, 3 minutes, liked, now playing'."
+  },
+  "trackRowPaused": "paused",
+  "@trackRowPaused": {
+    "description": "Read in the accessibility label of the track row that is the current queue item while it is paused, in the place of 'now playing'."
+  },
+  "playQueueTruncated": "Only the first {count} songs were queued",
+  "@playQueueTruncated": {
+    "description": "Snackbar after playing or queueing more songs than the queue holds; count is the most it holds (5,000).",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "librarySongsShuffleAll": "Shuffle all",
+  "@librarySongsShuffleAll": {
+    "description": "Button above the Library Songs list that plays the whole library in a random order."
+  },
+  "albumOverline": "Album",
+  "@albumOverline": {
+    "description": "Type label above the title of an album page."
+  },
+  "albumDisc": "Disc {number}",
+  "@albumDisc": {
+    "description": "Group header over the tracks of one disc of a multi-disc album.",
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "albumMoreByArtist": "More by this artist",
+  "@albumMoreByArtist": {
+    "description": "Title of the shelf of the artist's other albums on an album page."
+  },
+  "playlistOverline": "Playlist",
+  "@playlistOverline": {
+    "description": "Type label above the title of a playlist page."
+  },
+  "playlistPublic": "Public",
+  "@playlistPublic": {
+    "description": "Metadata on a playlist page: the playlist is visible to other users."
+  },
+  "playlistLikedTitle": "Liked Songs",
+  "@playlistLikedTitle": {
+    "description": "Title of the page listing the tracks the user liked."
+  },
+  "playlistEmpty": "This playlist has no songs yet",
+  "@playlistEmpty": {
+    "description": "Shown on a playlist page when the playlist has no songs."
+  },
+  "playlistNew": "New playlist",
+  "@playlistNew": {
+    "description": "Button in the Library's Playlists tab and the sidebar that creates a playlist, and the title of the dialog that names it."
+  },
+  "playlistRenameTitle": "Rename playlist",
+  "@playlistRenameTitle": {
+    "description": "Title of the dialog that renames a playlist."
+  },
+  "playlistNameLabel": "Name",
+  "@playlistNameLabel": {
+    "description": "Label of the playlist name field in the create and rename dialogs."
+  },
+  "playlistCreate": "Create",
+  "@playlistCreate": {
+    "description": "Confirm button of the dialog that creates a playlist."
+  },
+  "playlistRename": "Rename",
+  "@playlistRename": {
+    "description": "Confirm button of the dialog that renames a playlist."
+  },
+  "playlistCancel": "Cancel",
+  "@playlistCancel": {
+    "description": "Button that closes a playlist dialog without changing anything."
+  },
+  "playlistDeleteTitle": "Delete {name}?",
+  "@playlistDeleteTitle": {
+    "description": "Title of the dialog confirming that a playlist is deleted.",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "Road Trip"
+      }
+    }
+  },
+  "playlistDeleteBody": "The playlist is removed from your library. The songs in it stay.",
+  "@playlistDeleteBody": {
+    "description": "Body of the dialog confirming that a playlist is deleted."
+  },
+  "playlistDelete": "Delete",
+  "@playlistDelete": {
+    "description": "Destructive confirm button of the dialog that deletes a playlist."
+  },
+  "playlistAddToTitle": "Add to playlist",
+  "@playlistAddToTitle": {
+    "description": "Title of the sheet or dialog that picks the playlist to add songs to."
+  },
+  "playlistAdded": "{count, plural, =1{Added 1 song to {name}} other{Added {count} songs to {name}}}",
+  "@playlistAdded": {
+    "description": "Snackbar after songs were added to a playlist.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "name": {
+        "type": "String",
+        "example": "Road Trip"
+      }
+    }
+  },
+  "dragTrackCount": "{count, plural, =1{1 track} other{{count} tracks}}",
+  "@dragTrackCount": {
+    "description": "Label of the chip that follows the pointer while several tracks are dragged.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "playlistReorderHandle": "Drag to reorder",
+  "@playlistReorderHandle": {
+    "description": "Tooltip and screen-reader label of the drag handle that moves a song within a playlist."
+  },
+  "artistOverline": "Artist",
+  "@artistOverline": {
+    "description": "Type label above the name on an artist page."
+  },
+  "artistPopular": "Popular",
+  "@artistPopular": {
+    "description": "Title of the section of an artist page listing the artist's most played songs."
+  },
+  "artistShowMore": "Show more",
+  "@artistShowMore": {
+    "description": "Button under the Popular title of an artist page: lists more of the artist's most played songs."
+  },
+  "artistShowLess": "Show less",
+  "@artistShowLess": {
+    "description": "Button on an artist page that collapses the expanded Popular list or biography again."
+  },
+  "artistAlbums": "Albums",
+  "@artistAlbums": {
+    "description": "Title of the shelf of an artist's albums on an artist page."
+  },
+  "artistSinglesAndEps": "Singles and EPs",
+  "@artistSinglesAndEps": {
+    "description": "Title of the shelf of an artist's singles and EPs on an artist page."
+  },
+  "artistSimilar": "Similar Artists",
+  "@artistSimilar": {
+    "description": "Title of the shelf of artists similar to this one on an artist page."
+  },
+  "artistCardSubtitle": "Artist",
+  "@artistCardSubtitle": {
+    "description": "Second line of a similar-artist card on an artist page."
+  },
+  "artistAbout": "About",
+  "@artistAbout": {
+    "description": "Title of the biography section of an artist page."
+  },
+  "artistReadMore": "Read more",
+  "@artistReadMore": {
+    "description": "Button under the collapsed biography of an artist page: shows the whole text in place."
+  },
+  "searchFieldHint": "Songs, artists, albums or podcasts",
+  "@searchFieldHint": {
+    "description": "Placeholder and accessibility label of the field on the Search screen."
+  },
+  "searchClear": "Clear search",
+  "@searchClear": {
+    "description": "Tooltip and accessibility label of the button that empties the field on the Search screen."
+  },
+  "searchScopeAll": "All",
+  "@searchScopeAll": {
+    "description": "Filter chip on the Search screen: results from everywhere."
+  },
+  "searchScopeLibrary": "Library",
+  "@searchScopeLibrary": {
+    "description": "Filter chip on the Search screen: only results from the user's library."
+  },
+  "searchScopeDiscover": "Discover",
+  "@searchScopeDiscover": {
+    "description": "Filter chip on the Search screen: only results from outside the user's library."
+  },
+  "searchScopePodcasts": "Podcasts",
+  "@searchScopePodcasts": {
+    "description": "Filter chip on the Search screen: only podcasts."
+  },
+  "searchRecentTitle": "Recent searches",
+  "@searchRecentTitle": {
+    "description": "Heading of the list of the user's recent searches, shown on the Search screen while the field is empty."
+  },
+  "searchRecentClearAll": "Clear all",
+  "@searchRecentClearAll": {
+    "description": "Button next to the recent searches heading: forgets every recent search."
+  },
+  "searchRecentRemove": "Remove {query}",
+  "@searchRecentRemove": {
+    "description": "Tooltip and accessibility label of the button that forgets one recent search.",
+    "placeholders": {
+      "query": {
+        "type": "String",
+        "example": "miles davis"
+      }
+    }
+  },
+  "searchPrompt": "Search for songs, artists, albums and podcasts",
+  "@searchPrompt": {
+    "description": "Shown on the Search screen while the field is empty and there are no recent searches."
+  },
+  "searchNoResults": "No results for “{query}”",
+  "@searchNoResults": {
+    "description": "Shown on the Search screen when nothing matches the query.",
+    "placeholders": {
+      "query": {
+        "type": "String",
+        "example": "miles davis"
+      }
+    }
+  },
+  "searchTopResult": "Top result",
+  "@searchTopResult": {
+    "description": "Heading of the large card of the best match on the Search screen."
+  },
+  "searchSectionSongs": "Songs",
+  "@searchSectionSongs": {
+    "description": "Heading of the songs section of the Search screen."
+  },
+  "searchSectionArtists": "Artists",
+  "@searchSectionArtists": {
+    "description": "Heading of the artists section of the Search screen."
+  },
+  "searchSectionAlbums": "Albums",
+  "@searchSectionAlbums": {
+    "description": "Heading of the albums section of the Search screen."
+  },
+  "searchSectionPlaylists": "Playlists",
+  "@searchSectionPlaylists": {
+    "description": "Heading of the section of the user's playlists on the Search screen."
+  },
+  "searchSectionPodcasts": "Podcasts",
+  "@searchSectionPodcasts": {
+    "description": "Heading of the podcasts section of the Search screen."
+  },
+  "searchShowAll": "Show all",
+  "@searchShowAll": {
+    "description": "Button in a section header of the Search screen: shows every result of that section in place."
+  },
+  "searchShowLess": "Show less",
+  "@searchShowLess": {
+    "description": "Button in an expanded section header of the Search screen: shows the first results only again."
+  },
+  "searchNotPlayable": "Not playable",
+  "@searchNotPlayable": {
+    "description": "Tooltip and spoken reason of a song row on the Search screen that cannot be played."
+  },
+  "searchKindArtist": "Artist",
+  "@searchKindArtist": {
+    "description": "Second line of an artist card on the Search screen: what kind of item it is."
+  },
+  "searchKindSong": "Song",
+  "@searchKindSong": {
+    "description": "Second line of the top result card on the Search screen when it is a song with no artist name."
+  },
+  "searchKindPodcast": "Podcast",
+  "@searchKindPodcast": {
+    "description": "Second line of a podcast card on the Search screen when the podcast has no author."
+  },
+  "searchPlaylistSongs": "{count, plural, =1{1 song} other{{count} songs}}",
+  "@searchPlaylistSongs": {
+    "description": "Second line of a playlist card on the Search screen: how many songs the playlist has.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "codeCellsLabel": "Link code, 6 characters",
+  "@codeCellsLabel": {
+    "description": "Screen-reader label of the six cells a device-link code is typed into."
+  },
+  "codeCellsHint": "Codes have no I, O, 0 or 1",
+  "@codeCellsHint": {
+    "description": "Shown under the device-link code cells when a character that cannot be in a code was typed."
+  },
+  "connectDeviceLinkStep1": "Open soundspan in a browser",
+  "@connectDeviceLinkStep1": {
+    "description": "First of three steps to get a device-link code from the web UI."
+  },
+  "connectDeviceLinkStep2": "Go to Settings → Link Device",
+  "@connectDeviceLinkStep2": {
+    "description": "Second of three steps to get a device-link code from the web UI; 'Settings' and 'Link Device' are the web UI's names."
+  },
+  "connectDeviceLinkStep3": "Select Generate Code and enter it below",
+  "@connectDeviceLinkStep3": {
+    "description": "Third of three steps to get a device-link code from the web UI; 'Generate Code' is the web UI's button."
+  },
+  "connectDeviceLinkDeviceName": "Device name",
+  "@connectDeviceLinkDeviceName": {
+    "description": "Label of the field naming this device on the server when it is linked with a code."
+  },
+  "connectDeviceLinkSubmit": "Link",
+  "@connectDeviceLinkSubmit": {
+    "description": "Button that links this device with the entered code."
+  },
+  "connectScanQrCode": "Scan QR code",
+  "@connectScanQrCode": {
+    "description": "Button on the address screen and the device-link panel that opens the camera to scan the QR code from the web UI's device page."
+  },
+  "connectScanHint": "Point the camera at the QR code on the Link Device page of the web UI.",
+  "@connectScanHint": {
+    "description": "Instruction under the camera preview of the QR scanner."
+  },
+  "connectScanRejected": "That is not a soundspan code",
+  "@connectScanRejected": {
+    "description": "Shown for three seconds under the camera preview when the scanned QR code is neither a soundspan link nor a server address."
+  },
+  "connectScanPermissionDenied": "soundspan cannot use the camera to scan the code.",
+  "@connectScanPermissionDenied": {
+    "description": "Shown instead of the camera preview when the user denied the camera permission."
+  },
+  "connectScanAllowCamera": "To scan, allow camera access for soundspan in your system settings.",
+  "@connectScanAllowCamera": {
+    "description": "Tells the user how to allow the camera after denying it; there is no link to the settings."
+  },
+  "connectScanNoCamera": "No camera available",
+  "@connectScanNoCamera": {
+    "description": "Shown instead of the camera preview when the device has no usable camera."
+  },
+  "connectScanEnterCode": "Enter the code instead",
+  "@connectScanEnterCode": {
+    "description": "Button on the QR scanner's fallback screen that returns to typing the device-link code."
+  },
+  "connectDeviceLinkInvalidCode": "That code does not exist. Generate a new code in the web UI.",
+  "@connectDeviceLinkInvalidCode": {
+    "description": "Inline error when the server knows no such device-link code."
+  },
+  "connectDeviceLinkCodeUsed": "That code has already been used. Generate a new code in the web UI.",
+  "@connectDeviceLinkCodeUsed": {
+    "description": "Inline error when the device-link code was used before."
+  },
+  "connectDeviceLinkCodeExpired": "That code has expired. Generate a new code in the web UI.",
+  "@connectDeviceLinkCodeExpired": {
+    "description": "Inline error when the device-link code is too old."
+  },
+  "connectDeviceLinkRejected": "The server did not accept the code. Generate a new code in the web UI.",
+  "@connectDeviceLinkRejected": {
+    "description": "Inline error when the server turned the device-link code down without saying why."
+  },
+  "connectSignInLinkWithCode": "Link with a code",
+  "@connectSignInLinkWithCode": {
+    "description": "Secondary action on the password sign-in screen that shows the device-link panel instead."
+  },
+  "connectSignInUsePassword": "Sign in with a password",
+  "@connectSignInUsePassword": {
+    "description": "Secondary action on the device-link panel that goes back to the password form."
+  },
+  "connectSignInSsoNote": "Single sign-on users: link this device with a code.",
+  "@connectSignInSsoNote": {
+    "description": "Note on the password sign-in screen of a server that also offers single sign-on."
+  },
+  "connectLinkThisDevice": "Link this device",
+  "@connectLinkThisDevice": {
+    "description": "Heading of the device-link panel."
+  },
+  "connectSignInWithProvider": "Sign in with {provider}",
+  "@connectSignInWithProvider": {
+    "description": "Heading of the device-link panel on a server that offers only single sign-on, naming its provider.",
+    "placeholders": {
+      "provider": {
+        "type": "String",
+        "example": "Authentik"
+      }
+    }
+  },
+  "screenPodcast": "Podcast",
+  "@screenPodcast": {
+    "description": "Window title part and route name of a podcast page."
+  },
+  "podcastsYourPodcasts": "Your podcasts",
+  "@podcastsYourPodcasts": {
+    "description": "Title of the grid of the podcasts the user is subscribed to on the Podcasts screen."
+  },
+  "podcastsTopPodcasts": "Top podcasts",
+  "@podcastsTopPodcasts": {
+    "description": "Title of the shelf of popular podcasts from the directory on the Podcasts screen."
+  },
+  "podcastsEmpty": "You haven’t subscribed to any podcasts yet",
+  "@podcastsEmpty": {
+    "description": "Shown on the Podcasts screen when the user is subscribed to no podcast."
+  },
+  "podcastsOverline": "Podcast",
+  "@podcastsOverline": {
+    "description": "Type label above the title on a podcast page."
+  },
+  "podcastsEpisodeCount": "{count, plural, =1{1 episode} other{{count} episodes}}",
+  "@podcastsEpisodeCount": {
+    "description": "Part of the metadata line of a podcast page: how many episodes the podcast has.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "podcastsSubscribe": "Subscribe",
+  "@podcastsSubscribe": {
+    "description": "Button that subscribes the user to a podcast, on a podcast page and in the dialog of a top podcast."
+  },
+  "podcastsUnsubscribe": "Unsubscribe",
+  "@podcastsUnsubscribe": {
+    "description": "Button on a podcast page that unsubscribes the user from the podcast, and the confirming action of its dialog."
+  },
+  "podcastsUnsubscribeTitle": "Unsubscribe from {title}?",
+  "@podcastsUnsubscribeTitle": {
+    "description": "Title of the dialog confirming that the user wants to unsubscribe from a podcast.",
+    "placeholders": {
+      "title": {
+        "type": "String",
+        "example": "The Daily"
+      }
+    }
+  },
+  "podcastsUnsubscribeBody": "The podcast leaves your podcasts. You can subscribe again later.",
+  "@podcastsUnsubscribeBody": {
+    "description": "Body of the dialog confirming that the user wants to unsubscribe from a podcast."
+  },
+  "podcastsCancel": "Cancel",
+  "@podcastsCancel": {
+    "description": "Dismisses a Podcasts dialog without doing anything."
+  },
+  "podcastsOfflineTooltip": "Subscriptions can be changed only while the server is reachable",
+  "@podcastsOfflineTooltip": {
+    "description": "Tooltip of the disabled Subscribe or Unsubscribe button while the server is not reachable."
+  },
+  "podcastsSubscribeFailed": "Couldn’t subscribe. Try again.",
+  "@podcastsSubscribeFailed": {
+    "description": "Snackbar shown when subscribing to a podcast failed."
+  },
+  "podcastsUnsubscribeFailed": "Couldn’t unsubscribe. Try again.",
+  "@podcastsUnsubscribeFailed": {
+    "description": "Snackbar shown when unsubscribing from a podcast failed."
+  },
+  "podcastsShowMore": "Show more",
+  "@podcastsShowMore": {
+    "description": "Button under the collapsed description of a podcast page: shows the whole description."
+  },
+  "podcastsShowLess": "Show less",
+  "@podcastsShowLess": {
+    "description": "Button under the expanded description of a podcast page: collapses it to three lines again."
+  },
+  "podcastsEpisodePlayed": "Played",
+  "@podcastsEpisodePlayed": {
+    "description": "Label next to the check of an episode the user finished."
+  },
+  "podcastsEpisodeMinutes": "{count, plural, =1{1 minute} other{{count} minutes}}",
+  "@podcastsEpisodeMinutes": {
+    "description": "An episode's length as a screen reader says it, in whole minutes.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "podcastsEpisodeMinutesLeft": "{count, plural, =1{1 minute left} other{{count} minutes left}}",
+  "@podcastsEpisodeMinutesLeft": {
+    "description": "How much of a started episode is left, as a screen reader says it, in whole minutes.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "podcastsEpisodePlayedSpoken": "played",
+  "@podcastsEpisodePlayedSpoken": {
+    "description": "Last part of the screen-reader label of an episode the user finished, e.g. the 'played' of 'Title, Mar 12, 2026, 42 minutes, played'."
+  },
+  "navExplore": "Explore",
+  "@navExplore": {
+    "description": "Sidebar item, Home card and screen name of Explore, the page of recommendations and new music."
+  },
+  "discoverRecommendedForYou": "Recommended For You",
+  "@discoverRecommendedForYou": {
+    "description": "Title of the Home row and the Explore section of artists similar to the ones the user plays most."
+  },
+  "discoverPopularArtists": "Popular Artists",
+  "@discoverPopularArtists": {
+    "description": "Title of the Home row and the Explore section of artists popular right now."
+  },
+  "discoverCardArtist": "Artist",
+  "@discoverCardArtist": {
+    "description": "Second line of a card of a recommended or popular artist: what kind of item it is."
+  },
+  "exploreThisWeek": "This week’s discoveries",
+  "@exploreThisWeek": {
+    "description": "Title of the Explore section of this week's discovery playlist."
+  },
+  "explorePlay": "Play",
+  "@explorePlay": {
+    "description": "Button of the Explore discovery section that plays its tracks in order."
+  },
+  "exploreShuffle": "Shuffle",
+  "@exploreShuffle": {
+    "description": "Button of the Explore discovery section that plays its tracks in random order."
+  },
+  "exploreShowAll": "Show all",
+  "@exploreShowAll": {
+    "description": "Button under the first tracks of the Explore discovery section that shows every track."
+  },
+  "exploreEmpty": "Nothing to explore yet",
+  "@exploreEmpty": {
+    "description": "Shown on Explore when every section is empty."
+  },
+  "homeExploreCard": "Find new artists and music",
+  "@homeExploreCard": {
+    "description": "Second line of the Explore card at the end of Home on phones and tablets."
+  },
+  "exploreRadioByGenre": "Radio by genre",
+  "@exploreRadioByGenre": {
+    "description": "Title of the Explore section of radio stations, one per genre of the user's library."
+  },
+  "exploreRadioByDecade": "Radio by decade",
+  "@exploreRadioByDecade": {
+    "description": "Title of the Explore section of radio stations, one per decade of the user's library."
+  },
+  "exploreRadioShowAll": "Show all",
+  "@exploreRadioShowAll": {
+    "description": "Button under the first genre stations of Explore that shows every genre station."
+  },
+  "exploreRadioDecade": "{decade}s",
+  "@exploreRadioDecade": {
+    "description": "Name of a decade radio station, from the decade's first year, such as 1990s.",
+    "placeholders": {
+      "decade": {"type": "String", "example": "1990"}
+    }
+  },
+  "exploreRadioTrackCount": "{count, plural, =1{1 track} other{{count} tracks}}",
+  "@exploreRadioTrackCount": {
+    "description": "Caption of a radio station tile: how many library tracks the station draws from.",
+    "placeholders": {
+      "count": {"type": "int", "example": "42"}
+    }
+  },
+  "exploreRadioStationSemantics": "{station}, {tracks}, radio station",
+  "@exploreRadioStationSemantics": {
+    "description": "Screen-reader label of a radio station tile on Explore.",
+    "placeholders": {
+      "station": {"type": "String", "example": "Rock"},
+      "tracks": {"type": "String", "example": "42 tracks"}
+    }
+  },
+  "exploreRadioNoTracks": "No tracks for this station",
+  "@exploreRadioNoTracks": {
+    "description": "Snackbar when a radio station returned no playable tracks."
+  },
+  "exploreRadioFailed": "Couldn’t start the station",
+  "@exploreRadioFailed": {
+    "description": "Snackbar when starting a radio station failed."
+  },
+  "exploreRadioRetry": "Retry",
+  "@exploreRadioRetry": {
+    "description": "Action of the snackbar shown when starting a radio station failed; starts it again."
+  },
+  "exploreRadioOffline": "Not available offline",
+  "@exploreRadioOffline": {
+    "description": "Tooltip and screen-reader reason of a radio station tile that cannot start because the server is not reachable."
+  },
+  "queueContextRadio": "Radio · {station}",
+  "@queueContextRadio": {
+    "description": "Queue header and now-playing overline while the queue plays a radio station.",
+    "placeholders": {
+      "station": {"type": "String", "example": "Rock"}
+    }
+  },
+  "connectSignInUseApiKey": "Use an API key",
+  "@connectSignInUseApiKey": {
+    "description": "Secondary action on the sign-in screen that shows the form for signing in with an API key copied from the web UI."
+  },
+  "connectApiKeyHeading": "Sign in with an API key",
+  "@connectApiKeyHeading": {
+    "description": "Heading of the form that signs in with an API key pasted from the web UI."
+  },
+  "connectApiKeyField": "API key",
+  "@connectApiKeyField": {
+    "description": "Label of the field the API key is pasted into."
+  },
+  "connectApiKeyShow": "Show API key",
+  "@connectApiKeyShow": {
+    "description": "Tooltip of the button that reveals the pasted API key."
+  },
+  "connectApiKeyHide": "Hide API key",
+  "@connectApiKeyHide": {
+    "description": "Tooltip of the button that hides the pasted API key again."
+  },
+  "connectApiKeyPaste": "Paste",
+  "@connectApiKeyPaste": {
+    "description": "Button that fills the API key field from the clipboard."
+  },
+  "connectApiKeyExpiryUnknown": "This key’s expiry date is not known to the app. You will be asked to sign in again when the server stops accepting it.",
+  "@connectApiKeyExpiryUnknown": {
+    "description": "Note under the API key form: the app cannot tell when a pasted key expires."
+  },
+  "connectApiKeyMalformed": "This is not an API key. Copy the whole key from the web UI and paste it here.",
+  "@connectApiKeyMalformed": {
+    "description": "Inline error: the pasted text is empty, too long or has characters an API key cannot have."
+  },
+  "connectApiKeyRejected": "The server did not accept this key. It may have expired or been revoked.",
+  "@connectApiKeyRejected": {
+    "description": "Inline error: the server answered the API key with 401 or 403."
+  },
+  "connectSignInNoBrowserMethod": "This server offers no sign-in method this app can use in a browser.",
+  "@connectSignInNoBrowserMethod": {
+    "description": "Shown in the browser app when the server offers neither password sign-in nor single sign-on, leaving only API keys, which the browser app cannot use."
+  },
+  "downloadUnavailableDisabled": "Downloads are turned off on this server",
+  "@downloadUnavailableDisabled": {
+    "description": "Shown on a greyed-out track of a downloaded album or playlist when the server administrator turned offline downloads off."
+  },
+  "downloadUnavailableGone": "No longer available",
+  "@downloadUnavailableGone": {
+    "description": "Shown on a greyed-out track of a downloaded album or playlist that the server no longer has."
+  },
+  "downloadUnavailableAccount": "Not available for your account",
+  "@downloadUnavailableAccount": {
+    "description": "Shown on a greyed-out track of a downloaded album or playlist that this account cannot stream, so cannot download."
+  },
+  "playerPlay": "Play",
+  "@playerPlay": {
+    "description": "Tooltip and screen-reader label of the player's play button."
+  },
+  "playerPause": "Pause",
+  "@playerPause": {
+    "description": "Tooltip and screen-reader label of the player's pause button."
+  },
+  "playerSkipBack": "Skip back {seconds} seconds",
+  "@playerSkipBack": {
+    "description": "Tooltip and screen-reader label of the player's button that moves back in an episode by the skip interval.",
+    "placeholders": {
+      "seconds": {"type": "int", "example": "15"}
+    }
+  },
+  "playerSkipForward": "Skip forward {seconds} seconds",
+  "@playerSkipForward": {
+    "description": "Tooltip and screen-reader label of the player's button that moves forward in an episode by the skip interval.",
+    "placeholders": {
+      "seconds": {"type": "int", "example": "15"}
+    }
+  },
+  "playerAnnounceTrack": "Now playing {title} by {artist}",
+  "@playerAnnounceTrack": {
+    "description": "Spoken politely by the screen reader when playback moves to another track.",
+    "placeholders": {
+      "title": {"type": "String", "example": "Blue in Green"},
+      "artist": {"type": "String", "example": "Miles Davis"}
+    }
+  },
+  "playerAnnounceTrackNoArtist": "Now playing {title}",
+  "@playerAnnounceTrackNoArtist": {
+    "description": "Spoken politely by the screen reader when playback moves to a track whose artist is unknown.",
+    "placeholders": {
+      "title": {"type": "String", "example": "Blue in Green"}
+    }
+  },
+  "playerAnnounceEpisode": "{title}, {podcast}",
+  "@playerAnnounceEpisode": {
+    "description": "Spoken politely by the screen reader when playback moves to a podcast episode: the episode title, then the podcast title.",
+    "placeholders": {
+      "title": {"type": "String", "example": "Episode 12"},
+      "podcast": {"type": "String", "example": "The Daily Show"}
+    }
+  },
+  "playerSpeed": "Playback speed",
+  "@playerSpeed": {
+    "description": "Tooltip and screen-reader label of the player's episode speed menu button."
+  },
+  "playerSpeedValue": "{speed}×",
+  "@playerSpeedValue": {
+    "description": "An episode playback speed on the player's speed button and in its menu, such as 1.25×.",
+    "placeholders": {
+      "speed": {"type": "double", "format": "decimalPattern", "example": "1.25"}
+    }
+  },
+  "playerNext": "Next",
+  "@playerNext": {
+    "description": "Tooltip and screen-reader label of the player's button that skips to the next item."
+  },
+  "playerPrevious": "Previous",
+  "@playerPrevious": {
+    "description": "Tooltip and screen-reader label of the player's button that goes back to the previous item or the start of this one."
+  },
+  "playerShuffle": "Shuffle",
+  "@playerShuffle": {
+    "description": "Tooltip and screen-reader label of the player's shuffle toggle."
+  },
+  "playerRepeatOff": "Repeat",
+  "@playerRepeatOff": {
+    "description": "Tooltip and screen-reader label of the player's repeat button while repeat is off; a tap repeats the queue."
+  },
+  "playerRepeatAll": "Repeat all",
+  "@playerRepeatAll": {
+    "description": "Tooltip and screen-reader label of the player's repeat button while the whole queue repeats; a tap repeats the current item."
+  },
+  "playerRepeatOne": "Repeat one",
+  "@playerRepeatOne": {
+    "description": "Tooltip and screen-reader label of the player's repeat button while the current item repeats; a tap turns repeat off."
+  },
+  "playerVolume": "Volume",
+  "@playerVolume": {
+    "description": "Screen-reader label of the player's volume slider."
+  },
+  "playerSeek": "Seek",
+  "@playerSeek": {
+    "description": "Screen-reader label of the seek bar that shows and changes the position in the playing item."
+  },
+  "playerSeekValue": "{position} of {duration}",
+  "@playerSeekValue": {
+    "description": "Screen-reader value of the seek bar: the position and the length of the playing item, each as m:ss or h:mm:ss, e.g. 1:05 of 3:41.",
+    "placeholders": {
+      "position": {"type": "String", "example": "1:05"},
+      "duration": {"type": "String", "example": "3:41"}
+    }
+  },
+  "nowPlayingOverline": "Now playing",
+  "@nowPlayingOverline": {
+    "description": "Label at the top of the now-playing screen, shown in upper case."
+  },
+  "nowPlayingClose": "Close",
+  "@nowPlayingClose": {
+    "description": "Tooltip of the button that closes the now-playing screen."
+  },
+  "nowPlayingQueue": "Queue",
+  "@nowPlayingQueue": {
+    "description": "Tooltip of the button that shows the play queue, on the now-playing screen and on the player bar."
+  },
+  "nowPlayingAudioOutput": "Audio output",
+  "@nowPlayingAudioOutput": {
+    "description": "Accessibility label of the system audio output picker (AirPlay) on the now-playing screen."
+  },
+  "nowPlayingExpand": "Show now playing",
+  "@nowPlayingExpand": {
+    "description": "Tooltip of the player bar button that shows large artwork of the playing item over the content area."
+  },
+  "nowPlayingCollapse": "Hide now playing",
+  "@nowPlayingCollapse": {
+    "description": "Tooltip of the player bar button that hides the large artwork of the playing item."
+  },
+  "lyricsTitle": "Lyrics",
+  "@lyricsTitle": {
+    "description": "Title of the lyrics panel and sheet, and tooltip of the button that shows the lyrics, on the now-playing screen and on the player bar."
+  },
+  "lyricsNone": "No lyrics found",
+  "@lyricsNone": {
+    "description": "Shown in the lyrics view when the server has no lyrics for the current track."
+  },
+  "lyricsSeekHint": "Seek to {time}",
+  "@lyricsSeekHint": {
+    "description": "Screen-reader hint of a synced lyrics line: activating it moves playback to the time the line starts.",
+    "placeholders": {
+      "time": {
+        "type": "String",
+        "example": "1:05"
+      }
+    }
+  },
+  "lyricsInstrumental": "Instrumental",
+  "@lyricsInstrumental": {
+    "description": "Screen-reader label of a synced lyrics line without words (an instrumental gap), drawn as a ♪ marker."
+  },
+  "lyricsResumeAutoScroll": "Resume auto-scroll",
+  "@lyricsResumeAutoScroll": {
+    "description": "Button shown over the synced lyrics after the user scrolls them by hand; it makes the lyrics follow the current line again."
+  },
+  "queueTitle": "Queue",
+  "@queueTitle": {
+    "description": "Title of the play queue panel and sheet."
+  },
+  "queueNowPlaying": "Now playing",
+  "@queueNowPlaying": {
+    "description": "Header of the queue section holding the playing entry."
+  },
+  "queueNextUp": "Next up",
+  "@queueNextUp": {
+    "description": "Header of the queue section listing the entries that play after the current one."
+  },
+  "queueClear": "Clear",
+  "@queueClear": {
+    "description": "Action that empties the play queue."
+  },
+  "queueEmpty": "Nothing is queued",
+  "@queueEmpty": {
+    "description": "Sentence shown when the play queue is empty."
+  },
+  "queueRemove": "Remove from queue",
+  "@queueRemove": {
+    "description": "Tooltip and screen-reader action of the button that removes an entry from the play queue."
+  },
+  "queueMoveUp": "Move up",
+  "@queueMoveUp": {
+    "description": "Screen-reader action that moves a queue entry one place earlier."
+  },
+  "queueMoveDown": "Move down",
+  "@queueMoveDown": {
+    "description": "Screen-reader action that moves a queue entry one place later."
+  },
+  "queueReorderHandle": "Drag to reorder",
+  "@queueReorderHandle": {
+    "description": "Tooltip of the handle that reorders a queue entry by dragging."
+  },
+  "qualityBadgeSampleRate": "{codec} · {bitDepth}/{sampleRate} kHz",
+  "@qualityBadgeSampleRate": {
+    "description": "Quality badge of the playing stream with a bit depth: codec, bit depth and sample rate in kilohertz, e.g. FLAC · 24/96 kHz.",
+    "placeholders": {
+      "codec": {"type": "String", "example": "FLAC"},
+      "bitDepth": {"type": "String", "example": "24"},
+      "sampleRate": {"type": "String", "example": "44.1"}
+    }
+  },
+  "qualityBadgeBitrate": "{codec} · {bitrate} kbps",
+  "@qualityBadgeBitrate": {
+    "description": "Quality badge of the playing stream without a bit depth: codec and bit rate in kilobits per second, e.g. AAC · 256 kbps.",
+    "placeholders": {
+      "codec": {"type": "String", "example": "AAC"},
+      "bitrate": {"type": "String", "example": "256"}
+    }
+  },
+  "qualityBadgeDownloaded": "Downloaded",
+  "@qualityBadgeDownloaded": {
+    "description": "Quality badge of an item playing from a file downloaded to this device, when no download quality was stored."
+  },
+  "qualityBadgeDownloadedQuality": "Downloaded · {quality}",
+  "@qualityBadgeDownloadedQuality": {
+    "description": "Quality badge of an item playing from a file downloaded to this device: the word Downloaded and the quality it was downloaded at, one of the stream quality choices (Original, High, Medium, Low).",
+    "placeholders": {
+      "quality": {"type": "String", "example": "High"}
+    }
+  },
+  "menuPlayNow": "Play now",
+  "@menuPlayNow": {
+    "description": "Menu entry that replaces the queue with the list and plays this item."
+  },
+  "menuPlayNext": "Play next",
+  "@menuPlayNext": {
+    "description": "Menu entry that inserts the item after the current queue item."
+  },
+  "menuAddToQueue": "Add to queue",
+  "@menuAddToQueue": {
+    "description": "Menu entry and track-row accessibility action that appends the item to the queue."
+  },
+  "menuAddToPlaylist": "Add to playlist…",
+  "@menuAddToPlaylist": {
+    "description": "Menu entry that opens the playlist picker to add the item's songs."
+  },
+  "menuRemoveFromPlaylist": "Remove from this playlist",
+  "@menuRemoveFromPlaylist": {
+    "description": "Menu entry of a track inside a playlist the user owns that removes it from that playlist."
+  },
+  "menuGoToAlbum": "Go to album",
+  "@menuGoToAlbum": {
+    "description": "Menu entry that opens the track's album page."
+  },
+  "menuGoToArtist": "Go to artist",
+  "@menuGoToArtist": {
+    "description": "Menu entry that opens the artist page."
+  },
+  "menuShareLink": "Share link",
+  "@menuShareLink": {
+    "description": "Menu entry that copies a soundspan:// link to the item to the clipboard."
+  },
+  "menuLinkCopied": "Link copied",
+  "@menuLinkCopied": {
+    "description": "Snackbar after Share link copied a link to the clipboard."
+  },
+  "menuRename": "Rename",
+  "@menuRename": {
+    "description": "Menu entry of a playlist the user owns that renames it."
+  },
+  "menuDelete": "Delete",
+  "@menuDelete": {
+    "description": "Menu entry of a playlist the user owns that deletes it, after a confirmation."
+  },
+  "menuMoreOptions": "More options",
+  "@menuMoreOptions": {
+    "description": "Tooltip, accessibility label and track-row accessibility action of the button that opens an item's menu."
+  },
+  "actionPlay": "Play",
+  "@actionPlay": {
+    "description": "Label of the Play button of an album, artist or playlist page."
+  },
+  "actionShuffle": "Shuffle",
+  "@actionShuffle": {
+    "description": "Tooltip and accessibility label of the Shuffle button of an album, artist or playlist page."
+  },
+  "actionAddToPlaylist": "Add to playlist",
+  "@actionAddToPlaylist": {
+    "description": "Tooltip and accessibility label of the Add to playlist button of an album or playlist page."
+  },
+  "screenSettingsDesktop": "Desktop",
+  "@screenSettingsDesktop": {
+    "description": "Title of the Desktop settings section, which lists the keyboard shortcuts."
+  },
+  "settingsShortcutsTitle": "Keyboard shortcuts",
+  "@settingsShortcutsTitle": {
+    "description": "Heading of the list of keyboard shortcuts in Settings → Desktop."
+  },
+  "shortcutPlayPause": "Play or pause",
+  "@shortcutPlayPause": {
+    "description": "What the Space shortcut does, as listed in Settings → Desktop."
+  },
+  "shortcutNext": "Next track",
+  "@shortcutNext": {
+    "description": "What the next-track shortcut does, as listed in Settings → Desktop."
+  },
+  "shortcutPrevious": "Previous track",
+  "@shortcutPrevious": {
+    "description": "What the previous-track shortcut does, as listed in Settings → Desktop."
+  },
+  "shortcutSeekForward": "Seek forward {seconds} seconds",
+  "@shortcutSeekForward": {
+    "description": "What the seek-forward shortcut does, as listed in Settings → Desktop.",
+    "placeholders": {
+      "seconds": {"type": "int", "example": "10"}
+    }
+  },
+  "shortcutSeekBack": "Seek back {seconds} seconds",
+  "@shortcutSeekBack": {
+    "description": "What the seek-back shortcut does, as listed in Settings → Desktop.",
+    "placeholders": {
+      "seconds": {"type": "int", "example": "10"}
+    }
+  },
+  "shortcutVolumeUp": "Volume up",
+  "@shortcutVolumeUp": {
+    "description": "What the volume-up shortcut does, as listed in Settings → Desktop."
+  },
+  "shortcutVolumeDown": "Volume down",
+  "@shortcutVolumeDown": {
+    "description": "What the volume-down shortcut does, as listed in Settings → Desktop."
+  },
+  "shortcutShuffle": "Shuffle on or off",
+  "@shortcutShuffle": {
+    "description": "What the shuffle shortcut does, as listed in Settings → Desktop."
+  },
+  "shortcutRepeat": "Change repeat",
+  "@shortcutRepeat": {
+    "description": "What the repeat shortcut does (off, all, one), as listed in Settings → Desktop."
+  },
+  "shortcutLike": "Like or remove like of the current track",
+  "@shortcutLike": {
+    "description": "What the like shortcut does, as listed in Settings → Desktop."
+  },
+  "shortcutSearch": "Search",
+  "@shortcutSearch": {
+    "description": "What the search shortcut does (focus the search field), as listed in Settings → Desktop."
+  },
+  "shortcutGoTo": "Go to {destination}",
+  "@shortcutGoTo": {
+    "description": "What a navigation shortcut does, as listed in Settings → Desktop.",
+    "placeholders": {
+      "destination": {"type": "String", "example": "Library"}
+    }
+  },
+  "shortcutQueue": "Show or hide the queue",
+  "@shortcutQueue": {
+    "description": "What the queue shortcut does, as listed in Settings → Desktop."
+  },
+  "shortcutPlayRow": "Play the selected tracks",
+  "@shortcutPlayRow": {
+    "description": "What Enter on a track row does, as listed in Settings → Desktop."
+  },
+  "shortcutPlayRowNext": "Play the selected tracks next",
+  "@shortcutPlayRowNext": {
+    "description": "What Shift+Enter on a track row does, as listed in Settings → Desktop."
+  },
+  "shortcutRemoveRow": "Remove the selected tracks from the playlist",
+  "@shortcutRemoveRow": {
+    "description": "What Delete on a row of a playlist the user owns does, as listed in Settings → Desktop."
+  },
+  "shortcutMenu": "Open the menu of the focused item",
+  "@shortcutMenu": {
+    "description": "What the Menu key and Shift+F10 do, as listed in Settings → Desktop."
+  },
+  "shortcutRefresh": "Refresh",
+  "@shortcutRefresh": {
+    "description": "What the refresh shortcut does, as listed in Settings → Desktop."
+  },
+  "shortcutNextArea": "Next area",
+  "@shortcutNextArea": {
+    "description": "What F6 does (move focus to the next area of the window), as listed in Settings → Desktop."
+  },
+  "shortcutPreviousArea": "Previous area",
+  "@shortcutPreviousArea": {
+    "description": "What Shift+F6 does (move focus to the previous area of the window), as listed in Settings → Desktop."
+  },
+  "keyCtrl": "Ctrl",
+  "@keyCtrl": {
+    "description": "Name of the Control key in a shortcut."
+  },
+  "keyCmd": "Cmd",
+  "@keyCmd": {
+    "description": "Name of the Command key in a shortcut on macOS."
+  },
+  "keyShift": "Shift",
+  "@keyShift": {
+    "description": "Name of the Shift key in a shortcut."
+  },
+  "keyAlt": "Alt",
+  "@keyAlt": {
+    "description": "Name of the Alt key in a shortcut."
+  },
+  "keyOption": "Option",
+  "@keyOption": {
+    "description": "Name of the Option key in a shortcut on macOS."
+  },
+  "keySpace": "Space",
+  "@keySpace": {
+    "description": "Name of the space bar in a shortcut."
+  },
+  "keyEnter": "Enter",
+  "@keyEnter": {
+    "description": "Name of the Enter key in a shortcut."
+  },
+  "keyDelete": "Delete",
+  "@keyDelete": {
+    "description": "Name of the Delete key in a shortcut."
+  },
+  "keyMenu": "Menu",
+  "@keyMenu": {
+    "description": "Name of the Menu (context menu) key in a shortcut."
+  },
+  "keyMouseBack": "Mouse back button",
+  "@keyMouseBack": {
+    "description": "The mouse's back button, listed beside the Back shortcut."
+  },
+  "keyMouseForward": "Mouse forward button",
+  "@keyMouseForward": {
+    "description": "The mouse's forward button, listed beside the Forward shortcut."
+  },
+  "settingsStorageDownloads": "Downloads",
+  "@settingsStorageDownloads": {
+    "description": "Storage settings: heading of the download settings."
+  },
+  "settingsStorageDownloadQuality": "Download quality",
+  "@settingsStorageDownloadQuality": {
+    "description": "Storage settings: row choosing the audio quality of downloads."
+  },
+  "settingsStorageDownloadQualityCaption": "The quality applies to new downloads.",
+  "@settingsStorageDownloadQualityCaption": {
+    "description": "Storage settings: caption under the download quality row; items already downloaded keep their quality."
+  },
+  "settingsStorageWifiOnly": "Download on Wi-Fi only",
+  "@settingsStorageWifiOnly": {
+    "description": "Storage settings: switch that keeps downloads from running on mobile data."
+  },
+  "settingsStorageDeviceLimit": "Device limit",
+  "@settingsStorageDeviceLimit": {
+    "description": "Storage settings: title of the slider setting the most space downloads may use on this device."
+  },
+  "settingsStorageNoLimit": "No limit",
+  "@settingsStorageNoLimit": {
+    "description": "Storage settings: the device limit step that sets no limit."
+  },
+  "settingsStorageDeviceLimitUsage": "{used} of {limit} used",
+  "@settingsStorageDeviceLimitUsage": {
+    "description": "Storage settings: the space downloads use against the device limit.",
+    "placeholders": {
+      "used": {
+        "type": "String",
+        "example": "1.5 GB"
+      },
+      "limit": {
+        "type": "String",
+        "example": "20.0 GB"
+      }
+    }
+  },
+  "settingsStorageDeviceLimitUsageUnlimited": "{used} used, no limit",
+  "@settingsStorageDeviceLimitUsageUnlimited": {
+    "description": "Storage settings: the space downloads use when the device limit is off.",
+    "placeholders": {
+      "used": {
+        "type": "String",
+        "example": "1.5 GB"
+      }
+    }
+  },
+  "settingsStorageRemoveAll": "Remove all downloads",
+  "@settingsStorageRemoveAll": {
+    "description": "Storage settings: destructive action deleting every download of this server on this device."
+  },
+  "settingsStorageRemoveAllTitle": "Remove all downloads?",
+  "@settingsStorageRemoveAllTitle": {
+    "description": "Title of the dialog confirming that every download is removed."
+  },
+  "settingsStorageRemoveAllBody": "This frees {size} on this device. You can download them again later.",
+  "@settingsStorageRemoveAllBody": {
+    "description": "Body of the dialog confirming that every download is removed.",
+    "placeholders": {
+      "size": {
+        "type": "String",
+        "example": "1.5 GB"
+      }
+    }
+  },
+  "settingsStorageRemoveAllConfirm": "Remove",
+  "@settingsStorageRemoveAllConfirm": {
+    "description": "Confirm button of the dialog removing every download."
+  },
+  "settingsStorageThisDevice": "This device",
+  "@settingsStorageThisDevice": {
+    "description": "Storage settings: heading of the space this server’s data uses on the device."
+  },
+  "settingsStorageUsageDownloads": "Downloads",
+  "@settingsStorageUsageDownloads": {
+    "description": "Storage settings: usage row of the downloaded tracks and episodes."
+  },
+  "settingsStorageUsageDownloadCount": "{count, plural, =1{1 item} other{{count} items}}",
+  "@settingsStorageUsageDownloadCount": {
+    "description": "Storage settings: the number of downloaded tracks and episodes, under the Downloads usage row.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "12"
+      }
+    }
+  },
+  "settingsStorageUsageImages": "Images",
+  "@settingsStorageUsageImages": {
+    "description": "Storage settings: usage row of the saved artwork images."
+  },
+  "settingsStorageUsageDatabase": "Database",
+  "@settingsStorageUsageDatabase": {
+    "description": "Storage settings: usage row of the app’s databases for this server."
+  },
+  "settingsStorageUsageFree": "Free space",
+  "@settingsStorageUsageFree": {
+    "description": "Storage settings: usage row of the free space left on the device."
+  },
+  "settingsStorageServer": "Server",
+  "@settingsStorageServer": {
+    "description": "Storage settings: heading of the server’s download storage figures."
+  },
+  "settingsStorageServerUsed": "Used on the server: {used} of {limit}",
+  "@settingsStorageServerUsed": {
+    "description": "Storage settings: the space the user’s downloads take on the server against the server’s limit.",
+    "placeholders": {
+      "used": {
+        "type": "String",
+        "example": "1.5 GB"
+      },
+      "limit": {
+        "type": "String",
+        "example": "10.0 GB"
+      }
+    }
+  },
+  "settingsStorageServerDevice": "{count, plural, =1{From this device: {size}, 1 track} other{From this device: {size}, {count} tracks}}",
+  "@settingsStorageServerDevice": {
+    "description": "Storage settings: the part of the server figure that this device downloaded.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "12"
+      },
+      "size": {
+        "type": "String",
+        "example": "1.5 GB"
+      }
+    }
+  },
+  "settingsStorageServerCaption": "The server limit is changed in the server’s settings.",
+  "@settingsStorageServerCaption": {
+    "description": "Storage settings: caption under the server figures, which are read-only here."
+  },
+  "settingsStorageCache": "Cache",
+  "@settingsStorageCache": {
+    "description": "Storage settings: heading of the cache actions."
+  },
+  "settingsStorageClearCache": "Clear cache",
+  "@settingsStorageClearCache": {
+    "description": "Storage settings: action deleting saved images and browsing data."
+  },
+  "settingsStorageClearCacheCaption": "Saved images and browsing data are fetched again when needed. Downloads stay.",
+  "@settingsStorageClearCacheCaption": {
+    "description": "Storage settings: caption under the Clear cache action."
+  },
+  "settingsStorageClearCacheTitle": "Clear cache?",
+  "@settingsStorageClearCacheTitle": {
+    "description": "Title of the dialog confirming that the cache is cleared."
+  },
+  "settingsStorageClearCacheBody": "Saved images and browsing data are deleted. Downloads and playback are not affected.",
+  "@settingsStorageClearCacheBody": {
+    "description": "Body of the dialog confirming that the cache is cleared."
+  },
+  "settingsStorageClearCacheConfirm": "Clear",
+  "@settingsStorageClearCacheConfirm": {
+    "description": "Confirm button of the dialog clearing the cache."
+  },
+  "settingsStorageCancel": "Cancel",
+  "@settingsStorageCancel": {
+    "description": "Cancel button of the storage settings dialogs."
+  },
+  "downloadGlyphQueued": "Waiting to download",
+  "@downloadGlyphQueued": {
+    "description": "Screen-reader label of the download glyph of an item waiting to download."
+  },
+  "downloadGlyphRunning": "Downloading, {percent} percent",
+  "@downloadGlyphRunning": {
+    "description": "Screen-reader label of the download glyph of an item being downloaded.",
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "downloadGlyphRunningUnknown": "Downloading",
+  "@downloadGlyphRunningUnknown": {
+    "description": "Screen-reader label of the download glyph of an item being downloaded whose size is not known."
+  },
+  "downloadGlyphCompleted": "Downloaded",
+  "@downloadGlyphCompleted": {
+    "description": "Screen-reader label of the download glyph of a downloaded item."
+  },
+  "downloadGlyphFailed": "Download failed",
+  "@downloadGlyphFailed": {
+    "description": "Screen-reader label of the download glyph of an item whose download failed."
+  },
+  "downloadGlyphUnavailable": "Not available for download",
+  "@downloadGlyphUnavailable": {
+    "description": "Screen-reader label of the download glyph of an item the server will not let this device download."
+  },
+  "trackRowDownloaded": "downloaded",
+  "@trackRowDownloaded": {
+    "description": "Appended to a track row’s screen-reader label when the track is downloaded, as in 'Title, Artist, 3 minutes, downloaded'."
+  },
+  "trackRowLiked": "liked",
+  "@trackRowLiked": {
+    "description": "Read in a track row’s screen-reader label when the track is liked, after 'downloaded', as in 'Title, Artist, 3 minutes, downloaded, liked'."
+  },
+  "menuDownload": "Download",
+  "@menuDownload": {
+    "description": "Menu entry and action-bar button that keeps a track, album or playlist on this device."
+  },
+  "menuRemoveDownload": "Remove download",
+  "@menuRemoveDownload": {
+    "description": "Menu entry and action-bar button that deletes a downloaded track, album or playlist from this device."
+  },
+  "menuRetryDownload": "Retry download",
+  "@menuRetryDownload": {
+    "description": "Menu entry that tries a failed download again."
+  },
+  "menuCheckForChanges": "Check for changes",
+  "@menuCheckForChanges": {
+    "description": "Menu entry on a downloaded album or playlist that asks the server for changes to it now, so the download follows them."
+  },
+  "downloadRemoveTitle": "Remove download?",
+  "@downloadRemoveTitle": {
+    "description": "Title of the dialog confirming that a download is removed."
+  },
+  "downloadRemoveBody": "Its files are deleted from this device. You can download it again later.",
+  "@downloadRemoveBody": {
+    "description": "Body of the dialog confirming that a download is removed."
+  },
+  "downloadRemoveConfirm": "Remove",
+  "@downloadRemoveConfirm": {
+    "description": "Confirm button of the dialog removing a download."
+  },
+  "downloadCancel": "Cancel",
+  "@downloadCancel": {
+    "description": "Cancel button of the download dialogs."
+  },
+  "downloadClose": "Close",
+  "@downloadClose": {
+    "description": "Button that closes a download sheet."
+  },
+  "downloadServerQuotaTitle": "Not enough space on the server",
+  "@downloadServerQuotaTitle": {
+    "description": "Title of the sheet shown when the server refused a download because the user’s download limit there is reached."
+  },
+  "downloadServerQuotaBody": "Remove downloads to free up space, or raise the download limit in the server’s settings.",
+  "@downloadServerQuotaBody": {
+    "description": "Body of the sheet shown when the server’s download limit is reached."
+  },
+  "downloadSizeNeeded": "Needed: {size}",
+  "@downloadSizeNeeded": {
+    "description": "A byte value on a download sheet: what the download needs.",
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadSizeUsed": "Used: {size}",
+  "@downloadSizeUsed": {
+    "description": "A byte value on a download sheet: what is already used.",
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadSizeLimit": "Limit: {size}",
+  "@downloadSizeLimit": {
+    "description": "A byte value on a download sheet: the limit.",
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadSizeAvailable": "Available: {size}",
+  "@downloadSizeAvailable": {
+    "description": "A byte value on a download sheet: the room left on this device.",
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadManage": "Manage downloads",
+  "@downloadManage": {
+    "description": "Action of the server-limit sheet that opens the Downloads tab."
+  },
+  "downloadShortfallTitle": "{size} more needed on this device",
+  "@downloadShortfallTitle": {
+    "description": "Title of the sheet shown when a download does not fit in the device limit.",
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadRaiseLimit": "Raise limit",
+  "@downloadRaiseLimit": {
+    "description": "Action that raises the device download limit so the whole download fits."
+  },
+  "downloadWhatFits": "Download what fits",
+  "@downloadWhatFits": {
+    "description": "Action that keeps the device limit and downloads what fits in it."
+  },
+  "downloadRaiseLimitDiskFull": "There isn’t enough free space on this device. Free up space, then try again.",
+  "@downloadRaiseLimitDiskFull": {
+    "description": "Shown instead of raising the device limit when free disk space, not the limit, is what stops the download."
+  },
+  "downloadUnavailableTitle": "Some tracks can’t be downloaded",
+  "@downloadUnavailableTitle": {
+    "description": "Title of the sheet listing the tracks of an album or playlist that cannot be downloaded."
+  },
+  "downloadUnavailableOther": "Not available",
+  "@downloadUnavailableOther": {
+    "description": "Shown on a greyed-out track of a downloaded album or playlist for a reason this app does not know."
+  },
+  "libraryTabDownloads": "Downloads",
+  "@libraryTabDownloads": {
+    "description": "Library tab listing what is downloaded on this device."
+  },
+  "downloadsSummary": "{count, plural, =0{No items} =1{1 item} other{{count} items}} · {size}",
+  "@downloadsSummary": {
+    "description": "Storage summary at the top of the Downloads tab: the number of downloaded items and their size.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadsInProgressCount": "{count} in progress",
+  "@downloadsInProgressCount": {
+    "description": "Shown in the Downloads tab header while items are downloading.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "downloadsFilterInProgress": "In progress",
+  "@downloadsFilterInProgress": {
+    "description": "Filter chip of the Downloads tab showing only collections still downloading."
+  },
+  "downloadsPauseAll": "Pause all",
+  "@downloadsPauseAll": {
+    "description": "Downloads tab button pausing every download."
+  },
+  "downloadsResumeAll": "Resume all",
+  "@downloadsResumeAll": {
+    "description": "Downloads tab button resuming every paused download."
+  },
+  "downloadsEmpty": "Nothing downloaded yet. Choose Download on an album, a playlist or a song to keep it on this device.",
+  "@downloadsEmpty": {
+    "description": "Empty state of the Downloads tab."
+  },
+  "downloadsWaitingForConnection": "Waiting for connection",
+  "@downloadsWaitingForConnection": {
+    "description": "Shown on a Downloads tab row that waits for the server to be reachable."
+  },
+  "downloadsSourceGone": "No longer on the server",
+  "@downloadsSourceGone": {
+    "description": "Shown on a Downloads tab row whose album or playlist was deleted on the server; the downloaded files stay on this device."
+  },
+  "downloadsKindAlbum": "Album",
+  "@downloadsKindAlbum": {
+    "description": "Kind of a downloaded collection, on a Downloads tab row."
+  },
+  "downloadsKindPlaylist": "Playlist",
+  "@downloadsKindPlaylist": {
+    "description": "Kind of a downloaded collection, on a Downloads tab row."
+  },
+  "downloadsKindTrack": "Song",
+  "@downloadsKindTrack": {
+    "description": "Kind of a downloaded collection, on a Downloads tab row."
+  },
+  "downloadsKindEpisode": "Episode",
+  "@downloadsKindEpisode": {
+    "description": "Kind of a downloaded podcast episode, on a Downloads tab row."
+  },
+  "downloadsEpisodeSubtitle": "Episode · {podcast}",
+  "@downloadsEpisodeSubtitle": {
+    "description": "Subtitle of a downloaded podcast episode on the Downloads tab: the podcast it belongs to.",
+    "placeholders": {
+      "podcast": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadsItemsProgress": "{kind} · {completed} of {total}",
+  "@downloadsItemsProgress": {
+    "description": "Subtitle of a Downloads tab row: its kind and how many of its items are downloaded.",
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      },
+      "completed": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "downloadsPause": "Pause",
+  "@downloadsPause": {
+    "description": "Downloads tab row menu entry pausing its download."
+  },
+  "downloadsResume": "Resume",
+  "@downloadsResume": {
+    "description": "Downloads tab row menu entry resuming its download."
+  },
+  "listenTogetherTitle": "Listen Together",
+  "@listenTogetherTitle": {"description": "Avatar menu entry, sidebar item and screen name of Listen Together, where users play music in sync with others."},
+  "listenTogetherInGroup": "In a group",
+  "@listenTogetherInGroup": {"description": "Label of the Listen Together entry in the avatar menu and the sidebar while the user is in a group."},
+  "listenTogetherYourGroups": "Your groups",
+  "@listenTogetherYourGroups": {"description": "Listen Together lobby heading above the group the user is a member of."},
+  "listenTogetherPublicGroups": "Public groups",
+  "@listenTogetherPublicGroups": {"description": "Listen Together lobby heading above the public groups anyone can join."},
+  "listenTogetherEmpty": "Listen with others in sync",
+  "@listenTogetherEmpty": {"description": "Listen Together lobby when there is no group to show."},
+  "listenTogetherCreate": "Create group",
+  "@listenTogetherCreate": {"description": "Listen Together action that opens the form to create a group."},
+  "listenTogetherJoinWithCode": "Join with a code",
+  "@listenTogetherJoinWithCode": {"description": "Listen Together action that opens the field to join a group by its code."},
+  "listenTogetherJoin": "Join",
+  "@listenTogetherJoin": {"description": "Button on a Listen Together group row, or in the join form, that joins the group."},
+  "listenTogetherGroupRowDetails": "{host} · {count, plural, =1{1 member} other{{count} members}}",
+  "@listenTogetherGroupRowDetails": {"description": "Second line of a Listen Together group row: the host's name and how many members the group has.", "placeholders": {"host": {"type": "String", "example": "alex"}, "count": {"type": "int", "example": "3"}}},
+  "listenTogetherNameLabel": "Name (optional)",
+  "@listenTogetherNameLabel": {"description": "Label of the group name field of the create group form."},
+  "listenTogetherNameTooLong": "Use at most 80 characters",
+  "@listenTogetherNameTooLong": {"description": "Error under the group name field when the name is longer than 80 characters."},
+  "listenTogetherPrivate": "Private",
+  "@listenTogetherPrivate": {"description": "Visibility choice: the group is joined by its code only."},
+  "listenTogetherPublic": "Public",
+  "@listenTogetherPublic": {"description": "Visibility choice: the group is listed for everyone on the server."},
+  "listenTogetherStartWithQueue": "Start with my current queue",
+  "@listenTogetherStartWithQueue": {"description": "Switch of the create group form: the group starts with the music queued on this device."},
+  "listenTogetherCreateSubmit": "Create",
+  "@listenTogetherCreateSubmit": {"description": "Button of the create group form that creates the group."},
+  "listenTogetherCancel": "Cancel",
+  "@listenTogetherCancel": {"description": "Cancel button of the Listen Together forms and dialogs."},
+  "listenTogetherCodeLabel": "Group code",
+  "@listenTogetherCodeLabel": {"description": "Label of the field that takes the code of the group to join."},
+  "listenTogetherNoGroupWithCode": "No group with that code",
+  "@listenTogetherNoGroupWithCode": {"description": "Error of the join form when no group has the code entered."},
+  "listenTogetherPublicGroup": "Public group",
+  "@listenTogetherPublicGroup": {"description": "Visibility line in the header of a Listen Together group."},
+  "listenTogetherPrivateGroup": "Private group",
+  "@listenTogetherPrivateGroup": {"description": "Visibility line in the header of a Listen Together group."},
+  "listenTogetherHostedBy": "Hosted by {name}",
+  "@listenTogetherHostedBy": {"description": "Line in the header of a Listen Together group naming its host.", "placeholders": {"name": {"type": "String", "example": "alex"}}},
+  "listenTogetherReconnecting": "Reconnecting…",
+  "@listenTogetherReconnecting": {"description": "Shown in the header of a Listen Together group while the connection to the server is being restored."},
+  "listenTogetherCopyCode": "Copy code",
+  "@listenTogetherCopyCode": {"description": "Button that copies the group's join code."},
+  "listenTogetherCopied": "Copied",
+  "@listenTogetherCopied": {"description": "Announced after the group's join code was copied."},
+  "listenTogetherMembers": "Members",
+  "@listenTogetherMembers": {"description": "Heading of the member list of a Listen Together group."},
+  "listenTogetherHost": "Host",
+  "@listenTogetherHost": {"description": "Label next to the member who hosts the group."},
+  "listenTogetherNowPlaying": "Now playing",
+  "@listenTogetherNowPlaying": {"description": "Heading above the group's current track."},
+  "listenTogetherOpenQueue": "Open queue",
+  "@listenTogetherOpenQueue": {"description": "Action of a Listen Together group that shows the group's queue."},
+  "listenTogetherLeave": "Leave group",
+  "@listenTogetherLeave": {"description": "Action that leaves the Listen Together group."},
+  "listenTogetherEnd": "End group for everyone",
+  "@listenTogetherEnd": {"description": "Action, for the host only, that ends the Listen Together group for every member."},
+  "listenTogetherEndTitle": "End the group?",
+  "@listenTogetherEndTitle": {"description": "Title of the dialog confirming the host ends the group."},
+  "listenTogetherEndBody": "Everyone leaves the group and playback stops for them.",
+  "@listenTogetherEndBody": {"description": "Body of the dialog confirming the host ends the group."},
+  "listenTogetherEndConfirm": "End group",
+  "@listenTogetherEndConfirm": {"description": "Confirm button of the dialog that ends the group."},
+  "listenTogetherEndedByHost": "The host ended the group",
+  "@listenTogetherEndedByHost": {"description": "Shown on Listen Together after the host ended the group."},
+  "listenTogetherRemoved": "You were removed from the group",
+  "@listenTogetherRemoved": {"description": "Shown on Listen Together after this user was removed from the group."},
+  "listenTogetherQueueHeader": "{name} · {count} listening",
+  "@listenTogetherQueueHeader": {"description": "Header of the queue while in a Listen Together group: the group's name and how many members it has.", "placeholders": {"name": {"type": "String", "example": "Road trip"}, "count": {"type": "int", "example": "3"}}},
+  "listenTogetherHostControls": "The host controls playback",
+  "@listenTogetherHostControls": {"description": "Tooltip and hint of playback controls that are disabled because only the group's host controls playback."},
+  "listenTogetherNoResponse": "The server didn’t respond",
+  "@listenTogetherNoResponse": {"description": "Shown when a playback command sent to the group got no answer in time."},
+  "listenTogetherCommandRejected": "The group didn’t accept that",
+  "@listenTogetherCommandRejected": {"description": "Shown when the server refused a playback command sent to the group without saying why."},
+  "listenTogetherNotInGroup": "Not available while in a group",
+  "@listenTogetherNotInGroup": {"description": "Shown when a playback control the group does not have was used."},
+  "listenTogetherNotShareable": "{count, plural, =1{1 item can’t be shared with the group} other{{count} items can’t be shared with the group}}",
+  "@listenTogetherNotShareable": {"description": "Shown when episodes or tracks that cannot be shared were left out of what was added to the group's queue.", "placeholders": {"count": {"type": "int", "example": "2"}}},
+  "listenTogetherReplaceTitle": "Replace the group’s queue?",
+  "@listenTogetherReplaceTitle": {"description": "Title of the dialog confirming Play replaces the queue of the Listen Together group."},
+  "listenTogetherReplaceBody": "Everyone in the group hears this next.",
+  "@listenTogetherReplaceBody": {"description": "Body of the dialog confirming Play replaces the queue of the Listen Together group."},
+  "listenTogetherReplaceConfirm": "Replace",
+  "@listenTogetherReplaceConfirm": {"description": "Confirm button of the dialog that replaces the group's queue."},
+  "mixOverline": "Mix",
+  "@mixOverline": {
+    "description": "Small label above the title of a generated mix's page, naming what the page shows."
+  },
+  "mixEmpty": "This mix has no tracks right now",
+  "@mixEmpty": {
+    "description": "Shown on a generated mix's page when the mix has no tracks."
+  },
+  "mixNotAvailable": "Not available on this server",
+  "@mixNotAvailable": {
+    "description": "Shown in place of a generated mix's page when the server has generated mixes turned off."
+  },
+  "actionSaveAsPlaylist": "Save as playlist",
+  "@actionSaveAsPlaylist": {
+    "description": "Button on a generated mix's page that saves its tracks as a new playlist of the user."
+  },
+  "mixSaveTitle": "Save as playlist",
+  "@mixSaveTitle": {
+    "description": "Title of the dialog that names the playlist a generated mix is saved as."
+  },
+  "mixSaveConfirm": "Save",
+  "@mixSaveConfirm": {
+    "description": "Confirm button of the dialog that saves a generated mix as a playlist."
+  },
+  "mixSaved": "Saved to your playlists",
+  "@mixSaved": {
+    "description": "Snackbar after a generated mix was saved as a new playlist."
+  },
+  "mixSavedOpen": "Open",
+  "@mixSavedOpen": {
+    "description": "Snackbar action opening the playlist a generated mix was just saved as."
+  },
+  "libraryDownloadedOnly": "Downloaded only",
+  "@libraryDownloadedOnly": {
+    "description": "Filter chip above a library list: shows only what is downloaded to this device."
+  },
+  "trackNotAvailableOffline": "Not available offline",
+  "@trackNotAvailableOffline": {
+    "description": "Tooltip and accessibility reason of a track row that has no downloaded file while the app is offline."
+  },
+  "offlineBannerGoOnline": "Go online",
+  "@offlineBannerGoOnline": {
+    "description": "Action of the offline notice in the Library while offline mode is on: turns offline mode off."
+  },
+  "shellMenuOfflineMode": "Offline mode",
+  "@shellMenuOfflineMode": {
+    "description": "Switch in the account menu: when on, the app does not contact the server and shows only what is on this device."
+  },
+  "searchResultsFromDevice": "Results from this device",
+  "@searchResultsFromDevice": {
+    "description": "Label above search results while offline: the results come from what is saved on this device."
+  },
+  "windowTitleNowPlaying": "{title} — {artist} · soundspan",
+  "@windowTitleNowPlaying": {
+    "description": "The desktop window title while a track plays: its title and artist, followed by the application name.",
+    "placeholders": {
+      "title": {
+        "type": "String",
+        "example": "Blue in Green"
+      },
+      "artist": {
+        "type": "String",
+        "example": "Miles Davis"
+      }
+    }
+  },
+  "trayPlay": "Play",
+  "@trayPlay": {
+    "description": "Tray menu entry that resumes playback."
+  },
+  "trayPause": "Pause",
+  "@trayPause": {
+    "description": "Tray menu entry that pauses playback."
+  },
+  "trayShowWindow": "Show window",
+  "@trayShowWindow": {
+    "description": "Tray menu entry that shows the app's window."
+  },
+  "trayQuit": "Quit",
+  "@trayQuit": {
+    "description": "Tray menu entry that quits the app."
+  },
+  "trayNowPlaying": "{title} — {artist}",
+  "@trayNowPlaying": {
+    "description": "Disabled tray menu entry naming the current track and its artist.",
+    "placeholders": {
+      "title": {
+        "type": "String",
+        "example": "Blue in Green"
+      },
+      "artist": {
+        "type": "String",
+        "example": "Miles Davis"
+      }
+    }
+  },
+  "settingsCloseToTray": "Close to tray",
+  "@settingsCloseToTray": {
+    "description": "Switch in Settings → Desktop: closing the window hides it to the system tray and playback continues."
+  },
+  "settingsCloseToTrayUnavailable": "No system tray was found",
+  "@settingsCloseToTrayUnavailable": {
+    "description": "Explanation under the disabled Close to tray switch when the desktop has no system tray."
+  },
+  "settingsUpdateCheck": "Check for new versions",
+  "@settingsUpdateCheck": {
+    "description": "Switch in Settings → Desktop: the desktop app asks GitHub once a day whether a newer soundspan client release exists."
+  },
+  "settingsUpdateCheckCaption": "Asks GitHub for the list of soundspan releases once a day.",
+  "@settingsUpdateCheckCaption": {
+    "description": "Caption under the Check for new versions switch in Settings → Desktop."
+  },
+  "updateBannerMessage": "soundspan {version} is available",
+  "@updateBannerMessage": {
+    "description": "Notice at the top of the desktop app when a newer client release exists.",
+    "placeholders": {
+      "version": {
+        "type": "String",
+        "example": "0.2.0"
+      }
+    }
+  },
+  "updateViewRelease": "View release",
+  "@updateViewRelease": {
+    "description": "Button of the update notice and of Settings → About that opens the newer release's page on GitHub in the browser."
+  },
+  "settingsAboutUpdateAvailable": "Version {version} is available",
+  "@settingsAboutUpdateAvailable": {
+    "description": "Row in Settings → About when a newer client release exists.",
+    "placeholders": {
+      "version": {
+        "type": "String",
+        "example": "0.2.0"
+      }
+    }
+  },
+  "settingsAboutCheckNow": "Check now",
+  "@settingsAboutCheckNow": {
+    "description": "Row in Settings → About that checks at once whether a newer client release exists."
+  },
+  "closeKeepPlayingTitle": "Keep playing in the background?",
+  "@closeKeepPlayingTitle": {
+    "description": "Question asked when the window is closed while something plays and the desktop has no system tray."
+  },
+  "closeKeepPlaying": "Keep playing",
+  "@closeKeepPlaying": {
+    "description": "Answer to the close question: minimises the window and keeps playing."
+  },
+  "closeQuit": "Quit",
+  "@closeQuit": {
+    "description": "Answer to the close question: quits the app."
+  },
+  "menuSettings": "Settings…",
+  "@menuSettings": {
+    "description": "macOS application menu item that opens Settings."
+  },
+  "menuQuit": "Quit soundspan",
+  "@menuQuit": {
+    "description": "macOS application menu item that quits the app."
+  },
+  "menuPlayback": "Playback",
+  "@menuPlayback": {
+    "description": "macOS menu bar menu with the playback commands."
+  },
+  "menuView": "View",
+  "@menuView": {
+    "description": "macOS menu bar menu that shows the queue and the lyrics."
+  },
+  "menuWindow": "Window",
+  "@menuWindow": {
+    "description": "macOS menu bar menu with the window commands."
+  },
+  "menuPlayPause": "Play/Pause",
+  "@menuPlayPause": {
+    "description": "macOS Playback menu item that plays or pauses."
+  },
+  "menuNext": "Next",
+  "@menuNext": {
+    "description": "macOS Playback menu item that skips to the next item."
+  },
+  "menuPrevious": "Previous",
+  "@menuPrevious": {
+    "description": "macOS Playback menu item that goes to the previous item."
+  },
+  "menuShuffle": "Shuffle",
+  "@menuShuffle": {
+    "description": "macOS Playback menu item that turns shuffle on or off."
+  },
+  "menuRepeat": "Repeat",
+  "@menuRepeat": {
+    "description": "macOS Playback menu item that changes the repeat mode."
+  },
+  "menuQueue": "Queue",
+  "@menuQueue": {
+    "description": "macOS View menu item that shows or hides the queue."
+  },
+  "menuLyrics": "Lyrics",
+  "@menuLyrics": {
+    "description": "macOS View menu item that shows or hides the lyrics."
+  },
+  "navVibe": "Vibe",
+  "@navVibe": {
+    "description": "Sidebar item and title of the Vibe screen, which finds tracks by how they sound."
+  },
+  "homeVibeCard": "Tracks that sound like what you play",
+  "@homeVibeCard": {
+    "description": "Subtitle of the Vibe card at the end of Home."
+  },
+  "menuStartRadio": "Start radio",
+  "@menuStartRadio": {
+    "description": "Track menu entry that plays tracks that sound like the chosen one."
+  },
+  "vibeNoSimilar": "No similar tracks found",
+  "@vibeNoSimilar": {
+    "description": "Snackbar when Start radio found no tracks that sound like the chosen one."
+  },
+  "vibeSearchHint": "Describe a sound or a mood",
+  "@vibeSearchHint": {
+    "description": "Hint of the Vibe search field, which finds tracks by a description."
+  },
+  "vibeSearchLabel": "Search by description",
+  "@vibeSearchLabel": {
+    "description": "Screen reader label of the Vibe search field."
+  },
+  "vibeSearchClear": "Clear",
+  "@vibeSearchClear": {
+    "description": "Tooltip of the button that empties the Vibe search field."
+  },
+  "vibePlayAll": "Play all",
+  "@vibePlayAll": {
+    "description": "Button that plays every track listed on the Vibe screen."
+  },
+  "vibeSimilarTitle": "Similar to what’s playing",
+  "@vibeSimilarTitle": {
+    "description": "Title of the Vibe section listing tracks that sound like the current track."
+  },
+  "vibeNoMatches": "No matches",
+  "@vibeNoMatches": {
+    "description": "Shown when a Vibe search found no tracks."
+  },
+  "vibeExplain": "Play a track to see others that sound like it here.",
+  "@vibeExplain": {
+    "description": "Empty state of the Vibe screen while nothing with similar tracks is playing."
+  },
+  "vibeSearchUnavailable": "Vibe search is unavailable right now",
+  "@vibeSearchUnavailable": {
+    "description": "Shown when the server cannot search by description at the moment."
+  }
+}

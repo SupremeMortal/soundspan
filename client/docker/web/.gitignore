@@ -1,0 +1,5 @@
+# The prebuilt web bundle unpacked into the build context.
+/bundle/
+
+# The root .gitignore ignores *.conf; this one is the image config.
+!/nginx.conf

@@ -55,14 +55,14 @@ Rust remains an option for a future, isolated need (e.g. client-side DSP) behind
 |---|---|---|---|---|---|---|
 | Rendering | Impeller | Impeller | Skia/Impeller | Impeller | Skia | CanvasKit / skwasm |
 | Audio backend | ExoPlayer (`just_audio`) | AVPlayer (`just_audio`) | libmpv (`media_kit`) | AVPlayer (`just_audio`) | libmpv (`media_kit`) | HTML audio (`just_audio`) |
-| OS media controls | `audio_service` (MediaSession, notification) | `audio_service` (Now Playing, Control Center) | `smtc_windows` (SMTC) | `audio_service` (Now Playing) | `audio_service_mpris` (MPRIS) | `audio_service` (Media Session API) |
+| OS media controls | `audio_service` (MediaSession, notification) | `audio_service` (Now Playing, Control Center) | `soundspan_smtc` (SMTC) | `audio_service` (Now Playing) | `audio_service_mpris` (MPRIS) | `audio_service` (Media Session API) |
 | Background playback | Foreground service | `audio` background mode | Yes | Yes | Yes | Tab must stay open |
 | Car integration | Android Auto (`audio_service` browse tree) | CarPlay (M6) | — | — | — | — |
 | Offline downloads | Yes | Yes | Yes | Yes | Yes | No |
 | Credential storage | Keystore | Keychain | Credential Manager (DPAPI) | Keychain | libsecret | Memory / `sessionStorage` |
 | CORS applies | No | No | No | No | No | Yes |
 | Updates | Play Store / F-Droid | App Store | In-app updater (WinSparkle) | In-app updater (Sparkle) | Flatpak / package manager | Redeploy |
-| Minimum version | Android 8 (API 26) | iOS 15 | Windows 10 1809 | macOS 11 | GTK 3.24 (Ubuntu 22.04-class) | Current Chrome, Firefox, Safari, Edge |
+| Minimum version | Android 8 (API 26) | iOS 15 | Windows 10 1809 | macOS 12 | GTK 3.24 (Ubuntu 22.04-class) | Current Chrome, Firefox, Safari, Edge |
 | App identifier | `io.soundspan.app` (applicationId) | `io.soundspan.app` (bundle ID) | `io.soundspan.app` (MSIX identity) | `io.soundspan.app` (bundle ID) | `io.soundspan.app` (Flatpak / desktop file) | — |
 
 The web build is supported but secondary: canvas rendering gives weaker text selection and accessibility than the Next.js UI, and it cannot play in the background or download. It ships only as its own optional container image / static bundle; it is not bundled into the server image, and the Next.js UI stays the default web experience. Operators who deploy it either put it behind the same origin as the server or add its origin to `ALLOWED_ORIGINS`.
@@ -108,7 +108,7 @@ client/
 ├────────────── Data (repositories) ────────────────────────────────────┤
 │  soundspan_api (dio)   drift DB   secure storage   background_downloader│
 ├────────────── Platform plugins ───────────────────────────────────────┤
-│  just_audio · media_kit · audio_service · smtc_windows · mpris          │
+│  just_audio · media_kit · audio_service · soundspan_smtc · mpris        │
 └──────────── ExoPlayer · AVPlayer · libmpv · HTML audio ────────────────┘
 ```
 
@@ -125,7 +125,7 @@ Platform differences are isolated in `lib/platform/` with Dart conditional impor
 | Local DB / cache | `drift` (SQLite; WASM build on web) |
 | Secrets | `flutter_secure_storage` |
 | Playback | `just_audio` (Android, iOS, macOS, web), `media_kit` (Windows, Linux), behind one app-owned `PlayerEngine` interface |
-| Media controls | `audio_service`, `audio_service_mpris`, `smtc_windows` |
+| Media controls | `audio_service`, `audio_service_mpris`, `soundspan_smtc` (in-repo C++/WinRT plugin) |
 | Downloads | `background_downloader` |
 | Images | `cached_network_image` |
 | Realtime | `socket_io_client` |
@@ -189,7 +189,7 @@ Probe failures are classified and explained individually: DNS failure, connectio
 2. **Device link** (preferred on mobile, and for SSO-only servers): the user, signed in on the web UI, generates a code (`POST /api/device-link/generate`). The client submits it to `POST /api/device-link/verify` `{ code, deviceName }` and receives an **API key**. No browser redirect is involved.
 3. **Pasted API key**: created under Settings → API keys in the web UI.
 
-OIDC is not driven from inside native apps: the server's OIDC callback redirects to the configured web frontend, not an app-registered URI scheme. Native targets offer device link instead. The Flutter web build, when hosted on the server's origin, can reuse the browser OIDC flow.
+OIDC is not driven from inside native apps: the server's OIDC callback redirects to the configured web frontend, not an app-registered URI scheme. Native targets offer device link instead. The Flutter web build offers password sign-in only, even on the server's origin, because the callback hands its one-time code to the web UI's own login page ([10-platform-integration.md](flutter-client/10-platform-integration.md#web), OIDC row).
 
 ### Credential Use
 
@@ -228,7 +228,7 @@ API keys expire a fixed 90 days after creation (`API_KEY_LIFETIME_MS` in `backen
 
 - One `PlaybackController` owns the queue, shuffle, repeat, and a `PlayerEngine`. The UI talks only to the controller, on every platform.
 - `PlayerEngine` is an app-owned interface with two implementations: `just_audio` and `media_kit`.
-- Platform media controls are adapters around the controller: `audio_service` on Android/iOS/macOS/web, `audio_service_mpris` on Linux, and an `smtc_windows` bridge on Windows.
+- Platform media controls are adapters around the controller: `audio_service` on Android/iOS/macOS/web, `audio_service_mpris` on Linux, and the in-repo `soundspan_smtc` plugin on Windows.
 - Queue logic is pure Dart with unit tests independent of any player.
 
 ### Engines

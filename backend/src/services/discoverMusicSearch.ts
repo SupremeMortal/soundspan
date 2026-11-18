@@ -238,10 +238,9 @@ async function isYouTubeUsable(userId: string | undefined): Promise<boolean> {
  * TIDAL needs a signed-in (or shared) session and YouTube Music needs the
  * integration enabled and its sidecar up. Order is preserved.
  */
-export async function resolveUsableSearchProviders(
-    providers: readonly SearchProvider[],
-    userId: string | undefined,
-): Promise<SearchProvider[]> {
+export async function resolveUsableSearchProviders<
+    P extends SearchProvider = SearchProvider,
+>(providers: readonly P[], userId: string | undefined): Promise<P[]> {
     const checks = await Promise.all(
         providers.map(async (provider) => {
             try {
@@ -274,8 +273,9 @@ function trackKey(track: DiscoverTrackResult): string {
 /**
  * Merges provider results in priority order. A result whose artist (or
  * artist and title, for tracks) already came from a higher-priority provider
- * is dropped, and each type is capped at `limit`. A row without a usable name
- * is kept but never used to drop another.
+ * is dropped, and each type is capped at `limit`. A dropped track's
+ * `playbackId` moves to the kept row when that row has none. A row without a
+ * usable name is kept but never used to drop another.
  */
 export function mergeDiscoverProviderResults(
     ordered: readonly DiscoverProviderResults[],
@@ -284,7 +284,7 @@ export function mergeDiscoverProviderResults(
     const artists: DiscoverArtistResult[] = [];
     const tracks: DiscoverTrackResult[] = [];
     const seenArtists = new Set<string>();
-    const seenTracks = new Set<string>();
+    const keptTracks = new Map<string, DiscoverTrackResult>();
     for (const result of ordered) {
         for (const artist of result.artists) {
             const key = textKey(artist.name);
@@ -296,25 +296,106 @@ export function mergeDiscoverProviderResults(
         }
         for (const track of result.tracks) {
             const key = trackKey(track);
-            if (tracks.length >= limit || (key && seenTracks.has(key))) {
+            const kept = key ? keptTracks.get(key) : undefined;
+            if (kept) {
+                // The duplicate may be the playable copy of the kept row.
+                if (!kept.playbackId && track.playbackId) {
+                    kept.playbackId = track.playbackId;
+                }
                 continue;
             }
-            if (key) seenTracks.add(key);
-            tracks.push(track);
+            if (tracks.length >= limit) continue;
+            const copy = { ...track };
+            if (key) keptTracks.set(key, copy);
+            tracks.push(copy);
         }
     }
     return { artists, tracks };
 }
 
+/** A streaming provider that can play a matched catalog song. */
+export type PlayableProvider = Extract<SearchProvider, "tidal" | "youtube">;
+
+interface StreamingMatchTarget {
+    track: DiscoverTrackResult;
+    artist: string;
+    title: string;
+}
+
+async function matchPlaybackIds(
+    provider: PlayableProvider,
+    userId: string,
+    targets: readonly StreamingMatchTarget[],
+): Promise<Array<string | null | undefined>> {
+    const inputs = targets.map(({ artist, title }) => ({ artist, title }));
+    if (provider === "tidal") {
+        const matches = await tidalStreamingService.findMatchesForAlbum(
+            userId,
+            inputs,
+        );
+        return targets.map((_target, index) => {
+            const match = matches[index];
+            return match
+                ? tryEncodePlaybackId({ kind: "td", tidalId: match.id })
+                : null;
+        });
+    }
+    const matches = await ytMusicService.findMatchesForAlbum(userId, inputs);
+    return targets.map((_target, index) => {
+        const match = matches[index];
+        return match?.videoId
+            ? tryEncodePlaybackId({ kind: "ym", videoId: match.videoId })
+            : null;
+    });
+}
+
+/**
+ * Gives catalog songs without a `playbackId` (Last.fm, Deezer) one from a
+ * matching song on the given streaming providers, tried in order, so they
+ * stream in place. A provider whose matching fails is logged and skipped.
+ */
+async function attachStreamingMatches(
+    tracks: readonly DiscoverTrackResult[],
+    providers: readonly PlayableProvider[],
+    userId: string | undefined,
+): Promise<void> {
+    if (!userId) return;
+    let remaining: StreamingMatchTarget[] = tracks.flatMap((track) =>
+        !track.playbackId &&
+        typeof track.artist === "string" &&
+        track.artist &&
+        typeof track.name === "string" &&
+        track.name
+            ? [{ track, artist: track.artist, title: track.name }]
+            : [],
+    );
+    for (const provider of providers) {
+        if (remaining.length === 0) return;
+        try {
+            const ids = await matchPlaybackIds(provider, userId, remaining);
+            remaining.forEach((target, index) => {
+                const id = ids[index];
+                if (id) target.track.playbackId = id;
+            });
+            remaining = remaining.filter((target) => !target.track.playbackId);
+        } catch (error) {
+            log.warn(`${provider} song matching failed`, { error });
+        }
+    }
+}
+
 /**
  * Searches every given provider in parallel and merges the results in the
- * given priority order. A provider that fails is logged and skipped.
+ * given priority order. A provider that fails is logged and skipped. Songs
+ * left without a `playbackId` are then matched against `playableProviders`
+ * (in order) to make them streamable.
  */
 export async function searchDiscoverMusic(input: {
     query: string;
     limit: number;
     userId: string | undefined;
     providers: readonly SearchProvider[];
+    playableProviders?: readonly PlayableProvider[];
 }): Promise<{
     artists: DiscoverArtistResult[];
     tracks: DiscoverTrackResult[];
@@ -331,5 +412,11 @@ export async function searchDiscoverMusic(input: {
         }
         log.warn(`${provider} search failed`, { error: result.reason });
     });
-    return mergeDiscoverProviderResults(ordered, input.limit);
+    const merged = mergeDiscoverProviderResults(ordered, input.limit);
+    await attachStreamingMatches(
+        merged.tracks,
+        input.playableProviders ?? [],
+        input.userId,
+    );
+    return merged;
 }

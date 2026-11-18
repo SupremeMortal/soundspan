@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The downloads notification of background_downloader (doc 07,
+     Transfers; doc 10, Android). The plugin posts it on its own
+     low-importance channel, named by these strings, and draws the icons
+     aliased here, so it shows the app's monochrome notification icon. -->
+<resources>
+    <string name="bg_downloader_notification_channel_name">Downloads</string>
+    <string name="bg_downloader_notification_channel_description">Progress of downloads</string>
+    <drawable name="outline_file_download_24">@drawable/ic_stat_soundspan</drawable>
+    <drawable name="outline_download_done_24">@drawable/ic_stat_soundspan</drawable>
+    <drawable name="outline_error_outline_24">@drawable/ic_stat_soundspan</drawable>
+</resources>

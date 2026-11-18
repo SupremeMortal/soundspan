@@ -200,6 +200,10 @@ jest.mock("../../config", () => ({
 }));
 
 import router from "../podcasts";
+import {
+    expectClientSurfaceResponse,
+    withClientSurfaceValidation,
+} from "./helpers/expectClientSurfaceResponse";
 
 function getHandler(
     path: string,
@@ -297,13 +301,13 @@ describe("podcasts streaming/runtime behavior", () => {
         "/:podcastId/episodes/:episodeId/cache-status",
         "get",
     );
-    const streamHandler = getHandler(
-        "/:podcastId/episodes/:episodeId/stream",
-        "get",
+    const streamHandler = withClientSurfaceValidation(
+        "streamPodcastEpisode",
+        getHandler("/:podcastId/episodes/:episodeId/stream", "get"),
     );
-    const progressHandler = getHandler(
-        "/:podcastId/episodes/:episodeId/progress",
-        "post",
+    const progressHandler = withClientSurfaceValidation(
+        "updateEpisodeProgress",
+        getHandler("/:podcastId/episodes/:episodeId/progress", "post"),
     );
     const clearProgressHandler = getHandler(
         "/:podcastId/episodes/:episodeId/progress",
@@ -438,6 +442,10 @@ describe("podcasts streaming/runtime behavior", () => {
             end: 99,
         });
         expect(fileStream.pipe).toHaveBeenCalledWith(res);
+        expect(res.json).not.toHaveBeenCalled();
+        expect(() =>
+            expectClientSurfaceResponse("streamPodcastEpisode", res),
+        ).not.toThrow();
 
         for (const closeHandler of res.closeHandlers) {
             closeHandler();

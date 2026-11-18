@@ -83,6 +83,7 @@ jest.mock("jsonwebtoken", () => ({
 }));
 
 import router from "../onboarding";
+import { expectClientSurfaceResponse } from "./helpers/expectClientSurfaceResponse";
 
 function getHandler(path: string, method: "get" | "post" | "put" | "delete") {
     const layer = (router as any).stack.find(
@@ -448,6 +449,7 @@ describe("onboarding route runtime", () => {
             needsOnboarding: true,
             hasAccount: false,
         });
+        expectClientSurfaceResponse("getOnboardingStatus", noUserRes);
 
         prisma.user.count.mockResolvedValueOnce(1);
         mockVerifyAccessToken.mockReturnValueOnce({ userId: "u1" });
@@ -480,6 +482,10 @@ describe("onboarding route runtime", () => {
             needsOnboarding: false,
             hasAccount: true,
         });
+        expectClientSurfaceResponse(
+            "getOnboardingStatus",
+            onboardingCompleteRes,
+        );
 
         prisma.user.count.mockResolvedValueOnce(1);
         mockVerifyAccessToken.mockImplementationOnce(() => {
@@ -524,5 +530,6 @@ describe("onboarding route runtime", () => {
         await status(req, res);
         expect(res.statusCode).toBe(500);
         expect(res.body).toEqual({ error: "Failed to check status" });
+        expectClientSurfaceResponse("getOnboardingStatus", res);
     });
 });

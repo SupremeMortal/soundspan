@@ -1,0 +1,26 @@
+swagger_parser:
+  schema_path: openapi/soundspan-client.json
+  output_directory: lib/src/generated
+  generation:
+    root_api_class_name: SoundspanRestClient
+    http_client: dio
+    serializer: freezed
+    unknown_enum_values: preserve   # a value added by a newer server decodes to `<Enum>Unknown`
+    # Nullable uses of components that are also used non-null are rewritten
+    # to Nullable<Component> aliases (tool/normalize_spec.dart); each alias
+    # decodes to a typedef of the component's own Dart type (doc 03).
+    type_mappings:
+      - schema: '#/components/schemas/NullableLibraryTrack'
+        dart_type: NullableLibraryTrack
+        import: package:soundspan_api/src/nullable_references.dart
+        codec:
+          import: package:soundspan_api/src/nullable_references.dart
+          from_json: libraryTrackFromJson
+          to_json: libraryTrackToJson
+      - schema: '#/components/schemas/NullableVibeAudioFeatures'
+        dart_type: NullableVibeAudioFeatures
+        import: package:soundspan_api/src/nullable_references.dart
+        codec:
+          import: package:soundspan_api/src/nullable_references.dart
+          from_json: vibeAudioFeaturesFromJson
+          to_json: vibeAudioFeaturesToJson

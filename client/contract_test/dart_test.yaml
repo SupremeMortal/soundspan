@@ -1,0 +1,5 @@
+tags:
+  # Needs the contract server of compose.yaml, seeded by seed.ts.
+  contract:
+  # Needs the contract server and changes its state for later tests.
+  contract-destructive:

@@ -728,12 +728,20 @@ describe("library remote track preference endpoints", () => {
 });
 
 describe("remote-only album loading regression", () => {
+    beforeEach(() => {
+        // A remote-only album has no library tracks, so the user's album
+        // preference resolves from an empty track list.
+        mockPrisma.track.findMany.mockResolvedValue([]);
+    });
+
     it("loads a liked TIDAL-only remote album instead of returning 404", async () => {
         mockPrisma.album.findFirst.mockResolvedValueOnce({
             id: "album-remote-1",
             rgMbid: "remote:test-album",
             title: "Remote Album",
             artistId: "artist-remote-1",
+            year: null,
+            matchedRgMbid: null,
             location: "REMOTE",
             primaryType: "Album",
             coverUrl: "https://example.test/cover.jpg",
@@ -790,6 +798,8 @@ describe("remote-only album loading regression", () => {
             rgMbid: "remote:mixed",
             title: "Mixed Album",
             artistId: "artist-1",
+            year: null,
+            matchedRgMbid: null,
             location: "REMOTE",
             primaryType: "Album",
             coverUrl: null,

@@ -19,10 +19,6 @@ on:
 permissions:
   contents: read
 
-concurrency:
-  group: image-security-scanning-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
   trivy-image:
     name: Trivy Image Scan (${{ matrix.name }})

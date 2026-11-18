@@ -1080,6 +1080,24 @@ describe("library stream runtime coverage", () => {
         expect(res.statusCode).toBe(200);
     });
 
+    it("ignores report=0 on the legacy route and still records a play", async () => {
+        const req = {
+            params: { id: "track-1" },
+            query: { quality: "high", report: "0" },
+            user: { id: "user-9" },
+        } as any;
+        const res = createRes();
+
+        await streamHandler(req, res);
+
+        expect(mockPlayCreate).toHaveBeenCalledTimes(1);
+        expect(mockPlayCreate).toHaveBeenCalledWith({
+            data: { userId: "user-9", trackId: "track-1" },
+        });
+        expect(mockStreamWithRangeSupport).toHaveBeenCalled();
+        expect(res.statusCode).toBe(200);
+    });
+
     it("uses user playback settings when quality query is not provided", async () => {
         mockUserSettingsFindUnique.mockResolvedValueOnce({
             playbackQuality: "low",

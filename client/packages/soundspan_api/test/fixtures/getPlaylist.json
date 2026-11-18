@@ -1,0 +1,230 @@
+{
+  "createdAt": "2026-11-15T06:10:12.227Z",
+  "hiddenByUsers": [],
+  "id": "cmwhfqr2b002707l94le3ldu0",
+  "isHidden": false,
+  "isOwner": true,
+  "isPublic": false,
+  "items": [
+    {
+      "id": "cmwhfqr3j002907l95nhglsax",
+      "playback": {
+        "isPlayable": true,
+        "message": null,
+        "reason": null
+      },
+      "playlistId": "cmwhfqr2b002707l94le3ldu0",
+      "provider": {
+        "label": "LOCAL",
+        "source": "local",
+        "tidalTrackId": null,
+        "youtubeVideoId": null
+      },
+      "sort": 0,
+      "track": {
+        "album": {
+          "albumLoudnessLufs": null,
+          "albumTruePeakDb": null,
+          "artist": {
+            "id": "cmwhfq88g000y07l9a1qi9zi9",
+            "name": "Contract Aurora"
+          },
+          "coverArt": "native:cmwhfq8fl001607l9bc6nd9nw.jpg",
+          "id": "cmwhfq8fl001607l9bc6nd9nw",
+          "title": "First Light"
+        },
+        "artist": {
+          "id": "cmwhfq88g000y07l9a1qi9zi9",
+          "name": "Contract Aurora"
+        },
+        "displayTitle": null,
+        "duration": 30,
+        "filePath": "Contract Aurora/First Light/1-01 Aster Tone.flac",
+        "id": "cmwhfq8il001a07l9ez59crtp",
+        "loudnessLufs": null,
+        "playbackId": "t.cmwhfq8il001a07l9ez59crtp",
+        "provider": {
+          "tidalTrackId": null,
+          "youtubeVideoId": null
+        },
+        "source": "local",
+        "title": "Aster Tone",
+        "trackNo": 1,
+        "truePeakDb": null
+      },
+      "trackId": "cmwhfq8il001a07l9ez59crtp",
+      "trackTidalId": null,
+      "trackYtMusicId": null,
+      "type": "track"
+    },
+    {
+      "id": "cmwhfqr2t002807l9ucl6vpt8",
+      "playback": {
+        "isPlayable": true,
+        "message": null,
+        "reason": null
+      },
+      "playlistId": "cmwhfqr2b002707l94le3ldu0",
+      "provider": {
+        "label": "LOCAL",
+        "source": "local",
+        "tidalTrackId": null,
+        "youtubeVideoId": null
+      },
+      "sort": 1,
+      "track": {
+        "album": {
+          "albumLoudnessLufs": null,
+          "albumTruePeakDb": null,
+          "artist": {
+            "id": "cmwhfq7sz000g07l98lw8n9cp",
+            "name": "Contract Basalt"
+          },
+          "coverArt": "native:cmwhfq80b000p07l9lhk1awb2.jpg",
+          "id": "cmwhfq80b000p07l9lhk1awb2",
+          "title": "Quiet Fault"
+        },
+        "artist": {
+          "id": "cmwhfq7sz000g07l98lw8n9cp",
+          "name": "Contract Basalt"
+        },
+        "displayTitle": null,
+        "duration": 3,
+        "filePath": "Contract Basalt/Quiet Fault/1-06 Alder Tone.flac",
+        "id": "cmwhfq888000x07l976fptlcm",
+        "loudnessLufs": null,
+        "playbackId": "t.cmwhfq888000x07l976fptlcm",
+        "provider": {
+          "tidalTrackId": null,
+          "youtubeVideoId": null
+        },
+        "source": "local",
+        "title": "Alder Tone",
+        "trackNo": 6,
+        "truePeakDb": null
+      },
+      "trackId": "cmwhfq888000x07l976fptlcm",
+      "trackTidalId": null,
+      "trackYtMusicId": null,
+      "type": "track"
+    }
+  ],
+  "mergedItems": [
+    {
+      "id": "cmwhfqr3j002907l95nhglsax",
+      "playback": {
+        "isPlayable": true,
+        "message": null,
+        "reason": null
+      },
+      "playlistId": "cmwhfqr2b002707l94le3ldu0",
+      "provider": {
+        "label": "LOCAL",
+        "source": "local",
+        "tidalTrackId": null,
+        "youtubeVideoId": null
+      },
+      "sort": 0,
+      "track": {
+        "album": {
+          "albumLoudnessLufs": null,
+          "albumTruePeakDb": null,
+          "artist": {
+            "id": "cmwhfq88g000y07l9a1qi9zi9",
+            "name": "Contract Aurora"
+          },
+          "coverArt": "native:cmwhfq8fl001607l9bc6nd9nw.jpg",
+          "id": "cmwhfq8fl001607l9bc6nd9nw",
+          "title": "First Light"
+        },
+        "artist": {
+          "id": "cmwhfq88g000y07l9a1qi9zi9",
+          "name": "Contract Aurora"
+        },
+        "displayTitle": null,
+        "duration": 30,
+        "filePath": "Contract Aurora/First Light/1-01 Aster Tone.flac",
+        "id": "cmwhfq8il001a07l9ez59crtp",
+        "loudnessLufs": null,
+        "playbackId": "t.cmwhfq8il001a07l9ez59crtp",
+        "provider": {
+          "tidalTrackId": null,
+          "youtubeVideoId": null
+        },
+        "source": "local",
+        "title": "Aster Tone",
+        "trackNo": 1,
+        "truePeakDb": null
+      },
+      "trackId": "cmwhfq8il001a07l9ez59crtp",
+      "trackTidalId": null,
+      "trackYtMusicId": null,
+      "type": "track"
+    },
+    {
+      "id": "cmwhfqr2t002807l9ucl6vpt8",
+      "playback": {
+        "isPlayable": true,
+        "message": null,
+        "reason": null
+      },
+      "playlistId": "cmwhfqr2b002707l94le3ldu0",
+      "provider": {
+        "label": "LOCAL",
+        "source": "local",
+        "tidalTrackId": null,
+        "youtubeVideoId": null
+      },
+      "sort": 1,
+      "track": {
+        "album": {
+          "albumLoudnessLufs": null,
+          "albumTruePeakDb": null,
+          "artist": {
+            "id": "cmwhfq7sz000g07l98lw8n9cp",
+            "name": "Contract Basalt"
+          },
+          "coverArt": "native:cmwhfq80b000p07l9lhk1awb2.jpg",
+          "id": "cmwhfq80b000p07l9lhk1awb2",
+          "title": "Quiet Fault"
+        },
+        "artist": {
+          "id": "cmwhfq7sz000g07l98lw8n9cp",
+          "name": "Contract Basalt"
+        },
+        "displayTitle": null,
+        "duration": 3,
+        "filePath": "Contract Basalt/Quiet Fault/1-06 Alder Tone.flac",
+        "id": "cmwhfq888000x07l976fptlcm",
+        "loudnessLufs": null,
+        "playbackId": "t.cmwhfq888000x07l976fptlcm",
+        "provider": {
+          "tidalTrackId": null,
+          "youtubeVideoId": null
+        },
+        "source": "local",
+        "title": "Alder Tone",
+        "trackNo": 6,
+        "truePeakDb": null
+      },
+      "trackId": "cmwhfq888000x07l976fptlcm",
+      "trackTidalId": null,
+      "trackYtMusicId": null,
+      "type": "track"
+    }
+  ],
+  "mixId": null,
+  "name": "Captured fixtures (renamed)",
+  "pendingCount": 0,
+  "pendingTracks": [],
+  "spotifyPlaylistId": null,
+  "spotifyPlaylistUrl": null,
+  "totalItemCount": 2,
+  "trackCount": 2,
+  "truncated": false,
+  "updatedAt": "2026-11-15T06:10:12.285Z",
+  "user": {
+    "username": "listener"
+  },
+  "userId": "cmwhfq75r000107l99vpcqcqw"
+}

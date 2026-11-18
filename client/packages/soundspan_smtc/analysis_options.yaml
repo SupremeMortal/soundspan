@@ -1,0 +1,6 @@
+include: ../../analysis_options.yaml
+analyzer:
+  # Paths here are relative to this package; the client's own list is
+  # relative to client/ and replaced, not merged, by this one.
+  exclude:
+    - windows/**

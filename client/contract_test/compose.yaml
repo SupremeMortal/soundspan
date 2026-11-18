@@ -1,0 +1,77 @@
+# Contract server for client/contract_test: the pull request's own backend
+# with client-surface response validation on, PostgreSQL (pgvector) and
+# Redis. Services extend the root docker-compose.yml; the variables that file
+# marks required come from .env next to this file (throwaway values).
+#
+# podcast-feed serves the fixture podcast (fixtures/generate.sh) at
+# http://podcast-feed/feed.xml. The backend refuses feed and enclosure hosts
+# that resolve to private addresses, so the network uses a subnet outside the
+# ranges it blocks; production rules are unchanged.
+#
+#   docker compose -f compose.yaml up -d --build --wait
+#   docker compose -f compose.yaml down -v
+name: soundspan-contract
+
+services:
+    backend:
+        extends:
+            file: ../../docker-compose.yml
+            service: backend
+        container_name: soundspan-contract-backend
+        environment:
+            OPENAPI_VALIDATE_RESPONSES: "1"
+            BACKEND_PROCESS_ROLE: all
+            AUDIO_ANALYSIS_ENABLED: "false"
+        volumes: !override
+            - ./.fixtures/music:/music
+            - backend_cache:/app/cache
+            - backend_logs:/app/logs
+        ports: !override
+            - "127.0.0.1:13006:3006"
+        restart: "no"
+        depends_on:
+            postgres:
+                condition: service_healthy
+            redis:
+                condition: service_healthy
+            podcast-feed:
+                condition: service_healthy
+
+    podcast-feed:
+        image: nginx:1.27-alpine
+        container_name: soundspan-contract-podcast-feed
+        volumes:
+            - ./.fixtures/podcast:/usr/share/nginx/html:ro
+        restart: "no"
+        healthcheck:
+            test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1/feed.xml"]
+            interval: 2s
+            timeout: 2s
+            retries: 15
+
+    postgres:
+        extends:
+            file: ../../docker-compose.yml
+            service: postgres
+        container_name: soundspan-contract-postgres
+        ports: !reset []
+        restart: "no"
+
+    redis:
+        extends:
+            file: ../../docker-compose.yml
+            service: redis
+        container_name: soundspan-contract-redis
+        ports: !reset []
+        restart: "no"
+
+networks:
+    default:
+        ipam:
+            config:
+                - subnet: 11.86.0.0/24
+
+volumes:
+    postgres_data:
+    backend_cache:
+    backend_logs:

@@ -223,6 +223,96 @@ describe("streamLibraryTrack", () => {
         expect(mockServeNative).not.toHaveBeenCalled();
     });
 
+    describe("recordPlay", () => {
+        it("records no play and still serves the file when recordPlay is false", async () => {
+            const res = createRes();
+            await streamLibraryTrack({
+                userId: "u1",
+                trackId: "track-1",
+                quality: "low",
+                req,
+                res,
+                recordPlay: false,
+            });
+            expect(mockPlayFindFirst).not.toHaveBeenCalled();
+            expect(mockPlayCreate).not.toHaveBeenCalled();
+            expect(mockServeNative).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    requestedQuality: "low",
+                    track: expect.objectContaining({ id: "track-1" }),
+                }),
+            );
+        });
+
+        it.each([
+            ["omitted", undefined],
+            ["true", true],
+        ])(
+            "records one play when recordPlay is %s and none exists in the last 30 seconds",
+            async (_label, recordPlay) => {
+                await streamLibraryTrack({
+                    userId: "u1",
+                    trackId: "track-1",
+                    quality: "low",
+                    req,
+                    res: createRes(),
+                    ...(recordPlay === undefined ? {} : { recordPlay }),
+                });
+                expect(mockPlayCreate).toHaveBeenCalledTimes(1);
+                expect(mockPlayCreate).toHaveBeenCalledWith({
+                    data: { userId: "u1", trackId: "track-1" },
+                });
+            },
+        );
+
+        it("records no play when the federated peer serves and recordPlay is false", async () => {
+            mockTrackFindUnique.mockResolvedValue(
+                nativeTrack({
+                    origin: "FEDERATED",
+                    peerId: "p1",
+                    remoteId: "r1",
+                }),
+            );
+            mockLoadPeer.mockResolvedValue({ id: "p1" });
+            mockProxyPeer.mockResolvedValue(true);
+            await streamLibraryTrack({
+                userId: "u1",
+                trackId: "track-1",
+                quality: "low",
+                req,
+                res: createRes(),
+                recordPlay: false,
+            });
+            expect(mockProxyPeer).toHaveBeenCalled();
+            expect(mockPlayCreate).not.toHaveBeenCalled();
+        });
+
+        it("records no play when a fallback twin serves and recordPlay is false", async () => {
+            mockTrackFindUnique.mockResolvedValue(
+                nativeTrack({
+                    origin: "FEDERATED",
+                    peerId: "p1",
+                    remoteId: null,
+                }),
+            );
+            mockApplyFallback.mockResolvedValue(nativeTrack({ id: "twin" }));
+            await streamLibraryTrack({
+                userId: "u1",
+                trackId: "track-1",
+                quality: "low",
+                req,
+                res: createRes(),
+                recordPlay: false,
+            });
+            expect(mockServeNative).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    track: expect.objectContaining({ id: "twin" }),
+                }),
+            );
+            expect(mockPlayCreate).not.toHaveBeenCalled();
+        });
+    });
+
     it("responds 500 when a lookup throws", async () => {
         mockTrackFindUnique.mockRejectedValue(new Error("db down"));
         const res = createRes();

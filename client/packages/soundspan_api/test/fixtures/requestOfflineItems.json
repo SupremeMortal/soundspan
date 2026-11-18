@@ -1,0 +1,15 @@
+{
+  "cacheLimitBytes": 10737418240,
+  "cacheUsedBytes": 0,
+  "estimatedTotalBytes": 47085,
+  "items": [
+    {
+      "contentType": "FLAC",
+      "downloadUrl": "/api/playback/stream/t.cmwhfq888000x07l976fptlcm?quality=original&report=0",
+      "downloadable": true,
+      "expectedSize": 47085,
+      "playbackId": "t.cmwhfq888000x07l976fptlcm",
+      "quality": "original"
+    }
+  ]
+}

@@ -1,0 +1,288 @@
+// SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
+
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
+import 'package:flutter_web_plugins/url_strategy.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:soundspan/app/app.dart';
+import 'package:soundspan/app/desktop/desktop_controller.dart';
+import 'package:soundspan/app/l10n/generated/app_localizations.dart';
+import 'package:soundspan/app/licenses/license_registration.dart';
+import 'package:soundspan/app/router/deep_link_router.dart';
+import 'package:soundspan/app/router/notification_taps.dart';
+import 'package:soundspan/app/shell/window_state_controller.dart';
+import 'package:soundspan/core/auth/active_profile.dart';
+import 'package:soundspan/core/downloads/download_batch_notices.dart';
+import 'package:soundspan/core/downloads/download_notification_policy.dart';
+import 'package:soundspan/core/downloads/download_scheduler.dart';
+import 'package:soundspan/core/downloads/download_store.dart'
+    show DownloadCollectionKind;
+import 'package:soundspan/core/logging/app_logger.dart';
+import 'package:soundspan/core/logging/console_log_sink.dart';
+import 'package:soundspan/core/playback/media_controls/browse/browse_tree.dart';
+import 'package:soundspan/core/playback/media_controls/media_controls_providers.dart';
+import 'package:soundspan/core/playback/playback_providers.dart';
+import 'package:soundspan/core/profile/capability_refresher.dart';
+import 'package:soundspan/core/profile/key_expiry_binding.dart';
+import 'package:soundspan/core/profile/profile_providers.dart';
+import 'package:soundspan/core/profile/profile_runtime.dart';
+import 'package:soundspan/core/profile/reachability_binding.dart';
+import 'package:soundspan/core/storage/app/app_database.dart';
+import 'package:soundspan/core/storage/app/app_settings_store.dart';
+import 'package:soundspan/core/storage/providers.dart';
+import 'package:soundspan/core/sync/outbox/outbox.dart';
+import 'package:soundspan/platform/capabilities/capabilities.dart';
+import 'package:soundspan/platform/database_opener/database_opener.dart';
+import 'package:soundspan/platform/deep_links/deep_links.dart';
+import 'package:soundspan/platform/log_export/log_export.dart';
+import 'package:soundspan/platform/log_sink/log_sink.dart';
+import 'package:soundspan/platform/paths/paths.dart';
+import 'package:soundspan/platform/secrets/secrets.dart';
+import 'package:soundspan/shared/providers/images.dart';
+import 'package:soundspan/shared/providers/repositories.dart';
+
+final AppLogger _log = AppLogger.scope('App');
+
+/// A task that runs after the first frame without blocking the UI (doc 02,
+/// Bootstrap Sequence, step 8).
+typedef PostFirstFrameTask = Future<void> Function(ProviderContainer root);
+
+/// The tasks [bootstrap] starts, in parallel, after the first frame:
+/// reachability, the capability refresh, the cache pruning, the outbox
+/// worker, the download scheduler and the key-expiry monitor of every
+/// profile that becomes active, the deep-link listener, the
+/// notification-tap listener and the OS media controls. Later features
+/// append theirs.
+final List<PostFirstFrameTask> postFirstFrameTasks = [
+  startMediaControls,
+  startReachability,
+  startCapabilityRefresh,
+  startCachePruning,
+  startOutbox,
+  startDownloads,
+  startDeepLinks,
+  startKeyExpiryMonitor,
+  startNotificationTaps,
+];
+
+/// Starts the app (doc 02, Bootstrap Sequence): error hooks, the decoded-image
+/// memory cache limits, the bundled licences (read only when the licences screen asks), paths,
+/// logging, `app.db`, the root container and the active profile, the
+/// desktop window, then `runApp` and the [postFirstFrameTasks]. [args] are
+/// the launch arguments; on Windows and Linux they carry a deep link.
+///
+/// [paths], [secretStore] and [overrides] replace the platform's paths,
+/// the platform's secret store and add provider overrides; the desktop
+/// integration tests start the app with them (doc 11).
+Future<void> bootstrap({
+  List<String> args = const [],
+  AppPaths? paths,
+  SecretStore? secretStore,
+  List<Override> overrides = const [],
+}) async {
+  await runZonedGuarded<Future<void>>(
+    () async {
+      WidgetsFlutterBinding.ensureInitialized();
+      installErrorHooks();
+      configureImageMemoryCache(
+        isDesktop: currentPlatformCapabilities().isDesktop,
+      );
+      registerBundledLicenses(rootBundle);
+      if (kIsWeb) usePathUrlStrategy();
+      final appPaths = paths ?? await resolveAppPaths();
+      final persistentSink = createPersistentLogSink(
+        directory: kIsWeb ? null : appPaths.logs,
+      );
+      AppLogging.configure(
+        sinks: [if (kDebugMode) ConsoleLogSink(), persistentSink],
+        releaseMode: kReleaseMode,
+      );
+      final root = await createRootContainer(
+        paths: appPaths,
+        secretStore: secretStore,
+        overrides: [
+          persistentLogSinkProvider.overrideWithValue(persistentSink),
+          launchArgumentsProvider.overrideWithValue(List.unmodifiable(args)),
+          mediaControlsChannelNameProvider.overrideWith(
+            (ref) => lookupAppLocalizations(
+              ref.watch(localeSettingProvider).value ?? const Locale('en'),
+            ).playbackNotificationChannelName,
+          ),
+          mediaControlsLikeLabelProvider.overrideWith((ref) {
+            final l10n = lookupAppLocalizations(
+              ref.watch(localeSettingProvider).value ?? const Locale('en'),
+            );
+            return (liked) =>
+                liked ? l10n.likeButtonRemove : l10n.likeButtonLike;
+          }),
+          mediaControlsBrowseTitlesProvider.overrideWith((ref) {
+            final l10n = lookupAppLocalizations(
+              ref.watch(localeSettingProvider).value ?? const Locale('en'),
+            );
+            return () => BrowseRootTitles(
+              recent: l10n.androidAutoRecent,
+              playlists: l10n.androidAutoPlaylists,
+              albums: l10n.androidAutoAlbums,
+              downloads: l10n.androidAutoDownloads,
+              downloadsSubtitle: (kind, completed) =>
+                  l10n.androidAutoDownloadsSubtitle(switch (kind) {
+                    DownloadCollectionKind.album => l10n.downloadsKindAlbum,
+                    DownloadCollectionKind.playlist =>
+                      l10n.downloadsKindPlaylist,
+                    DownloadCollectionKind.track => l10n.downloadsKindTrack,
+                    DownloadCollectionKind.episode =>
+                      l10n.androidAutoKindEpisode,
+                  }, completed),
+            );
+          }),
+          downloadNotificationTextsProvider.overrideWith((ref) {
+            final l10n = lookupAppLocalizations(
+              ref.watch(localeSettingProvider).value ?? const Locale('en'),
+            );
+            return DownloadNotificationTexts(
+              title: l10n.downloadsNotificationTitle,
+              finished: l10n.downloadsNotificationFinished,
+            );
+          }),
+          keyExpiryNotificationTextProvider.overrideWith(
+            (ref) => keyExpiryNotificationText(
+              lookupAppLocalizations(
+                ref.watch(localeSettingProvider).value ?? const Locale('en'),
+              ),
+            ),
+          ),
+          ...overrides,
+        ],
+      );
+      await restoreWindow(root);
+      runApp(
+        UncontrolledProviderScope(container: root, child: const SoundspanApp()),
+      );
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        for (final task in postFirstFrameTasks) {
+          unawaited(
+            task(root).catchError((Object error, StackTrace stackTrace) {
+              _log.severe('Start-up task failed', const {}, error, stackTrace);
+            }),
+          );
+        }
+      });
+    },
+    (error, stackTrace) =>
+        _log.severe('Uncaught error', const {}, error, stackTrace),
+  );
+}
+
+/// Desktop only (doc 02, step 5): restores the window's bounds before the
+/// first frame and starts persisting them, then registers the tray and
+/// takes over closing the window ([startDesktop]). A failure is logged;
+/// the window then opens at the runner's default size, or closing it
+/// closes the app.
+Future<void> restoreWindow(ProviderContainer root) async {
+  try {
+    await root.read(windowStateControllerProvider).start();
+  } on Object catch (error, stackTrace) {
+    _log.severe('Could not restore the window', const {}, error, stackTrace);
+  }
+  try {
+    await startDesktop(root);
+  } on Object catch (error, stackTrace) {
+    _log.severe('Could not start the tray', const {}, error, stackTrace);
+  }
+}
+
+/// Routes framework and uncaught platform errors to the logger. Nothing is
+/// sent off the device.
+void installErrorHooks() {
+  FlutterError.onError = (details) {
+    _log.severe(
+      'Framework error',
+      {if (details.library != null) 'library': details.library},
+      details.exception,
+      details.stack,
+    );
+  };
+  PlatformDispatcher.instance.onError = (error, stackTrace) {
+    _log.severe('Uncaught error', const {}, error, stackTrace);
+    return true;
+  };
+}
+
+/// The `User-Agent` of API requests: `soundspan-client/<version> (<os>)`.
+String userAgentFor(String version, {String? os}) =>
+    'soundspan-client/$version (${os ?? currentOsName()})';
+
+/// The name of the operating system the app runs on, lower case, or `web`.
+String currentOsName() => kIsWeb
+    ? 'web'
+    : switch (defaultTargetPlatform) {
+        TargetPlatform.android => 'android',
+        TargetPlatform.iOS => 'ios',
+        TargetPlatform.macOS => 'macos',
+        TargetPlatform.windows => 'windows',
+        TargetPlatform.linux => 'linux',
+        TargetPlatform.fuchsia => 'fuchsia',
+      };
+
+/// Builds the root [ProviderContainer] (doc 02, steps 3, 4 and 6) and
+/// activates the stored active profile, creating the playback controller
+/// of every profile that becomes active ([createPlaybackOnActivation]).
+///
+/// The container overrides the paths, the database opener, the opened
+/// `app.db`, the secret store and the `User-Agent`, and seeds the active
+/// profile id from the app settings. Each of them is the platform's unless
+/// passed in, so tests build the same container over in-memory storage; an
+/// [appDatabase] passed in is not closed with the container. [overrides] are
+/// added last. When the stored profile cannot be activated, the failure is
+/// logged and no profile is active.
+Future<ProviderContainer> createRootContainer({
+  AppPaths? paths,
+  DatabaseOpener? databaseOpener,
+  AppDatabase? appDatabase,
+  SecretStore? secretStore,
+  String? userAgent,
+  List<Override> overrides = const [],
+}) async {
+  final resolvedPaths = paths ?? await resolveAppPaths();
+  final opener = databaseOpener ?? createDatabaseOpener(resolvedPaths);
+  final database =
+      appDatabase ?? AppDatabase(opener.open(const AppDatabaseTarget()));
+  final activeId = await AppSettingsStore(database)
+      .read(AppSettingKeys.activeProfileId);
+
+  final root = ProviderContainer(
+    overrides: [
+      appPathsProvider.overrideWithValue(resolvedPaths),
+      databaseOpenerProvider.overrideWithValue(opener),
+      appDatabaseProvider.overrideWith((ref) {
+        if (appDatabase == null) {
+          ref.onDispose(() => unawaited(database.close()));
+        }
+        return database;
+      }),
+      secretStoreProvider.overrideWithValue(secretStore ?? createSecretStore()),
+      userAgentProvider.overrideWithValue(
+        userAgent ?? userAgentFor((await PackageInfo.fromPlatform()).version),
+      ),
+      initialActiveProfileIdProvider.overrideWithValue(activeId),
+      ...overrides,
+    ],
+  );
+  createPlaybackOnActivation(root);
+  try {
+    await root.read(profileRuntimeProvider).start();
+  } on Object catch (error, stackTrace) {
+    _log.severe(
+      'Could not activate the stored profile',
+      {'profileId': activeId},
+      error,
+      stackTrace,
+    );
+  }
+  return root;
+}

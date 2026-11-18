@@ -1,0 +1,67 @@
+{
+  "tracks": [
+    {
+      "album": {
+        "albumLoudnessLufs": null,
+        "albumTruePeakDb": null,
+        "coverArt": "native:cmwhfq7gs000407l9aq1p9nxu.jpg",
+        "id": "cmwhfq7gs000407l9aq1p9nxu",
+        "title": "Ember Lines"
+      },
+      "artist": {
+        "id": "cmwhfq7g8000307l9drua3jcd",
+        "name": "Contract Cinder"
+      },
+      "duration": 3,
+      "filePath": "Contract Cinder/Ember Lines/1-05 Glade Tone.flac",
+      "id": "cmwhfq7n4000807l9179ossq3",
+      "loudnessLufs": null,
+      "playbackId": "t.cmwhfq7n4000807l9179ossq3",
+      "title": "Glade Tone",
+      "trackNo": 5,
+      "truePeakDb": null
+    },
+    {
+      "album": {
+        "albumLoudnessLufs": null,
+        "albumTruePeakDb": null,
+        "coverArt": "native:cmwhfq7t4000h07l9cf09q4az.jpg",
+        "id": "cmwhfq7t4000h07l9cf09q4az",
+        "title": "Stone Garden"
+      },
+      "artist": {
+        "id": "cmwhfq7sz000g07l98lw8n9cp",
+        "name": "Contract Basalt"
+      },
+      "duration": 3,
+      "filePath": "Contract Basalt/Stone Garden/1-01 Opal Tone.flac",
+      "id": "cmwhfq7vr000k07l97z6yjfhe",
+      "loudnessLufs": null,
+      "playbackId": "t.cmwhfq7vr000k07l97z6yjfhe",
+      "title": "Opal Tone",
+      "trackNo": 1,
+      "truePeakDb": null
+    },
+    {
+      "album": {
+        "albumLoudnessLufs": null,
+        "albumTruePeakDb": null,
+        "coverArt": "native:cmwhfq8fl001607l9bc6nd9nw.jpg",
+        "id": "cmwhfq8fl001607l9bc6nd9nw",
+        "title": "First Light"
+      },
+      "artist": {
+        "id": "cmwhfq88g000y07l9a1qi9zi9",
+        "name": "Contract Aurora"
+      },
+      "duration": 3,
+      "filePath": "Contract Aurora/First Light/1-05 Ember Tone.flac",
+      "id": "cmwhfq8m8001e07l97yagr3fk",
+      "loudnessLufs": null,
+      "playbackId": "t.cmwhfq8m8001e07l97yagr3fk",
+      "title": "Ember Tone",
+      "trackNo": 5,
+      "truePeakDb": null
+    }
+  ]
+}

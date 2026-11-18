@@ -1,0 +1,28 @@
+{
+  "audiobookId": null,
+  "createdAt": "2026-11-15T06:10:12.206Z",
+  "currentIndex": 0,
+  "currentTime": 12.5,
+  "deviceId": "legacy",
+  "isPlaying": false,
+  "isShuffle": false,
+  "playbackType": "track",
+  "podcastId": null,
+  "queue": [
+    {
+      "album": null,
+      "artist": null,
+      "duration": 0,
+      "id": "t.cmwhfq888000x07l976fptlcm",
+      "itemType": "track",
+      "mediaSource": "local",
+      "provider": {
+        "source": "local"
+      },
+      "title": "Unknown"
+    }
+  ],
+  "trackId": "cmwhfq888000x07l976fptlcm",
+  "updatedAt": "2026-11-15T06:10:12.206Z",
+  "userId": "cmwhfq75r000107l99vpcqcqw"
+}

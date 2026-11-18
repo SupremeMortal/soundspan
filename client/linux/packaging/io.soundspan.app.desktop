@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=soundspan
+Comment=Music, podcasts and audiobooks from your soundspan server
+Exec=soundspan %u
+Icon=io.soundspan.app
+StartupWMClass=io.soundspan.app
+Terminal=false
+Categories=AudioVideo;Audio;Player;
+MimeType=x-scheme-handler/soundspan;

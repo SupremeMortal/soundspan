@@ -44,6 +44,7 @@ import {
     endGroup,
 } from "../../services/listenTogether";
 import { GroupError } from "../../services/listenTogetherManager";
+import { withClientSurfaceValidation } from "./helpers/expectClientSurfaceResponse";
 
 const mockCreateGroup = createGroup as jest.Mock;
 const mockJoinGroup = joinGroup as jest.Mock;
@@ -85,13 +86,58 @@ function createRes() {
 }
 
 describe("listenTogether routes runtime", () => {
-    const createGroupHandler = getHandler("/", "post");
-    const joinGroupHandler = getHandler("/join", "post");
-    const discoverGroupsHandler = getHandler("/discover", "get");
+    const createGroupHandler = withClientSurfaceValidation(
+        "createListenGroup",
+        getHandler("/", "post"),
+    );
+    const joinGroupHandler = withClientSurfaceValidation(
+        "joinListenGroup",
+        getHandler("/join", "post"),
+    );
+    const discoverGroupsHandler = withClientSurfaceValidation(
+        "discoverListenGroups",
+        getHandler("/discover", "get"),
+    );
     const activeCountHandler = getHandler("/active-count", "get");
-    const myGroupHandler = getHandler("/mine", "get");
-    const leaveGroupHandler = getHandler("/:groupId/leave", "post");
-    const endGroupHandler = getHandler("/:groupId/end", "post");
+    const myGroupHandler = withClientSurfaceValidation(
+        "getMyListenGroup",
+        getHandler("/mine", "get"),
+    );
+    const leaveGroupHandler = withClientSurfaceValidation(
+        "leaveListenGroup",
+        getHandler("/:groupId/leave", "post"),
+    );
+    const endGroupHandler = withClientSurfaceValidation(
+        "endListenGroup",
+        getHandler("/:groupId/end", "post"),
+    );
+
+    const discoverableGroup = {
+        id: "group-1",
+        name: "Road Trip",
+        joinCode: "ABC123",
+        groupType: "host-follower",
+        visibility: "public",
+        host: { id: "u1", username: "alice" },
+        memberCount: 2,
+        isMember: false,
+        isPlaying: true,
+        currentTrack: { id: "t1", title: "Song One", artistName: "Artist" },
+    };
+
+    const queuedTrack = {
+        id: "t1",
+        playbackId: "t_dDE",
+        title: "Song One",
+        duration: 215,
+        loudnessLufs: null,
+        truePeakDb: null,
+        artist: { id: "ar-1", name: "Artist" },
+        album: { id: "al-1", title: "Album", coverArt: null },
+        mediaSource: "local",
+        streamSource: "local",
+        localTrackId: "t1",
+    };
 
     const baseSnapshot = {
         id: "group-1",
@@ -139,13 +185,7 @@ describe("listenTogether routes runtime", () => {
                 },
             ],
         });
-        mockDiscoverGroups.mockResolvedValue([
-            {
-                id: "group-1",
-                name: "Road Trip",
-                joinCode: "ABC123",
-            },
-        ]);
+        mockDiscoverGroups.mockResolvedValue([discoverableGroup]);
         mockGetActiveGroupCount.mockResolvedValue(4);
         mockGetMyGroup.mockResolvedValue(baseSnapshot);
         mockLeaveGroup.mockResolvedValue({ ended: false });
@@ -193,13 +233,7 @@ describe("listenTogether routes runtime", () => {
         await discoverGroupsHandler(discoverReq, discoverResPayload);
         expect(mockDiscoverGroups).toHaveBeenCalledWith("u2");
         expect(discoverResPayload.statusCode).toBe(200);
-        expect(discoverResPayload.body).toEqual([
-            {
-                id: "group-1",
-                name: "Road Trip",
-                joinCode: "ABC123",
-            },
-        ]);
+        expect(discoverResPayload.body).toEqual([discoverableGroup]);
 
         const activeCountResPayload = createRes();
         await activeCountHandler({} as any, activeCountResPayload);
@@ -327,5 +361,166 @@ describe("listenTogether routes runtime", () => {
             "[ListenTogether] discover failed:",
             error,
         );
+    });
+    it("creates a group from playbackId queue tracks and answers the snapshot", async () => {
+        const playingSnapshot = {
+            ...baseSnapshot,
+            membershipVersion: 1,
+            syncState: "playing",
+            readyDeadlineMs: null,
+            readyUserIds: [],
+            playback: {
+                ...baseSnapshot.playback,
+                queue: [queuedTrack],
+                isPlaying: true,
+                positionMs: 1200,
+                stateVersion: 1,
+                trackId: "t1",
+            },
+        };
+        mockCreateGroup.mockResolvedValueOnce(playingSnapshot);
+        const req = {
+            user: { id: "u1", username: "alice" },
+            body: {
+                queueTracks: [
+                    {
+                        playbackId: "t_dDE",
+                        metadata: {
+                            title: "Song One",
+                            artist: "Artist",
+                            album: "Album",
+                            durationSec: 215,
+                        },
+                    },
+                ],
+                isPlaying: true,
+            },
+        } as any;
+        const res = createRes();
+
+        await createGroupHandler(req, res);
+
+        expect(res.statusCode).toBe(201);
+        expect(res.body).toEqual(playingSnapshot);
+    });
+
+    it("answers 400 INVALID_PLAYBACK_ID when a queue track id cannot be parsed", async () => {
+        mockCreateGroup.mockRejectedValueOnce(
+            new GroupError("INVALID_PLAYBACK_ID", "Invalid playbackId"),
+        );
+        const res = createRes();
+
+        await createGroupHandler(
+            {
+                user: { id: "u1", username: "alice" },
+                body: { queueTracks: [{ playbackId: "nope" }] },
+            } as any,
+            res,
+        );
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body).toEqual({
+            error: "Invalid playbackId",
+            code: "INVALID_PLAYBACK_ID",
+        });
+    });
+
+    it("discovers no groups as an empty list", async () => {
+        mockDiscoverGroups.mockResolvedValueOnce([]);
+        const res = createRes();
+
+        await discoverGroupsHandler({ user: { id: "u1" } } as any, res);
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body).toEqual([]);
+    });
+
+    it("discovers an idle group with no current track", async () => {
+        const idle = {
+            ...discoverableGroup,
+            isPlaying: false,
+            currentTrack: null,
+        };
+        mockDiscoverGroups.mockResolvedValueOnce([idle]);
+        const res = createRes();
+
+        await discoverGroupsHandler({ user: { id: "u1" } } as any, res);
+
+        expect(res.body).toEqual([idle]);
+    });
+
+    it("answers null for mine when the user is in no group", async () => {
+        mockGetMyGroup.mockResolvedValueOnce(null);
+        const res = createRes();
+
+        await myGroupHandler({ user: { id: "u1" } } as any, res);
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body).toBeNull();
+    });
+
+    it("reports the new host when a leave hands the group over", async () => {
+        mockLeaveGroup.mockResolvedValueOnce({
+            ended: false,
+            newHostUserId: "u2",
+            newHostUsername: "bob",
+        });
+        const res = createRes();
+
+        await leaveGroupHandler(
+            { user: { id: "u1" }, params: { groupId: "group-1" } } as any,
+            res,
+        );
+
+        expect(res.body).toEqual({
+            success: true,
+            ended: false,
+            newHostUserId: "u2",
+            newHostUsername: "bob",
+        });
+    });
+
+    it("answers 403 and 404 for leave and end errors", async () => {
+        const cases = [
+            {
+                handler: leaveGroupHandler,
+                mock: mockLeaveGroup,
+                code: "NOT_MEMBER",
+                status: 403,
+            },
+            {
+                handler: leaveGroupHandler,
+                mock: mockLeaveGroup,
+                code: "NOT_FOUND",
+                status: 404,
+            },
+            {
+                handler: endGroupHandler,
+                mock: mockEndGroup,
+                code: "NOT_ALLOWED",
+                status: 403,
+            },
+            {
+                handler: endGroupHandler,
+                mock: mockEndGroup,
+                code: "NOT_FOUND",
+                status: 404,
+            },
+        ] as const;
+
+        for (const testCase of cases) {
+            testCase.mock.mockRejectedValueOnce(
+                new GroupError(testCase.code, `${testCase.code} failure`),
+            );
+            const res = createRes();
+
+            await testCase.handler(
+                { user: { id: "u2" }, params: { groupId: "group-1" } } as any,
+                res,
+            );
+
+            expect(res.statusCode).toBe(testCase.status);
+            expect(res.body).toEqual({ error: `${testCase.code} failure` });
+        }
     });
 });

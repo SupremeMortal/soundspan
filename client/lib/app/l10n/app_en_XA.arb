@@ -1,0 +1,3378 @@
+{
+  "@@locale": "en_XA",
+  "appTitle": "[šöûñðšþåñ one]",
+  "@appTitle": {
+    "description": "The application name, shown as the window and task-switcher title and on the start screen."
+  },
+  "windowTitle": "[{screen} · šöûñðšþåñ one two]",
+  "@windowTitle": {
+    "description": "The window or browser tab title: the current screen's name followed by the application name.",
+    "placeholders": {
+      "screen": {
+        "type": "String",
+        "example": "Home"
+      }
+    }
+  },
+  "navHome": "[Ĥömé one]",
+  "@navHome": {
+    "description": "Navigation destination and screen name: the home screen."
+  },
+  "navSearch": "[Šéåŕçĥ one]",
+  "@navSearch": {
+    "description": "Navigation destination and screen name: the search screen."
+  },
+  "navLibrary": "[Ļîbŕåŕý one]",
+  "@navLibrary": {
+    "description": "Navigation destination and screen name: the user's library."
+  },
+  "navPodcasts": "[Þöðçåšţš one]",
+  "@navPodcasts": {
+    "description": "Navigation destination and screen name: podcasts."
+  },
+  "navMainLabel": "[Måîñ ñåvîĝåţîöñ one two]",
+  "@navMainLabel": {
+    "description": "Accessibility label of the group holding the main navigation destinations."
+  },
+  "screenConnect": "[Åðð šéŕvéŕ one]",
+  "@screenConnect": {
+    "description": "Screen name: entering the address of a server to add."
+  },
+  "screenConnectScan": "[Šçåñ QŔ çöðé one two]",
+  "@screenConnectScan": {
+    "description": "Screen name: scanning the QR code from the web UI's device page with the camera."
+  },
+  "screenConnectProbe": "[Çĥéçķîñĝ šéŕvéŕ one two]",
+  "@screenConnectProbe": {
+    "description": "Screen name: the app is contacting the server the user entered."
+  },
+  "screenSignIn": "[Šîĝñ îñ one]",
+  "@screenSignIn": {
+    "description": "Screen name: signing in to a server."
+  },
+  "screenSettings": "[Šéţţîñĝš one]",
+  "@screenSettings": {
+    "description": "Screen name: the settings screen."
+  },
+  "screenSettingsServers": "[Šéŕvéŕš one]",
+  "@screenSettingsServers": {
+    "description": "Screen name: the settings page listing the user's servers."
+  },
+  "screenSettingsPlayback": "[Þļåýbåçķ one]",
+  "@screenSettingsPlayback": {
+    "description": "Screen name: the playback settings page."
+  },
+  "playbackNotificationChannelName": "[Þļåýbåçķ one]",
+  "@playbackNotificationChannelName": {
+    "description": "Name of the Android notification channel of the playback notification, shown in the system's notification settings for the app."
+  },
+  "androidAutoRecent": "[Ŕéçéñţ one]",
+  "@androidAutoRecent": {
+    "description": "Title of the Android Auto browse folder listing recently listened tracks."
+  },
+  "androidAutoPlaylists": "[Þļåýļîšţš one]",
+  "@androidAutoPlaylists": {
+    "description": "Title of the Android Auto browse folder listing the user's playlists."
+  },
+  "androidAutoAlbums": "[Åļbûmš one]",
+  "@androidAutoAlbums": {
+    "description": "Title of the Android Auto browse folder listing the library's albums."
+  },
+  "androidAutoDownloads": "[Ðöŵñļöåðš one]",
+  "@androidAutoDownloads": {
+    "description": "Title of the Android Auto browse folder listing what is downloaded to this device; it works with no connection."
+  },
+  "androidAutoDownloadsSubtitle": "[{kind} · {completed} one]",
+  "@androidAutoDownloadsSubtitle": {
+    "description": "Subtitle of a downloaded album, playlist, song or episode in the Android Auto Downloads folder: its kind and how many of its tracks are downloaded.",
+    "placeholders": {
+      "kind": {
+        "type": "String",
+        "example": "Album"
+      },
+      "completed": {
+        "type": "int",
+        "example": "12"
+      }
+    }
+  },
+  "downloadsNotificationTitle": "[{count, plural, =1{Ðöŵñļöåðîñĝ 1 îţém one two} other{Ðöŵñļöåðîñĝ {count} îţémš one two}}]",
+  "@downloadsNotificationTitle": {
+    "description": "Title of the system notification shown while downloads run on Android: how many items the current batch holds. It never names a track or a source.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "12"
+      }
+    }
+  },
+  "downloadsNotificationFinished": "[Ðöŵñļöåðš fîñîšĥéð one two]",
+  "@downloadsNotificationFinished": {
+    "description": "Text of the system notification on Android once every download of the batch has finished."
+  },
+  "androidAutoKindEpisode": "[Þöðçåšţ éþîšöðé one two]",
+  "@androidAutoKindEpisode": {
+    "description": "Kind of a downloaded podcast episode, in the Android Auto Downloads folder."
+  },
+  "screenSettingsStorage": "[Šţöŕåĝé one]",
+  "@screenSettingsStorage": {
+    "description": "Screen name: the storage settings page."
+  },
+  "screenSettingsAppearance": "[Åþþéåŕåñçé one]",
+  "@screenSettingsAppearance": {
+    "description": "Screen name: the appearance settings page."
+  },
+  "screenSettingsAbout": "[Åböûţ one]",
+  "@screenSettingsAbout": {
+    "description": "Screen name: the about page."
+  },
+  "screenAlbum": "[Åļbûm one]",
+  "@screenAlbum": {
+    "description": "Screen name: the detail screen of one album."
+  },
+  "screenArtist": "[Åŕţîšţ one]",
+  "@screenArtist": {
+    "description": "Screen name: the detail screen of one artist."
+  },
+  "screenPlaylist": "[Þļåýļîšţ one]",
+  "@screenPlaylist": {
+    "description": "Screen name: the detail screen of one playlist."
+  },
+  "screenMix": "[Mîx one]",
+  "@screenMix": {
+    "description": "Screen name: the detail screen of one generated mix of Made For You."
+  },
+  "shellBack": "[Båçķ one]",
+  "@shellBack": {
+    "description": "Top bar button: go back in the current navigation destination."
+  },
+  "shellForward": "[Föŕŵåŕð one]",
+  "@shellForward": {
+    "description": "Top bar button: re-open the screen most recently left with Back."
+  },
+  "shellSearchHint": "[Šéåŕçĥ one]",
+  "@shellSearchHint": {
+    "description": "Placeholder and accessibility label of the search field in the top bar."
+  },
+  "shellAccountMenu": "[Åççöûñţ åñð šéŕvéŕš one two]",
+  "@shellAccountMenu": {
+    "description": "Tooltip and accessibility label of the avatar button that opens the account menu with the server switcher."
+  },
+  "shellMenuServers": "[Šéŕvéŕš one]",
+  "@shellMenuServers": {
+    "description": "Heading of the server list in the account menu."
+  },
+  "shellMenuCurrentServer": "[Çûŕŕéñţ šéŕvéŕ one two]",
+  "@shellMenuCurrentServer": {
+    "description": "Accessibility label of the mark next to the server the app is showing, in the account menu and in the Servers settings."
+  },
+  "shellMenuAddServer": "[Åðð šéŕvéŕ one]",
+  "@shellMenuAddServer": {
+    "description": "Account menu entry: add another server."
+  },
+  "shellMenuSettings": "[Šéţţîñĝš one]",
+  "@shellMenuSettings": {
+    "description": "Account menu entry: open the settings."
+  },
+  "shellActivity": "[Åçţîvîţý one]",
+  "@shellActivity": {
+    "description": "Top bar button tooltip: show or hide the Activity panel listing who is online."
+  },
+  "shellMenuActivity": "[Åçţîvîţý one]",
+  "@shellMenuActivity": {
+    "description": "Account menu entry: open the Activity sheet listing who is online."
+  },
+  "activityTitle": "[Åçţîvîţý one]",
+  "@activityTitle": {
+    "description": "Heading of the Activity panel and sheet, which list who is online."
+  },
+  "activityOnThisServer": "[Öñ ţĥîš šéŕvéŕ one two]",
+  "@activityOnThisServer": {
+    "description": "Activity section heading: users of the server the app is signed in to."
+  },
+  "activityOnConnectedServers": "[Öñ çöññéçţéð šéŕvéŕš one two]",
+  "@activityOnConnectedServers": {
+    "description": "Activity section heading: users of other servers this server is connected to."
+  },
+  "activityStatusPlaying": "[Þļåýîñĝ one]",
+  "@activityStatusPlaying": {
+    "description": "Activity row status: the user is playing music."
+  },
+  "activityStatusPaused": "[Þåûšéð one]",
+  "@activityStatusPaused": {
+    "description": "Activity row status: the user has paused playback."
+  },
+  "activityStatusIdle": "[Îðļé one]",
+  "@activityStatusIdle": {
+    "description": "Activity row status: the user is online but not playing."
+  },
+  "activityPeerStatus": "[{status} öñ {server} one]",
+  "@activityPeerStatus": {
+    "description": "Activity row status of a user of a connected server.",
+    "placeholders": {
+      "status": {
+        "type": "String",
+        "example": "Playing"
+      },
+      "server": {
+        "type": "String",
+        "example": "North"
+      }
+    }
+  },
+  "activityTrack": "[{title} · {artist} one]",
+  "@activityTrack": {
+    "description": "Activity row second line: the track the user plays and its artist.",
+    "placeholders": {
+      "title": {
+        "type": "String",
+        "example": "Blue Monday"
+      },
+      "artist": {
+        "type": "String",
+        "example": "New Order"
+      }
+    }
+  },
+  "activityEmpty": "[Ñöböðý éļšé îš öñļîñé one two three]",
+  "@activityEmpty": {
+    "description": "Activity empty state: no other user is online."
+  },
+  "activityRowPlaying": "[{name}, þļåýîñĝ {title} bý {artist} one two]",
+  "@activityRowPlaying": {
+    "description": "Screen reader label of an Activity row: the user plays a track.",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "Ana"
+      },
+      "title": {
+        "type": "String",
+        "example": "Blue Monday"
+      },
+      "artist": {
+        "type": "String",
+        "example": "New Order"
+      }
+    }
+  },
+  "activityRowPaused": "[{name}, þåûšéð öñ {title} bý {artist} one two]",
+  "@activityRowPaused": {
+    "description": "Screen reader label of an Activity row: the user paused a track.",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "Ana"
+      },
+      "title": {
+        "type": "String",
+        "example": "Blue Monday"
+      },
+      "artist": {
+        "type": "String",
+        "example": "New Order"
+      }
+    }
+  },
+  "activityRowStatus": "[{name}, {status} one]",
+  "@activityRowStatus": {
+    "description": "Screen reader label of an Activity row without a track; status is the row status text.",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "Ana"
+      },
+      "status": {
+        "type": "String",
+        "example": "Idle"
+      }
+    }
+  },
+  "activityRowPeer": "[{label}, öñ {server} one]",
+  "@activityRowPeer": {
+    "description": "Screen reader label of an Activity row of a connected server: the row label and the server name.",
+    "placeholders": {
+      "label": {
+        "type": "String",
+        "example": "Ana, idle"
+      },
+      "server": {
+        "type": "String",
+        "example": "North"
+      }
+    }
+  },
+  "settingsThemeTitle": "[Ţĥémé one]",
+  "@settingsThemeTitle": {
+    "description": "Heading of the theme choice in the Appearance settings."
+  },
+  "settingsThemeSystem": "[Šýšţém one]",
+  "@settingsThemeSystem": {
+    "description": "Theme choice: follow the device’s light or dark setting."
+  },
+  "settingsThemeDark": "[Ðåŕķ one]",
+  "@settingsThemeDark": {
+    "description": "Theme choice: always dark."
+  },
+  "settingsThemeLight": "[Ļîĝĥţ one]",
+  "@settingsThemeLight": {
+    "description": "Theme choice: always light."
+  },
+  "settingsLanguageTitle": "[Ļåñĝûåĝé one]",
+  "@settingsLanguageTitle": {
+    "description": "Heading of the language choice in the Appearance settings."
+  },
+  "settingsLanguageSystem": "[Šýšţém ðéfåûļţ one two]",
+  "@settingsLanguageSystem": {
+    "description": "Language choice: use the device’s language."
+  },
+  "settingsLanguageName": "[Éñĝļîšĥ one]",
+  "@settingsLanguageName": {
+    "description": "The name of this language written in this language, shown in the language choice."
+  },
+  "settingsPlaybackQualityWifi": "[Qûåļîţý öñ Ŵî-Fî one two]",
+  "@settingsPlaybackQualityWifi": {
+    "description": "Playback settings row: the stream quality used on Wi-Fi and other connections that are not mobile data."
+  },
+  "settingsPlaybackQualityCellular": "[Qûåļîţý öñ möbîļé ðåţå one two three]",
+  "@settingsPlaybackQualityCellular": {
+    "description": "Playback settings row: the stream quality used on a mobile data connection."
+  },
+  "settingsPlaybackQualitySingle": "[Šţŕéåmîñĝ qûåļîţý one two]",
+  "@settingsPlaybackQualitySingle": {
+    "description": "Playback settings row on devices without mobile data: the stream quality on every connection."
+  },
+  "settingsPlaybackQualityCaption": "[Qûåļîţý çĥåñĝéš åþþļý fŕöm ţĥé ñéxţ îţém ţĥåţ šţåŕţš. one two three four five]",
+  "@settingsPlaybackQualityCaption": {
+    "description": "Caption under the quality rows: the playing item is not reloaded."
+  },
+  "settingsPlaybackQualityServerDefault": "[Šéŕvéŕ ðéfåûļţ one two]",
+  "@settingsPlaybackQualityServerDefault": {
+    "description": "Stream quality choice: use the quality saved on the server."
+  },
+  "settingsPlaybackQualityServerDefaultCaption": "[Ţĥé qûåļîţý šåvéð öñ ţĥé šéŕvéŕ åþþļîéš. one two three four]",
+  "@settingsPlaybackQualityServerDefaultCaption": {
+    "description": "Caption of the Server default quality choice."
+  },
+  "settingsPlaybackQualityOriginal": "[Öŕîĝîñåļ one]",
+  "@settingsPlaybackQualityOriginal": {
+    "description": "Stream quality choice: the original file, not transcoded."
+  },
+  "settingsPlaybackQualityHigh": "[Ĥîĝĥ one]",
+  "@settingsPlaybackQualityHigh": {
+    "description": "Stream quality choice: high."
+  },
+  "settingsPlaybackQualityMedium": "[Méðîûm one]",
+  "@settingsPlaybackQualityMedium": {
+    "description": "Stream quality choice: medium."
+  },
+  "settingsPlaybackQualityLow": "[Ļöŵ one]",
+  "@settingsPlaybackQualityLow": {
+    "description": "Stream quality choice: low."
+  },
+  "settingsPlaybackLevelling": "[Vöļûmé ļévéļļîñĝ one two]",
+  "@settingsPlaybackLevelling": {
+    "description": "Playback settings row: the loudness levelling mode, saved on the server."
+  },
+  "settingsPlaybackLevellingOff": "[Öff one]",
+  "@settingsPlaybackLevellingOff": {
+    "description": "Volume levelling choice: no levelling."
+  },
+  "settingsPlaybackLevellingTrack": "[Ţŕåçķ one]",
+  "@settingsPlaybackLevellingTrack": {
+    "description": "Volume levelling choice: each track is levelled on its own."
+  },
+  "settingsPlaybackLevellingAlbum": "[Åļbûm one]",
+  "@settingsPlaybackLevellingAlbum": {
+    "description": "Volume levelling choice: tracks are levelled on their album's loudness."
+  },
+  "settingsPlaybackLevellingAuto": "[Åûţömåţîç one]",
+  "@settingsPlaybackLevellingAuto": {
+    "description": "Volume levelling choice: album levelling while an album plays, track levelling otherwise."
+  },
+  "settingsPlaybackLevellingUnknown": "[Ûñķñöŵñ one]",
+  "@settingsPlaybackLevellingUnknown": {
+    "description": "Volume levelling value the server holds that this app does not know."
+  },
+  "settingsPlaybackLevellingOffline": "[Åvåîļåbļé ŵĥéñ ţĥé šéŕvéŕ çåñ bé ŕéåçĥéð one two three four]",
+  "@settingsPlaybackLevellingOffline": {
+    "description": "Tooltip of the disabled volume levelling row while the server cannot be reached."
+  },
+  "settingsPlaybackLevellingFailed": "[Çöûļðñ’ţ çĥåñĝé vöļûmé ļévéļļîñĝ one two three]",
+  "@settingsPlaybackLevellingFailed": {
+    "description": "Snackbar when saving the volume levelling mode failed."
+  },
+  "settingsPlaybackSkipInterval": "[Šķîþ îñţéŕvåļ (þöðçåšţš) one two three]",
+  "@settingsPlaybackSkipInterval": {
+    "description": "Playback settings row: how far the skip buttons move in an episode."
+  },
+  "settingsPlaybackSpeed": "[Ðéfåûļţ šþééð (þöðçåšţš) one two three]",
+  "@settingsPlaybackSpeed": {
+    "description": "Playback settings row: the speed episodes play at."
+  },
+  "settingsPlaybackSkipSeconds": "[{seconds, plural, =1{1 šéçöñð one} other{{seconds} šéçöñðš one}}]",
+  "@settingsPlaybackSkipSeconds": {
+    "description": "A skip interval choice or value, in seconds.",
+    "placeholders": {
+      "seconds": {
+        "type": "int",
+        "example": "15"
+      }
+    }
+  },
+  "settingsPlaybackSpeedValue": "[{speed}× one]",
+  "@settingsPlaybackSpeedValue": {
+    "description": "A playback speed choice or value, such as 1.25×.",
+    "placeholders": {
+      "speed": {
+        "type": "double",
+        "format": "decimalPattern",
+        "example": "1.25"
+      }
+    }
+  },
+  "settingsServersAdd": "[Åðð šéŕvéŕ one]",
+  "@settingsServersAdd": {
+    "description": "Servers settings action: add another server."
+  },
+  "settingsServersSwitch": "[Šŵîţçĥ one]",
+  "@settingsServersSwitch": {
+    "description": "Servers settings action: make this server the one the app shows."
+  },
+  "settingsServersRename": "[Ŕéñåmé one]",
+  "@settingsServersRename": {
+    "description": "Servers settings action: change the name shown for this server."
+  },
+  "settingsServersOpenAdmin": "[Öþéñ šéŕvéŕ åðmîñ one two]",
+  "@settingsServersOpenAdmin": {
+    "description": "Servers settings action, shown to administrators: open the server’s administration page in the browser."
+  },
+  "settingsServersStateActive": "[Åçţîvé one]",
+  "@settingsServersStateActive": {
+    "description": "State of a server profile: signed in."
+  },
+  "settingsServersStateSignedOut": "[Šîĝñéð öûţ one]",
+  "@settingsServersStateSignedOut": {
+    "description": "State of a server profile: signed out; its data is kept."
+  },
+  "settingsServersAccount": "[{username} öñ {host} one]",
+  "@settingsServersAccount": {
+    "description": "The user name and server host of a server profile.",
+    "placeholders": {
+      "username": {
+        "type": "String",
+        "example": "ada"
+      },
+      "host": {
+        "type": "String",
+        "example": "music.example.com"
+      }
+    }
+  },
+  "settingsServersVersion": "[Šéŕvéŕ véŕšîöñ {version} one two]",
+  "@settingsServersVersion": {
+    "description": "The server version seen when the app last checked.",
+    "placeholders": {
+      "version": {
+        "type": "String",
+        "example": "1.4.0"
+      }
+    }
+  },
+  "settingsServersVersionUnknown": "[Šéŕvéŕ véŕšîöñ ñöţ ķñöŵñ ýéţ one two three]",
+  "@settingsServersVersionUnknown": {
+    "description": "Shown instead of the server version before the app has checked it."
+  },
+  "settingsServersLinkExpires": "[Ļîñķ éxþîŕéš {date} one two]",
+  "@settingsServersLinkExpires": {
+    "description": "When the API key of a device-linked server profile expires.",
+    "placeholders": {
+      "date": {
+        "type": "DateTime",
+        "format": "yMMMd",
+        "example": "2026-06-01"
+      }
+    }
+  },
+  "settingsServersLinkExpiryUnknown": "[Ļîñķ éxþîŕý ûñķñöŵñ one two]",
+  "@settingsServersLinkExpiryUnknown": {
+    "description": "Shown for a server profile signed in with an API key whose expiry date is not known."
+  },
+  "settingsServersRenameTitle": "[Ŕéñåmé šéŕvéŕ one two]",
+  "@settingsServersRenameTitle": {
+    "description": "Title of the dialog that renames a server."
+  },
+  "settingsServersRenameLabel": "[Ñåmé one]",
+  "@settingsServersRenameLabel": {
+    "description": "Label of the name field in the rename dialog."
+  },
+  "settingsServersRenameSave": "[Šåvé one]",
+  "@settingsServersRenameSave": {
+    "description": "Rename dialog button: store the new name."
+  },
+  "settingsServersSignOut": "[Šîĝñ öûţ one]",
+  "@settingsServersSignOut": {
+    "description": "Servers settings action: sign out of this server; its downloads and cached data stay on this device."
+  },
+  "settingsServersRemove": "[Ŕémövé ţĥîš šéŕvéŕ one two]",
+  "@settingsServersRemove": {
+    "description": "Servers settings action: sign out and delete everything stored for this server on this device."
+  },
+  "settingsServersSignOutTitle": "[Šîĝñ öûţ öf {server}? one two]",
+  "@settingsServersSignOutTitle": {
+    "description": "Title of the dialog that confirms signing out of a server.",
+    "placeholders": {
+      "server": {
+        "type": "String",
+        "example": "music.example.com"
+      }
+    }
+  },
+  "settingsServersSignOutBody": "[Ðöŵñļöåðš, çåçĥéð ðåţå åñð çĥåñĝéš ñöţ ýéţ šéñţ šţåý öñ ţĥîš ðévîçé. Šîĝñ îñ åĝåîñ ţö ûšé ţĥîš šéŕvéŕ. one two three four five six seven eight nine]",
+  "@settingsServersSignOutBody": {
+    "description": "Body of the sign-out dialog."
+  },
+  "settingsServersSignOutRemoveDownloads": "[{count, plural, =1{Åļšö ŕémövé ðöŵñļöåðš (1 îţém, {size}) one two three} other{Åļšö ŕémövé ðöŵñļöåðš ({count} îţémš, {size}) one two three}}]",
+  "@settingsServersSignOutRemoveDownloads": {
+    "description": "Sign-out dialog checkbox: delete this server's downloaded music from this device too; with how many items and how much space they take.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "12"
+      },
+      "size": {
+        "type": "String",
+        "example": "340 MB"
+      }
+    }
+  },
+  "settingsServersRemoveTitle": "[Ŕémövé {server}? one]",
+  "@settingsServersRemoveTitle": {
+    "description": "Title of the dialog that confirms removing a server.",
+    "placeholders": {
+      "server": {
+        "type": "String",
+        "example": "music.example.com"
+      }
+    }
+  },
+  "settingsServersRemoveBody": "[Ţĥîš šîĝñš öûţ åñð ðéļéţéš évéŕýţĥîñĝ ţĥîš åþþ šţöŕéš föŕ {server} öñ ţĥîš ðévîçé, ðöŵñļöåðš îñçļûðéð. one two three four five six seven eight]",
+  "@settingsServersRemoveBody": {
+    "description": "Body of the dialog that confirms removing a server.",
+    "placeholders": {
+      "server": {
+        "type": "String",
+        "example": "music.example.com"
+      }
+    }
+  },
+  "settingsServersRemovePending": "[{count, plural, =1{1 çĥåñĝé ĥåš ñöţ bééñ šéñţ ţö ţĥé šéŕvéŕ åñð ŵîļļ bé ļöšţ. one two three four five} other{{count} çĥåñĝéš ĥåvé ñöţ bééñ šéñţ ţö ţĥé šéŕvéŕ åñð ŵîļļ bé ļöšţ. one two three four five}}]",
+  "@settingsServersRemovePending": {
+    "description": "Remove-server dialog: how many changes made on this device would be lost.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "settingsServersRemoveDownloads": "[Ðöŵñļöåðš öñ ţĥîš ðévîçé föŕ ţĥîš šéŕvéŕ ŵîļļ bé ðéļéţéð. one two three four five]",
+  "@settingsServersRemoveDownloads": {
+    "description": "Remove-server dialog: shown when this server has downloaded music on this device."
+  },
+  "settingsServersRemoveConfirm": "[Ŕémövé one]",
+  "@settingsServersRemoveConfirm": {
+    "description": "Remove-server dialog button: remove the server."
+  },
+  "settingsServersRemoveAnyway": "[Ŕémövé åñýŵåý one two]",
+  "@settingsServersRemoveAnyway": {
+    "description": "Remove-server dialog button when changes have not been sent: remove the server and lose them."
+  },
+  "settingsServersSigningOut": "[Šîĝñîñĝ öûţ… one two]",
+  "@settingsServersSigningOut": {
+    "description": "Shown in the sign-out dialog while the app signs out."
+  },
+  "settingsServersRemoving": "[Ŕémövîñĝ… one]",
+  "@settingsServersRemoving": {
+    "description": "Shown in the remove-server dialog while the app removes the server."
+  },
+  "settingsServersExitFailed": "[Ţĥé šîĝñ-îñ ðéţåîļš öñ ţĥîš ðévîçé çöûļð ñöţ bé ðéļéţéð. Ţŕý åĝåîñ. one two three four five six]",
+  "@settingsServersExitFailed": {
+    "description": "Shown in the sign-out and remove-server dialogs when the device's secure storage failed."
+  },
+  "commonCancel": "[Çåñçéļ one]",
+  "@commonCancel": {
+    "description": "Dialog button: close without changing anything."
+  },
+  "localDataTooNewTitle": "[Ţĥîš ðåţå ŵåš ŵŕîţţéñ bý å ñéŵéŕ véŕšîöñ öf ţĥé åþþ one two three four five]",
+  "@localDataTooNewTitle": {
+    "description": "Title of the screen shown when this server’s data on the device was written by a newer app version."
+  },
+  "localDataTooNewBody": "[Ûþðåţé ţĥé åþþ ţö ķééþ ûšîñĝ ţĥîš ðåţå, ŕéšéţ ţĥîš šéŕvéŕ’š ļöçåļ ðåţå, öŕ šŵîţçĥ ţö åñöţĥéŕ šéŕvéŕ. one two three four five six seven eight]",
+  "@localDataTooNewBody": {
+    "description": "Explanation on the screen shown when this server’s data on the device was written by a newer app version."
+  },
+  "localDataTooNewReset": "[Ŕéšéţ ţĥîš šéŕvéŕ’š ļöçåļ ðåţå one two three]",
+  "@localDataTooNewReset": {
+    "description": "Button: delete this server’s data on the device and start fresh, after a confirmation."
+  },
+  "localDataTooNewSwitch": "[Šŵîţçĥ šéŕvéŕ one two]",
+  "@localDataTooNewSwitch": {
+    "description": "Button: open the server list to show another server."
+  },
+  "localDataTooNewConfirmTitle": "[Ŕéšéţ ļöçåļ ðåţå? one two]",
+  "@localDataTooNewConfirmTitle": {
+    "description": "Title of the confirmation before this server’s data on the device is deleted."
+  },
+  "localDataTooNewConfirmBody": "[Ţĥé qûéûé, þéñðîñĝ çĥåñĝéš åñð ðöŵñļöåðš öf ţĥîš šéŕvéŕ åŕé ðéļéţéð fŕöm ţĥîš ðévîçé. Ýöûŕ ļîbŕåŕý öñ ţĥé šéŕvéŕ îš ñöţ çĥåñĝéð. one two three four five six seven eight nine ten one]",
+  "@localDataTooNewConfirmBody": {
+    "description": "Body of the confirmation before this server’s data on the device is deleted."
+  },
+  "localDataTooNewConfirmReset": "[Ŕéšéţ one]",
+  "@localDataTooNewConfirmReset": {
+    "description": "Confirmation button: delete this server’s data on the device."
+  },
+  "storageVolatileNotice": "[Ţĥîš bŕöŵšéŕ îš ñöţ ķééþîñĝ ðåţå, šö ñöţĥîñĝ ŵîļļ bé ŕémémbéŕéð åfţéŕ ţĥîš þåĝé îš çļöšéð. one two three four five six seven eight]",
+  "@storageVolatileNotice": {
+    "description": "One-time notice on the web when the browser offers no lasting storage, for example in private browsing."
+  },
+  "screenLicenses": "[Öþéñ-šöûŕçé ļîçéñçéš one two]",
+  "@screenLicenses": {
+    "description": "Screen name: the list of the licences of the app, its bundled fonts and libraries, and the packages it uses."
+  },
+  "settingsAboutLicenses": "[Ļîçéñçéš one]",
+  "@settingsAboutLicenses": {
+    "description": "Row in Settings → About that opens the open-source licences screen."
+  },
+  "settingsAboutPendingChanges": "[Þéñðîñĝ çĥåñĝéš: {count} one two]",
+  "@settingsAboutPendingChanges": {
+    "description": "Row in Settings → About: how many changes made on this device have not reached the server yet.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "settingsAboutVersion": "[Véŕšîöñ one]",
+  "@settingsAboutVersion": {
+    "description": "Row title in Settings → About; the row shows the app's version below it."
+  },
+  "settingsAboutVersionValue": "[{version} ({build}) one]",
+  "@settingsAboutVersionValue": {
+    "description": "The app's version and build number under the Version row in Settings → About.",
+    "placeholders": {
+      "version": {
+        "type": "String",
+        "example": "1.2.3"
+      },
+      "build": {
+        "type": "String",
+        "example": "45"
+      }
+    }
+  },
+  "settingsAboutVersionWithChannel": "[{version} ({build}) · {channel} one]",
+  "@settingsAboutVersionWithChannel": {
+    "description": "The app's version, build number and release channel (for example dev) under the Version row in Settings → About, on builds that are not stable releases.",
+    "placeholders": {
+      "version": {
+        "type": "String",
+        "example": "1.2.3"
+      },
+      "build": {
+        "type": "String",
+        "example": "45"
+      },
+      "channel": {
+        "type": "String",
+        "example": "dev"
+      }
+    }
+  },
+  "settingsAboutExportLogs": "[Éxþöŕţ ļöĝš one two]",
+  "@settingsAboutExportLogs": {
+    "description": "Row in Settings → About that saves or shares this device's diagnostic logs, to attach to a bug report."
+  },
+  "settingsAboutExportLogsDone": "[Ļöĝš éxþöŕţéð one two]",
+  "@settingsAboutExportLogsDone": {
+    "description": "Snackbar after the logs were saved, shared or downloaded."
+  },
+  "settingsAboutExportLogsNothing": "[Ñö ļöĝš ţö éxþöŕţ one two]",
+  "@settingsAboutExportLogsNothing": {
+    "description": "Snackbar when Export logs found no logs on this device."
+  },
+  "settingsAboutExportLogsFailed": "[Çöûļðñ’ţ éxþöŕţ ļöĝš one two]",
+  "@settingsAboutExportLogsFailed": {
+    "description": "Snackbar when Export logs failed."
+  },
+  "outboxItemsGoneMessage": "[Šömé çĥåñĝéš çöûļðñ’ţ bé šåvéð béçåûšé ţĥé îţém ñö ļöñĝéŕ éxîšţš one two three four five six]",
+  "@outboxItemsGoneMessage": {
+    "description": "Snackbar: changes made on this device were discarded because the track or playlist they apply to was deleted on the server."
+  },
+  "outboxConflictMessage": "[Å çĥåñĝé çöûļðñ’ţ bé šåvéð béçåûšé îţ ŵåš çĥåñĝéð éļšéŵĥéŕé one two three four five]",
+  "@outboxConflictMessage": {
+    "description": "Snackbar: a change made on this device was discarded because the same item was changed on another device first."
+  },
+  "licensesSectionBundled": "[Föñţš åñð bûñðļéð ļîbŕåŕîéš one two three]",
+  "@licensesSectionBundled": {
+    "description": "Section heading on the licences screen: the fonts and native libraries shipped inside the app."
+  },
+  "licensesSectionPackages": "[Þåçķåĝéš one]",
+  "@licensesSectionPackages": {
+    "description": "Section heading on the licences screen: the software packages the app is built with."
+  },
+  "licensesCount": "[{count, plural, =1{1 ļîçéñçé one} other{{count} ļîçéñçéš one}}]",
+  "@licensesCount": {
+    "description": "Under a package name on the licences screen: how many licences apply to it.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "2"
+      }
+    }
+  },
+  "licensesLoading": "[Ļöåðîñĝ ļîçéñçéš one two]",
+  "@licensesLoading": {
+    "description": "Accessibility label of the progress indicator while the licences are collected."
+  },
+  "licensesLoadFailed": "[Ţĥé ļîçéñçéš çöûļð ñöţ bé ļöåðéð. one two three]",
+  "@licensesLoadFailed": {
+    "description": "Shown on the licences screen when collecting the licences failed."
+  },
+  "licensesRetry": "[Ţŕý åĝåîñ one]",
+  "@licensesRetry": {
+    "description": "Button on the licences screen that collects the licences again after a failure."
+  },
+  "connectAddressLabel": "[Šéŕvéŕ åððŕéšš one two]",
+  "@connectAddressLabel": {
+    "description": "Label of the text field where the user types the address of their soundspan server."
+  },
+  "connectAddressHint": "[mûšîç.éxåmþļé.çöm öŕ 192.168.1.20:3030 one two three four]",
+  "@connectAddressHint": {
+    "description": "Example addresses shown in the empty server address field."
+  },
+  "connectAddressSubmit": "[Çöññéçţ one]",
+  "@connectAddressSubmit": {
+    "description": "Primary button that checks the server address the user typed."
+  },
+  "connectAddressBack": "[Båçķ one]",
+  "@connectAddressBack": {
+    "description": "Tooltip of the back control on the address screen, shown when a server is already set up."
+  },
+  "connectAddressEmpty": "[Éñţéŕ ţĥé åððŕéšš öf ýöûŕ šöûñðšþåñ šéŕvéŕ. one two three four]",
+  "@connectAddressEmpty": {
+    "description": "Shown under the address field when it was submitted empty."
+  },
+  "connectAddressUnsupportedScheme": "[Ûšé åñ åððŕéšš ţĥåţ šţåŕţš ŵîţĥ ĥţţþ:// öŕ ĥţţþš://. one two three four five]",
+  "@connectAddressUnsupportedScheme": {
+    "description": "Shown under the address field when the address names another scheme, such as ftp://."
+  },
+  "connectAddressInvalid": "[Ţĥåţ îš ñöţ å šéŕvéŕ åððŕéšš. Çĥéçķ îţ åñð ţŕý åĝåîñ. one two three four five]",
+  "@connectAddressInvalid": {
+    "description": "Shown under the address field when the address cannot be used."
+  },
+  "connectCleartextTitle": "[Çöññéçţîöñ ñöţ éñçŕýþţéð one two three]",
+  "@connectCleartextTitle": {
+    "description": "Title of the dialog shown before connecting to a public server over plain http."
+  },
+  "connectCleartextBody": "[{address} ûšéš ĥţţþ, šö ýöûŕ þåššŵöŕð åñð mûšîç ţŕåvéļ ûñéñçŕýþţéð åñð çåñ bé ŕéåð öñ ţĥé ŵåý. Ûšé ĥţţþš îf ţĥé šéŕvéŕ öfféŕš îţ. one two three four five six seven eight nine ten]",
+  "@connectCleartextBody": {
+    "description": "Body of the dialog shown before connecting to a public server over plain http, on platforms that allow it.",
+    "placeholders": {
+      "address": {
+        "type": "String",
+        "example": "http://music.example.com"
+      }
+    }
+  },
+  "connectCleartextBlockedBody": "[{address} ûšéš ĥţţþ. Ţĥîš ðévîçé bļöçķš ûñéñçŕýþţéð çöññéçţîöñš ţö þûbļîç šéŕvéŕš, šö ûšé ţĥé šéŕvéŕ’š ĥţţþš åððŕéšš. one two three four five six seven eight nine]",
+  "@connectCleartextBlockedBody": {
+    "description": "Body of the dialog shown when the user enters a public plain-http address on a platform that blocks such connections.",
+    "placeholders": {
+      "address": {
+        "type": "String",
+        "example": "http://music.example.com"
+      }
+    }
+  },
+  "connectCleartextCancel": "[Çåñçéļ one]",
+  "@connectCleartextCancel": {
+    "description": "Dialog button that closes the unencrypted-connection warning without connecting."
+  },
+  "connectCleartextConnectAnyway": "[Çöññéçţ åñýŵåý one two]",
+  "@connectCleartextConnectAnyway": {
+    "description": "Dialog button that connects to a public server over plain http despite the warning."
+  },
+  "connectProbeResolving": "[Çöññéçţîñĝ ţö {address} one two]",
+  "@connectProbeResolving": {
+    "description": "Shown while the app contacts the server.",
+    "placeholders": {
+      "address": {
+        "type": "String",
+        "example": "https://music.example.com"
+      }
+    }
+  },
+  "connectProbeStarting": "[Ţĥé šéŕvéŕ îš šţåŕţîñĝ one two three]",
+  "@connectProbeStarting": {
+    "description": "Shown when the server answered that it is still starting up."
+  },
+  "connectProbeStartingRetry": "[{seconds, plural, =1{Ţŕýîñĝ åĝåîñ îñ 1 šéçöñð one two three} other{Ţŕýîñĝ åĝåîñ îñ {seconds} šéçöñðš one two three}}]",
+  "@connectProbeStartingRetry": {
+    "description": "Countdown to the next attempt while the server is starting.",
+    "placeholders": {
+      "seconds": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "connectProbeCancel": "[Çåñçéļ one]",
+  "@connectProbeCancel": {
+    "description": "Button that stops contacting the server and returns to the address screen."
+  },
+  "connectProbeUsing": "[Ûšîñĝ {address} one]",
+  "@connectProbeUsing": {
+    "description": "Shown when the server moved the app to another address, which is the one that will be used.",
+    "placeholders": {
+      "address": {
+        "type": "String",
+        "example": "https://music.example.com"
+      }
+    }
+  },
+  "connectProbeConnected": "[Çöññéçţéð ţö {address} one two]",
+  "@connectProbeConnected": {
+    "description": "Shown on the result of a successful check of a server reached without encryption.",
+    "placeholders": {
+      "address": {
+        "type": "String",
+        "example": "http://192.168.1.20:3030"
+      }
+    }
+  },
+  "connectProbeNotEncrypted": "[Ñöţ éñçŕýþţéð one two]",
+  "@connectProbeNotEncrypted": {
+    "description": "Warning chip on a server reached over plain http on the local network."
+  },
+  "connectProbeContinue": "[Çöñţîñûé one]",
+  "@connectProbeContinue": {
+    "description": "Button that continues to sign-in after the server was found."
+  },
+  "connectProbeEditAddress": "[Éðîţ åððŕéšš one two]",
+  "@connectProbeEditAddress": {
+    "description": "Button that returns to the address screen with the typed address kept."
+  },
+  "connectProbeTryAgain": "[Ţŕý åĝåîñ one]",
+  "@connectProbeTryAgain": {
+    "description": "Button that contacts the server again."
+  },
+  "connectProbeTried": "[Åððŕéšš ţŕîéð: {address} one two]",
+  "@connectProbeTried": {
+    "description": "The address the app tried, shown on a failure.",
+    "placeholders": {
+      "address": {
+        "type": "String",
+        "example": "https://music.example.com"
+      }
+    }
+  },
+  "connectProbeNeedsSetup": "[Ţĥîš šéŕvéŕ ĥåš ñöţ bééñ šéţ ûþ ýéţ. Öþéñ îţ îñ å bŕöŵšéŕ, çŕéåţé ţĥé fîŕšţ åççöûñţ ţĥéŕé, ţĥéñ ţŕý åĝåîñ. one two three four five six seven eight nine]",
+  "@connectProbeNeedsSetup": {
+    "description": "Shown when the server has no account yet and must be set up in its web interface."
+  },
+  "connectProbeOpenInBrowser": "[Öþéñ îñ bŕöŵšéŕ one two]",
+  "@connectProbeOpenInBrowser": {
+    "description": "Button that opens the server’s web interface in the system browser."
+  },
+  "connectProbeDns": "[Åððŕéšš ñöţ föûñð one two]",
+  "@connectProbeDns": {
+    "description": "Failure: the server’s host name could not be found."
+  },
+  "connectProbeRefused": "[Ñöţĥîñĝ îš ļîšţéñîñĝ åţ ţĥåţ åððŕéšš åñð þöŕţ one two three four]",
+  "@connectProbeRefused": {
+    "description": "Failure: the connection was refused."
+  },
+  "connectProbeTimeout": "[Ţĥé šéŕvéŕ ðîð ñöţ åñšŵéŕ one two three]",
+  "@connectProbeTimeout": {
+    "description": "Failure: the server did not answer in time."
+  },
+  "connectProbeTls": "[Ţĥé šéŕvéŕ’š çéŕţîfîçåţé îš ñöţ ţŕûšţéð bý ţĥîš ðévîçé one two three four five]",
+  "@connectProbeTls": {
+    "description": "Failure: the secure connection failed because the certificate is not trusted."
+  },
+  "connectProbeBlockedByProxy": "[Šöméţĥîñĝ îñ fŕöñţ öf ţĥé šéŕvéŕ ŕéqûîŕéš îţš öŵñ ļöĝîñ one two three four five]",
+  "@connectProbeBlockedByProxy": {
+    "description": "Failure: a proxy or gateway in front of the server asked for its own login."
+  },
+  "connectProbeNotSoundspan": "[Ţĥåţ åððŕéšš îš ñöţ å šöûñðšþåñ šéŕvéŕ (çĥéçķ ţĥé þåţĥ) one two three four five]",
+  "@connectProbeNotSoundspan": {
+    "description": "Failure: the address answered, but not as a soundspan server."
+  },
+  "connectProbeServerError": "[Ţĥé šéŕvéŕ ŕéþöŕţéð åñ éŕŕöŕ one two three]",
+  "@connectProbeServerError": {
+    "description": "Failure: the server answered with an error."
+  },
+  "connectProbeRedirectRefused": "[Ţĥé šéŕvéŕ ŕéðîŕéçţéð ţö åñ åððŕéšš ţĥîš åþþ ŵîļļ ñöţ föļļöŵ one two three four five]",
+  "@connectProbeRedirectRefused": {
+    "description": "Failure: the server redirected too often, to another scheme, or from https to http."
+  },
+  "connectProbeCorsOrNetwork": "[Ţĥé šéŕvéŕ çöûļð ñöţ bé ŕéåçĥéð. Îf îţ îš ŕûññîñĝ, îţ mûšţ åļļöŵ ţĥîš åþþ’š åððŕéšš: åðð ţĥé åððŕéšš béļöŵ ţö ţĥé šéŕvéŕ’š ÅĻĻÖŴÉÐ_ÖŔÎĜÎÑŠ šéţţîñĝ, ŕéšţåŕţ îţ åñð ţŕý åĝåîñ. one two three four five six seven eight nine ten one two three four five]",
+  "@connectProbeCorsOrNetwork": {
+    "description": "Failure in the browser app: the server is unreachable or does not allow this app’s origin. ALLOWED_ORIGINS is a setting name and is not translated."
+  },
+  "connectServerTooOld": "[Ţĥîš åþþ ñééðš šöûñðšþåñ {minServer} öŕ ñéŵéŕ. Ţĥîš šéŕvéŕ ŕûñš {version}. one two three four five]",
+  "@connectServerTooOld": {
+    "description": "Shown instead of sign-in, or instead of the app, when the server is older than the oldest version this app supports.",
+    "placeholders": {
+      "minServer": {
+        "type": "String",
+        "example": "2.6.1"
+      },
+      "version": {
+        "type": "String",
+        "example": "2.5.0"
+      }
+    }
+  },
+  "connectServerTooOldCheckAgain": "[Çĥéçķ åĝåîñ one two]",
+  "@connectServerTooOldCheckAgain": {
+    "description": "Button that asks the signed-in server for its version again."
+  },
+  "connectServerTooOldSwitchServer": "[Šŵîţçĥ šéŕvéŕ one two]",
+  "@connectServerTooOldSwitchServer": {
+    "description": "Button that opens the list of servers, to use another one."
+  },
+  "connectProbeOrigin": "[Ţĥîš åþþ’š åððŕéšš one two]",
+  "@connectProbeOrigin": {
+    "description": "Label of the read-only field showing the web app’s origin."
+  },
+  "connectProbeCopyOrigin": "[Çöþý one]",
+  "@connectProbeCopyOrigin": {
+    "description": "Button that copies the web app’s origin to the clipboard."
+  },
+  "mediaCardPlay": "[Þļåý one]",
+  "@mediaCardPlay": {
+    "description": "Tooltip and accessibility label of the play button shown over a hovered or focused album, artist or playlist card."
+  },
+  "shelfShowAll": "[Šĥöŵ åļļ one]",
+  "@shelfShowAll": {
+    "description": "Button in the header of a horizontal row of cards on Home: opens the whole section."
+  },
+  "shelfScrollBack": "[Šçŕöļļ båçķ one two]",
+  "@shelfScrollBack": {
+    "description": "Arrow button in the header of a horizontal row of cards: scrolls the row back by one visible width."
+  },
+  "shelfScrollForward": "[Šçŕöļļ föŕŵåŕð one two]",
+  "@shelfScrollForward": {
+    "description": "Arrow button in the header of a horizontal row of cards: scrolls the row forward by one visible width."
+  },
+  "connectSignInHeading": "[Šîĝñ îñ ţö {server} one two]",
+  "@connectSignInHeading": {
+    "description": "Heading of the sign-in form; names the server.",
+    "placeholders": {
+      "server": {
+        "type": "String",
+        "example": "https://music.example.com"
+      }
+    }
+  },
+  "connectSignInBack": "[Ûšé å ðîfféŕéñţ šéŕvéŕ one two three]",
+  "@connectSignInBack": {
+    "description": "Back control of the sign-in screen; returns to the address screen."
+  },
+  "connectSignInUsername": "[Ûšéŕ ñåmé öŕ émåîļ one two]",
+  "@connectSignInUsername": {
+    "description": "Label of the user name field on the sign-in form."
+  },
+  "connectSignInPassword": "[Þåššŵöŕð one]",
+  "@connectSignInPassword": {
+    "description": "Label of the password field on the sign-in form."
+  },
+  "connectSignInShowPassword": "[Šĥöŵ þåššŵöŕð one two]",
+  "@connectSignInShowPassword": {
+    "description": "Tooltip of the control that reveals the typed password."
+  },
+  "connectSignInHidePassword": "[Ĥîðé þåššŵöŕð one two]",
+  "@connectSignInHidePassword": {
+    "description": "Tooltip of the control that hides the typed password again."
+  },
+  "connectSignInSubmit": "[Šîĝñ îñ one]",
+  "@connectSignInSubmit": {
+    "description": "Button that submits the user name and password."
+  },
+  "connectSignInInvalidCredentials": "[Ţĥé ûšéŕ ñåmé öŕ þåššŵöŕð îš ñöţ çöŕŕéçţ one two three four]",
+  "@connectSignInInvalidCredentials": {
+    "description": "Inline error when the server rejected the user name or password."
+  },
+  "connectSignInAuthenticatorPrompt": "[Éñţéŕ ţĥé 6-ðîĝîţ çöðé fŕöm ýöûŕ åûţĥéñţîçåţöŕ åþþ. one two three four five]",
+  "@connectSignInAuthenticatorPrompt": {
+    "description": "Instruction on the two-factor step in authenticator mode."
+  },
+  "connectSignInRecoveryPrompt": "[Éñţéŕ öñé öf ýöûŕ 8-çĥåŕåçţéŕ ŕéçövéŕý çöðéš. one two three four]",
+  "@connectSignInRecoveryPrompt": {
+    "description": "Instruction on the two-factor step in recovery-code mode."
+  },
+  "connectSignInAuthenticatorCode": "[Åûţĥéñţîçåţöŕ çöðé one two]",
+  "@connectSignInAuthenticatorCode": {
+    "description": "Label of the code field in authenticator mode."
+  },
+  "connectSignInRecoveryCode": "[Ŕéçövéŕý çöðé one two]",
+  "@connectSignInRecoveryCode": {
+    "description": "Label of the code field in recovery-code mode."
+  },
+  "connectSignInUseRecovery": "[Ûšé å ŕéçövéŕý çöðé îñšţéåð one two three]",
+  "@connectSignInUseRecovery": {
+    "description": "Button that switches the two-factor step to recovery codes."
+  },
+  "connectSignInUseAuthenticator": "[Ûšé åñ åûţĥéñţîçåţöŕ çöðé îñšţéåð one two three]",
+  "@connectSignInUseAuthenticator": {
+    "description": "Button that switches the two-factor step back to authenticator codes."
+  },
+  "connectSignInVerify": "[Véŕîfý one]",
+  "@connectSignInVerify": {
+    "description": "Button that submits the two-factor code."
+  },
+  "connectSignInStartOver": "[Šţåŕţ övéŕ one]",
+  "@connectSignInStartOver": {
+    "description": "Button that leaves the two-factor step and returns to the user name and password."
+  },
+  "connectSignInInvalidCode": "[Ţĥåţ çöðé îš ñöţ çöŕŕéçţ one two three]",
+  "@connectSignInInvalidCode": {
+    "description": "Inline error when the server rejected the two-factor or recovery code."
+  },
+  "connectSignInRateLimited": "[{seconds, plural, =1{Ţöö måñý åţţémþţš. Ţŕý åĝåîñ îñ 1 šéçöñð. one two three four} other{Ţöö måñý åţţémþţš. Ţŕý åĝåîñ îñ {seconds} šéçöñðš. one two three four}}]",
+  "@connectSignInRateLimited": {
+    "description": "Shown after too many sign-in attempts, counting down until the next one is allowed.",
+    "placeholders": {
+      "seconds": {
+        "type": "int",
+        "example": "30"
+      }
+    }
+  },
+  "connectSignInFailed": "[Çöûļð ñöţ šîĝñ îñ. Çĥéçķ ţĥé çöññéçţîöñ åñð ţŕý åĝåîñ. one two three four five]",
+  "@connectSignInFailed": {
+    "description": "Inline error when the sign-in request failed for any other reason."
+  },
+  "connectSignInRetry": "[Ŕéţŕý one]",
+  "@connectSignInRetry": {
+    "description": "Button that sends the failed sign-in again."
+  },
+  "connectSignInSecureStorage": "[Ţĥîš ðévîçé ĥåš ñö šéçûŕé šţöŕåĝé šéŕvîçé, šö ţĥé šîĝñ-îñ çåññöţ bé ķéþţ. Öñ Ļîñûx, îñšţåļļ åñð šţåŕţ å Šéçŕéţ Šéŕvîçé þŕövîðéŕ šûçĥ åš ĜÑÖMÉ Ķéýŕîñĝ öŕ ĶŴåļļéţ. one two three four five six seven eight nine ten one two three four]",
+  "@connectSignInSecureStorage": {
+    "description": "Error when the device cannot store the sign-in securely; nothing was saved."
+  },
+  "connectSignInNoPassword": "[Ţĥîš šéŕvéŕ ðöéš ñöţ öfféŕ þåššŵöŕð šîĝñ-îñ. one two three four]",
+  "@connectSignInNoPassword": {
+    "description": "Shown instead of the form when the server has password sign-in turned off."
+  },
+  "trackRowDurationHours": "[{count, plural, =1{1 ĥöûŕ one} other{{count} ĥöûŕš one}}]",
+  "@trackRowDurationHours": {
+    "description": "Hours part of a track's length as read by a screen reader, e.g. the '1 hour' of '1 hour 2 minutes 3 seconds'.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trackRowDurationMinutes": "[{count, plural, =1{1 mîñûţé one} other{{count} mîñûţéš one}}]",
+  "@trackRowDurationMinutes": {
+    "description": "Minutes part of a track's length as read by a screen reader, e.g. the '3 minutes' of '3 minutes 41 seconds'.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trackRowDurationSeconds": "[{count, plural, =1{1 šéçöñð one} other{{count} šéçöñðš one}}]",
+  "@trackRowDurationSeconds": {
+    "description": "Seconds part of a track's length as read by a screen reader, e.g. the '41 seconds' of '3 minutes 41 seconds'.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "errorViewOffline": "[Ýöû’ŕé öffļîñé one two]",
+  "@errorViewOffline": {
+    "description": "Shown in place of a screen's content when the server could not be reached and nothing is cached."
+  },
+  "errorViewFeatureDisabled": "[Ñöţ åvåîļåbļé öñ ţĥîš šéŕvéŕ one two three]",
+  "@errorViewFeatureDisabled": {
+    "description": "Shown in place of a screen's content when the server has turned off the feature the screen needs."
+  },
+  "errorViewRateLimited": "[Ţöö måñý ŕéqûéšţš, ţŕý åĝåîñ šĥöŕţļý one two three four]",
+  "@errorViewRateLimited": {
+    "description": "Shown in place of a screen's content when the server refused the request because too many were sent."
+  },
+  "errorViewServerProblem": "[Ţĥé šéŕvéŕ ŕåñ îñţö å þŕöbļém one two three]",
+  "@errorViewServerProblem": {
+    "description": "Shown in place of a screen's content when the server, or a service it relies on, failed."
+  },
+  "errorViewNotFound": "[Ţĥîš îţém îš ñö ļöñĝéŕ åvåîļåbļé one two three]",
+  "@errorViewNotFound": {
+    "description": "Shown in place of an album, artist, playlist or other item that no longer exists on the server."
+  },
+  "errorViewGeneric": "[Šöméţĥîñĝ ŵéñţ ŵŕöñĝ one two]",
+  "@errorViewGeneric": {
+    "description": "Shown in place of a screen's content when loading failed for any other reason."
+  },
+  "errorViewRetry": "[Ŕéţŕý one]",
+  "@errorViewRetry": {
+    "description": "Button under a loading error: tries to load the screen again."
+  },
+  "appBannerDismiss": "[Ðîšmîšš one]",
+  "@appBannerDismiss": {
+    "description": "Tooltip and accessibility label of the close button of an inline notice at the top of a screen."
+  },
+  "offlineBannerNoNetwork": "[Ýöû’ŕé öffļîñé. Šĥöŵîñĝ ŵĥåţ’š šåvéð öñ ţĥîš ðévîçé. one two three four five]",
+  "@offlineBannerNoNetwork": {
+    "description": "Notice at the top of Home and Library when the device has no network connection."
+  },
+  "offlineBannerServerUnreachable": "[Çåñ’ţ ŕéåçĥ ţĥé šéŕvéŕ. Šĥöŵîñĝ ŵĥåţ’š šåvéð öñ ţĥîš ðévîçé. one two three four five]",
+  "@offlineBannerServerUnreachable": {
+    "description": "Notice at the top of Home and Library when the network is up but the server does not answer."
+  },
+  "offlineBannerForced": "[Öffļîñé möðé îš öñ. one two]",
+  "@offlineBannerForced": {
+    "description": "Notice at the top of Home and Library when the user turned offline mode on."
+  },
+  "offlineBannerRetry": "[Ŕéţŕý one]",
+  "@offlineBannerRetry": {
+    "description": "Button of the server-unreachable notice that asks the server again at once."
+  },
+  "libraryTabPlaylists": "[Þļåýļîšţš one]",
+  "@libraryTabPlaylists": {
+    "description": "Library tab that lists the user's playlists."
+  },
+  "libraryTabArtists": "[Åŕţîšţš one]",
+  "@libraryTabArtists": {
+    "description": "Library tab that lists the artists in the user's library."
+  },
+  "libraryTabAlbums": "[Åļbûmš one]",
+  "@libraryTabAlbums": {
+    "description": "Library tab that lists the albums in the user's library."
+  },
+  "libraryTabSongs": "[Šöñĝš one]",
+  "@libraryTabSongs": {
+    "description": "Library tab that lists the songs in the user's library."
+  },
+  "librarySort": "[Šöŕţ one]",
+  "@librarySort": {
+    "description": "Tooltip and accessibility label of the button above a library list that opens the choice of sort order."
+  },
+  "librarySortNameAsc": "[Ñåmé (Å-Ž) one]",
+  "@librarySortNameAsc": {
+    "description": "Sort order of a library list: by name, A to Z."
+  },
+  "librarySortNameDesc": "[Ñåmé (Ž-Å) one]",
+  "@librarySortNameDesc": {
+    "description": "Sort order of a library list: by name, Z to A."
+  },
+  "librarySortYearNewest": "[Ýéåŕ (ñéŵéšţ) one two]",
+  "@librarySortYearNewest": {
+    "description": "Sort order of the albums list: newest release year first."
+  },
+  "librarySortMostTracks": "[Möšţ ţŕåçķš one two]",
+  "@librarySortMostTracks": {
+    "description": "Sort order of the artists list: artists with the most tracks first."
+  },
+  "libraryOriginAll": "[Åļļ one]",
+  "@libraryOriginAll": {
+    "description": "Filter chip above a library list: shows everything in the library, wherever it lives."
+  },
+  "libraryOriginLocal": "[Ļöçåļ one]",
+  "@libraryOriginLocal": {
+    "description": "Filter chip above a library list: shows only what lives in this server's own music folder."
+  },
+  "libraryOriginPeers": "[Þééŕš one]",
+  "@libraryOriginPeers": {
+    "description": "Filter chip above a library list: shows only what lives on connected peer servers."
+  },
+  "libraryOriginRemote": "[Ŕémöţé one]",
+  "@libraryOriginRemote": {
+    "description": "Filter chip above a library list: shows only what lives in connected streaming services."
+  },
+  "libraryRefresh": "[Ŕéfŕéšĥ one]",
+  "@libraryRefresh": {
+    "description": "Tooltip and accessibility label of the button above a library list that loads the list again from the server."
+  },
+  "libraryRefreshFailed": "[Çöûļðñ’ţ ŕéfŕéšĥ ţĥé ļîšţ one two three]",
+  "@libraryRefreshFailed": {
+    "description": "Short message shown at the bottom of the screen when a library list could not be loaded again; the list already shown stays."
+  },
+  "libraryAlbumsEmpty": "[Ñö åļbûmš ýéţ one two]",
+  "@libraryAlbumsEmpty": {
+    "description": "Shown in place of the albums list when the library holds no albums."
+  },
+  "twoPaneSelectItem": "[Šéļéçţ åñ îţém one two]",
+  "@twoPaneSelectItem": {
+    "description": "Shown in the empty detail pane of the two-pane layout of a tablet in landscape until an item of the list beside it is selected."
+  },
+  "libraryArtistsEmpty": "[Ñö åŕţîšţš ýéţ one two]",
+  "@libraryArtistsEmpty": {
+    "description": "Shown in place of the artists list when the library holds no artists."
+  },
+  "librarySongsEmpty": "[Ñö šöñĝš ýéţ one two]",
+  "@librarySongsEmpty": {
+    "description": "Shown in place of the songs list when the library holds no tracks."
+  },
+  "libraryLikedSongs": "[Ļîķéð Šöñĝš one two]",
+  "@libraryLikedSongs": {
+    "description": "Name of the pinned row at the top of the playlist list in the Library and the sidebar; it opens the tracks the user liked."
+  },
+  "libraryPlaylistTrackCount": "[{count, plural, =1{1 šöñĝ one} other{{count} šöñĝš one}}]",
+  "@libraryPlaylistTrackCount": {
+    "description": "Second line of a playlist row in the Library: how many songs the playlist holds.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "12"
+      }
+    }
+  },
+  "libraryPlaylistsEmptyHint": "[Þļåýļîšţš ýöû çŕéåţé åþþéåŕ ĥéŕé one two three]",
+  "@libraryPlaylistsEmptyHint": {
+    "description": "One line under Liked Songs in the Library's playlist list when the user has no playlists yet."
+  },
+  "sidebarPlaylistsLabel": "[Þļåýļîšţš one]",
+  "@sidebarPlaylistsLabel": {
+    "description": "Accessibility label of the list of playlists in the sidebar, under the main destinations."
+  },
+  "libraryArtistCardSubtitle": "[Åŕţîšţ one]",
+  "@libraryArtistCardSubtitle": {
+    "description": "Second line of an artist card in the library grid, under the artist's name."
+  },
+  "homeGreetingMorning": "[Ĝööð möŕñîñĝ one two]",
+  "@homeGreetingMorning": {
+    "description": "Greeting at the top of Home before 12:00 local time."
+  },
+  "homeGreetingAfternoon": "[Ĝööð åfţéŕñööñ one two]",
+  "@homeGreetingAfternoon": {
+    "description": "Greeting at the top of Home from 12:00 to 17:59 local time."
+  },
+  "homeGreetingEvening": "[Ĝööð évéñîñĝ one two]",
+  "@homeGreetingEvening": {
+    "description": "Greeting at the top of Home from 18:00 local time."
+  },
+  "homeShelfContinueListening": "[Çöñţîñûé Ļîšţéñîñĝ one two]",
+  "@homeShelfContinueListening": {
+    "description": "Title of the Home row of artists and podcasts the user listened to recently."
+  },
+  "homeShelfRecentlyAdded": "[Ŕéçéñţļý Åððéð one two]",
+  "@homeShelfRecentlyAdded": {
+    "description": "Title of the Home row of artists recently added to the library."
+  },
+  "homeShelfMadeForYou": "[Måðé Föŕ Ýöû one two]",
+  "@homeShelfMadeForYou": {
+    "description": "Title of the Home row with Liked Songs and the mixes generated for the user."
+  },
+  "homeShelfYourPlaylists": "[Ýöûŕ Þļåýļîšţš one two]",
+  "@homeShelfYourPlaylists": {
+    "description": "Title of the Home row of the user's playlists."
+  },
+  "homeShelfPopularPodcasts": "[Þöþûļåŕ Þöðçåšţš one two]",
+  "@homeShelfPopularPodcasts": {
+    "description": "Title of the Home row of podcasts popular in the podcast directory."
+  },
+  "homeLikedSongs": "[Ļîķéð Šöñĝš one two]",
+  "@homeLikedSongs": {
+    "description": "Title of the card that opens the tracks the user liked."
+  },
+  "homeLikedSongsSubtitle": "[Þļåýļîšţ one]",
+  "@homeLikedSongsSubtitle": {
+    "description": "Second line of the Liked Songs card: what kind of item it is."
+  },
+  "homeCardArtist": "[Åŕţîšţ one]",
+  "@homeCardArtist": {
+    "description": "Second line of a card of an artist on Home: what kind of item it is."
+  },
+  "homeCardPodcast": "[Þöðçåšţ one]",
+  "@homeCardPodcast": {
+    "description": "Second line of a card of a podcast on Home when the podcast has no author."
+  },
+  "homeNoticeNewerThanTested": "[Ţĥîš šéŕvéŕ îš ñéŵéŕ ţĥåñ ţĥîš åþþ ŵåš ţéšţéð ŵîţĥ one two three four five]",
+  "@homeNoticeNewerThanTested": {
+    "description": "Notice at the top of Home when the server runs a version newer than the newest one this app was tested against."
+  },
+  "homeNoticeVersionUnknown": "[Ţĥîš šéŕvéŕ’š véŕšîöñ çöûļð ñöţ bé ŕéåð one two three four]",
+  "@homeNoticeVersionUnknown": {
+    "description": "Notice at the top of Home when the server did not say which version it runs."
+  },
+  "homeLinkExpiring": "[{days, plural, =1{Ţĥîš ðévîçé’š ļîñķ éxþîŕéš ţöðåý one two three} other{Ţĥîš ðévîçé’š ļîñķ éxþîŕéš îñ {days} ðåýš one two three}}]",
+  "@homeLinkExpiring": {
+    "description": "Banner at the top of Home when this device's link (its API key) expires within 14 days; 1 means today.",
+    "placeholders": {
+      "days": {
+        "type": "int",
+        "example": "5"
+      }
+    }
+  },
+  "homeLinkExpired": "[Ţĥîš ðévîçé’š ļîñķ ĥåš éxþîŕéð one two three]",
+  "@homeLinkExpired": {
+    "description": "Banner at the top of Home when this device's link (its API key) has expired."
+  },
+  "homeLinkAgain": "[Ļîñķ åĝåîñ one]",
+  "@homeLinkAgain": {
+    "description": "Action of the link-expiry banner: link this device again with a new code."
+  },
+  "keyExpiryNotificationTitle": "[Ţĥîš ðévîçé’š ļîñķ éxþîŕéš šööñ one two three]",
+  "@keyExpiryNotificationTitle": {
+    "description": "Title of the local notification warning that this device's link (its API key) expires soon."
+  },
+  "keyExpiryNotificationBody": "[{days, plural, =1{Îţ éxþîŕéš ţöðåý. Ţåþ ţö ļîñķ îţ åĝåîñ. one two three four} other{Îţ éxþîŕéš îñ {days} ðåýš. Ţåþ ţö ļîñķ îţ åĝåîñ. one two three four}}]",
+  "@keyExpiryNotificationBody": {
+    "description": "Body of the local notification warning that this device's link expires; 1 means today.",
+    "placeholders": {
+      "days": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "homeEmptyLibrary": "[Ýöûŕ ļîbŕåŕý îš émþţý one two three]",
+  "@homeEmptyLibrary": {
+    "description": "Shown on Home in place of the rows when every row loaded and none has anything in it."
+  },
+  "homePlaylistSongs": "[{count, plural, =1{1 šöñĝ one} other{{count} šöñĝš one}}]",
+  "@homePlaylistSongs": {
+    "description": "Second line of a playlist card on Home: how many songs the playlist has.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "detailDurationMinutes": "[{minutes} mîñ one]",
+  "@detailDurationMinutes": {
+    "description": "Total running time of an album or playlist under an hour, in a detail page's metadata line, e.g. '45 min'.",
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "detailDurationHours": "[{hours} ĥŕ {minutes} mîñ one]",
+  "@detailDurationHours": {
+    "description": "Total running time of an album or playlist from an hour, in a detail page's metadata line, e.g. '1 hr 5 min'.",
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "detailSongCount": "[{count, plural, =1{1 šöñĝ one} other{{count} šöñĝš one}}]",
+  "@detailSongCount": {
+    "description": "Number of songs in an album or playlist, in a detail page's metadata line.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "detailRefreshFailed": "[Çöûļðñ’ţ ŕéfŕéšĥ. Šĥöŵîñĝ šåvéð çöñţéñţ. one two three four]",
+  "@detailRefreshFailed": {
+    "description": "Snackbar when an album or playlist page could not be refreshed and the saved copy stays on screen."
+  },
+  "likeButtonLike": "[Ļîķé one]",
+  "@likeButtonLike": {
+    "description": "Tooltip, accessibility label and track-row action of the heart button of a track that is not liked."
+  },
+  "likeButtonRemove": "[Ŕémövé ļîķé one two]",
+  "@likeButtonRemove": {
+    "description": "Tooltip, accessibility label and track-row action of the heart button of a liked track."
+  },
+  "trackNotPlayable": "[Ñöţ þļåýåbļé one two]",
+  "@trackNotPlayable": {
+    "description": "Tooltip and accessibility reason of a track row that cannot be played."
+  },
+  "trackRowPlayHint": "[Þļåý one]",
+  "@trackRowPlayHint": {
+    "description": "Accessibility hint of a track row: activating it plays the track within its list."
+  },
+  "trackRowPlaying": "[ñöŵ þļåýîñĝ one two]",
+  "@trackRowPlaying": {
+    "description": "Read in the accessibility label of the track row that is the current queue item while it plays, after the downloaded and liked words, as in 'Title, Artist, 3 minutes, liked, now playing'."
+  },
+  "trackRowPaused": "[þåûšéð one]",
+  "@trackRowPaused": {
+    "description": "Read in the accessibility label of the track row that is the current queue item while it is paused, in the place of 'now playing'."
+  },
+  "playQueueTruncated": "[Öñļý ţĥé fîŕšţ {count} šöñĝš ŵéŕé qûéûéð one two three]",
+  "@playQueueTruncated": {
+    "description": "Snackbar after playing or queueing more songs than the queue holds; count is the most it holds (5,000).",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "librarySongsShuffleAll": "[Šĥûffļé åļļ one two]",
+  "@librarySongsShuffleAll": {
+    "description": "Button above the Library Songs list that plays the whole library in a random order."
+  },
+  "albumOverline": "[Åļbûm one]",
+  "@albumOverline": {
+    "description": "Type label above the title of an album page."
+  },
+  "albumDisc": "[Ðîšç {number} one]",
+  "@albumDisc": {
+    "description": "Group header over the tracks of one disc of a multi-disc album.",
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "albumMoreByArtist": "[Möŕé bý ţĥîš åŕţîšţ one two]",
+  "@albumMoreByArtist": {
+    "description": "Title of the shelf of the artist's other albums on an album page."
+  },
+  "playlistOverline": "[Þļåýļîšţ one]",
+  "@playlistOverline": {
+    "description": "Type label above the title of a playlist page."
+  },
+  "playlistPublic": "[Þûbļîç one]",
+  "@playlistPublic": {
+    "description": "Metadata on a playlist page: the playlist is visible to other users."
+  },
+  "playlistLikedTitle": "[Ļîķéð Šöñĝš one two]",
+  "@playlistLikedTitle": {
+    "description": "Title of the page listing the tracks the user liked."
+  },
+  "playlistEmpty": "[Ţĥîš þļåýļîšţ ĥåš ñö šöñĝš ýéţ one two three]",
+  "@playlistEmpty": {
+    "description": "Shown on a playlist page when the playlist has no songs."
+  },
+  "playlistNew": "[Ñéŵ þļåýļîšţ one two]",
+  "@playlistNew": {
+    "description": "Button in the Library's Playlists tab and the sidebar that creates a playlist, and the title of the dialog that names it."
+  },
+  "playlistRenameTitle": "[Ŕéñåmé þļåýļîšţ one two]",
+  "@playlistRenameTitle": {
+    "description": "Title of the dialog that renames a playlist."
+  },
+  "playlistNameLabel": "[Ñåmé one]",
+  "@playlistNameLabel": {
+    "description": "Label of the playlist name field in the create and rename dialogs."
+  },
+  "playlistCreate": "[Çŕéåţé one]",
+  "@playlistCreate": {
+    "description": "Confirm button of the dialog that creates a playlist."
+  },
+  "playlistRename": "[Ŕéñåmé one]",
+  "@playlistRename": {
+    "description": "Confirm button of the dialog that renames a playlist."
+  },
+  "playlistCancel": "[Çåñçéļ one]",
+  "@playlistCancel": {
+    "description": "Button that closes a playlist dialog without changing anything."
+  },
+  "playlistDeleteTitle": "[Ðéļéţé {name}? one]",
+  "@playlistDeleteTitle": {
+    "description": "Title of the dialog confirming that a playlist is deleted.",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "Road Trip"
+      }
+    }
+  },
+  "playlistDeleteBody": "[Ţĥé þļåýļîšţ îš ŕémövéð fŕöm ýöûŕ ļîbŕåŕý. Ţĥé šöñĝš îñ îţ šţåý. one two three four five six]",
+  "@playlistDeleteBody": {
+    "description": "Body of the dialog confirming that a playlist is deleted."
+  },
+  "playlistDelete": "[Ðéļéţé one]",
+  "@playlistDelete": {
+    "description": "Destructive confirm button of the dialog that deletes a playlist."
+  },
+  "playlistAddToTitle": "[Åðð ţö þļåýļîšţ one two]",
+  "@playlistAddToTitle": {
+    "description": "Title of the sheet or dialog that picks the playlist to add songs to."
+  },
+  "playlistAdded": "[{count, plural, =1{Åððéð 1 šöñĝ ţö {name} one two} other{Åððéð {count} šöñĝš ţö {name} one two}}]",
+  "@playlistAdded": {
+    "description": "Snackbar after songs were added to a playlist.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "name": {
+        "type": "String",
+        "example": "Road Trip"
+      }
+    }
+  },
+  "dragTrackCount": "[{count, plural, =1{1 ţŕåçķ one} other{{count} ţŕåçķš one}}]",
+  "@dragTrackCount": {
+    "description": "Label of the chip that follows the pointer while several tracks are dragged.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "playlistReorderHandle": "[Ðŕåĝ ţö ŕéöŕðéŕ one two]",
+  "@playlistReorderHandle": {
+    "description": "Tooltip and screen-reader label of the drag handle that moves a song within a playlist."
+  },
+  "artistOverline": "[Åŕţîšţ one]",
+  "@artistOverline": {
+    "description": "Type label above the name on an artist page."
+  },
+  "artistPopular": "[Þöþûļåŕ one]",
+  "@artistPopular": {
+    "description": "Title of the section of an artist page listing the artist's most played songs."
+  },
+  "artistShowMore": "[Šĥöŵ möŕé one]",
+  "@artistShowMore": {
+    "description": "Button under the Popular title of an artist page: lists more of the artist's most played songs."
+  },
+  "artistShowLess": "[Šĥöŵ ļéšš one]",
+  "@artistShowLess": {
+    "description": "Button on an artist page that collapses the expanded Popular list or biography again."
+  },
+  "artistAlbums": "[Åļbûmš one]",
+  "@artistAlbums": {
+    "description": "Title of the shelf of an artist's albums on an artist page."
+  },
+  "artistSinglesAndEps": "[Šîñĝļéš åñð ÉÞš one two]",
+  "@artistSinglesAndEps": {
+    "description": "Title of the shelf of an artist's singles and EPs on an artist page."
+  },
+  "artistSimilar": "[Šîmîļåŕ Åŕţîšţš one two]",
+  "@artistSimilar": {
+    "description": "Title of the shelf of artists similar to this one on an artist page."
+  },
+  "artistCardSubtitle": "[Åŕţîšţ one]",
+  "@artistCardSubtitle": {
+    "description": "Second line of a similar-artist card on an artist page."
+  },
+  "artistAbout": "[Åböûţ one]",
+  "@artistAbout": {
+    "description": "Title of the biography section of an artist page."
+  },
+  "artistReadMore": "[Ŕéåð möŕé one]",
+  "@artistReadMore": {
+    "description": "Button under the collapsed biography of an artist page: shows the whole text in place."
+  },
+  "searchFieldHint": "[Šöñĝš, åŕţîšţš, åļbûmš öŕ þöðçåšţš one two three]",
+  "@searchFieldHint": {
+    "description": "Placeholder and accessibility label of the field on the Search screen."
+  },
+  "searchClear": "[Çļéåŕ šéåŕçĥ one two]",
+  "@searchClear": {
+    "description": "Tooltip and accessibility label of the button that empties the field on the Search screen."
+  },
+  "searchScopeAll": "[Åļļ one]",
+  "@searchScopeAll": {
+    "description": "Filter chip on the Search screen: results from everywhere."
+  },
+  "searchScopeLibrary": "[Ļîbŕåŕý one]",
+  "@searchScopeLibrary": {
+    "description": "Filter chip on the Search screen: only results from the user's library."
+  },
+  "searchScopeDiscover": "[Ðîšçövéŕ one]",
+  "@searchScopeDiscover": {
+    "description": "Filter chip on the Search screen: only results from outside the user's library."
+  },
+  "searchScopePodcasts": "[Þöðçåšţš one]",
+  "@searchScopePodcasts": {
+    "description": "Filter chip on the Search screen: only podcasts."
+  },
+  "searchRecentTitle": "[Ŕéçéñţ šéåŕçĥéš one two]",
+  "@searchRecentTitle": {
+    "description": "Heading of the list of the user's recent searches, shown on the Search screen while the field is empty."
+  },
+  "searchRecentClearAll": "[Çļéåŕ åļļ one]",
+  "@searchRecentClearAll": {
+    "description": "Button next to the recent searches heading: forgets every recent search."
+  },
+  "searchRecentRemove": "[Ŕémövé {query} one]",
+  "@searchRecentRemove": {
+    "description": "Tooltip and accessibility label of the button that forgets one recent search.",
+    "placeholders": {
+      "query": {
+        "type": "String",
+        "example": "miles davis"
+      }
+    }
+  },
+  "searchPrompt": "[Šéåŕçĥ föŕ šöñĝš, åŕţîšţš, åļbûmš åñð þöðçåšţš one two three four]",
+  "@searchPrompt": {
+    "description": "Shown on the Search screen while the field is empty and there are no recent searches."
+  },
+  "searchNoResults": "[Ñö ŕéšûļţš föŕ “{query}” one two]",
+  "@searchNoResults": {
+    "description": "Shown on the Search screen when nothing matches the query.",
+    "placeholders": {
+      "query": {
+        "type": "String",
+        "example": "miles davis"
+      }
+    }
+  },
+  "searchTopResult": "[Ţöþ ŕéšûļţ one]",
+  "@searchTopResult": {
+    "description": "Heading of the large card of the best match on the Search screen."
+  },
+  "searchSectionSongs": "[Šöñĝš one]",
+  "@searchSectionSongs": {
+    "description": "Heading of the songs section of the Search screen."
+  },
+  "searchSectionArtists": "[Åŕţîšţš one]",
+  "@searchSectionArtists": {
+    "description": "Heading of the artists section of the Search screen."
+  },
+  "searchSectionAlbums": "[Åļbûmš one]",
+  "@searchSectionAlbums": {
+    "description": "Heading of the albums section of the Search screen."
+  },
+  "searchSectionPlaylists": "[Þļåýļîšţš one]",
+  "@searchSectionPlaylists": {
+    "description": "Heading of the section of the user's playlists on the Search screen."
+  },
+  "searchSectionPodcasts": "[Þöðçåšţš one]",
+  "@searchSectionPodcasts": {
+    "description": "Heading of the podcasts section of the Search screen."
+  },
+  "searchShowAll": "[Šĥöŵ åļļ one]",
+  "@searchShowAll": {
+    "description": "Button in a section header of the Search screen: shows every result of that section in place."
+  },
+  "searchShowLess": "[Šĥöŵ ļéšš one]",
+  "@searchShowLess": {
+    "description": "Button in an expanded section header of the Search screen: shows the first results only again."
+  },
+  "searchNotPlayable": "[Ñöţ þļåýåbļé one two]",
+  "@searchNotPlayable": {
+    "description": "Tooltip and spoken reason of a song row on the Search screen that cannot be played."
+  },
+  "searchKindArtist": "[Åŕţîšţ one]",
+  "@searchKindArtist": {
+    "description": "Second line of an artist card on the Search screen: what kind of item it is."
+  },
+  "searchKindSong": "[Šöñĝ one]",
+  "@searchKindSong": {
+    "description": "Second line of the top result card on the Search screen when it is a song with no artist name."
+  },
+  "searchKindPodcast": "[Þöðçåšţ one]",
+  "@searchKindPodcast": {
+    "description": "Second line of a podcast card on the Search screen when the podcast has no author."
+  },
+  "searchPlaylistSongs": "[{count, plural, =1{1 šöñĝ one} other{{count} šöñĝš one}}]",
+  "@searchPlaylistSongs": {
+    "description": "Second line of a playlist card on the Search screen: how many songs the playlist has.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "codeCellsLabel": "[Ļîñķ çöðé, 6 çĥåŕåçţéŕš one two three]",
+  "@codeCellsLabel": {
+    "description": "Screen-reader label of the six cells a device-link code is typed into."
+  },
+  "codeCellsHint": "[Çöðéš ĥåvé ñö Î, Ö, 0 öŕ 1 one two three]",
+  "@codeCellsHint": {
+    "description": "Shown under the device-link code cells when a character that cannot be in a code was typed."
+  },
+  "connectDeviceLinkStep1": "[Öþéñ šöûñðšþåñ îñ å bŕöŵšéŕ one two three]",
+  "@connectDeviceLinkStep1": {
+    "description": "First of three steps to get a device-link code from the web UI."
+  },
+  "connectDeviceLinkStep2": "[Ĝö ţö Šéţţîñĝš → Ļîñķ Ðévîçé one two three]",
+  "@connectDeviceLinkStep2": {
+    "description": "Second of three steps to get a device-link code from the web UI; 'Settings' and 'Link Device' are the web UI's names."
+  },
+  "connectDeviceLinkStep3": "[Šéļéçţ Ĝéñéŕåţé Çöðé åñð éñţéŕ îţ béļöŵ one two three four]",
+  "@connectDeviceLinkStep3": {
+    "description": "Third of three steps to get a device-link code from the web UI; 'Generate Code' is the web UI's button."
+  },
+  "connectDeviceLinkDeviceName": "[Ðévîçé ñåmé one two]",
+  "@connectDeviceLinkDeviceName": {
+    "description": "Label of the field naming this device on the server when it is linked with a code."
+  },
+  "connectDeviceLinkSubmit": "[Ļîñķ one]",
+  "@connectDeviceLinkSubmit": {
+    "description": "Button that links this device with the entered code."
+  },
+  "connectScanQrCode": "[Šçåñ QŔ çöðé one two]",
+  "@connectScanQrCode": {
+    "description": "Button on the address screen and the device-link panel that opens the camera to scan the QR code from the web UI's device page."
+  },
+  "connectScanHint": "[Þöîñţ ţĥé çåméŕå åţ ţĥé QŔ çöðé öñ ţĥé Ļîñķ Ðévîçé þåĝé öf ţĥé ŵéb ÛÎ. one two three four five six]",
+  "@connectScanHint": {
+    "description": "Instruction under the camera preview of the QR scanner."
+  },
+  "connectScanRejected": "[Ţĥåţ îš ñöţ å šöûñðšþåñ çöðé one two three]",
+  "@connectScanRejected": {
+    "description": "Shown for three seconds under the camera preview when the scanned QR code is neither a soundspan link nor a server address."
+  },
+  "connectScanPermissionDenied": "[šöûñðšþåñ çåññöţ ûšé ţĥé çåméŕå ţö šçåñ ţĥé çöðé. one two three four five]",
+  "@connectScanPermissionDenied": {
+    "description": "Shown instead of the camera preview when the user denied the camera permission."
+  },
+  "connectScanAllowCamera": "[Ţö šçåñ, åļļöŵ çåméŕå åççéšš föŕ šöûñðšþåñ îñ ýöûŕ šýšţém šéţţîñĝš. one two three four five six]",
+  "@connectScanAllowCamera": {
+    "description": "Tells the user how to allow the camera after denying it; there is no link to the settings."
+  },
+  "connectScanNoCamera": "[Ñö çåméŕå åvåîļåbļé one two]",
+  "@connectScanNoCamera": {
+    "description": "Shown instead of the camera preview when the device has no usable camera."
+  },
+  "connectScanEnterCode": "[Éñţéŕ ţĥé çöðé îñšţéåð one two three]",
+  "@connectScanEnterCode": {
+    "description": "Button on the QR scanner's fallback screen that returns to typing the device-link code."
+  },
+  "connectDeviceLinkInvalidCode": "[Ţĥåţ çöðé ðöéš ñöţ éxîšţ. Ĝéñéŕåţé å ñéŵ çöðé îñ ţĥé ŵéb ÛÎ. one two three four five]",
+  "@connectDeviceLinkInvalidCode": {
+    "description": "Inline error when the server knows no such device-link code."
+  },
+  "connectDeviceLinkCodeUsed": "[Ţĥåţ çöðé ĥåš åļŕéåðý bééñ ûšéð. Ĝéñéŕåţé å ñéŵ çöðé îñ ţĥé ŵéb ÛÎ. one two three four five six]",
+  "@connectDeviceLinkCodeUsed": {
+    "description": "Inline error when the device-link code was used before."
+  },
+  "connectDeviceLinkCodeExpired": "[Ţĥåţ çöðé ĥåš éxþîŕéð. Ĝéñéŕåţé å ñéŵ çöðé îñ ţĥé ŵéb ÛÎ. one two three four five]",
+  "@connectDeviceLinkCodeExpired": {
+    "description": "Inline error when the device-link code is too old."
+  },
+  "connectDeviceLinkRejected": "[Ţĥé šéŕvéŕ ðîð ñöţ åççéþţ ţĥé çöðé. Ĝéñéŕåţé å ñéŵ çöðé îñ ţĥé ŵéb ÛÎ. one two three four five six]",
+  "@connectDeviceLinkRejected": {
+    "description": "Inline error when the server turned the device-link code down without saying why."
+  },
+  "connectSignInLinkWithCode": "[Ļîñķ ŵîţĥ å çöðé one two]",
+  "@connectSignInLinkWithCode": {
+    "description": "Secondary action on the password sign-in screen that shows the device-link panel instead."
+  },
+  "connectSignInUsePassword": "[Šîĝñ îñ ŵîţĥ å þåššŵöŕð one two three]",
+  "@connectSignInUsePassword": {
+    "description": "Secondary action on the device-link panel that goes back to the password form."
+  },
+  "connectSignInSsoNote": "[Šîñĝļé šîĝñ-öñ ûšéŕš: ļîñķ ţĥîš ðévîçé ŵîţĥ å çöðé. one two three four five]",
+  "@connectSignInSsoNote": {
+    "description": "Note on the password sign-in screen of a server that also offers single sign-on."
+  },
+  "connectLinkThisDevice": "[Ļîñķ ţĥîš ðévîçé one two]",
+  "@connectLinkThisDevice": {
+    "description": "Heading of the device-link panel."
+  },
+  "connectSignInWithProvider": "[Šîĝñ îñ ŵîţĥ {provider} one two]",
+  "@connectSignInWithProvider": {
+    "description": "Heading of the device-link panel on a server that offers only single sign-on, naming its provider.",
+    "placeholders": {
+      "provider": {
+        "type": "String",
+        "example": "Authentik"
+      }
+    }
+  },
+  "screenPodcast": "[Þöðçåšţ one]",
+  "@screenPodcast": {
+    "description": "Window title part and route name of a podcast page."
+  },
+  "podcastsYourPodcasts": "[Ýöûŕ þöðçåšţš one two]",
+  "@podcastsYourPodcasts": {
+    "description": "Title of the grid of the podcasts the user is subscribed to on the Podcasts screen."
+  },
+  "podcastsTopPodcasts": "[Ţöþ þöðçåšţš one two]",
+  "@podcastsTopPodcasts": {
+    "description": "Title of the shelf of popular podcasts from the directory on the Podcasts screen."
+  },
+  "podcastsEmpty": "[Ýöû ĥåvéñ’ţ šûbšçŕîbéð ţö åñý þöðçåšţš ýéţ one two three four]",
+  "@podcastsEmpty": {
+    "description": "Shown on the Podcasts screen when the user is subscribed to no podcast."
+  },
+  "podcastsOverline": "[Þöðçåšţ one]",
+  "@podcastsOverline": {
+    "description": "Type label above the title on a podcast page."
+  },
+  "podcastsEpisodeCount": "[{count, plural, =1{1 éþîšöðé one} other{{count} éþîšöðéš one}}]",
+  "@podcastsEpisodeCount": {
+    "description": "Part of the metadata line of a podcast page: how many episodes the podcast has.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "podcastsSubscribe": "[Šûbšçŕîbé one]",
+  "@podcastsSubscribe": {
+    "description": "Button that subscribes the user to a podcast, on a podcast page and in the dialog of a top podcast."
+  },
+  "podcastsUnsubscribe": "[Ûñšûbšçŕîbé one two]",
+  "@podcastsUnsubscribe": {
+    "description": "Button on a podcast page that unsubscribes the user from the podcast, and the confirming action of its dialog."
+  },
+  "podcastsUnsubscribeTitle": "[Ûñšûbšçŕîbé fŕöm {title}? one two]",
+  "@podcastsUnsubscribeTitle": {
+    "description": "Title of the dialog confirming that the user wants to unsubscribe from a podcast.",
+    "placeholders": {
+      "title": {
+        "type": "String",
+        "example": "The Daily"
+      }
+    }
+  },
+  "podcastsUnsubscribeBody": "[Ţĥé þöðçåšţ ļéåvéš ýöûŕ þöðçåšţš. Ýöû çåñ šûbšçŕîbé åĝåîñ ļåţéŕ. one two three four five six]",
+  "@podcastsUnsubscribeBody": {
+    "description": "Body of the dialog confirming that the user wants to unsubscribe from a podcast."
+  },
+  "podcastsCancel": "[Çåñçéļ one]",
+  "@podcastsCancel": {
+    "description": "Dismisses a Podcasts dialog without doing anything."
+  },
+  "podcastsOfflineTooltip": "[Šûbšçŕîþţîöñš çåñ bé çĥåñĝéð öñļý ŵĥîļé ţĥé šéŕvéŕ îš ŕéåçĥåbļé one two three four five six]",
+  "@podcastsOfflineTooltip": {
+    "description": "Tooltip of the disabled Subscribe or Unsubscribe button while the server is not reachable."
+  },
+  "podcastsSubscribeFailed": "[Çöûļðñ’ţ šûbšçŕîbé. Ţŕý åĝåîñ. one two three]",
+  "@podcastsSubscribeFailed": {
+    "description": "Snackbar shown when subscribing to a podcast failed."
+  },
+  "podcastsUnsubscribeFailed": "[Çöûļðñ’ţ ûñšûbšçŕîbé. Ţŕý åĝåîñ. one two three]",
+  "@podcastsUnsubscribeFailed": {
+    "description": "Snackbar shown when unsubscribing from a podcast failed."
+  },
+  "podcastsShowMore": "[Šĥöŵ möŕé one]",
+  "@podcastsShowMore": {
+    "description": "Button under the collapsed description of a podcast page: shows the whole description."
+  },
+  "podcastsShowLess": "[Šĥöŵ ļéšš one]",
+  "@podcastsShowLess": {
+    "description": "Button under the expanded description of a podcast page: collapses it to three lines again."
+  },
+  "podcastsEpisodePlayed": "[Þļåýéð one]",
+  "@podcastsEpisodePlayed": {
+    "description": "Label next to the check of an episode the user finished."
+  },
+  "podcastsEpisodeMinutes": "[{count, plural, =1{1 mîñûţé one} other{{count} mîñûţéš one}}]",
+  "@podcastsEpisodeMinutes": {
+    "description": "An episode's length as a screen reader says it, in whole minutes.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "podcastsEpisodeMinutesLeft": "[{count, plural, =1{1 mîñûţé ļéfţ one two} other{{count} mîñûţéš ļéfţ one two}}]",
+  "@podcastsEpisodeMinutesLeft": {
+    "description": "How much of a started episode is left, as a screen reader says it, in whole minutes.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "podcastsEpisodePlayedSpoken": "[þļåýéð one]",
+  "@podcastsEpisodePlayedSpoken": {
+    "description": "Last part of the screen-reader label of an episode the user finished, e.g. the 'played' of 'Title, Mar 12, 2026, 42 minutes, played'."
+  },
+  "navExplore": "[Éxþļöŕé one]",
+  "@navExplore": {
+    "description": "Sidebar item, Home card and screen name of Explore, the page of recommendations and new music."
+  },
+  "discoverRecommendedForYou": "[Ŕéçömméñðéð Föŕ Ýöû one two]",
+  "@discoverRecommendedForYou": {
+    "description": "Title of the Home row and the Explore section of artists similar to the ones the user plays most."
+  },
+  "discoverPopularArtists": "[Þöþûļåŕ Åŕţîšţš one two]",
+  "@discoverPopularArtists": {
+    "description": "Title of the Home row and the Explore section of artists popular right now."
+  },
+  "discoverCardArtist": "[Åŕţîšţ one]",
+  "@discoverCardArtist": {
+    "description": "Second line of a card of a recommended or popular artist: what kind of item it is."
+  },
+  "exploreThisWeek": "[Ţĥîš ŵééķ’š ðîšçövéŕîéš one two three]",
+  "@exploreThisWeek": {
+    "description": "Title of the Explore section of this week's discovery playlist."
+  },
+  "explorePlay": "[Þļåý one]",
+  "@explorePlay": {
+    "description": "Button of the Explore discovery section that plays its tracks in order."
+  },
+  "exploreShuffle": "[Šĥûffļé one]",
+  "@exploreShuffle": {
+    "description": "Button of the Explore discovery section that plays its tracks in random order."
+  },
+  "exploreShowAll": "[Šĥöŵ åļļ one]",
+  "@exploreShowAll": {
+    "description": "Button under the first tracks of the Explore discovery section that shows every track."
+  },
+  "exploreEmpty": "[Ñöţĥîñĝ ţö éxþļöŕé ýéţ one two three]",
+  "@exploreEmpty": {
+    "description": "Shown on Explore when every section is empty."
+  },
+  "homeExploreCard": "[Fîñð ñéŵ åŕţîšţš åñð mûšîç one two three]",
+  "@homeExploreCard": {
+    "description": "Second line of the Explore card at the end of Home on phones and tablets."
+  },
+  "exploreRadioByGenre": "[Ŕåðîö bý ĝéñŕé one two]",
+  "@exploreRadioByGenre": {
+    "description": "Title of the Explore section of radio stations, one per genre of the user's library."
+  },
+  "exploreRadioByDecade": "[Ŕåðîö bý ðéçåðé one two]",
+  "@exploreRadioByDecade": {
+    "description": "Title of the Explore section of radio stations, one per decade of the user's library."
+  },
+  "exploreRadioShowAll": "[Šĥöŵ åļļ one]",
+  "@exploreRadioShowAll": {
+    "description": "Button under the first genre stations of Explore that shows every genre station."
+  },
+  "exploreRadioDecade": "[{decade}š one]",
+  "@exploreRadioDecade": {
+    "description": "Name of a decade radio station, from the decade's first year, such as 1990s.",
+    "placeholders": {
+      "decade": {
+        "type": "String",
+        "example": "1990"
+      }
+    }
+  },
+  "exploreRadioTrackCount": "[{count, plural, =1{1 ţŕåçķ one} other{{count} ţŕåçķš one}}]",
+  "@exploreRadioTrackCount": {
+    "description": "Caption of a radio station tile: how many library tracks the station draws from.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "42"
+      }
+    }
+  },
+  "exploreRadioStationSemantics": "[{station}, {tracks}, ŕåðîö šţåţîöñ one two]",
+  "@exploreRadioStationSemantics": {
+    "description": "Screen-reader label of a radio station tile on Explore.",
+    "placeholders": {
+      "station": {
+        "type": "String",
+        "example": "Rock"
+      },
+      "tracks": {
+        "type": "String",
+        "example": "42 tracks"
+      }
+    }
+  },
+  "exploreRadioNoTracks": "[Ñö ţŕåçķš föŕ ţĥîš šţåţîöñ one two three]",
+  "@exploreRadioNoTracks": {
+    "description": "Snackbar when a radio station returned no playable tracks."
+  },
+  "exploreRadioFailed": "[Çöûļðñ’ţ šţåŕţ ţĥé šţåţîöñ one two three]",
+  "@exploreRadioFailed": {
+    "description": "Snackbar when starting a radio station failed."
+  },
+  "exploreRadioRetry": "[Ŕéţŕý one]",
+  "@exploreRadioRetry": {
+    "description": "Action of the snackbar shown when starting a radio station failed; starts it again."
+  },
+  "exploreRadioOffline": "[Ñöţ åvåîļåbļé öffļîñé one two three]",
+  "@exploreRadioOffline": {
+    "description": "Tooltip and screen-reader reason of a radio station tile that cannot start because the server is not reachable."
+  },
+  "queueContextRadio": "[Ŕåðîö · {station} one]",
+  "@queueContextRadio": {
+    "description": "Queue header and now-playing overline while the queue plays a radio station.",
+    "placeholders": {
+      "station": {
+        "type": "String",
+        "example": "Rock"
+      }
+    }
+  },
+  "connectSignInUseApiKey": "[Ûšé åñ ÅÞÎ ķéý one two]",
+  "@connectSignInUseApiKey": {
+    "description": "Secondary action on the sign-in screen that shows the form for signing in with an API key copied from the web UI."
+  },
+  "connectApiKeyHeading": "[Šîĝñ îñ ŵîţĥ åñ ÅÞÎ ķéý one two three]",
+  "@connectApiKeyHeading": {
+    "description": "Heading of the form that signs in with an API key pasted from the web UI."
+  },
+  "connectApiKeyField": "[ÅÞÎ ķéý one]",
+  "@connectApiKeyField": {
+    "description": "Label of the field the API key is pasted into."
+  },
+  "connectApiKeyShow": "[Šĥöŵ ÅÞÎ ķéý one two]",
+  "@connectApiKeyShow": {
+    "description": "Tooltip of the button that reveals the pasted API key."
+  },
+  "connectApiKeyHide": "[Ĥîðé ÅÞÎ ķéý one two]",
+  "@connectApiKeyHide": {
+    "description": "Tooltip of the button that hides the pasted API key again."
+  },
+  "connectApiKeyPaste": "[Þåšţé one]",
+  "@connectApiKeyPaste": {
+    "description": "Button that fills the API key field from the clipboard."
+  },
+  "connectApiKeyExpiryUnknown": "[Ţĥîš ķéý’š éxþîŕý ðåţé îš ñöţ ķñöŵñ ţö ţĥé åþþ. Ýöû ŵîļļ bé åšķéð ţö šîĝñ îñ åĝåîñ ŵĥéñ ţĥé šéŕvéŕ šţöþš åççéþţîñĝ îţ. one two three four five six seven eight nine ten]",
+  "@connectApiKeyExpiryUnknown": {
+    "description": "Note under the API key form: the app cannot tell when a pasted key expires."
+  },
+  "connectApiKeyMalformed": "[Ţĥîš îš ñöţ åñ ÅÞÎ ķéý. Çöþý ţĥé ŵĥöļé ķéý fŕöm ţĥé ŵéb ÛÎ åñð þåšţé îţ ĥéŕé. one two three four five six seven]",
+  "@connectApiKeyMalformed": {
+    "description": "Inline error: the pasted text is empty, too long or has characters an API key cannot have."
+  },
+  "connectApiKeyRejected": "[Ţĥé šéŕvéŕ ðîð ñöţ åççéþţ ţĥîš ķéý. Îţ måý ĥåvé éxþîŕéð öŕ bééñ ŕévöķéð. one two three four five six seven]",
+  "@connectApiKeyRejected": {
+    "description": "Inline error: the server answered the API key with 401 or 403."
+  },
+  "connectSignInNoBrowserMethod": "[Ţĥîš šéŕvéŕ öfféŕš ñö šîĝñ-îñ méţĥöð ţĥîš åþþ çåñ ûšé îñ å bŕöŵšéŕ. one two three four five six]",
+  "@connectSignInNoBrowserMethod": {
+    "description": "Shown in the browser app when the server offers neither password sign-in nor single sign-on, leaving only API keys, which the browser app cannot use."
+  },
+  "downloadUnavailableDisabled": "[Ðöŵñļöåðš åŕé ţûŕñéð öff öñ ţĥîš šéŕvéŕ one two three four]",
+  "@downloadUnavailableDisabled": {
+    "description": "Shown on a greyed-out track of a downloaded album or playlist when the server administrator turned offline downloads off."
+  },
+  "downloadUnavailableGone": "[Ñö ļöñĝéŕ åvåîļåbļé one two]",
+  "@downloadUnavailableGone": {
+    "description": "Shown on a greyed-out track of a downloaded album or playlist that the server no longer has."
+  },
+  "downloadUnavailableAccount": "[Ñöţ åvåîļåbļé föŕ ýöûŕ åççöûñţ one two three]",
+  "@downloadUnavailableAccount": {
+    "description": "Shown on a greyed-out track of a downloaded album or playlist that this account cannot stream, so cannot download."
+  },
+  "playerPlay": "[Þļåý one]",
+  "@playerPlay": {
+    "description": "Tooltip and screen-reader label of the player's play button."
+  },
+  "playerPause": "[Þåûšé one]",
+  "@playerPause": {
+    "description": "Tooltip and screen-reader label of the player's pause button."
+  },
+  "playerSkipBack": "[Šķîþ båçķ {seconds} šéçöñðš one two]",
+  "@playerSkipBack": {
+    "description": "Tooltip and screen-reader label of the player's button that moves back in an episode by the skip interval.",
+    "placeholders": {
+      "seconds": {
+        "type": "int",
+        "example": "15"
+      }
+    }
+  },
+  "playerSkipForward": "[Šķîþ föŕŵåŕð {seconds} šéçöñðš one two three]",
+  "@playerSkipForward": {
+    "description": "Tooltip and screen-reader label of the player's button that moves forward in an episode by the skip interval.",
+    "placeholders": {
+      "seconds": {
+        "type": "int",
+        "example": "15"
+      }
+    }
+  },
+  "playerAnnounceTrack": "[Ñöŵ þļåýîñĝ {title} bý {artist} one two]",
+  "@playerAnnounceTrack": {
+    "description": "Spoken politely by the screen reader when playback moves to another track.",
+    "placeholders": {
+      "title": {
+        "type": "String",
+        "example": "Blue in Green"
+      },
+      "artist": {
+        "type": "String",
+        "example": "Miles Davis"
+      }
+    }
+  },
+  "playerAnnounceTrackNoArtist": "[Ñöŵ þļåýîñĝ {title} one two]",
+  "@playerAnnounceTrackNoArtist": {
+    "description": "Spoken politely by the screen reader when playback moves to a track whose artist is unknown.",
+    "placeholders": {
+      "title": {
+        "type": "String",
+        "example": "Blue in Green"
+      }
+    }
+  },
+  "playerAnnounceEpisode": "[{title}, {podcast} one]",
+  "@playerAnnounceEpisode": {
+    "description": "Spoken politely by the screen reader when playback moves to a podcast episode: the episode title, then the podcast title.",
+    "placeholders": {
+      "title": {
+        "type": "String",
+        "example": "Episode 12"
+      },
+      "podcast": {
+        "type": "String",
+        "example": "The Daily Show"
+      }
+    }
+  },
+  "playerSpeed": "[Þļåýbåçķ šþééð one two]",
+  "@playerSpeed": {
+    "description": "Tooltip and screen-reader label of the player's episode speed menu button."
+  },
+  "playerSpeedValue": "[{speed}× one]",
+  "@playerSpeedValue": {
+    "description": "An episode playback speed on the player's speed button and in its menu, such as 1.25×.",
+    "placeholders": {
+      "speed": {
+        "type": "double",
+        "format": "decimalPattern",
+        "example": "1.25"
+      }
+    }
+  },
+  "playerNext": "[Ñéxţ one]",
+  "@playerNext": {
+    "description": "Tooltip and screen-reader label of the player's button that skips to the next item."
+  },
+  "playerPrevious": "[Þŕévîöûš one]",
+  "@playerPrevious": {
+    "description": "Tooltip and screen-reader label of the player's button that goes back to the previous item or the start of this one."
+  },
+  "playerShuffle": "[Šĥûffļé one]",
+  "@playerShuffle": {
+    "description": "Tooltip and screen-reader label of the player's shuffle toggle."
+  },
+  "playerRepeatOff": "[Ŕéþéåţ one]",
+  "@playerRepeatOff": {
+    "description": "Tooltip and screen-reader label of the player's repeat button while repeat is off; a tap repeats the queue."
+  },
+  "playerRepeatAll": "[Ŕéþéåţ åļļ one]",
+  "@playerRepeatAll": {
+    "description": "Tooltip and screen-reader label of the player's repeat button while the whole queue repeats; a tap repeats the current item."
+  },
+  "playerRepeatOne": "[Ŕéþéåţ öñé one]",
+  "@playerRepeatOne": {
+    "description": "Tooltip and screen-reader label of the player's repeat button while the current item repeats; a tap turns repeat off."
+  },
+  "playerVolume": "[Vöļûmé one]",
+  "@playerVolume": {
+    "description": "Screen-reader label of the player's volume slider."
+  },
+  "playerSeek": "[Šééķ one]",
+  "@playerSeek": {
+    "description": "Screen-reader label of the seek bar that shows and changes the position in the playing item."
+  },
+  "playerSeekValue": "[{position} öf {duration} one]",
+  "@playerSeekValue": {
+    "description": "Screen-reader value of the seek bar: the position and the length of the playing item, each as m:ss or h:mm:ss, e.g. 1:05 of 3:41.",
+    "placeholders": {
+      "position": {
+        "type": "String",
+        "example": "1:05"
+      },
+      "duration": {
+        "type": "String",
+        "example": "3:41"
+      }
+    }
+  },
+  "nowPlayingOverline": "[Ñöŵ þļåýîñĝ one two]",
+  "@nowPlayingOverline": {
+    "description": "Label at the top of the now-playing screen, shown in upper case."
+  },
+  "nowPlayingClose": "[Çļöšé one]",
+  "@nowPlayingClose": {
+    "description": "Tooltip of the button that closes the now-playing screen."
+  },
+  "nowPlayingQueue": "[Qûéûé one]",
+  "@nowPlayingQueue": {
+    "description": "Tooltip of the button that shows the play queue, on the now-playing screen and on the player bar."
+  },
+  "nowPlayingAudioOutput": "[Åûðîö öûţþûţ one two]",
+  "@nowPlayingAudioOutput": {
+    "description": "Accessibility label of the system audio output picker (AirPlay) on the now-playing screen."
+  },
+  "nowPlayingExpand": "[Šĥöŵ ñöŵ þļåýîñĝ one two]",
+  "@nowPlayingExpand": {
+    "description": "Tooltip of the player bar button that shows large artwork of the playing item over the content area."
+  },
+  "nowPlayingCollapse": "[Ĥîðé ñöŵ þļåýîñĝ one two]",
+  "@nowPlayingCollapse": {
+    "description": "Tooltip of the player bar button that hides the large artwork of the playing item."
+  },
+  "lyricsTitle": "[Ļýŕîçš one]",
+  "@lyricsTitle": {
+    "description": "Title of the lyrics panel and sheet, and tooltip of the button that shows the lyrics, on the now-playing screen and on the player bar."
+  },
+  "lyricsNone": "[Ñö ļýŕîçš föûñð one two]",
+  "@lyricsNone": {
+    "description": "Shown in the lyrics view when the server has no lyrics for the current track."
+  },
+  "lyricsSeekHint": "[Šééķ ţö {time} one]",
+  "@lyricsSeekHint": {
+    "description": "Screen-reader hint of a synced lyrics line: activating it moves playback to the time the line starts.",
+    "placeholders": {
+      "time": {
+        "type": "String",
+        "example": "1:05"
+      }
+    }
+  },
+  "lyricsInstrumental": "[Îñšţŕûméñţåļ one two]",
+  "@lyricsInstrumental": {
+    "description": "Screen-reader label of a synced lyrics line without words (an instrumental gap), drawn as a ♪ marker."
+  },
+  "lyricsResumeAutoScroll": "[Ŕéšûmé åûţö-šçŕöļļ one two]",
+  "@lyricsResumeAutoScroll": {
+    "description": "Button shown over the synced lyrics after the user scrolls them by hand; it makes the lyrics follow the current line again."
+  },
+  "queueTitle": "[Qûéûé one]",
+  "@queueTitle": {
+    "description": "Title of the play queue panel and sheet."
+  },
+  "queueNowPlaying": "[Ñöŵ þļåýîñĝ one two]",
+  "@queueNowPlaying": {
+    "description": "Header of the queue section holding the playing entry."
+  },
+  "queueNextUp": "[Ñéxţ ûþ one]",
+  "@queueNextUp": {
+    "description": "Header of the queue section listing the entries that play after the current one."
+  },
+  "queueClear": "[Çļéåŕ one]",
+  "@queueClear": {
+    "description": "Action that empties the play queue."
+  },
+  "queueEmpty": "[Ñöţĥîñĝ îš qûéûéð one two]",
+  "@queueEmpty": {
+    "description": "Sentence shown when the play queue is empty."
+  },
+  "queueRemove": "[Ŕémövé fŕöm qûéûé one two]",
+  "@queueRemove": {
+    "description": "Tooltip and screen-reader action of the button that removes an entry from the play queue."
+  },
+  "queueMoveUp": "[Mövé ûþ one]",
+  "@queueMoveUp": {
+    "description": "Screen-reader action that moves a queue entry one place earlier."
+  },
+  "queueMoveDown": "[Mövé ðöŵñ one]",
+  "@queueMoveDown": {
+    "description": "Screen-reader action that moves a queue entry one place later."
+  },
+  "queueReorderHandle": "[Ðŕåĝ ţö ŕéöŕðéŕ one two]",
+  "@queueReorderHandle": {
+    "description": "Tooltip of the handle that reorders a queue entry by dragging."
+  },
+  "qualityBadgeSampleRate": "[{codec} · {bitDepth}/{sampleRate} ķĤž one]",
+  "@qualityBadgeSampleRate": {
+    "description": "Quality badge of the playing stream with a bit depth: codec, bit depth and sample rate in kilohertz, e.g. FLAC · 24/96 kHz.",
+    "placeholders": {
+      "codec": {
+        "type": "String",
+        "example": "FLAC"
+      },
+      "bitDepth": {
+        "type": "String",
+        "example": "24"
+      },
+      "sampleRate": {
+        "type": "String",
+        "example": "44.1"
+      }
+    }
+  },
+  "qualityBadgeBitrate": "[{codec} · {bitrate} ķbþš one]",
+  "@qualityBadgeBitrate": {
+    "description": "Quality badge of the playing stream without a bit depth: codec and bit rate in kilobits per second, e.g. AAC · 256 kbps.",
+    "placeholders": {
+      "codec": {
+        "type": "String",
+        "example": "AAC"
+      },
+      "bitrate": {
+        "type": "String",
+        "example": "256"
+      }
+    }
+  },
+  "qualityBadgeDownloaded": "[Ðöŵñļöåðéð one]",
+  "@qualityBadgeDownloaded": {
+    "description": "Quality badge of an item playing from a file downloaded to this device, when no download quality was stored."
+  },
+  "qualityBadgeDownloadedQuality": "[Ðöŵñļöåðéð · {quality} one two]",
+  "@qualityBadgeDownloadedQuality": {
+    "description": "Quality badge of an item playing from a file downloaded to this device: the word Downloaded and the quality it was downloaded at, one of the stream quality choices (Original, High, Medium, Low).",
+    "placeholders": {
+      "quality": {
+        "type": "String",
+        "example": "High"
+      }
+    }
+  },
+  "menuPlayNow": "[Þļåý ñöŵ one]",
+  "@menuPlayNow": {
+    "description": "Menu entry that replaces the queue with the list and plays this item."
+  },
+  "menuPlayNext": "[Þļåý ñéxţ one]",
+  "@menuPlayNext": {
+    "description": "Menu entry that inserts the item after the current queue item."
+  },
+  "menuAddToQueue": "[Åðð ţö qûéûé one two]",
+  "@menuAddToQueue": {
+    "description": "Menu entry and track-row accessibility action that appends the item to the queue."
+  },
+  "menuAddToPlaylist": "[Åðð ţö þļåýļîšţ… one two]",
+  "@menuAddToPlaylist": {
+    "description": "Menu entry that opens the playlist picker to add the item's songs."
+  },
+  "menuRemoveFromPlaylist": "[Ŕémövé fŕöm ţĥîš þļåýļîšţ one two three]",
+  "@menuRemoveFromPlaylist": {
+    "description": "Menu entry of a track inside a playlist the user owns that removes it from that playlist."
+  },
+  "menuGoToAlbum": "[Ĝö ţö åļbûm one two]",
+  "@menuGoToAlbum": {
+    "description": "Menu entry that opens the track's album page."
+  },
+  "menuGoToArtist": "[Ĝö ţö åŕţîšţ one two]",
+  "@menuGoToArtist": {
+    "description": "Menu entry that opens the artist page."
+  },
+  "menuShareLink": "[Šĥåŕé ļîñķ one]",
+  "@menuShareLink": {
+    "description": "Menu entry that copies a soundspan:// link to the item to the clipboard."
+  },
+  "menuLinkCopied": "[Ļîñķ çöþîéð one two]",
+  "@menuLinkCopied": {
+    "description": "Snackbar after Share link copied a link to the clipboard."
+  },
+  "menuRename": "[Ŕéñåmé one]",
+  "@menuRename": {
+    "description": "Menu entry of a playlist the user owns that renames it."
+  },
+  "menuDelete": "[Ðéļéţé one]",
+  "@menuDelete": {
+    "description": "Menu entry of a playlist the user owns that deletes it, after a confirmation."
+  },
+  "menuMoreOptions": "[Möŕé öþţîöñš one two]",
+  "@menuMoreOptions": {
+    "description": "Tooltip, accessibility label and track-row accessibility action of the button that opens an item's menu."
+  },
+  "actionPlay": "[Þļåý one]",
+  "@actionPlay": {
+    "description": "Label of the Play button of an album, artist or playlist page."
+  },
+  "actionShuffle": "[Šĥûffļé one]",
+  "@actionShuffle": {
+    "description": "Tooltip and accessibility label of the Shuffle button of an album, artist or playlist page."
+  },
+  "actionAddToPlaylist": "[Åðð ţö þļåýļîšţ one two]",
+  "@actionAddToPlaylist": {
+    "description": "Tooltip and accessibility label of the Add to playlist button of an album or playlist page."
+  },
+  "screenSettingsDesktop": "[Ðéšķţöþ one]",
+  "@screenSettingsDesktop": {
+    "description": "Title of the Desktop settings section, which lists the keyboard shortcuts."
+  },
+  "settingsShortcutsTitle": "[Ķéýböåŕð šĥöŕţçûţš one two]",
+  "@settingsShortcutsTitle": {
+    "description": "Heading of the list of keyboard shortcuts in Settings → Desktop."
+  },
+  "shortcutPlayPause": "[Þļåý öŕ þåûšé one two]",
+  "@shortcutPlayPause": {
+    "description": "What the Space shortcut does, as listed in Settings → Desktop."
+  },
+  "shortcutNext": "[Ñéxţ ţŕåçķ one]",
+  "@shortcutNext": {
+    "description": "What the next-track shortcut does, as listed in Settings → Desktop."
+  },
+  "shortcutPrevious": "[Þŕévîöûš ţŕåçķ one two]",
+  "@shortcutPrevious": {
+    "description": "What the previous-track shortcut does, as listed in Settings → Desktop."
+  },
+  "shortcutSeekForward": "[Šééķ föŕŵåŕð {seconds} šéçöñðš one two three]",
+  "@shortcutSeekForward": {
+    "description": "What the seek-forward shortcut does, as listed in Settings → Desktop.",
+    "placeholders": {
+      "seconds": {
+        "type": "int",
+        "example": "10"
+      }
+    }
+  },
+  "shortcutSeekBack": "[Šééķ båçķ {seconds} šéçöñðš one two]",
+  "@shortcutSeekBack": {
+    "description": "What the seek-back shortcut does, as listed in Settings → Desktop.",
+    "placeholders": {
+      "seconds": {
+        "type": "int",
+        "example": "10"
+      }
+    }
+  },
+  "shortcutVolumeUp": "[Vöļûmé ûþ one]",
+  "@shortcutVolumeUp": {
+    "description": "What the volume-up shortcut does, as listed in Settings → Desktop."
+  },
+  "shortcutVolumeDown": "[Vöļûmé ðöŵñ one two]",
+  "@shortcutVolumeDown": {
+    "description": "What the volume-down shortcut does, as listed in Settings → Desktop."
+  },
+  "shortcutShuffle": "[Šĥûffļé öñ öŕ öff one two]",
+  "@shortcutShuffle": {
+    "description": "What the shuffle shortcut does, as listed in Settings → Desktop."
+  },
+  "shortcutRepeat": "[Çĥåñĝé ŕéþéåţ one two]",
+  "@shortcutRepeat": {
+    "description": "What the repeat shortcut does (off, all, one), as listed in Settings → Desktop."
+  },
+  "shortcutLike": "[Ļîķé öŕ ŕémövé ļîķé öf ţĥé çûŕŕéñţ ţŕåçķ one two three four]",
+  "@shortcutLike": {
+    "description": "What the like shortcut does, as listed in Settings → Desktop."
+  },
+  "shortcutSearch": "[Šéåŕçĥ one]",
+  "@shortcutSearch": {
+    "description": "What the search shortcut does (focus the search field), as listed in Settings → Desktop."
+  },
+  "shortcutGoTo": "[Ĝö ţö {destination} one]",
+  "@shortcutGoTo": {
+    "description": "What a navigation shortcut does, as listed in Settings → Desktop.",
+    "placeholders": {
+      "destination": {
+        "type": "String",
+        "example": "Library"
+      }
+    }
+  },
+  "shortcutQueue": "[Šĥöŵ öŕ ĥîðé ţĥé qûéûé one two three]",
+  "@shortcutQueue": {
+    "description": "What the queue shortcut does, as listed in Settings → Desktop."
+  },
+  "shortcutPlayRow": "[Þļåý ţĥé šéļéçţéð ţŕåçķš one two three]",
+  "@shortcutPlayRow": {
+    "description": "What Enter on a track row does, as listed in Settings → Desktop."
+  },
+  "shortcutPlayRowNext": "[Þļåý ţĥé šéļéçţéð ţŕåçķš ñéxţ one two three]",
+  "@shortcutPlayRowNext": {
+    "description": "What Shift+Enter on a track row does, as listed in Settings → Desktop."
+  },
+  "shortcutRemoveRow": "[Ŕémövé ţĥé šéļéçţéð ţŕåçķš fŕöm ţĥé þļåýļîšţ one two three four]",
+  "@shortcutRemoveRow": {
+    "description": "What Delete on a row of a playlist the user owns does, as listed in Settings → Desktop."
+  },
+  "shortcutMenu": "[Öþéñ ţĥé méñû öf ţĥé föçûšéð îţém one two three]",
+  "@shortcutMenu": {
+    "description": "What the Menu key and Shift+F10 do, as listed in Settings → Desktop."
+  },
+  "shortcutRefresh": "[Ŕéfŕéšĥ one]",
+  "@shortcutRefresh": {
+    "description": "What the refresh shortcut does, as listed in Settings → Desktop."
+  },
+  "shortcutNextArea": "[Ñéxţ åŕéå one]",
+  "@shortcutNextArea": {
+    "description": "What F6 does (move focus to the next area of the window), as listed in Settings → Desktop."
+  },
+  "shortcutPreviousArea": "[Þŕévîöûš åŕéå one two]",
+  "@shortcutPreviousArea": {
+    "description": "What Shift+F6 does (move focus to the previous area of the window), as listed in Settings → Desktop."
+  },
+  "keyCtrl": "[Çţŕļ one]",
+  "@keyCtrl": {
+    "description": "Name of the Control key in a shortcut."
+  },
+  "keyCmd": "[Çmð one]",
+  "@keyCmd": {
+    "description": "Name of the Command key in a shortcut on macOS."
+  },
+  "keyShift": "[Šĥîfţ one]",
+  "@keyShift": {
+    "description": "Name of the Shift key in a shortcut."
+  },
+  "keyAlt": "[Åļţ one]",
+  "@keyAlt": {
+    "description": "Name of the Alt key in a shortcut."
+  },
+  "keyOption": "[Öþţîöñ one]",
+  "@keyOption": {
+    "description": "Name of the Option key in a shortcut on macOS."
+  },
+  "keySpace": "[Šþåçé one]",
+  "@keySpace": {
+    "description": "Name of the space bar in a shortcut."
+  },
+  "keyEnter": "[Éñţéŕ one]",
+  "@keyEnter": {
+    "description": "Name of the Enter key in a shortcut."
+  },
+  "keyDelete": "[Ðéļéţé one]",
+  "@keyDelete": {
+    "description": "Name of the Delete key in a shortcut."
+  },
+  "keyMenu": "[Méñû one]",
+  "@keyMenu": {
+    "description": "Name of the Menu (context menu) key in a shortcut."
+  },
+  "keyMouseBack": "[Möûšé båçķ bûţţöñ one two]",
+  "@keyMouseBack": {
+    "description": "The mouse's back button, listed beside the Back shortcut."
+  },
+  "keyMouseForward": "[Möûšé föŕŵåŕð bûţţöñ one two]",
+  "@keyMouseForward": {
+    "description": "The mouse's forward button, listed beside the Forward shortcut."
+  },
+  "settingsStorageDownloads": "[Ðöŵñļöåðš one]",
+  "@settingsStorageDownloads": {
+    "description": "Storage settings: heading of the download settings."
+  },
+  "settingsStorageDownloadQuality": "[Ðöŵñļöåð qûåļîţý one two]",
+  "@settingsStorageDownloadQuality": {
+    "description": "Storage settings: row choosing the audio quality of downloads."
+  },
+  "settingsStorageDownloadQualityCaption": "[Ţĥé qûåļîţý åþþļîéš ţö ñéŵ ðöŵñļöåðš. one two three four]",
+  "@settingsStorageDownloadQualityCaption": {
+    "description": "Storage settings: caption under the download quality row; items already downloaded keep their quality."
+  },
+  "settingsStorageWifiOnly": "[Ðöŵñļöåð öñ Ŵî-Fî öñļý one two three]",
+  "@settingsStorageWifiOnly": {
+    "description": "Storage settings: switch that keeps downloads from running on mobile data."
+  },
+  "settingsStorageDeviceLimit": "[Ðévîçé ļîmîţ one two]",
+  "@settingsStorageDeviceLimit": {
+    "description": "Storage settings: title of the slider setting the most space downloads may use on this device."
+  },
+  "settingsStorageNoLimit": "[Ñö ļîmîţ one]",
+  "@settingsStorageNoLimit": {
+    "description": "Storage settings: the device limit step that sets no limit."
+  },
+  "settingsStorageDeviceLimitUsage": "[{used} öf {limit} ûšéð one]",
+  "@settingsStorageDeviceLimitUsage": {
+    "description": "Storage settings: the space downloads use against the device limit.",
+    "placeholders": {
+      "used": {
+        "type": "String",
+        "example": "1.5 GB"
+      },
+      "limit": {
+        "type": "String",
+        "example": "20.0 GB"
+      }
+    }
+  },
+  "settingsStorageDeviceLimitUsageUnlimited": "[{used} ûšéð, ñö ļîmîţ one two]",
+  "@settingsStorageDeviceLimitUsageUnlimited": {
+    "description": "Storage settings: the space downloads use when the device limit is off.",
+    "placeholders": {
+      "used": {
+        "type": "String",
+        "example": "1.5 GB"
+      }
+    }
+  },
+  "settingsStorageRemoveAll": "[Ŕémövé åļļ ðöŵñļöåðš one two]",
+  "@settingsStorageRemoveAll": {
+    "description": "Storage settings: destructive action deleting every download of this server on this device."
+  },
+  "settingsStorageRemoveAllTitle": "[Ŕémövé åļļ ðöŵñļöåðš? one two three]",
+  "@settingsStorageRemoveAllTitle": {
+    "description": "Title of the dialog confirming that every download is removed."
+  },
+  "settingsStorageRemoveAllBody": "[Ţĥîš fŕééš {size} öñ ţĥîš ðévîçé. Ýöû çåñ ðöŵñļöåð ţĥém åĝåîñ ļåţéŕ. one two three four five six]",
+  "@settingsStorageRemoveAllBody": {
+    "description": "Body of the dialog confirming that every download is removed.",
+    "placeholders": {
+      "size": {
+        "type": "String",
+        "example": "1.5 GB"
+      }
+    }
+  },
+  "settingsStorageRemoveAllConfirm": "[Ŕémövé one]",
+  "@settingsStorageRemoveAllConfirm": {
+    "description": "Confirm button of the dialog removing every download."
+  },
+  "settingsStorageThisDevice": "[Ţĥîš ðévîçé one two]",
+  "@settingsStorageThisDevice": {
+    "description": "Storage settings: heading of the space this server’s data uses on the device."
+  },
+  "settingsStorageUsageDownloads": "[Ðöŵñļöåðš one]",
+  "@settingsStorageUsageDownloads": {
+    "description": "Storage settings: usage row of the downloaded tracks and episodes."
+  },
+  "settingsStorageUsageDownloadCount": "[{count, plural, =1{1 îţém one} other{{count} îţémš one}}]",
+  "@settingsStorageUsageDownloadCount": {
+    "description": "Storage settings: the number of downloaded tracks and episodes, under the Downloads usage row.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "12"
+      }
+    }
+  },
+  "settingsStorageUsageImages": "[Îmåĝéš one]",
+  "@settingsStorageUsageImages": {
+    "description": "Storage settings: usage row of the saved artwork images."
+  },
+  "settingsStorageUsageDatabase": "[Ðåţåbåšé one]",
+  "@settingsStorageUsageDatabase": {
+    "description": "Storage settings: usage row of the app’s databases for this server."
+  },
+  "settingsStorageUsageFree": "[Fŕéé šþåçé one]",
+  "@settingsStorageUsageFree": {
+    "description": "Storage settings: usage row of the free space left on the device."
+  },
+  "settingsStorageServer": "[Šéŕvéŕ one]",
+  "@settingsStorageServer": {
+    "description": "Storage settings: heading of the server’s download storage figures."
+  },
+  "settingsStorageServerUsed": "[Ûšéð öñ ţĥé šéŕvéŕ: {used} öf {limit} one two three]",
+  "@settingsStorageServerUsed": {
+    "description": "Storage settings: the space the user’s downloads take on the server against the server’s limit.",
+    "placeholders": {
+      "used": {
+        "type": "String",
+        "example": "1.5 GB"
+      },
+      "limit": {
+        "type": "String",
+        "example": "10.0 GB"
+      }
+    }
+  },
+  "settingsStorageServerDevice": "[{count, plural, =1{Fŕöm ţĥîš ðévîçé: {size}, 1 ţŕåçķ one two three} other{Fŕöm ţĥîš ðévîçé: {size}, {count} ţŕåçķš one two three}}]",
+  "@settingsStorageServerDevice": {
+    "description": "Storage settings: the part of the server figure that this device downloaded.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "12"
+      },
+      "size": {
+        "type": "String",
+        "example": "1.5 GB"
+      }
+    }
+  },
+  "settingsStorageServerCaption": "[Ţĥé šéŕvéŕ ļîmîţ îš çĥåñĝéð îñ ţĥé šéŕvéŕ’š šéţţîñĝš. one two three four five]",
+  "@settingsStorageServerCaption": {
+    "description": "Storage settings: caption under the server figures, which are read-only here."
+  },
+  "settingsStorageCache": "[Çåçĥé one]",
+  "@settingsStorageCache": {
+    "description": "Storage settings: heading of the cache actions."
+  },
+  "settingsStorageClearCache": "[Çļéåŕ çåçĥé one two]",
+  "@settingsStorageClearCache": {
+    "description": "Storage settings: action deleting saved images and browsing data."
+  },
+  "settingsStorageClearCacheCaption": "[Šåvéð îmåĝéš åñð bŕöŵšîñĝ ðåţå åŕé féţçĥéð åĝåîñ ŵĥéñ ñééðéð. Ðöŵñļöåðš šţåý. one two three four five six seven]",
+  "@settingsStorageClearCacheCaption": {
+    "description": "Storage settings: caption under the Clear cache action."
+  },
+  "settingsStorageClearCacheTitle": "[Çļéåŕ çåçĥé? one two]",
+  "@settingsStorageClearCacheTitle": {
+    "description": "Title of the dialog confirming that the cache is cleared."
+  },
+  "settingsStorageClearCacheBody": "[Šåvéð îmåĝéš åñð bŕöŵšîñĝ ðåţå åŕé ðéļéţéð. Ðöŵñļöåðš åñð þļåýbåçķ åŕé ñöţ åfféçţéð. one two three four five six seven]",
+  "@settingsStorageClearCacheBody": {
+    "description": "Body of the dialog confirming that the cache is cleared."
+  },
+  "settingsStorageClearCacheConfirm": "[Çļéåŕ one]",
+  "@settingsStorageClearCacheConfirm": {
+    "description": "Confirm button of the dialog clearing the cache."
+  },
+  "settingsStorageCancel": "[Çåñçéļ one]",
+  "@settingsStorageCancel": {
+    "description": "Cancel button of the storage settings dialogs."
+  },
+  "downloadGlyphQueued": "[Ŵåîţîñĝ ţö ðöŵñļöåð one two]",
+  "@downloadGlyphQueued": {
+    "description": "Screen-reader label of the download glyph of an item waiting to download."
+  },
+  "downloadGlyphRunning": "[Ðöŵñļöåðîñĝ, {percent} þéŕçéñţ one two three]",
+  "@downloadGlyphRunning": {
+    "description": "Screen-reader label of the download glyph of an item being downloaded.",
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "downloadGlyphRunningUnknown": "[Ðöŵñļöåðîñĝ one two]",
+  "@downloadGlyphRunningUnknown": {
+    "description": "Screen-reader label of the download glyph of an item being downloaded whose size is not known."
+  },
+  "downloadGlyphCompleted": "[Ðöŵñļöåðéð one]",
+  "@downloadGlyphCompleted": {
+    "description": "Screen-reader label of the download glyph of a downloaded item."
+  },
+  "downloadGlyphFailed": "[Ðöŵñļöåð fåîļéð one two]",
+  "@downloadGlyphFailed": {
+    "description": "Screen-reader label of the download glyph of an item whose download failed."
+  },
+  "downloadGlyphUnavailable": "[Ñöţ åvåîļåbļé föŕ ðöŵñļöåð one two three]",
+  "@downloadGlyphUnavailable": {
+    "description": "Screen-reader label of the download glyph of an item the server will not let this device download."
+  },
+  "trackRowDownloaded": "[ðöŵñļöåðéð one]",
+  "@trackRowDownloaded": {
+    "description": "Appended to a track row’s screen-reader label when the track is downloaded, as in 'Title, Artist, 3 minutes, downloaded'."
+  },
+  "trackRowLiked": "[ļîķéð one]",
+  "@trackRowLiked": {
+    "description": "Read in a track row’s screen-reader label when the track is liked, after 'downloaded', as in 'Title, Artist, 3 minutes, downloaded, liked'."
+  },
+  "menuDownload": "[Ðöŵñļöåð one]",
+  "@menuDownload": {
+    "description": "Menu entry and action-bar button that keeps a track, album or playlist on this device."
+  },
+  "menuRemoveDownload": "[Ŕémövé ðöŵñļöåð one two]",
+  "@menuRemoveDownload": {
+    "description": "Menu entry and action-bar button that deletes a downloaded track, album or playlist from this device."
+  },
+  "menuRetryDownload": "[Ŕéţŕý ðöŵñļöåð one two]",
+  "@menuRetryDownload": {
+    "description": "Menu entry that tries a failed download again."
+  },
+  "menuCheckForChanges": "[Çĥéçķ föŕ çĥåñĝéš one two]",
+  "@menuCheckForChanges": {
+    "description": "Menu entry on a downloaded album or playlist that asks the server for changes to it now, so the download follows them."
+  },
+  "downloadRemoveTitle": "[Ŕémövé ðöŵñļöåð? one two]",
+  "@downloadRemoveTitle": {
+    "description": "Title of the dialog confirming that a download is removed."
+  },
+  "downloadRemoveBody": "[Îţš fîļéš åŕé ðéļéţéð fŕöm ţĥîš ðévîçé. Ýöû çåñ ðöŵñļöåð îţ åĝåîñ ļåţéŕ. one two three four five six seven]",
+  "@downloadRemoveBody": {
+    "description": "Body of the dialog confirming that a download is removed."
+  },
+  "downloadRemoveConfirm": "[Ŕémövé one]",
+  "@downloadRemoveConfirm": {
+    "description": "Confirm button of the dialog removing a download."
+  },
+  "downloadCancel": "[Çåñçéļ one]",
+  "@downloadCancel": {
+    "description": "Cancel button of the download dialogs."
+  },
+  "downloadClose": "[Çļöšé one]",
+  "@downloadClose": {
+    "description": "Button that closes a download sheet."
+  },
+  "downloadServerQuotaTitle": "[Ñöţ éñöûĝĥ šþåçé öñ ţĥé šéŕvéŕ one two three]",
+  "@downloadServerQuotaTitle": {
+    "description": "Title of the sheet shown when the server refused a download because the user’s download limit there is reached."
+  },
+  "downloadServerQuotaBody": "[Ŕémövé ðöŵñļöåðš ţö fŕéé ûþ šþåçé, öŕ ŕåîšé ţĥé ðöŵñļöåð ļîmîţ îñ ţĥé šéŕvéŕ’š šéţţîñĝš. one two three four five six seven eight]",
+  "@downloadServerQuotaBody": {
+    "description": "Body of the sheet shown when the server’s download limit is reached."
+  },
+  "downloadSizeNeeded": "[Ñééðéð: {size} one]",
+  "@downloadSizeNeeded": {
+    "description": "A byte value on a download sheet: what the download needs.",
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadSizeUsed": "[Ûšéð: {size} one]",
+  "@downloadSizeUsed": {
+    "description": "A byte value on a download sheet: what is already used.",
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadSizeLimit": "[Ļîmîţ: {size} one]",
+  "@downloadSizeLimit": {
+    "description": "A byte value on a download sheet: the limit.",
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadSizeAvailable": "[Åvåîļåbļé: {size} one two]",
+  "@downloadSizeAvailable": {
+    "description": "A byte value on a download sheet: the room left on this device.",
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadManage": "[Måñåĝé ðöŵñļöåðš one two]",
+  "@downloadManage": {
+    "description": "Action of the server-limit sheet that opens the Downloads tab."
+  },
+  "downloadShortfallTitle": "[{size} möŕé ñééðéð öñ ţĥîš ðévîçé one two three]",
+  "@downloadShortfallTitle": {
+    "description": "Title of the sheet shown when a download does not fit in the device limit.",
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadRaiseLimit": "[Ŕåîšé ļîmîţ one two]",
+  "@downloadRaiseLimit": {
+    "description": "Action that raises the device download limit so the whole download fits."
+  },
+  "downloadWhatFits": "[Ðöŵñļöåð ŵĥåţ fîţš one two]",
+  "@downloadWhatFits": {
+    "description": "Action that keeps the device limit and downloads what fits in it."
+  },
+  "downloadRaiseLimitDiskFull": "[Ţĥéŕé îšñ’ţ éñöûĝĥ fŕéé šþåçé öñ ţĥîš ðévîçé. Fŕéé ûþ šþåçé, ţĥéñ ţŕý åĝåîñ. one two three four five six seven]",
+  "@downloadRaiseLimitDiskFull": {
+    "description": "Shown instead of raising the device limit when free disk space, not the limit, is what stops the download."
+  },
+  "downloadUnavailableTitle": "[Šömé ţŕåçķš çåñ’ţ bé ðöŵñļöåðéð one two three]",
+  "@downloadUnavailableTitle": {
+    "description": "Title of the sheet listing the tracks of an album or playlist that cannot be downloaded."
+  },
+  "downloadUnavailableOther": "[Ñöţ åvåîļåbļé one two]",
+  "@downloadUnavailableOther": {
+    "description": "Shown on a greyed-out track of a downloaded album or playlist for a reason this app does not know."
+  },
+  "libraryTabDownloads": "[Ðöŵñļöåðš one]",
+  "@libraryTabDownloads": {
+    "description": "Library tab listing what is downloaded on this device."
+  },
+  "downloadsSummary": "[{count, plural, =0{Ñö îţémš one} =1{1 îţém one} other{{count} îţémš one}} · {size} one]",
+  "@downloadsSummary": {
+    "description": "Storage summary at the top of the Downloads tab: the number of downloaded items and their size.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadsInProgressCount": "[{count} îñ þŕöĝŕéšš one two]",
+  "@downloadsInProgressCount": {
+    "description": "Shown in the Downloads tab header while items are downloading.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "downloadsFilterInProgress": "[Îñ þŕöĝŕéšš one two]",
+  "@downloadsFilterInProgress": {
+    "description": "Filter chip of the Downloads tab showing only collections still downloading."
+  },
+  "downloadsPauseAll": "[Þåûšé åļļ one]",
+  "@downloadsPauseAll": {
+    "description": "Downloads tab button pausing every download."
+  },
+  "downloadsResumeAll": "[Ŕéšûmé åļļ one]",
+  "@downloadsResumeAll": {
+    "description": "Downloads tab button resuming every paused download."
+  },
+  "downloadsEmpty": "[Ñöţĥîñĝ ðöŵñļöåðéð ýéţ. Çĥööšé Ðöŵñļöåð öñ åñ åļbûm, å þļåýļîšţ öŕ å šöñĝ ţö ķééþ îţ öñ ţĥîš ðévîçé. one two three four five six seven eight]",
+  "@downloadsEmpty": {
+    "description": "Empty state of the Downloads tab."
+  },
+  "downloadsWaitingForConnection": "[Ŵåîţîñĝ föŕ çöññéçţîöñ one two three]",
+  "@downloadsWaitingForConnection": {
+    "description": "Shown on a Downloads tab row that waits for the server to be reachable."
+  },
+  "downloadsSourceGone": "[Ñö ļöñĝéŕ öñ ţĥé šéŕvéŕ one two three]",
+  "@downloadsSourceGone": {
+    "description": "Shown on a Downloads tab row whose album or playlist was deleted on the server; the downloaded files stay on this device."
+  },
+  "downloadsKindAlbum": "[Åļbûm one]",
+  "@downloadsKindAlbum": {
+    "description": "Kind of a downloaded collection, on a Downloads tab row."
+  },
+  "downloadsKindPlaylist": "[Þļåýļîšţ one]",
+  "@downloadsKindPlaylist": {
+    "description": "Kind of a downloaded collection, on a Downloads tab row."
+  },
+  "downloadsKindTrack": "[Šöñĝ one]",
+  "@downloadsKindTrack": {
+    "description": "Kind of a downloaded collection, on a Downloads tab row."
+  },
+  "downloadsKindEpisode": "[Éþîšöðé one]",
+  "@downloadsKindEpisode": {
+    "description": "Kind of a downloaded podcast episode, on a Downloads tab row."
+  },
+  "downloadsEpisodeSubtitle": "[Éþîšöðé · {podcast} one]",
+  "@downloadsEpisodeSubtitle": {
+    "description": "Subtitle of a downloaded podcast episode on the Downloads tab: the podcast it belongs to.",
+    "placeholders": {
+      "podcast": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadsItemsProgress": "[{kind} · {completed} öf {total} one]",
+  "@downloadsItemsProgress": {
+    "description": "Subtitle of a Downloads tab row: its kind and how many of its items are downloaded.",
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      },
+      "completed": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "downloadsPause": "[Þåûšé one]",
+  "@downloadsPause": {
+    "description": "Downloads tab row menu entry pausing its download."
+  },
+  "downloadsResume": "[Ŕéšûmé one]",
+  "@downloadsResume": {
+    "description": "Downloads tab row menu entry resuming its download."
+  },
+  "listenTogetherTitle": "[Ļîšţéñ Ţöĝéţĥéŕ one two]",
+  "@listenTogetherTitle": {
+    "description": "Avatar menu entry, sidebar item and screen name of Listen Together, where users play music in sync with others."
+  },
+  "listenTogetherInGroup": "[Îñ å ĝŕöûþ one]",
+  "@listenTogetherInGroup": {
+    "description": "Label of the Listen Together entry in the avatar menu and the sidebar while the user is in a group."
+  },
+  "listenTogetherYourGroups": "[Ýöûŕ ĝŕöûþš one two]",
+  "@listenTogetherYourGroups": {
+    "description": "Listen Together lobby heading above the group the user is a member of."
+  },
+  "listenTogetherPublicGroups": "[Þûbļîç ĝŕöûþš one two]",
+  "@listenTogetherPublicGroups": {
+    "description": "Listen Together lobby heading above the public groups anyone can join."
+  },
+  "listenTogetherEmpty": "[Ļîšţéñ ŵîţĥ öţĥéŕš îñ šýñç one two three]",
+  "@listenTogetherEmpty": {
+    "description": "Listen Together lobby when there is no group to show."
+  },
+  "listenTogetherCreate": "[Çŕéåţé ĝŕöûþ one two]",
+  "@listenTogetherCreate": {
+    "description": "Listen Together action that opens the form to create a group."
+  },
+  "listenTogetherJoinWithCode": "[Ĵöîñ ŵîţĥ å çöðé one two]",
+  "@listenTogetherJoinWithCode": {
+    "description": "Listen Together action that opens the field to join a group by its code."
+  },
+  "listenTogetherJoin": "[Ĵöîñ one]",
+  "@listenTogetherJoin": {
+    "description": "Button on a Listen Together group row, or in the join form, that joins the group."
+  },
+  "listenTogetherGroupRowDetails": "[{host} · {count, plural, =1{1 mémbéŕ one} other{{count} mémbéŕš one}} one]",
+  "@listenTogetherGroupRowDetails": {
+    "description": "Second line of a Listen Together group row: the host's name and how many members the group has.",
+    "placeholders": {
+      "host": {
+        "type": "String",
+        "example": "alex"
+      },
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "listenTogetherNameLabel": "[Ñåmé (öþţîöñåļ) one two]",
+  "@listenTogetherNameLabel": {
+    "description": "Label of the group name field of the create group form."
+  },
+  "listenTogetherNameTooLong": "[Ûšé åţ möšţ 80 çĥåŕåçţéŕš one two three]",
+  "@listenTogetherNameTooLong": {
+    "description": "Error under the group name field when the name is longer than 80 characters."
+  },
+  "listenTogetherPrivate": "[Þŕîvåţé one]",
+  "@listenTogetherPrivate": {
+    "description": "Visibility choice: the group is joined by its code only."
+  },
+  "listenTogetherPublic": "[Þûbļîç one]",
+  "@listenTogetherPublic": {
+    "description": "Visibility choice: the group is listed for everyone on the server."
+  },
+  "listenTogetherStartWithQueue": "[Šţåŕţ ŵîţĥ mý çûŕŕéñţ qûéûé one two three]",
+  "@listenTogetherStartWithQueue": {
+    "description": "Switch of the create group form: the group starts with the music queued on this device."
+  },
+  "listenTogetherCreateSubmit": "[Çŕéåţé one]",
+  "@listenTogetherCreateSubmit": {
+    "description": "Button of the create group form that creates the group."
+  },
+  "listenTogetherCancel": "[Çåñçéļ one]",
+  "@listenTogetherCancel": {
+    "description": "Cancel button of the Listen Together forms and dialogs."
+  },
+  "listenTogetherCodeLabel": "[Ĝŕöûþ çöðé one]",
+  "@listenTogetherCodeLabel": {
+    "description": "Label of the field that takes the code of the group to join."
+  },
+  "listenTogetherNoGroupWithCode": "[Ñö ĝŕöûþ ŵîţĥ ţĥåţ çöðé one two three]",
+  "@listenTogetherNoGroupWithCode": {
+    "description": "Error of the join form when no group has the code entered."
+  },
+  "listenTogetherPublicGroup": "[Þûbļîç ĝŕöûþ one two]",
+  "@listenTogetherPublicGroup": {
+    "description": "Visibility line in the header of a Listen Together group."
+  },
+  "listenTogetherPrivateGroup": "[Þŕîvåţé ĝŕöûþ one two]",
+  "@listenTogetherPrivateGroup": {
+    "description": "Visibility line in the header of a Listen Together group."
+  },
+  "listenTogetherHostedBy": "[Ĥöšţéð bý {name} one]",
+  "@listenTogetherHostedBy": {
+    "description": "Line in the header of a Listen Together group naming its host.",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "alex"
+      }
+    }
+  },
+  "listenTogetherReconnecting": "[Ŕéçöññéçţîñĝ… one two]",
+  "@listenTogetherReconnecting": {
+    "description": "Shown in the header of a Listen Together group while the connection to the server is being restored."
+  },
+  "listenTogetherCopyCode": "[Çöþý çöðé one]",
+  "@listenTogetherCopyCode": {
+    "description": "Button that copies the group's join code."
+  },
+  "listenTogetherCopied": "[Çöþîéð one]",
+  "@listenTogetherCopied": {
+    "description": "Announced after the group's join code was copied."
+  },
+  "listenTogetherMembers": "[Mémbéŕš one]",
+  "@listenTogetherMembers": {
+    "description": "Heading of the member list of a Listen Together group."
+  },
+  "listenTogetherHost": "[Ĥöšţ one]",
+  "@listenTogetherHost": {
+    "description": "Label next to the member who hosts the group."
+  },
+  "listenTogetherNowPlaying": "[Ñöŵ þļåýîñĝ one two]",
+  "@listenTogetherNowPlaying": {
+    "description": "Heading above the group's current track."
+  },
+  "listenTogetherOpenQueue": "[Öþéñ qûéûé one]",
+  "@listenTogetherOpenQueue": {
+    "description": "Action of a Listen Together group that shows the group's queue."
+  },
+  "listenTogetherLeave": "[Ļéåvé ĝŕöûþ one two]",
+  "@listenTogetherLeave": {
+    "description": "Action that leaves the Listen Together group."
+  },
+  "listenTogetherEnd": "[Éñð ĝŕöûþ föŕ évéŕýöñé one two three]",
+  "@listenTogetherEnd": {
+    "description": "Action, for the host only, that ends the Listen Together group for every member."
+  },
+  "listenTogetherEndTitle": "[Éñð ţĥé ĝŕöûþ? one two]",
+  "@listenTogetherEndTitle": {
+    "description": "Title of the dialog confirming the host ends the group."
+  },
+  "listenTogetherEndBody": "[Évéŕýöñé ļéåvéš ţĥé ĝŕöûþ åñð þļåýbåçķ šţöþš föŕ ţĥém. one two three four five]",
+  "@listenTogetherEndBody": {
+    "description": "Body of the dialog confirming the host ends the group."
+  },
+  "listenTogetherEndConfirm": "[Éñð ĝŕöûþ one]",
+  "@listenTogetherEndConfirm": {
+    "description": "Confirm button of the dialog that ends the group."
+  },
+  "listenTogetherEndedByHost": "[Ţĥé ĥöšţ éñðéð ţĥé ĝŕöûþ one two three]",
+  "@listenTogetherEndedByHost": {
+    "description": "Shown on Listen Together after the host ended the group."
+  },
+  "listenTogetherRemoved": "[Ýöû ŵéŕé ŕémövéð fŕöm ţĥé ĝŕöûþ one two three]",
+  "@listenTogetherRemoved": {
+    "description": "Shown on Listen Together after this user was removed from the group."
+  },
+  "listenTogetherQueueHeader": "[{name} · {count} ļîšţéñîñĝ one two]",
+  "@listenTogetherQueueHeader": {
+    "description": "Header of the queue while in a Listen Together group: the group's name and how many members it has.",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "Road trip"
+      },
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "listenTogetherHostControls": "[Ţĥé ĥöšţ çöñţŕöļš þļåýbåçķ one two three]",
+  "@listenTogetherHostControls": {
+    "description": "Tooltip and hint of playback controls that are disabled because only the group's host controls playback."
+  },
+  "listenTogetherNoResponse": "[Ţĥé šéŕvéŕ ðîðñ’ţ ŕéšþöñð one two three]",
+  "@listenTogetherNoResponse": {
+    "description": "Shown when a playback command sent to the group got no answer in time."
+  },
+  "listenTogetherCommandRejected": "[Ţĥé ĝŕöûþ ðîðñ’ţ åççéþţ ţĥåţ one two three]",
+  "@listenTogetherCommandRejected": {
+    "description": "Shown when the server refused a playback command sent to the group without saying why."
+  },
+  "listenTogetherNotInGroup": "[Ñöţ åvåîļåbļé ŵĥîļé îñ å ĝŕöûþ one two three]",
+  "@listenTogetherNotInGroup": {
+    "description": "Shown when a playback control the group does not have was used."
+  },
+  "listenTogetherNotShareable": "[{count, plural, =1{1 îţém çåñ’ţ bé šĥåŕéð ŵîţĥ ţĥé ĝŕöûþ one two three four} other{{count} îţémš çåñ’ţ bé šĥåŕéð ŵîţĥ ţĥé ĝŕöûþ one two three four}}]",
+  "@listenTogetherNotShareable": {
+    "description": "Shown when episodes or tracks that cannot be shared were left out of what was added to the group's queue.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "2"
+      }
+    }
+  },
+  "listenTogetherReplaceTitle": "[Ŕéþļåçé ţĥé ĝŕöûþ’š qûéûé? one two three]",
+  "@listenTogetherReplaceTitle": {
+    "description": "Title of the dialog confirming Play replaces the queue of the Listen Together group."
+  },
+  "listenTogetherReplaceBody": "[Évéŕýöñé îñ ţĥé ĝŕöûþ ĥéåŕš ţĥîš ñéxţ. one two three four]",
+  "@listenTogetherReplaceBody": {
+    "description": "Body of the dialog confirming Play replaces the queue of the Listen Together group."
+  },
+  "listenTogetherReplaceConfirm": "[Ŕéþļåçé one]",
+  "@listenTogetherReplaceConfirm": {
+    "description": "Confirm button of the dialog that replaces the group's queue."
+  },
+  "mixOverline": "[Mîx one]",
+  "@mixOverline": {
+    "description": "Small label above the title of a generated mix's page, naming what the page shows."
+  },
+  "mixEmpty": "[Ţĥîš mîx ĥåš ñö ţŕåçķš ŕîĝĥţ ñöŵ one two three]",
+  "@mixEmpty": {
+    "description": "Shown on a generated mix's page when the mix has no tracks."
+  },
+  "mixNotAvailable": "[Ñöţ åvåîļåbļé öñ ţĥîš šéŕvéŕ one two three]",
+  "@mixNotAvailable": {
+    "description": "Shown in place of a generated mix's page when the server has generated mixes turned off."
+  },
+  "actionSaveAsPlaylist": "[Šåvé åš þļåýļîšţ one two]",
+  "@actionSaveAsPlaylist": {
+    "description": "Button on a generated mix's page that saves its tracks as a new playlist of the user."
+  },
+  "mixSaveTitle": "[Šåvé åš þļåýļîšţ one two]",
+  "@mixSaveTitle": {
+    "description": "Title of the dialog that names the playlist a generated mix is saved as."
+  },
+  "mixSaveConfirm": "[Šåvé one]",
+  "@mixSaveConfirm": {
+    "description": "Confirm button of the dialog that saves a generated mix as a playlist."
+  },
+  "mixSaved": "[Šåvéð ţö ýöûŕ þļåýļîšţš one two three]",
+  "@mixSaved": {
+    "description": "Snackbar after a generated mix was saved as a new playlist."
+  },
+  "mixSavedOpen": "[Öþéñ one]",
+  "@mixSavedOpen": {
+    "description": "Snackbar action opening the playlist a generated mix was just saved as."
+  },
+  "libraryDownloadedOnly": "[Ðöŵñļöåðéð öñļý one two]",
+  "@libraryDownloadedOnly": {
+    "description": "Filter chip above a library list: shows only what is downloaded to this device."
+  },
+  "trackNotAvailableOffline": "[Ñöţ åvåîļåbļé öffļîñé one two three]",
+  "@trackNotAvailableOffline": {
+    "description": "Tooltip and accessibility reason of a track row that has no downloaded file while the app is offline."
+  },
+  "offlineBannerGoOnline": "[Ĝö öñļîñé one]",
+  "@offlineBannerGoOnline": {
+    "description": "Action of the offline notice in the Library while offline mode is on: turns offline mode off."
+  },
+  "shellMenuOfflineMode": "[Öffļîñé möðé one two]",
+  "@shellMenuOfflineMode": {
+    "description": "Switch in the account menu: when on, the app does not contact the server and shows only what is on this device."
+  },
+  "searchResultsFromDevice": "[Ŕéšûļţš fŕöm ţĥîš ðévîçé one two three]",
+  "@searchResultsFromDevice": {
+    "description": "Label above search results while offline: the results come from what is saved on this device."
+  },
+  "windowTitleNowPlaying": "[{title} — {artist} · šöûñðšþåñ one two]",
+  "@windowTitleNowPlaying": {
+    "description": "The desktop window title while a track plays: its title and artist, followed by the application name.",
+    "placeholders": {
+      "title": {
+        "type": "String",
+        "example": "Blue in Green"
+      },
+      "artist": {
+        "type": "String",
+        "example": "Miles Davis"
+      }
+    }
+  },
+  "trayPlay": "[Þļåý one]",
+  "@trayPlay": {
+    "description": "Tray menu entry that resumes playback."
+  },
+  "trayPause": "[Þåûšé one]",
+  "@trayPause": {
+    "description": "Tray menu entry that pauses playback."
+  },
+  "trayShowWindow": "[Šĥöŵ ŵîñðöŵ one two]",
+  "@trayShowWindow": {
+    "description": "Tray menu entry that shows the app's window."
+  },
+  "trayQuit": "[Qûîţ one]",
+  "@trayQuit": {
+    "description": "Tray menu entry that quits the app."
+  },
+  "trayNowPlaying": "[{title} — {artist} one]",
+  "@trayNowPlaying": {
+    "description": "Disabled tray menu entry naming the current track and its artist.",
+    "placeholders": {
+      "title": {
+        "type": "String",
+        "example": "Blue in Green"
+      },
+      "artist": {
+        "type": "String",
+        "example": "Miles Davis"
+      }
+    }
+  },
+  "settingsCloseToTray": "[Çļöšé ţö ţŕåý one two]",
+  "@settingsCloseToTray": {
+    "description": "Switch in Settings → Desktop: closing the window hides it to the system tray and playback continues."
+  },
+  "settingsCloseToTrayUnavailable": "[Ñö šýšţém ţŕåý ŵåš föûñð one two three]",
+  "@settingsCloseToTrayUnavailable": {
+    "description": "Explanation under the disabled Close to tray switch when the desktop has no system tray."
+  },
+  "settingsUpdateCheck": "[Çĥéçķ föŕ ñéŵ véŕšîöñš one two three]",
+  "@settingsUpdateCheck": {
+    "description": "Switch in Settings → Desktop: the desktop app asks GitHub once a day whether a newer soundspan client release exists."
+  },
+  "settingsUpdateCheckCaption": "[Åšķš ĜîţĤûb föŕ ţĥé ļîšţ öf šöûñðšþåñ ŕéļéåšéš öñçé å ðåý. one two three four five]",
+  "@settingsUpdateCheckCaption": {
+    "description": "Caption under the Check for new versions switch in Settings → Desktop."
+  },
+  "updateBannerMessage": "[šöûñðšþåñ {version} îš åvåîļåbļé one two three]",
+  "@updateBannerMessage": {
+    "description": "Notice at the top of the desktop app when a newer client release exists.",
+    "placeholders": {
+      "version": {
+        "type": "String",
+        "example": "0.2.0"
+      }
+    }
+  },
+  "updateViewRelease": "[Vîéŵ ŕéļéåšé one two]",
+  "@updateViewRelease": {
+    "description": "Button of the update notice and of Settings → About that opens the newer release's page on GitHub in the browser."
+  },
+  "settingsAboutUpdateAvailable": "[Véŕšîöñ {version} îš åvåîļåbļé one two three]",
+  "@settingsAboutUpdateAvailable": {
+    "description": "Row in Settings → About when a newer client release exists.",
+    "placeholders": {
+      "version": {
+        "type": "String",
+        "example": "0.2.0"
+      }
+    }
+  },
+  "settingsAboutCheckNow": "[Çĥéçķ ñöŵ one]",
+  "@settingsAboutCheckNow": {
+    "description": "Row in Settings → About that checks at once whether a newer client release exists."
+  },
+  "closeKeepPlayingTitle": "[Ķééþ þļåýîñĝ îñ ţĥé båçķĝŕöûñð? one two three]",
+  "@closeKeepPlayingTitle": {
+    "description": "Question asked when the window is closed while something plays and the desktop has no system tray."
+  },
+  "closeKeepPlaying": "[Ķééþ þļåýîñĝ one two]",
+  "@closeKeepPlaying": {
+    "description": "Answer to the close question: minimises the window and keeps playing."
+  },
+  "closeQuit": "[Qûîţ one]",
+  "@closeQuit": {
+    "description": "Answer to the close question: quits the app."
+  },
+  "menuSettings": "[Šéţţîñĝš… one]",
+  "@menuSettings": {
+    "description": "macOS application menu item that opens Settings."
+  },
+  "menuQuit": "[Qûîţ šöûñðšþåñ one two]",
+  "@menuQuit": {
+    "description": "macOS application menu item that quits the app."
+  },
+  "menuPlayback": "[Þļåýbåçķ one]",
+  "@menuPlayback": {
+    "description": "macOS menu bar menu with the playback commands."
+  },
+  "menuView": "[Vîéŵ one]",
+  "@menuView": {
+    "description": "macOS menu bar menu that shows the queue and the lyrics."
+  },
+  "menuWindow": "[Ŵîñðöŵ one]",
+  "@menuWindow": {
+    "description": "macOS menu bar menu with the window commands."
+  },
+  "menuPlayPause": "[Þļåý/Þåûšé one]",
+  "@menuPlayPause": {
+    "description": "macOS Playback menu item that plays or pauses."
+  },
+  "menuNext": "[Ñéxţ one]",
+  "@menuNext": {
+    "description": "macOS Playback menu item that skips to the next item."
+  },
+  "menuPrevious": "[Þŕévîöûš one]",
+  "@menuPrevious": {
+    "description": "macOS Playback menu item that goes to the previous item."
+  },
+  "menuShuffle": "[Šĥûffļé one]",
+  "@menuShuffle": {
+    "description": "macOS Playback menu item that turns shuffle on or off."
+  },
+  "menuRepeat": "[Ŕéþéåţ one]",
+  "@menuRepeat": {
+    "description": "macOS Playback menu item that changes the repeat mode."
+  },
+  "menuQueue": "[Qûéûé one]",
+  "@menuQueue": {
+    "description": "macOS View menu item that shows or hides the queue."
+  },
+  "menuLyrics": "[Ļýŕîçš one]",
+  "@menuLyrics": {
+    "description": "macOS View menu item that shows or hides the lyrics."
+  },
+  "navVibe": "[Vîbé one]",
+  "@navVibe": {
+    "description": "Sidebar item and title of the Vibe screen, which finds tracks by how they sound."
+  },
+  "homeVibeCard": "[Ţŕåçķš ţĥåţ šöûñð ļîķé ŵĥåţ ýöû þļåý one two three four]",
+  "@homeVibeCard": {
+    "description": "Subtitle of the Vibe card at the end of Home."
+  },
+  "menuStartRadio": "[Šţåŕţ ŕåðîö one two]",
+  "@menuStartRadio": {
+    "description": "Track menu entry that plays tracks that sound like the chosen one."
+  },
+  "vibeNoSimilar": "[Ñö šîmîļåŕ ţŕåçķš föûñð one two three]",
+  "@vibeNoSimilar": {
+    "description": "Snackbar when Start radio found no tracks that sound like the chosen one."
+  },
+  "vibeSearchHint": "[Ðéšçŕîbé å šöûñð öŕ å mööð one two three]",
+  "@vibeSearchHint": {
+    "description": "Hint of the Vibe search field, which finds tracks by a description."
+  },
+  "vibeSearchLabel": "[Šéåŕçĥ bý ðéšçŕîþţîöñ one two three]",
+  "@vibeSearchLabel": {
+    "description": "Screen reader label of the Vibe search field."
+  },
+  "vibeSearchClear": "[Çļéåŕ one]",
+  "@vibeSearchClear": {
+    "description": "Tooltip of the button that empties the Vibe search field."
+  },
+  "vibePlayAll": "[Þļåý åļļ one]",
+  "@vibePlayAll": {
+    "description": "Button that plays every track listed on the Vibe screen."
+  },
+  "vibeSimilarTitle": "[Šîmîļåŕ ţö ŵĥåţ’š þļåýîñĝ one two three]",
+  "@vibeSimilarTitle": {
+    "description": "Title of the Vibe section listing tracks that sound like the current track."
+  },
+  "vibeNoMatches": "[Ñö måţçĥéš one]",
+  "@vibeNoMatches": {
+    "description": "Shown when a Vibe search found no tracks."
+  },
+  "vibeExplain": "[Þļåý å ţŕåçķ ţö šéé öţĥéŕš ţĥåţ šöûñð ļîķé îţ ĥéŕé. one two three four five]",
+  "@vibeExplain": {
+    "description": "Empty state of the Vibe screen while nothing with similar tracks is playing."
+  },
+  "vibeSearchUnavailable": "[Vîbé šéåŕçĥ îš ûñåvåîļåbļé ŕîĝĥţ ñöŵ one two three four]",
+  "@vibeSearchUnavailable": {
+    "description": "Shown when the server cannot search by description at the moment."
+  }
+}

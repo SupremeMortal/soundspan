@@ -33,6 +33,19 @@ jest.mock("../../playback/playbackStreamInfo", () => ({
 
 import { PlaybackResolutionError } from "../../playback/resolvePlayback";
 import { OfflineItemsError, resolveOfflineItems } from "../resolveOfflineItems";
+import { expectClientSurfaceResponse } from "../../../routes/__tests__/helpers/expectClientSurfaceResponse";
+
+/** Wraps resolved items in the 200 body of `requestOfflineItems`. */
+function expectValidItemsBody(out: {
+    items: unknown[];
+    estimatedTotalBytes: number;
+}): void {
+    expectClientSurfaceResponse("requestOfflineItems", 200, {
+        ...out,
+        cacheLimitBytes: 0,
+        cacheUsedBytes: 0,
+    });
+}
 
 const SIZES: Record<string, number | null> = {
     "t.local1": 1000,
@@ -114,7 +127,8 @@ describe("resolveOfflineItems", () => {
                 {
                     playbackId: "t.local1",
                     downloadable: true,
-                    downloadUrl: "/api/playback/stream/t.local1?quality=medium",
+                    downloadUrl:
+                        "/api/playback/stream/t.local1?quality=medium&report=0",
                     expectedSize: 1000,
                     quality: "medium",
                     contentType: "audio/mpeg",
@@ -151,13 +165,32 @@ describe("resolveOfflineItems", () => {
             expect(out.items.find((i) => i.playbackId === id)).toEqual({
                 playbackId: id,
                 downloadable: true,
-                downloadUrl: `/api/playback/stream/${id}?quality=medium`,
+                downloadUrl: `/api/playback/stream/${id}?quality=medium&report=0`,
                 expectedSize: SIZES[id],
                 quality: "medium",
                 contentType: "audio/mpeg",
             });
         }
         expect(out.estimatedTotalBytes).toBe(1000 + 2000 + 3000 + 4000);
+    });
+
+    it("marks every downloadUrl report=0 so downloads record no play", async () => {
+        mockAlbumFindFirst.mockResolvedValue(mixedAlbum());
+        const out = await resolveOfflineItems({
+            userId: "u1",
+            kind: "album",
+            id: "alb1",
+            quality: "low",
+        });
+        const downloadable = out.items.filter((i) => i.downloadable);
+        expect(downloadable).toHaveLength(4);
+        for (const item of downloadable) {
+            if (!item.downloadable) throw new Error("unreachable");
+            const url = new URL(item.downloadUrl, "http://server");
+            expect(item.downloadUrl.endsWith("&report=0")).toBe(true);
+            expect(url.searchParams.get("report")).toBe("0");
+            expect(url.searchParams.get("quality")).toBe(item.quality);
+        }
     });
 
     it("honours a policy block for one item", async () => {
@@ -190,7 +223,8 @@ describe("resolveOfflineItems", () => {
                 {
                     playbackId: "yt.vid2",
                     downloadable: true,
-                    downloadUrl: "/api/playback/stream/yt.vid2?quality=medium",
+                    downloadUrl:
+                        "/api/playback/stream/yt.vid2?quality=medium&report=0",
                     expectedSize: null,
                     quality: "medium",
                     contentType: "audio/mpeg",
@@ -240,7 +274,7 @@ describe("resolveOfflineItems", () => {
         expect(out.items[0]).toMatchObject({
             downloadable: true,
             quality: "low",
-            downloadUrl: "/api/playback/stream/t.local1?quality=low",
+            downloadUrl: "/api/playback/stream/t.local1?quality=low&report=0",
         });
     });
 
@@ -298,6 +332,44 @@ describe("resolveOfflineItems", () => {
         await expect(
             resolveOfflineItems({ userId: "u1", kind: "playlist", id: "x" }),
         ).rejects.toBeInstanceOf(OfflineItemsError);
+    });
+
+    it.each([
+        "SOURCE_DOWNLOADS_DISABLED",
+        "TRACK_UNAVAILABLE",
+        "SOURCE_UNAVAILABLE",
+    ])(
+        "answers a %s block that validates as an offline item",
+        async (reason) => {
+            mockPolicy.mockResolvedValue({ downloadable: false, reason });
+            const out = await resolveOfflineItems({
+                userId: "u1",
+                kind: "track",
+                id: "t.local1",
+            });
+            expect(out.items).toEqual([
+                { playbackId: "t.local1", downloadable: false, reason },
+            ]);
+            expectValidItemsBody(out);
+        },
+    );
+
+    it("answers downloadable items with and without a size that validate", async () => {
+        mockAlbumFindFirst.mockResolvedValue(mixedAlbum());
+        const out = await resolveOfflineItems({
+            userId: "u1",
+            kind: "album",
+            id: "alb1",
+        });
+        expect(out.items.every((entry) => entry.downloadable)).toBe(true);
+        expectValidItemsBody(out);
+        const single = await resolveOfflineItems({
+            userId: "u1",
+            kind: "track",
+            id: "yt.vid2",
+        });
+        expect(single.items[0]).toMatchObject({ expectedSize: null });
+        expectValidItemsBody(single);
     });
 
     it("marks items unavailable when resolution or stream info fails", async () => {

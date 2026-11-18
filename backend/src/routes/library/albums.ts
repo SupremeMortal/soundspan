@@ -24,6 +24,7 @@ import {
     formatAlbumPreferenceResponse,
     formatTrackPreferenceResponse,
     hasConnectedProviderToken,
+    loadAlbumPreferenceStatesForUser,
     toLikedResponseTrack,
 } from "../../services/libraryTrackPreferences";
 import {
@@ -84,83 +85,6 @@ export const albumsPreferenceRouter = Router();
  * Router segment for albums routes registered at this position.
  */
 export const albumsDeletionRouter = Router();
-/**
- * @openapi
- * /api/library/albums:
- *   get:
- *     summary: List albums in the library with pagination and filtering
- *     tags: [Library]
- *     security:
- *       - apiKeyAuth: []
- *     parameters:
- *       - in: query
- *         name: artistId
- *         schema:
- *           type: string
- *         description: Filter by artist ID
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *           default: 500
- *         description: Number of albums to return
- *       - in: query
- *         name: offset
- *         schema:
- *           type: integer
- *           default: 0
- *         description: Offset for pagination
- *       - in: query
- *         name: filter
- *         schema:
- *           type: string
- *           enum: [owned, discovery, all]
- *           default: owned
- *         description: Filter by ownership type
- *       - in: query
- *         name: origin
- *         schema:
- *           type: string
- *           enum: [all, local, peers, remote]
- *           default: all
- *         description: Filter albums by local or federated track origin; remote is your liked TIDAL / YouTube Music tracks that are not in the library
- *       - in: query
- *         name: sortBy
- *         schema:
- *           type: string
- *           enum: [name, name-desc, recent]
- *           default: name
- *         description: Sort order
- *     responses:
- *       200:
- *         description: Paginated list of albums
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 albums:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       source:
- *                         type: string
- *                         enum: [local, federated, remote]
- *                       remoteSources:
- *                         type: array
- *                         items:
- *                           type: string
- *                           enum: [tidal, youtube]
- *                 total:
- *                   type: integer
- *                 offset:
- *                   type: integer
- *                 limit:
- *                   type: integer
- *       401:
- *         description: Not authenticated
- */
 // GET /library/albums?artistId=&limit=&offset=&filter=owned|discovery|all
 /**
  * Handles GET /api/library/albums.
@@ -268,31 +192,44 @@ export async function handleGetAlbums(req: Request, res: Response) {
             prisma.album.count({ where }),
         ]);
 
+        const surfaceAlbums = albumsData.filter((album) =>
+            isLibrarySurfaceAlbumLocation(album.location),
+        );
+        const userId = req.user?.id;
+        const preferences = userId
+            ? await loadAlbumPreferenceStatesForUser(
+                  userId,
+                  surfaceAlbums.map((album) => album.id),
+              )
+            : null;
+
         // Normalize coverArt field for frontend
-        const albums = albumsData
-            .filter((album) => isLibrarySurfaceAlbumLocation(album.location))
-            .map(({ federationPeer, ...album }) => {
-                const remoteSources = remoteLibrary?.byAlbumId.get(album.id);
-                return {
-                    ...album,
-                    source:
-                        album.location === "FEDERATED"
-                            ? "federated"
-                            : album.location === "REMOTE" && remoteSources
-                              ? "remote"
-                              : "local",
-                    ...(remoteSources ? { remoteSources } : {}),
-                    peer: federationPeer
-                        ? {
-                              id: federationPeer.id,
-                              name: federationPeer.name,
-                              online:
-                                  federationPeer.outboundStatus === "ACTIVE",
-                          }
-                        : undefined,
-                    coverArt: album.coverUrl,
-                };
-            });
+        const albums = surfaceAlbums.map(({ federationPeer, ...album }) => {
+            const remoteSources = remoteLibrary?.byAlbumId.get(album.id);
+            return {
+                ...album,
+                ...(preferences
+                    ? {
+                          preference: preferences.get(album.id) ?? "neutral",
+                      }
+                    : {}),
+                source:
+                    album.location === "FEDERATED"
+                        ? "federated"
+                        : album.location === "REMOTE" && remoteSources
+                          ? "remote"
+                          : "local",
+                ...(remoteSources ? { remoteSources } : {}),
+                peer: federationPeer
+                    ? {
+                          id: federationPeer.id,
+                          name: federationPeer.name,
+                          online: federationPeer.outboundStatus === "ACTIVE",
+                      }
+                    : undefined,
+                coverArt: album.coverUrl,
+            };
+        });
 
         res.json({
             albums,
@@ -311,56 +248,6 @@ export async function handleGetAlbums(req: Request, res: Response) {
 
 albumsBrowseRouter.get("/albums", handleGetAlbums);
 
-/**
- * @openapi
- * /api/library/albums/{id}:
- *   get:
- *     summary: Get album details with tracks
- *     tags: [Library]
- *     security:
- *       - apiKeyAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: Album ID or release group MBID
- *       - in: query
- *         name: includeTracks
- *         schema:
- *           type: boolean
- *           default: true
- *         description: Include track listing
- *     responses:
- *       200:
- *         description: Album details with tracks and ownership info
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               description: Album record with tracks, owned state, source, and cover; only streaming-match fields are listed below.
- *               properties:
- *                 tracks:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       playbackId:
- *                         type: string
- *                         description: "Opaque track identifier. Do not parse."
- *                 matchedRgMbid:
- *                   type: string
- *                   nullable: true
- *                   description: MusicBrainz release group matched for a streaming-only album
- *                 matchedInLibrary:
- *                   type: boolean
- *                   description: The library already holds the matched release group
- *       404:
- *         description: Album not found
- *       401:
- *         description: Not authenticated
- */
 // GET /library/albums/:id
 async function findAlbumWithoutTracks(where: Prisma.AlbumWhereInput) {
     return prisma.album.findFirst({
@@ -464,6 +351,12 @@ export async function handleGetAlbum(req: AlbumDetailRequest, res: Response) {
         return sendRouteError(res, 404, "Album not found");
     }
     const { owned, matchedInLibrary } = await loadAlbumLibraryState(album);
+    const userId = req.user?.id;
+    const preference = userId
+        ? ((await loadAlbumPreferenceStatesForUser(userId, [album.id])).get(
+              album.id,
+          ) ?? "neutral")
+        : undefined;
     const publicFields = publicAlbumFields(albumWithTracks, albumWithoutTracks);
     if (!publicFields) {
         return sendRouteError(res, 404, "Album not found");
@@ -484,48 +377,12 @@ export async function handleGetAlbum(req: AlbumDetailRequest, res: Response) {
         owned,
         matchedInLibrary,
         coverArt: album.coverUrl,
+        ...(preference ? { preference } : {}),
     });
 }
 
 albumsBrowseRouter.get("/albums/:id", asyncHandler(handleGetAlbum));
 
-/**
- * @openapi
- * /api/library/albums/{id}/preference:
- *   post:
- *     summary: Set preference (like/dislike) for all tracks in an album
- *     tags: [Library]
- *     security:
- *       - apiKeyAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: Album ID or release group MBID
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               signal:
- *                 type: string
- *                 enum: [thumbs_up, thumbs_down, clear]
- *     responses:
- *       200:
- *         description: Album preference set successfully
- *       400:
- *         description: Invalid preference signal
- *       404:
- *         description: Album not found
- *       422:
- *         description: Album contains no local tracks
- *       401:
- *         description: Not authenticated
- */
 // POST /library/albums/:id/preference
 async function findAlbumLocalTrackIds(
     requestedAlbumId: string,

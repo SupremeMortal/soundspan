@@ -10,10 +10,15 @@ jest.mock("../tidalStreaming", () => ({
         isAvailable: jest.fn(),
         getAuthStatus: jest.fn(),
         search: jest.fn(),
+        findMatchesForAlbum: jest.fn(),
     },
 }));
 jest.mock("../youtubeMusic", () => ({
-    ytMusicService: { isAvailable: jest.fn(), searchCanonical: jest.fn() },
+    ytMusicService: {
+        isAvailable: jest.fn(),
+        searchCanonical: jest.fn(),
+        findMatchesForAlbum: jest.fn(),
+    },
 }));
 jest.mock("../../utils/systemSettings", () => ({
     getSystemSettings: jest.fn(),
@@ -115,6 +120,37 @@ describe("mergeDiscoverProviderResults", () => {
         );
 
         expect(merged.artists.map((a) => a.name)).toEqual(["A", "B"]);
+    });
+
+    it("keeps a dropped duplicate's playable id on the row that stays", () => {
+        const merged = mergeDiscoverProviderResults(
+            [
+                {
+                    provider: "lastfm",
+                    artists: [],
+                    tracks: [track("lastfm", "Daft Punk", "One More Time")],
+                },
+                {
+                    provider: "tidal",
+                    artists: [],
+                    tracks: [
+                        {
+                            ...track("tidal", "Daft Punk", "One More Time"),
+                            tidalTrackId: 123,
+                            playbackId: "td.123",
+                        },
+                    ],
+                },
+            ],
+            10,
+        );
+
+        expect(merged.tracks).toEqual([
+            expect.objectContaining({
+                id: "lastfm:Daft Punk:One More Time",
+                playbackId: "td.123",
+            }),
+        ]);
     });
 });
 
@@ -240,6 +276,104 @@ describe("searchDiscoverMusic", () => {
             "daft",
             "songs",
         );
+    });
+});
+
+describe("searchDiscoverMusic streaming matches", () => {
+    beforeEach(() => jest.clearAllMocks());
+
+    it("makes catalog songs playable from TIDAL first, then YouTube Music", async () => {
+        (lastFmService.searchArtists as jest.Mock).mockResolvedValue([]);
+        (lastFmService.searchTracks as jest.Mock).mockResolvedValue([
+            {
+                type: "track",
+                id: "a",
+                name: "One More Time",
+                artist: "Daft Punk",
+            },
+            {
+                type: "track",
+                id: "b",
+                name: "Rare B-Side",
+                artist: "Daft Punk",
+            },
+            { type: "track", id: "c", name: "Unfindable", artist: "Nobody" },
+        ]);
+        (
+            tidalStreamingService.findMatchesForAlbum as jest.Mock
+        ).mockResolvedValue([
+            {
+                id: 123,
+                title: "One More Time",
+                artist: "Daft Punk",
+                duration: 320,
+            },
+            null,
+            null,
+        ]);
+        (ytMusicService.findMatchesForAlbum as jest.Mock).mockResolvedValue([
+            { videoId: "vid-b", title: "Rare B-Side", duration: 200 },
+            null,
+        ]);
+
+        const result = await searchDiscoverMusic({
+            query: "daft",
+            limit: 10,
+            userId: "user-1",
+            providers: ["lastfm"],
+            playableProviders: ["tidal", "youtube"],
+        });
+
+        expect(result.tracks.map((t) => t.playbackId)).toEqual([
+            "td.123",
+            "ym.vid-b",
+            undefined,
+        ]);
+        expect(tidalStreamingService.findMatchesForAlbum).toHaveBeenCalledWith(
+            "user-1",
+            [
+                { artist: "Daft Punk", title: "One More Time" },
+                { artist: "Daft Punk", title: "Rare B-Side" },
+                { artist: "Nobody", title: "Unfindable" },
+            ],
+        );
+        expect(ytMusicService.findMatchesForAlbum).toHaveBeenCalledWith(
+            "user-1",
+            [
+                { artist: "Daft Punk", title: "Rare B-Side" },
+                { artist: "Nobody", title: "Unfindable" },
+            ],
+        );
+    });
+
+    it("leaves songs unplayable when matching fails or no provider can stream", async () => {
+        (lastFmService.searchArtists as jest.Mock).mockResolvedValue([]);
+        (lastFmService.searchTracks as jest.Mock).mockResolvedValue([
+            { type: "track", id: "a", name: "Song", artist: "Band" },
+        ]);
+        (ytMusicService.findMatchesForAlbum as jest.Mock).mockRejectedValue(
+            new Error("sidecar down"),
+        );
+
+        const failed = await searchDiscoverMusic({
+            query: "song",
+            limit: 10,
+            userId: "user-1",
+            providers: ["lastfm"],
+            playableProviders: ["youtube"],
+        });
+        const none = await searchDiscoverMusic({
+            query: "song",
+            limit: 10,
+            userId: "user-1",
+            providers: ["lastfm"],
+        });
+
+        expect(failed.tracks[0].playbackId).toBeUndefined();
+        expect(none.tracks[0].playbackId).toBeUndefined();
+        expect(
+            tidalStreamingService.findMatchesForAlbum,
+        ).not.toHaveBeenCalled();
     });
 });
 

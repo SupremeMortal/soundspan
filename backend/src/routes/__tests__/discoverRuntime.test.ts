@@ -102,6 +102,7 @@ import router from "../discover";
 import { prisma as dbPrisma } from "../../utils/db";
 import { lastFmService } from "../../services/lastfm";
 import { discoveryRecommendationsService } from "../../services/discovery";
+import { withClientSurfaceValidation } from "./helpers/expectClientSurfaceResponse";
 
 const mockUserDiscoverConfigUpsert = dbPrisma.userDiscoverConfig
     .upsert as jest.Mock;
@@ -120,6 +121,8 @@ const mockDiscoverExclusionDelete = dbPrisma.discoverExclusion
 const mockGetTopChartArtists = lastFmService.getTopChartArtists as jest.Mock;
 const mockClearCurrentPlaylist =
     discoveryRecommendationsService.clearCurrentPlaylist as jest.Mock;
+const mockGetCurrentPlaylist =
+    discoveryRecommendationsService.getCurrentPlaylist as jest.Mock;
 
 function getRouteHandler(
     path: string,
@@ -154,7 +157,14 @@ function createRes() {
 describe("discover route runtime behavior", () => {
     const configPatchHandler = getRouteHandler("/config", "patch");
     const configGetHandler = getRouteHandler("/config", "get");
-    const popularArtistsHandler = getRouteHandler("/popular-artists", "get");
+    const popularArtistsHandler = withClientSurfaceValidation(
+        "listPopularArtists",
+        getRouteHandler("/popular-artists", "get"),
+    );
+    const currentHandler = withClientSurfaceValidation(
+        "getCurrentDiscover",
+        getRouteHandler("/current", "get"),
+    );
     const clearHandler = getRouteHandler("/clear", "delete");
     const batchStatusHandler = getRouteHandler("/batch-status", "get");
     const generateHandler = getRouteHandler("/generate", "post");
@@ -280,10 +290,29 @@ describe("discover route runtime behavior", () => {
     });
 
     it("returns popular artists from Last.fm on success", async () => {
-        mockGetTopChartArtists.mockResolvedValueOnce([
-            { name: "Artist One" },
-            { name: "Artist Two" },
-        ]);
+        const artists = [
+            {
+                type: "music",
+                id: "mbid-1",
+                name: "Artist One",
+                listeners: 1200,
+                playCount: 34000,
+                url: "https://www.last.fm/music/Artist+One",
+                image: "https://images.example/one.jpg",
+                mbid: "mbid-1",
+            },
+            {
+                type: "music",
+                id: "Artist Two",
+                name: "Artist Two",
+                listeners: 900,
+                playCount: 12000,
+                url: "https://www.last.fm/music/Artist+Two",
+                image: null,
+                mbid: "",
+            },
+        ];
+        mockGetTopChartArtists.mockResolvedValueOnce(artists);
 
         const req = { query: { limit: "2" } } as any;
         const res = createRes();
@@ -292,8 +321,77 @@ describe("discover route runtime behavior", () => {
 
         expect(mockGetTopChartArtists).toHaveBeenCalledWith(2);
         expect(res.statusCode).toBe(200);
+        expect(res.body).toEqual({ artists });
+    });
+
+    it("returns the current week's Discover playlist with its tracks", async () => {
+        const playlist = {
+            weekStart: new Date("2026-11-09T00:00:00.000Z"),
+            weekEnd: new Date("2026-11-15T23:59:59.999Z"),
+            tracks: [
+                {
+                    id: "t-1",
+                    title: "Track One",
+                    artist: "Artist One",
+                    album: "Album One",
+                    albumId: "rg-1",
+                    isLiked: false,
+                    likedAt: null,
+                    similarity: 0.72,
+                    tier: "high",
+                    coverUrl: "native:albums/al-1.jpg",
+                    available: true,
+                    duration: 215,
+                    sourceType: "local",
+                    loudnessLufs: -9.1,
+                    truePeakDb: -0.4,
+                    albumLoudnessLufs: null,
+                    albumTruePeakDb: null,
+                    playbackId: "pb-t-1",
+                },
+            ],
+            unavailable: [],
+            totalCount: 1,
+            unavailableCount: 0,
+        };
+        mockGetCurrentPlaylist.mockResolvedValueOnce(playlist);
+
+        const req = { user: { id: "user-1" }, query: {} } as any;
+        const res = createRes();
+        await currentHandler(req, res);
+
+        expect(mockGetCurrentPlaylist).toHaveBeenCalledWith("user-1");
+        expect(res.statusCode).toBe(200);
+        expect(res.body.tracks).toHaveLength(1);
+        expect(res.body.tracks[0].playbackId).toBe("pb-t-1");
+    });
+
+    it("returns an empty current playlist before the week's playlist exists", async () => {
+        mockGetCurrentPlaylist.mockResolvedValueOnce({
+            weekStart: new Date("2026-11-09T00:00:00.000Z"),
+            weekEnd: new Date("2026-11-15T23:59:59.999Z"),
+            tracks: [],
+            unavailable: [],
+            totalCount: 0,
+            unavailableCount: 0,
+        });
+
+        const res = createRes();
+        await currentHandler({ user: { id: "user-1" }, query: {} } as any, res);
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.totalCount).toBe(0);
+    });
+
+    it("answers 500 when the current playlist cannot be loaded", async () => {
+        mockGetCurrentPlaylist.mockRejectedValueOnce(new Error("db down"));
+
+        const res = createRes();
+        await currentHandler({ user: { id: "user-1" }, query: {} } as any, res);
+
+        expect(res.statusCode).toBe(500);
         expect(res.body).toEqual({
-            artists: [{ name: "Artist One" }, { name: "Artist Two" }],
+            error: "Failed to get Discover Weekly playlist",
         });
     });
 

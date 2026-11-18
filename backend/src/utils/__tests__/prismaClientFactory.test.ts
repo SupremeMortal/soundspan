@@ -71,6 +71,29 @@ describe("createPrismaClient", () => {
         ).toBe("tenant");
     });
 
+    it("builds the URL from POSTGRES_* components when DATABASE_URL is empty", async () => {
+        const originalEnv = process.env;
+        process.env = {
+            ...originalEnv,
+            DATABASE_URL: "",
+            POSTGRES_HOST: "postgres",
+            POSTGRES_PORT: "5432",
+            POSTGRES_USER: "soundspan",
+            POSTGRES_PASSWORD: "p@ss word",
+            POSTGRES_DB: "soundspan",
+        };
+        try {
+            const { poolOptions } = await poolOptionsFor({});
+            expect(
+                (poolOptions as { connectionString?: string }).connectionString,
+            ).toBe(
+                "postgresql://soundspan:p%40ss%20word@postgres:5432/soundspan",
+            );
+        } finally {
+            process.env = originalEnv;
+        }
+    });
+
     it("rejects invalid pool bounds", () => {
         expect(() => createPrismaClient({ connectionLimit: 0 })).toThrow(
             "connectionLimit must be >= 1",

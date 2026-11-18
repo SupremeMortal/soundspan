@@ -1,0 +1,972 @@
+name: Client Quality
+
+on:
+  pull_request:
+    paths:
+      - "client/**"
+      - "backend/src/routes/**"
+      - "backend/src/openapi/**"
+      - ".github/workflows/client-*.yml"
+      - ".github/actions/client-flutter/**"
+      - "scripts/ci/client-nightly-report.mjs"
+      - "scripts/ci/__tests__/client-nightly-report.test.mjs"
+      - "CHANGELOG.md"
+  push:
+    branches: [main]
+    paths:
+      - "client/**"
+      - ".github/workflows/client-*.yml"
+      - ".github/actions/client-flutter/**"
+  # A manual run on main also refreshes the bleeding pre-release.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  changes:
+    name: Client changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      client: ${{ steps.diff.outputs.client }}
+      apple: ${{ steps.diff.outputs.apple }}
+      api_surface: ${{ steps.diff.outputs.api_surface }}
+      contract: ${{ steps.diff.outputs.contract }}
+      web_storage: ${{ steps.diff.outputs.web_storage }}
+      desktop: ${{ steps.diff.outputs.desktop }}
+      device: ${{ steps.diff.outputs.device }}
+      device_suites: ${{ steps.diff.outputs.device_suites }}
+      workflows: ${{ steps.diff.outputs.workflows }}
+      downloads: ${{ steps.diff.outputs.downloads }}
+      release_build: ${{ steps.diff.outputs.release_build }}
+      release_notes: ${{ steps.diff.outputs.release_notes }}
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Compute changed areas
+        id: diff
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          set -euo pipefail
+          if [[ "$EVENT_NAME" != "pull_request" ]]; then
+            {
+              echo "client=true"
+              echo "apple=true"
+              echo "api_surface=true"
+              echo "contract=true"
+              echo "web_storage=true"
+              echo "desktop=true"
+              echo "device=true"
+              echo "device_suites=all"
+              echo "workflows=true"
+              echo "downloads=true"
+              echo "release_build=true"
+              echo "release_notes=true"
+            } >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # Diff against the merge base with the base branch, not the previous
+          # push, so a job that failed earlier cannot be skipped later.
+          git fetch --no-tags origin "$BASE_REF"
+          base="$(git merge-base "origin/$BASE_REF" HEAD)"
+          changed="$(git diff --name-only "$base" HEAD)"
+          printf 'Changed files:\n%s\n' "$changed"
+          has() { grep -Eq "$1" <<< "$changed" && echo true || echo false; }
+          device="$(has '^(client/lib/core/playback/engines/|client/integration_test/|client/lib/platform/player_engine/|client/lib/core/playback/media_controls/|client/lib/platform/media_controls/|client/android/|client/ios/|client/windows/|client/packages/soundspan_smtc/|\.github/workflows/client-device-tests\.yml$)')"
+          desktop_integration="$(has '^(client/integration_test/desktop/|client/lib/app/|client/lib/platform/|client/linux/|client/windows/|client/macos/|client/pubspec\.lock$|\.github/workflows/client-device-tests\.yml$)')"
+          perf="$(has '^(client/integration_test/perf_scroll_test\.dart$|client/test_driver/perf_driver\.dart$|client/lib/shared/widgets/|client/lib/features/library/|client/lib/app/|client/tool/perf/|client/pubspec\.lock$|\.github/workflows/client-device-tests\.yml$)')"
+          patrol="$(has '^(client/integration_test/patrol/|client/android/|client/lib/core/playback/|client/lib/core/downloads/|client/lib/platform/downloader/|client/lib/features/connect/|client/pubspec\.lock$|\.github/workflows/client-device-tests\.yml$)')"
+          {
+            echo "client=$(has '^(client/|\.github/workflows/client-[^/]*\.yml$|\.github/actions/client-flutter/)')"
+            echo "apple=$(has '^(client/ios/|client/macos/|client/pubspec\.lock$|client/lib/platform/|\.github/workflows/client-quality\.yml$|\.github/actions/client-flutter/)')"
+            echo "api_surface=$(has '^(client/packages/soundspan_api/|client/tool/specs/|client/tool/spec_compat\.dart$|backend/src/routes/|backend/src/openapi/|\.github/workflows/client-quality\.yml$)')"
+            echo "contract=$(has '^(client/packages/soundspan_api/|client/tool/specs/|client/tool/spec_compat\.dart$|client/contract_test/|client/lib/core/realtime/|backend/src/routes/|backend/src/openapi/|\.github/workflows/client-quality\.yml$)')"
+            echo "web_storage=$(has '^(client/lib/platform/|client/web/|client/integration_test/web/|client/pubspec\.lock$|\.github/workflows/client-quality\.yml$)')"
+            echo "desktop=$(has '^(client/linux/|client/windows/|client/lib/platform/desktop_shell/|client/lib/app/shell/window_state_controller\.dart$|client/integration_test/desktop/|client/tool/ci/|\.github/workflows/client-quality\.yml$)')"
+            echo "device=$device"
+            echo "workflows=$(has '^(\.github/workflows/client-[^/]*\.yml$|scripts/ci/client-nightly-report\.mjs$|scripts/ci/__tests__/client-nightly-report\.test\.mjs$|scripts/ci/ensure-ubuntu-apt-sources\.sh$|scripts/ci/__tests__/ensure-ubuntu-apt-sources\.test\.mjs$|\.github/actions/client-flutter/)')"
+            echo "downloads=$(has '^(client/lib/platform/downloader/|client/lib/core/downloads/|client/integration_test/downloads/|client/integration_test/support/throttled_file_server\.dart$|\.github/workflows/client-quality\.yml$)')"
+            echo "release_build=$(has '^(\.github/workflows/client-(build|release)\.yml$|client/tool/release/|client/pubspec\.(yaml|lock)$|client/config/|client/(android|docker|ios|linux|macos|windows|web)/)')"
+            echo "release_notes=$(has '^(\.github/workflows/client-(build|release)\.yml$|client/tool/release/|client/pubspec\.(yaml|lock)$|client/config/|client/(android|docker|ios|linux|macos|windows|web)/|CHANGELOG\.md$)')"
+          } | tee -a "$GITHUB_OUTPUT"
+          # The job groups of client-device-tests.yml, separated by spaces:
+          # the engine suite when `device` is true, the desktop suite when the
+          # desktop app paths changed, the patrol suite when the Patrol
+          # paths changed, and the perf suite when the scroll test, the
+          # widgets and screens it measures or the perf tools changed;
+          # `none` when there is none.
+          suites=""
+          [[ "$device" == true ]] && suites+=" engine"
+          [[ "$desktop_integration" == true ]] && suites+=" desktop"
+          [[ "$patrol" == true ]] && suites+=" patrol"
+          [[ "$perf" == true ]] && suites+=" perf"
+          suites="${suites# }"
+          echo "device_suites=${suites:-none}" | tee -a "$GITHUB_OUTPUT"
+
+      - name: Read the client version
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(sed -n 's/^version: *\([^+[:space:]]*\).*$/\1/p' client/pubspec.yaml)"
+          test -n "$version"
+          echo "version=$version" | tee -a "$GITHUB_OUTPUT"
+
+  client-analyze:
+    name: client-analyze
+    needs: changes
+    if: needs.changes.outputs.client == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Flutter
+        uses: ./.github/actions/client-flutter
+
+      - name: Format
+        working-directory: client
+        run: dart format --output=none --set-exit-if-changed .
+
+      - name: Analyze client
+        working-directory: client
+        run: flutter analyze --fatal-infos
+
+      - name: Layering and platform imports
+        working-directory: client
+        run: dart run tool/check_imports.dart
+
+      - name: No hard-coded UI strings
+        working-directory: client
+        run: dart run tool/check_l10n.dart
+
+      - name: Platform configuration
+        working-directory: client
+        run: dart run tool/check_platform_config.dart
+
+      - name: Dependency and font licences
+        working-directory: client
+        run: dart run tool/license_audit.dart
+
+      - name: Icons are current
+        working-directory: client
+        run: dart run tool/gen_icons.dart --check
+
+      - name: Analyze soundspan_api
+        working-directory: client/packages/soundspan_api
+        run: dart analyze --fatal-infos
+
+      - name: Analyze contract_test
+        working-directory: client/contract_test
+        run: dart analyze --fatal-infos
+
+  # Code generation is the slowest check, so it runs beside client-analyze
+  # instead of inside it.
+  client-generated:
+    name: client-generated
+    needs: changes
+    if: needs.changes.outputs.client == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Flutter
+        uses: ./.github/actions/client-flutter
+
+      - name: Generated code is current
+        working-directory: client
+        run: |
+          tool/gen.sh
+          git diff --exit-code -- .
+
+  # The client's unit and widget tests in shards; client-test merges their
+  # coverage and applies the floor.
+  client-test-shard:
+    name: client-test-shard (${{ matrix.shard }})
+    needs: changes
+    if: needs.changes.outputs.client == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2]
+    env:
+      SHARDS: 3
+      SHARD: ${{ matrix.shard }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Flutter
+        uses: ./.github/actions/client-flutter
+
+      - name: Setup Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+
+      - name: Install the socket test server
+        run: npm ci --prefix client/test/support/socket_server
+
+      - name: Test soundspan_api with coverage
+        if: matrix.shard == 0
+        working-directory: client/packages/soundspan_api
+        run: dart test --coverage-path=coverage/lcov.info
+
+      # Whole files per shard, so each shard compiles only its own files.
+      - name: Test client with coverage
+        working-directory: client
+        run: |
+          set -euo pipefail
+          mapfile -t files < <(tool/ci/test_shard.sh "$SHARDS" "$SHARD")
+          echo "Shard $SHARD of $SHARDS: ${#files[@]} test files"
+          flutter test --coverage --exclude-tags golden,contract,engine "${files[@]}"
+
+      - name: Test contract_test without a server
+        if: matrix.shard == 0
+        working-directory: client/contract_test
+        run: dart test --exclude-tags contract,contract-destructive
+
+      - name: Collect coverage
+        run: |
+          mkdir -p "$RUNNER_TEMP/coverage"
+          cp client/coverage/lcov.info "$RUNNER_TEMP/coverage/app-$SHARD.lcov"
+          if [ -f client/packages/soundspan_api/coverage/lcov.info ]; then
+            cp client/packages/soundspan_api/coverage/lcov.info "$RUNNER_TEMP/coverage/api.lcov"
+          fi
+
+      - name: Upload coverage
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: client-test-coverage-${{ matrix.shard }}
+          path: ${{ runner.temp }}/coverage/*
+          if-no-files-found: error
+          retention-days: 1
+
+  # Keeps the client-test check name. It runs after a failed shard too, so a
+  # failed shard fails this check instead of skipping it.
+  client-test:
+    name: client-test
+    needs: [changes, client-test-shard]
+    if: ${{ !cancelled() && needs.changes.outputs.client == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Every shard passed
+        env:
+          SHARDS_RESULT: ${{ needs.client-test-shard.result }}
+        run: |
+          echo "client-test-shard: $SHARDS_RESULT"
+          test "$SHARDS_RESULT" = success
+
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Flutter
+        uses: ./.github/actions/client-flutter
+
+      - name: Download coverage
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: client-test-coverage-*
+          path: ${{ runner.temp }}/coverage
+          merge-multiple: true
+
+      - name: Merge coverage
+        run: |
+          set -euo pipefail
+          mkdir -p client/coverage client/packages/soundspan_api/coverage
+          cat "$RUNNER_TEMP"/coverage/app-*.lcov > client/coverage/lcov.info
+          cp "$RUNNER_TEMP/coverage/api.lcov" client/packages/soundspan_api/coverage/lcov.info
+
+      - name: Coverage floor
+        working-directory: client
+        run: dart run tool/coverage_floor.dart
+
+  client-spec:
+    name: client-spec
+    needs: changes
+    if: needs.changes.outputs.api_surface == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+          cache: "npm"
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install and build media metadata contract
+        working-directory: packages/media-metadata-contract
+        run: |
+          npm ci
+          npm run build
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Generate Prisma client
+        working-directory: backend
+        run: npx prisma generate
+
+      - name: Emit the client-surface spec
+        run: npm --prefix backend run openapi:emit-client
+
+      - name: Committed spec is current
+        run: git diff --exit-code -- client/packages/soundspan_api/openapi
+
+      - name: Set up Flutter
+        uses: ./.github/actions/client-flutter
+
+      - name: Spec is compatible with minServer
+        working-directory: client
+        run: dart run tool/spec_compat.dart
+
+  # The contract suite against the backend of this commit
+  # (client-contract.yml); client-nightly.yml calls it over the version
+  # matrix.
+  client-contract:
+    name: client-contract
+    needs: changes
+    if: needs.changes.outputs.contract == 'true'
+    uses: ./.github/workflows/client-contract.yml
+
+  client-downloads-integration:
+    name: client-downloads-integration
+    needs: changes
+    if: needs.changes.outputs.downloads == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # The composite action apt-installs the Linux build packages of doc 01.
+      - name: Set up Flutter
+        uses: ./.github/actions/client-flutter
+
+      - name: Setup Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+
+      # The plugin's task store lives under the XDG documents directory,
+      # which path_provider resolves with xdg-user-dir.
+      - name: Install ffmpeg, Xvfb and xdg-user-dirs
+        run: |
+          sudo apt-get install -y --no-install-recommends \
+            ffmpeg xvfb xdg-user-dirs
+
+      - name: Generate the fixture library
+        working-directory: client/contract_test
+        run: fixtures/generate.sh
+
+      - name: Start the contract server
+        working-directory: client/contract_test
+        run: docker compose -f compose.yaml up -d --build --wait
+
+      - name: Seed the contract server
+        working-directory: client/contract_test
+        run: node seed.ts
+
+      - name: Downloader integration test
+        working-directory: client
+        run: |
+          xvfb-run -a flutter test integration_test/downloads -d linux \
+            --tags downloads \
+            --dart-define=DOWNLOADS_SEED="$GITHUB_WORKSPACE/client/contract_test/.seed/credentials.json"
+
+      - name: Collect server logs
+        if: failure()
+        working-directory: client/contract_test
+        run: docker compose -f compose.yaml logs --no-color > compose-logs.txt 2>&1 || true
+
+      - name: Upload server logs
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: client-downloads-integration-logs
+          path: client/contract_test/compose-logs.txt
+          if-no-files-found: warn
+
+      - name: Tear down the contract server
+        if: always()
+        working-directory: client/contract_test
+        run: docker compose -f compose.yaml down -v --remove-orphans
+
+  client-golden:
+    name: client-golden
+    needs: changes
+    if: needs.changes.outputs.client == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Flutter
+        uses: ./.github/actions/client-flutter
+
+      - name: Golden tests
+        working-directory: client
+        run: flutter test --tags golden
+
+      - name: Upload golden failures
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: client-golden-failures
+          # pubspec.yaml anchors the common root at client/, so paths in the
+          # artifact stay relative to client/.
+          path: |
+            client/pubspec.yaml
+            client/test/**/failures/**
+          if-no-files-found: warn
+
+      - name: Render goldens on this runner
+        if: failure()
+        working-directory: client
+        run: flutter test --tags golden --update-goldens
+
+      - name: Upload rendered goldens
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: client-golden-rendered
+          path: |
+            client/pubspec.yaml
+            client/test/**/goldens/**/*.png
+            !client/test/**/failures/**
+          if-no-files-found: warn
+
+  client-build-android:
+    name: client-build-android
+    needs: changes
+    # client-build-dry-run builds this target with the same checks when
+    # release_build is true.
+    if: needs.changes.outputs.client == 'true' && needs.changes.outputs.release_build != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Java
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      # setup-gradle prunes the Gradle home to the build's working set before
+      # saving (cache-cleanup) and splits it into content-keyed entries, so the
+      # Android jobs no longer restore one ~1.5 GB ~/.gradle/caches blob that
+      # stalls for minutes when the Actions cache service is slow.
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+        with:
+          cache-cleanup: on-success
+
+      - name: Set up Flutter
+        uses: ./.github/actions/client-flutter
+
+      - name: Build debug APK
+        working-directory: client
+        run: flutter build apk --debug --dart-define-from-file=config/dev.json
+
+      - name: The APK has the adaptive launcher icon
+        working-directory: client
+        run: tool/ci/check_apk_icon.sh build/app/outputs/flutter-apk/app-debug.apk
+
+      - name: The merged manifest has every doc 10 entry
+        working-directory: client
+        run: tool/ci/check_apk_manifest.sh build/app/outputs/flutter-apk/app-debug.apk
+
+  client-build-linux:
+    name: client-build-linux
+    needs: changes
+    # client-build-dry-run builds this target with the same checks when
+    # release_build is true.
+    if: needs.changes.outputs.client == 'true' && needs.changes.outputs.release_build != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # The composite action apt-installs the Linux build packages of doc 01.
+      - name: Set up Flutter
+        uses: ./.github/actions/client-flutter
+
+      - name: Build Linux release
+        working-directory: client
+        run: flutter build linux --release --dart-define-from-file=config/dev.json
+
+      - name: Every shared library resolves
+        working-directory: client
+        run: tool/check_ldd.sh build/linux/x64/release/bundle
+
+  client-build-web:
+    name: client-build-web
+    needs: changes
+    # client-build-dry-run builds this target with the same checks when
+    # release_build is true.
+    if: needs.changes.outputs.client == 'true' && needs.changes.outputs.release_build != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Flutter
+        uses: ./.github/actions/client-flutter
+
+      - name: Build web release
+        working-directory: client
+        run: flutter build web --release --dart-define-from-file=config/dev.json
+
+      - name: The bundle ships the drift WASM files
+        working-directory: client
+        run: |
+          test -s build/web/sqlite3.wasm
+          test -s build/web/drift_worker.js
+
+      - name: The bundle ships the committed icons
+        working-directory: client
+        run: |
+          for icon in favicon.png icons/Icon-192.png icons/Icon-512.png icons/Icon-maskable-192.png icons/Icon-maskable-512.png; do
+            cmp "web/$icon" "build/web/$icon"
+          done
+
+      # The gzip-compressed initial load against the 5 MB budget of
+      # tool/perf/budgets.json (doc 13, Risk Register K8); the table goes to
+      # the job summary.
+      - name: Initial-load bundle size
+        working-directory: client
+        run: dart run tool/perf/web_bundle_size.dart --dir build/web
+
+  client-web-integration:
+    name: client-web-integration
+    needs: changes
+    if: needs.changes.outputs.web_storage == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Flutter
+        uses: ./.github/actions/client-flutter
+
+      # The runner image ships Google Chrome and the matching chromedriver.
+      - name: Start chromedriver
+        run: |
+          "$CHROMEWEBDRIVER/chromedriver" --port=4444 &
+          for _ in $(seq 1 30); do
+            curl -fsS http://localhost:4444/status > /dev/null && exit 0
+            sleep 1
+          done
+          echo "chromedriver did not start" >&2
+          exit 1
+
+      - name: Web storage integration test
+        working-directory: client
+        run: >-
+          flutter drive
+          --driver=test_driver/integration_test.dart
+          --target=integration_test/web/storage_web_test.dart
+          -d web-server --browser-name=chrome --headless
+
+  client-build-windows:
+    name: client-build-windows
+    needs: changes
+    # client-build-dry-run builds this target with the same checks when
+    # release_build is true.
+    if: needs.changes.outputs.client == 'true' && needs.changes.outputs.release_build != 'true'
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Flutter
+        uses: ./.github/actions/client-flutter
+
+      - name: Build Windows release
+        working-directory: client
+        run: flutter build windows --release --dart-define-from-file=config/dev.json
+
+      - name: Single instance
+        working-directory: client
+        shell: pwsh
+        run: tool/ci/single_instance_windows.ps1
+
+  client-desktop-linux:
+    name: client-desktop-linux
+    needs: changes
+    if: needs.changes.outputs.desktop == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # The composite action apt-installs the Linux build packages of doc 01.
+      - name: Set up Flutter
+        uses: ./.github/actions/client-flutter
+
+      - name: Install the display, window manager and D-Bus
+        run: |
+          sudo apt-get install -y --no-install-recommends \
+            xvfb openbox dbus dbus-x11 x11-utils xdotool
+
+      - name: Start a D-Bus session, Xvfb and openbox
+        run: |
+          eval "$(dbus-launch --sh-syntax)"
+          echo "DBUS_SESSION_BUS_ADDRESS=$DBUS_SESSION_BUS_ADDRESS" >> "$GITHUB_ENV"
+          Xvfb :99 -screen 0 1920x1080x24 > /tmp/xvfb.log 2>&1 &
+          echo "DISPLAY=:99" >> "$GITHUB_ENV"
+          for _ in $(seq 1 30); do
+            xdpyinfo -display :99 > /dev/null 2>&1 && break
+            sleep 1
+          done
+          DISPLAY=:99 openbox > /tmp/openbox.log 2>&1 &
+          sleep 2
+
+      - name: Desktop integration test
+        working-directory: client
+        run: flutter test integration_test/desktop/window_test.dart -d linux
+
+      - name: Deep link integration test
+        working-directory: client
+        run: flutter test integration_test/desktop/deep_link_test.dart -d linux
+
+      - name: Build Linux release
+        working-directory: client
+        run: flutter build linux --release --dart-define-from-file=config/dev.json
+
+      - name: Single instance
+        working-directory: client
+        run: tool/ci/single_instance_linux.sh
+
+  client-build-macos-ios:
+    name: client-build-macos-ios
+    needs: changes
+    # macOS runners are slow to start, so the job runs only when the
+    # repository variable CLIENT_MACOS_CI is 'true'.
+    if: needs.changes.outputs.apple == 'true' && vars.CLIENT_MACOS_CI == 'true'
+    runs-on: macos-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Flutter
+        uses: ./.github/actions/client-flutter
+
+      - name: Build macOS release
+        working-directory: client
+        run: flutter build macos --release --dart-define-from-file=config/dev.json
+
+      - name: Build iOS release without code signing
+        working-directory: client
+        run: flutter build ios --release --no-codesign --dart-define-from-file=config/dev.json
+
+      # The built bundles carry the Info.plist keys, entitlements and
+      # privacy manifest of doc 10, a universal macOS binary and the
+      # hardened runtime.
+      - name: Check the built bundles
+        working-directory: client
+        shell: bash
+        run: |
+          set -euo pipefail
+          mac_app=build/macos/Build/Products/Release/soundspan.app
+          ios_app=build/ios/iphoneos/Runner.app
+          out="$RUNNER_TEMP/built-config"
+          mkdir -p "$out"
+          plutil -convert xml1 -o "$out/ios-Info.plist" "$ios_app/Info.plist"
+          plutil -convert xml1 -o "$out/macos-Info.plist" "$mac_app/Contents/Info.plist"
+          codesign -d --entitlements - --xml "$mac_app" > "$out/macos.entitlements"
+          test -f "$ios_app/PrivacyInfo.xcprivacy" || {
+            echo "PrivacyInfo.xcprivacy is missing from $ios_app"
+            exit 1
+          }
+          plutil -convert xml1 -o "$out/PrivacyInfo.xcprivacy" "$ios_app/PrivacyInfo.xcprivacy"
+          dart run tool/check_platform_config.dart \
+            --ios-plist="$out/ios-Info.plist" \
+            --macos-plist="$out/macos-Info.plist" \
+            --macos-release-entitlements="$out/macos.entitlements" \
+            --ios-privacy-manifest="$out/PrivacyInfo.xcprivacy"
+          archs="$(lipo -archs "$mac_app/Contents/MacOS/soundspan")"
+          echo "macOS architectures: $archs"
+          [[ " $archs " == *" arm64 "* && " $archs " == *" x86_64 "* ]] || {
+            echo "The macOS executable is not universal"
+            exit 1
+          }
+          signature="$(codesign -dv "$mac_app" 2>&1)"
+          echo "$signature"
+          grep -Eq 'flags=.*runtime' <<< "$signature" || {
+            echo "The macOS app is not signed with the hardened runtime"
+            exit 1
+          }
+
+  # The engine conformance suite on an Android emulator, an iOS simulator,
+  # macOS, headless Chrome, Linux and Windows, the desktop integration tests
+  # on Linux, Windows and macOS, the Patrol suite on an Android emulator,
+  # and the perf suite on Linux and an Android emulator
+  # (client-device-tests.yml), each group when its paths changed.
+  client-device-tests:
+    name: client-device-tests
+    needs: changes
+    if: needs.changes.outputs.device_suites != 'none'
+    uses: ./.github/workflows/client-device-tests.yml
+    with:
+      suites: ${{ needs.changes.outputs.device_suites }}
+
+  # Lints the client workflows, client-nightly.yml included, which cannot
+  # run from a pull request, and self-tests its report script.
+  client-workflows:
+    name: client-workflows
+    needs: changes
+    if: needs.changes.outputs.workflows == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      ACTIONLINT_VERSION: "1.7.12"
+      ACTIONLINT_SHA256: 8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+
+      - name: actionlint
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz"
+          curl -sSfL -o "$RUNNER_TEMP/$archive" \
+            "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/$archive"
+          echo "$ACTIONLINT_SHA256  $RUNNER_TEMP/$archive" | sha256sum --check --strict
+          tar -xzf "$RUNNER_TEMP/$archive" -C "$RUNNER_TEMP" actionlint
+          "$RUNNER_TEMP/actionlint" -color .github/workflows/client-*.yml
+
+      - name: Nightly report script self-test
+        run: node --test scripts/ci/__tests__/client-nightly-report.test.mjs
+
+      - name: Ubuntu apt sources script self-test
+        run: node --test scripts/ci/__tests__/ensure-ubuntu-apt-sources.test.mjs
+
+  # Dry run of the reusable release build: every target in release mode,
+  # unsigned, plus SHA256SUMS. Nothing is published; artifacts expire
+  # after 7 days.
+  client-build-dry-run:
+    name: client-build-dry-run
+    needs: changes
+    if: needs.changes.outputs.release_build == 'true'
+    uses: ./.github/workflows/client-build.yml
+    with:
+      version: ${{ needs.changes.outputs.version }}
+      build-number: "${{ github.run_number }}"
+      macos: ${{ vars.CLIENT_MACOS_CI == 'true' }}
+
+  # The release workflow's tag validation and notes, without a tag: the
+  # pubspec version as the tag and the notes against main's changelog.
+  client-release-dry-run:
+    name: client-release-dry-run
+    needs: changes
+    if: needs.changes.outputs.release_notes == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      VERSION: ${{ needs.changes.outputs.version }}
+      ACTIONLINT_VERSION: "1.7.12"
+      ACTIONLINT_SHA256: 8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Set up Flutter
+        uses: ./.github/actions/client-flutter
+
+      - name: Validate the tag client-v<pubspec version>
+        working-directory: client
+        run: dart run tool/release/validate_tag.dart --tag "client-v$VERSION" --pubspec pubspec.yaml
+
+      - name: Write the release notes against main's changelog
+        working-directory: client
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin main
+          git show origin/main:CHANGELOG.md > "$RUNNER_TEMP/main-CHANGELOG.md"
+          mkdir -p "$RUNNER_TEMP/client-release-notes"
+          dart run tool/release/release_notes.dart \
+            --changelog ../CHANGELOG.md \
+            --previous-changelog "$RUNNER_TEMP/main-CHANGELOG.md" \
+            --version "$VERSION" --repository "$GITHUB_REPOSITORY" \
+            --out "$RUNNER_TEMP/client-release-notes/release-notes.md"
+
+      - name: Upload the release notes
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: client-release-notes
+          path: ${{ runner.temp }}/client-release-notes/release-notes.md
+          if-no-files-found: error
+          retention-days: 7
+
+      # Checks the syntax and expressions of the client workflows, the tag
+      # workflow included, without running them.
+      - name: actionlint
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz"
+          curl -sSfL -o "$RUNNER_TEMP/$archive" \
+            "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/$archive"
+          echo "$ACTIONLINT_SHA256  $RUNNER_TEMP/$archive" | sha256sum --check --strict
+          tar -xzf "$RUNNER_TEMP/$archive" -C "$RUNNER_TEMP" actionlint
+          "$RUNNER_TEMP/actionlint" -color .github/workflows/client-*.yml
+
+  # On pushes to main and manual runs on main, the dry run's artifacts replace the assets of the
+  # rolling "bleeding" pre-release, whose tag is moved to the pushed commit.
+  # It is never marked latest, and its tag does not match client-v*, so the
+  # desktop update notice ignores it.
+  client-bleeding-release:
+    name: client-bleeding-release
+    needs: [changes, client-build-dry-run]
+    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # One publish at a time; a newer pending run replaces an older one.
+    concurrency:
+      group: client-bleeding-release
+      cancel-in-progress: false
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      TAG: bleeding
+      VERSION: ${{ needs.changes.outputs.version }}
+    steps:
+      # Runs can finish out of order; never move the release backwards.
+      - name: Skip when the release already has a newer commit
+        id: order
+        shell: bash
+        run: |
+          set -euo pipefail
+          current="$(gh api "repos/$GH_REPO/git/ref/tags/$TAG" --jq .object.sha 2>/dev/null || true)"
+          if [[ -n "$current" && "$current" != "$GITHUB_SHA" ]]; then
+            status="$(gh api "repos/$GH_REPO/compare/$GITHUB_SHA...$current" --jq .status)"
+            if [[ "$status" == "ahead" ]]; then
+              echo "$TAG is at $current, newer than $GITHUB_SHA; nothing to do." | tee -a "$GITHUB_STEP_SUMMARY"
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          fi
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+
+      - name: Download release files
+        if: steps.order.outputs.skip != 'true'
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: client-release-files
+          path: release
+
+      - name: Verify SHA256SUMS
+        if: steps.order.outputs.skip != 'true'
+        working-directory: release
+        run: |
+          sha256sum --check --strict SHA256SUMS
+          ls -l
+
+      - name: Attest build provenance
+        if: steps.order.outputs.skip != 'true'
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: release/*
+
+      - name: Write the release notes
+        if: steps.order.outputs.skip != 'true'
+        shell: bash
+        env:
+          COMMIT_URL: ${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          # shellcheck disable=SC2016 # the backticks are Markdown, not command substitution
+          {
+            printf 'Automatic build of the client from `main` at [`%s`](%s) (version %s, build %s), replaced on every push to `main` that changes the client.\n\n' \
+              "${GITHUB_SHA::7}" "$COMMIT_URL" "$VERSION" "$GITHUB_RUN_NUMBER"
+            printf 'These are unsigned development builds: Windows SmartScreen and macOS ask for confirmation, the Android build is debug-signed, and there is no iOS build. Use a `client-v*` release for anything you rely on.\n\n'
+            printf 'Built by [this workflow run](%s). Verify downloads with `SHA256SUMS` and `gh attestation verify <file> --repo %s`.\n' \
+              "$RUN_URL" "$GH_REPO"
+          } > "$RUNNER_TEMP/bleeding-notes.md"
+
+      - name: Create or update the bleeding pre-release
+        if: steps.order.outputs.skip != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          title="soundspan client bleeding ($VERSION, ${GITHUB_SHA::7})"
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" release/* \
+              --target "$GITHUB_SHA" \
+              --prerelease \
+              --latest=false \
+              --title "$title" \
+              --notes-file "$RUNNER_TEMP/bleeding-notes.md"
+            echo "Created the $TAG release at $GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          # Move the tag to this commit, or recreate it if it was deleted.
+          if gh api "repos/$GH_REPO/git/ref/tags/$TAG" >/dev/null 2>&1; then
+            gh api -X PATCH "repos/$GH_REPO/git/refs/tags/$TAG" -f sha="$GITHUB_SHA" -F force=true >/dev/null
+          else
+            gh api -X POST "repos/$GH_REPO/git/refs" -f ref="refs/tags/$TAG" -f sha="$GITHUB_SHA" >/dev/null
+          fi
+
+          # Upload over the existing assets first, then delete the ones this
+          # build no longer has (for example after a version bump), so the
+          # release is never empty.
+          gh release upload "$TAG" release/* --clobber
+          declare -A keep=()
+          for f in release/*; do keep["$(basename "$f")"]=1; done
+          while IFS= read -r name; do
+            if [[ -z "${keep[$name]:-}" ]]; then
+              gh release delete-asset "$TAG" "$name" --yes
+            fi
+          done < <(gh release view "$TAG" --json assets --jq '.assets[].name')
+
+          gh release edit "$TAG" \
+            --draft=false \
+            --prerelease \
+            --latest=false \
+            --title "$title" \
+            --notes-file "$RUNNER_TEMP/bleeding-notes.md"
+          echo "Updated the $TAG release to $GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"

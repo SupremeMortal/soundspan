@@ -1,3 +1,5 @@
+import { expectClientSurfaceResponse } from "../routes/__tests__/helpers/expectClientSurfaceResponse";
+
 describe("api entrypoint runtime behavior", () => {
     const originalEnv = process.env;
     const originalExit = process.exit;
@@ -88,6 +90,7 @@ describe("api entrypoint runtime behavior", () => {
             databaseUrl?: string;
             redisUrl?: string;
             docsPublic?: boolean;
+            openapi?: { validateResponses: boolean };
             adminResetPassword?: string;
             discover?: {
                 mode: "legacy" | "recommendation";
@@ -241,6 +244,7 @@ describe("api entrypoint runtime behavior", () => {
             databaseUrl: "postgresql://user:secret@db:5432/soundspan",
             redisUrl: "redis://redis:6379/0",
             docsPublic: false,
+            openapi: { validateResponses: false },
             metrics: { token: "metrics-token", publicAccess: false },
             streaming: { traceEnabled: false },
             adminResetPassword: undefined,
@@ -349,8 +353,14 @@ describe("api entrypoint runtime behavior", () => {
             serve: swaggerServe,
             setup: swaggerSetup,
         }));
+        const validateClientSurfaceResponses = jest.fn(
+            () => "response-validation-middleware",
+        );
+        jest.doMock("../openapi/responseValidation", () => ({
+            validateClientSurfaceResponses,
+        }));
         jest.doMock("../config/swagger", () => ({
-            swaggerSpec: { openapi: "3.0.0" },
+            swaggerSpec: { openapi: "3.0.0", info: { version: "1.2.3" } },
         }));
         jest.doMock("bcrypt", () => ({
             hash: hashedAdminPassword,
@@ -435,6 +445,7 @@ describe("api entrypoint runtime behavior", () => {
             initializeFederationMetrics,
             sessionMiddleware,
             redisStoreCtor,
+            validateClientSurfaceResponses,
         };
     }
 
@@ -616,6 +627,81 @@ describe("api entrypoint runtime behavior", () => {
             "api-limiter",
             expect.anything(),
         );
+    });
+
+    it("does not install client-surface response validation when the flag is off", async () => {
+        process.env = {
+            ...originalEnv,
+            BACKEND_PROCESS_ROLE: "api",
+        };
+        jest.spyOn(process, "on").mockImplementation(() => process as any);
+        jest.spyOn(global, "setInterval").mockImplementation(
+            () => 1 as unknown as NodeJS.Timeout,
+        );
+        process.exit = jest.fn() as any;
+
+        const mocks = setupApiEntrypointMocks();
+
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        require("../index");
+        await flushPromises();
+
+        expect(mocks.validateClientSurfaceResponses).not.toHaveBeenCalled();
+        expect(mocks.app.use).not.toHaveBeenCalledWith(
+            "response-validation-middleware",
+        );
+        expect(mocks.logger.info).not.toHaveBeenCalledWith(
+            "Client-surface response validation enabled",
+        );
+    });
+
+    it("installs client-surface response validation once before the routes when the flag is on", async () => {
+        process.env = {
+            ...originalEnv,
+            BACKEND_PROCESS_ROLE: "api",
+        };
+        jest.spyOn(process, "on").mockImplementation(() => process as any);
+        jest.spyOn(global, "setInterval").mockImplementation(
+            () => 1 as unknown as NodeJS.Timeout,
+        );
+        process.exit = jest.fn() as any;
+
+        const mocks = setupApiEntrypointMocks({
+            configOverrides: { openapi: { validateResponses: true } },
+        });
+
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        require("../index");
+        await flushPromises();
+
+        expect(mocks.validateClientSurfaceResponses).toHaveBeenCalledTimes(1);
+        expect(mocks.validateClientSurfaceResponses).toHaveBeenCalledWith(
+            expect.objectContaining({ onMismatch: "respond" }),
+        );
+        expect(mocks.logger.info).toHaveBeenCalledWith(
+            "Client-surface response validation enabled",
+        );
+
+        const useIndex = mocks.app.use.mock.calls.findIndex(
+            ([first]) => first === "response-validation-middleware",
+        );
+        expect(useIndex).toBeGreaterThanOrEqual(0);
+        const validationOrder =
+            mocks.app.use.mock.invocationCallOrder[useIndex];
+        const firstRouterOrder = Math.min(
+            ...mocks.app.use.mock.calls
+                .map((call, index) => ({ call, index }))
+                .filter(({ call }) => String(call[0]).startsWith("/api/"))
+                .map(
+                    ({ index }) =>
+                        mocks.app.use.mock.invocationCallOrder[index],
+                ),
+        );
+        const firstGetOrder = Math.min(
+            ...mocks.app.get.mock.invocationCallOrder,
+        );
+        expect(validationOrder).toBeLessThan(firstRouterOrder);
+        expect(validationOrder).toBeLessThan(firstGetOrder);
     });
 
     it("does not mount cookie-session middleware", async () => {
@@ -1119,6 +1205,7 @@ describe("api entrypoint runtime behavior", () => {
         expect(apiReadyRes.statusCode).toBe(503);
         expect(legacyRes.statusCode).toBe(503);
         expect(apiHealthRes.statusCode).toBe(503);
+        expectClientSurfaceResponse("getHealth", apiHealthRes);
         expect(readyRes.body).toMatchObject({
             role: "api",
             startupComplete: false,
@@ -1208,6 +1295,7 @@ describe("api entrypoint runtime behavior", () => {
 
         expect(healthRes.statusCode).toBe(200);
         expect(apiHealthRes.statusCode).toBe(200);
+        expectClientSurfaceResponse("getHealth", apiHealthRes);
         expect(readyRes.statusCode).toBe(200);
         expect(apiReadyRes.statusCode).toBe(200);
         expect(liveRes.statusCode).toBe(200);
@@ -1593,6 +1681,31 @@ describe("api entrypoint runtime behavior", () => {
         expect(process.exit).toHaveBeenCalledWith(1);
         expect(mocks.redisClient.ping).not.toHaveBeenCalled();
         expect(setTimeoutSpy).toHaveBeenCalledTimes(9);
+    });
+
+    it("serves the merged OpenAPI document at /api/docs.json", async () => {
+        process.env = {
+            ...originalEnv,
+            BACKEND_PROCESS_ROLE: "api",
+        };
+        process.exit = jest.fn() as any;
+
+        const mocks = setupApiEntrypointMocks();
+
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        require("../index");
+        await flushPromises();
+
+        const docs = getGetHandler(mocks.app, "/api/docs.json");
+        const res = createJsonRes();
+        docs({}, res);
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body).toEqual({
+            openapi: "3.0.0",
+            info: { version: "1.2.3" },
+        });
+        expectClientSurfaceResponse("getApiDocument", res);
     });
 
     it("requires auth middleware for API docs in production without DOCS_PUBLIC", async () => {

@@ -1,0 +1,5 @@
+{
+  "localLoginEnabled": true,
+  "oidcEnabled": false,
+  "oidcProviderName": "SSO"
+}

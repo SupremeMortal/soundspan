@@ -177,6 +177,7 @@ import { resolveAlbumCover } from "../../services/metadata/albumCoverResolver";
 import { dataCacheService } from "../../services/dataCache";
 import { musicBrainzService } from "../../services/musicbrainz";
 import { redisClient } from "../../utils/redis";
+import { withClientSurfaceValidation } from "./helpers/expectClientSurfaceResponse";
 
 const mockArtistFindFirst = prisma.artist.findFirst as jest.Mock;
 const mockPlayGroupBy = prisma.play.groupBy as jest.Mock;
@@ -230,7 +231,10 @@ function createMockArtist(name = "AC/DC") {
 }
 
 describe("library artist lookup compatibility", () => {
-    const artistHandler = getGetHandler("/artists/:id");
+    const artistHandler = withClientSurfaceValidation(
+        "getArtist",
+        getGetHandler("/artists/:id"),
+    );
 
     beforeEach(() => {
         jest.clearAllMocks();
@@ -458,6 +462,9 @@ describe("library artist lookup compatibility", () => {
                         {
                             id: "track-1",
                             title: "Owned Track",
+                            duration: 245,
+                            trackNo: 1,
+                            discNo: 1,
                             album: {
                                 id: "album-1",
                                 title: "Owned Album",
@@ -531,6 +538,9 @@ describe("library artist lookup compatibility", () => {
                             {
                                 id: "track-remaster",
                                 title: libraryTitle,
+                                duration: 245,
+                                trackNo: 1,
+                                discNo: 1,
                                 album: {
                                     id: "album-1",
                                     title: "Owned Album",
@@ -589,7 +599,9 @@ describe("library artist lookup compatibility", () => {
             albums: [
                 {
                     id: "album-deluxe",
+                    artistId: "artist-1",
                     title: "Album (Deluxe Edition)",
+                    year: 2011,
                     rgMbid: "rg-owned-deluxe",
                     coverUrl: "owned-cover.jpg",
                     location: "LIBRARY",
@@ -629,6 +641,60 @@ describe("library artist lookup compatibility", () => {
             }),
         ]);
         expect(res.body.discographyComplete).toBe(true);
+    });
+
+    it("returns the release type of library albums and discography entries", async () => {
+        mockArtistFindFirst.mockResolvedValueOnce({
+            ...createMockArtist(),
+            albums: [
+                {
+                    id: "album-ep",
+                    artistId: "artist-1",
+                    title: "Owned EP",
+                    year: 2015,
+                    rgMbid: "rg-owned-ep",
+                    coverUrl: null,
+                    primaryType: "EP",
+                    location: "LIBRARY",
+                    tracks: [],
+                },
+            ],
+        });
+        mockMusicBrainzGetReleaseGroups.mockResolvedValueOnce([
+            {
+                id: "rg-mb-single",
+                title: "Catalog Single",
+                "first-release-date": "2016-01-01",
+                "primary-type": "Single",
+                "secondary-types": [],
+            },
+        ]);
+        const req = {
+            params: { id: "artist-local-id-123" },
+            query: {
+                includeDiscography: "true",
+                includeTopTracks: "false",
+                includeSimilarArtists: "false",
+            },
+            user: { id: "user-1" },
+        } as any;
+        const res = createRes();
+
+        await artistHandler(req, res);
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.albums).toEqual([
+            expect.objectContaining({
+                id: "album-ep",
+                source: "database",
+                primaryType: "EP",
+            }),
+            expect.objectContaining({
+                id: "rg-mb-single",
+                source: "musicbrainz",
+                primaryType: "Single",
+            }),
+        ]);
     });
 
     it("uses a fresh persisted discography on Redis miss without MusicBrainz", async () => {

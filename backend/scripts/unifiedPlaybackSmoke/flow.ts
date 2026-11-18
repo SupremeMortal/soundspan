@@ -1,11 +1,19 @@
 import crypto from "node:crypto";
-import { io, type Socket } from "socket.io-client";
 import {
     assertSmoke,
     bearer,
     fetchBounded,
 } from "../backupRestoreSmoke/support";
-import { asArray, asRecord, type Credentials, send, sendJson } from "./http";
+import {
+    asArray,
+    asRecord,
+    assertNoSchemaMismatch,
+    connectSocket,
+    type Credentials,
+    send,
+    sendJson,
+} from "./http";
+import { assertDownloadsDoNotReport } from "./prerequisites";
 import type { SeededLibrary } from "./fixtures";
 
 const ADMIN_USERNAME = "playback-admin";
@@ -92,6 +100,7 @@ async function rangeStatus(
     const response = await fetchBounded(`${baseUrl}${route}`, {
         headers: { ...headers, Range: "bytes=0-99" },
     });
+    await assertNoSchemaMismatch("GET", route, response);
     const bytes = Buffer.from(await response.arrayBuffer());
     return {
         status: response.status,
@@ -274,6 +283,7 @@ export async function assertOffline(
         items[0].playbackId === playbackId && items[0].downloadable === true,
         `Offline item not downloadable: ${JSON.stringify(items[0])}`,
     );
+    await assertDownloadsDoNotReport(baseUrl, creds, items);
     await sendJson(baseUrl, "POST", "/api/offline/items/complete", auth, {
         deviceId,
         playbackId,
@@ -302,23 +312,6 @@ export async function assertOffline(
         revokedItems[0]?.revoked === true,
         "Disabling offlineDownloadsEnabled did not report revoked: true",
     );
-}
-
-function connectSocket(baseUrl: string, apiKey: string): Promise<Socket> {
-    return new Promise((resolve, reject) => {
-        const socket = io(`${baseUrl}/listen-together`, {
-            path: "/socket.io/listen-together",
-            auth: { apiKey },
-            transports: ["websocket"],
-            reconnection: false,
-            timeout: 15_000,
-        });
-        socket.once("connect", () => resolve(socket));
-        socket.once("connect_error", (error) => {
-            socket.close();
-            reject(error);
-        });
-    });
 }
 
 export async function assertSocketApiKey(

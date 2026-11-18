@@ -14,7 +14,7 @@ describe("config/swagger", () => {
             },
         }));
 
-        const { swaggerSpec } = require("../swagger");
+        const { commentDocument, swaggerSpec } = require("../swagger");
         const generatedOptions = swaggerJsdoc.mock.calls[0]?.[0] as {
             definition: {
                 components: { securitySchemes: Record<string, unknown> };
@@ -52,6 +52,16 @@ describe("config/swagger", () => {
         expect(
             generatedOptions.definition.components.securitySchemes,
         ).not.toHaveProperty("sessionAuth");
-        expect(swaggerSpec).toBe(mockedSpec);
+        expect(commentDocument).toBe(mockedSpec);
+        expect(swaggerSpec).toEqual(
+            expect.objectContaining({
+                mocked: "swagger-spec",
+                paths: expect.objectContaining({
+                    "/api/auth/login": expect.objectContaining({
+                        post: expect.objectContaining({ operationId: "login" }),
+                    }),
+                }),
+            }),
+        );
     });
 });

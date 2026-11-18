@@ -44,7 +44,7 @@ Defined in [12](12-server-prerequisites-p6-p9.md).
 | S1-P9d | Device link and API keys | Same |
 | S1-P9e | Offline | Same |
 | S1-P9f | Mixes, discovery, radio, vibe, Listen Together REST, presence | Same |
-| S1-REL | Server release containing P1–P9; `BuildConfig.minServer` set to it | Tag exists; contract suite pinned to it |
+| S1-REL | `BuildConfig.minServer` (and `maxTestedServer` when lower) is the server's `version` if that version is unreleased, otherwise the next minor, with the server version moved to it in the package manifests and the Helm chart; `client/tool/specs/min-server.json` is refreshed from the client-surface spec of that version. Cutting the server release is on the human checklist | `client-spec` passes against the refreshed snapshot |
 
 ## M0. Foundations
 
@@ -67,7 +67,7 @@ Exit: a debug build on all six targets signs in with a password to a real server
 | M0-13 | App shell: router, `WindowClass`, bottom bar / rail / sidebar, top bar, empty player slots, settings skeleton with theme mode and servers | M0-05, M0-10 | Goldens at 390, 800, 1440 in both themes |
 | M0-14 | Library, playlist, and search repositories over the generated clients; `ImageUrls`; `OffsetPage` and `KeysetPage` | M0-07 | Mapping tests (wire to domain); contract group "Library and browse" |
 | M0-15 | `CacheDatabase`, `Cached<T>` SWR repositories, `PagedSource` | M0-09, M0-14 | SWR sequence tests (cache hit, stale, refresh failure, offline) |
-| M0-16 | Shared widgets: `Artwork`, `MediaCard`, `Shelf`, `TrackRow` (no playback actions), `EmptyState`, `ErrorView`, `Banner`; image cache manager | M0-05, M0-14 | Goldens; semantics guideline tests |
+| M0-16 | Shared widgets: `Artwork`, `MediaCard`, `Shelf`, `TrackRow` (no playback actions), `EmptyState`, `ErrorView`, `AppBanner`; image cache manager | M0-05, M0-14 | Goldens; semantics guideline tests |
 | M0-17 | Library screens: Playlists, Artists, Albums, Songs tabs with paging | M0-15, M0-16 | Scroll test over a 10,000-row fake source keeps extent stable |
 | M0-18 | Album, Artist, Playlist detail (read-only) | M0-15, M0-16 | Widget tests; goldens |
 | M0-19 | Home shelves and Search (library + discover, recent searches) | M0-15, M0-16 | Widget tests |
@@ -101,7 +101,7 @@ Exit: on all six targets, an album plays gaplessly from the server with OS media
 | M1-18 | Reachability controller and offline banner (no downloads yet) | M0-15 | State-transition tests |
 | M1-19 | Desktop interaction: shortcuts, selection, context menus, drag to playlist and queue, tray, macOS menu bar | M1-12, M1-14 | Desktop integration tests for shortcuts; manual drag tests |
 | M1-20 | Playback settings: per-network quality, levelling mode | M1-06 | Widget tests |
-| M1-21 | `client-nightly.yml`: engine conformance on four runners, desktop integration | M1-03, M1-04 | Nightly green three nights running |
+| M1-21 | Desktop integration tests on Linux, Windows and macOS in the reusable `client-device-tests.yml`, the reusable `client-contract.yml`, and `client-nightly.yml` over both | M1-03, M1-04 | The device-test jobs, `client-contract` and `client-workflows` green on the pull request |
 
 ## M2. Mobile Polish
 
@@ -110,17 +110,17 @@ Exit: a phone links to an SSO-only server with a code or QR, plays for an hour w
 | Id | Task | Depends | Acceptance |
 |---|---|---|---|
 | M2-01 | Device-link sign-in: `CodeCells`, verify, device naming, expiry lookup | M0-12, S1-P9d | Widget tests for each error; contract group |
-| M2-02 | Deep links on all native targets; `DeepLinkRouter` | M0-21 | Unit tests for URI validation; manual per-OS rows |
+| M2-02 | Deep links on all native targets; `DeepLinkRouter` | M0-21 | `test/app/router/deep_link_router_test.dart` (table-driven `parse`; `handle` for probe with code, profile switch, entity links with and without a profile, duplicates within 2 s, invalid links logged without their query); `tool/check_platform_config.dart` in `client-analyze` with its fixture tests; `integration_test/desktop/deep_link_test.dart` in `client-desktop-linux` (a second launch with `soundspan://album/test-id` reaches the first instance's router); manual per-OS rows in the human checklist |
 | M2-03 | QR scanner (Android, iOS, macOS, web) | M2-01 | Widget test with a fake scanner; camera permission denied path |
 | M2-04 | Pasted API key sign-in | M2-01 | Widget tests |
 | M2-05 | `KeyExpiryMonitor`, banner, local notification, re-link with self-revoke | M2-01, S1-P6 | Clock-driven tests at 15, 14, 3, 1, 0 days |
 | M2-06 | Sign-out and remove-server sequences | M2-05, M1-13 | Sequence tests including failures of each best-effort step |
-| M2-07 | Android: foreground service configuration, notification actions (Like), media button receiver, backup exclusions, permissions flow | M1-10 | Manual rows on a physical device |
-| M2-08 | Android Auto browse tree, `playFromMediaId`, voice search | M2-07 | Desktop Head Unit checklist |
-| M2-09 | iOS: background audio, route picker, interruptions, privacy manifest, launch screen | M1-10 | Manual rows on a physical device |
-| M2-10 | Patrol suite on Android emulator: sign in, play, background, notification pause, resume | M2-07 | In nightly |
+| M2-07 | Android: foreground service configuration, notification actions (Like), media button receiver, backup exclusions, permissions flow | M1-10 | `test/core/playback/media_controls/android_handler_test.dart` (controls for a track, a liked track and a single-episode queue; Like forwards once; 10 minutes paused stops, 9 minutes then play does not); `test/core/playback/notification_permission_test.dart`; `tool/check_platform_config.dart` fixture tests for every manifest row and the network-security and backup-rule files, and its run over the merged manifest of the built APK (`tool/ci/check_apk_manifest.sh`) in `client-build-android` and `client-build-dry-run`; `integration_test/android/playback_service_test.dart` on the API 34 emulator in `client-device-tests.yml`; manual rows on a physical device in the human checklist |
+| M2-08 | Android Auto browse tree, `playFromMediaId`, voice search | M2-07 | `test/core/playback/media_controls/browse/browse_tree_test.dart` (roots, the 200-album limit, playable album children without unplayable tracks, encoded ids, malformed ids and a failing source, `resolve` per kind and its null cases, voice search with and without a query) and `android_auto_handler_test.dart` (browse items without artwork, `playFromMediaId` replacing the queue on a `FakeEngine`, a search without hits changing nothing); `tool/check_platform_config.dart` on `automotive_app_desc.xml` and on the merged manifest in `client-build-android`; the Desktop Head Unit rows of the human checklist |
+| M2-09 | iOS and macOS: background audio, route picker, entitlements and hardened runtime, privacy manifest | M1-10 | `tool/check_platform_config.dart` on the source files and, in `client-build-macos-ios`, on the built bundles (plist keys, entitlements, privacy manifest, universal binary, hardened runtime); the route picker platform view created on the iOS simulator in `engine-conformance-ios`; manual rows on a physical device |
+| M2-10 | Patrol suite on Android emulator: sign in, play, background, notification pause, resume | M2-07 | `patrol-android` of `client-device-tests.yml`: on PRs touching `integration_test/patrol/**`, `android/**`, `lib/core/playback/**`, `lib/features/connect/**`, `pubspec.lock` or that workflow, through `client-quality.yml`, and nightly; no iOS Patrol run (the iOS scenario is on the human checklist) |
 | M2-11 | Compact and medium layout polish: gestures (swipe mini player, drag-down now playing), fast scroll, tablet two-pane | M1-12 | Goldens at 390 and 800 |
-| M2-12 | `client-release.yml` first version: unsigned artifacts, draft pre-release, checksums | M0-02 | A `client-v0.x` pre-release exists with every artifact except iOS |
+| M2-12 | Release workflow in two tasks. M2-12a: reusable `client-build.yml` (unsigned release artifacts for every target except iOS, `SHA256SUMS`, `tool/release/check_artifacts.dart`) and its pull-request dry run. M2-12b: `client-release.yml` (tag validation, draft pre-release, notes from the `### Client` changelog) calling it | M0-02 | M2-12a: `client-build-dry-run` is green on the pull request with every artifact and `SHA256SUMS`. M2-12b: the tag workflow validates and drafts a pre-release from those artifacts |
 
 ## M3. Offline
 
@@ -162,12 +162,13 @@ Exit: accessibility script passes on every platform, resource budgets are met an
 
 | Id | Task | Depends | Acceptance |
 |---|---|---|---|
-| M5-01 | Accessibility pass: labels, traversal, announcements, text scale, high contrast; fixes | all UI | Scripted screen-reader pass recorded per platform |
-| M5-02 | Performance pass against the resource budget; fixes | all | Measurements recorded in the release checklist |
+| M5-01a | Accessibility pass, labels and checks: a registry of every routed screen and of the surfaces that are not routes (sheets, menus, panels, confirmation dialogs, offline and error states), each checked against the tap-target, label and text-contrast guidelines at 390 and 1440 in both themes; tooltips and labels on icon-only controls; `TrackRow` as one semantics node with custom actions; `SeekBar` and volume as sliders; fixes | all UI | `test/a11y/all_screens_test.dart` passes, and fails when the router declares a route with no registry case |
+| M5-01b | Accessibility pass, interaction: focus ring, traversal groups and F6, now-playing announcements, text scale 2.0, high contrast; the screen-reader script ([09](09-ui-and-design-system.md#screen-reader-script)); fixes | M5-01a | `test/a11y/all_screens_test.dart` also lays out every registry case at text scale 2.0 (390 and 1440) and checks every case in high contrast; `test/app/theme/focus_ring_test.dart`, `test/app/shell/focus_regions_test.dart`, `test/features/player/now_playing_announcement_test.dart`, `test/app/theme/high_contrast_test.dart`, `test/app/text_scale_test.dart` and the goldens under `test/goldens/a11y/` pass; the scripted screen-reader passes are recorded per platform |
+| M5-02 | Performance checks in CI against the resource budget (`client/tool/perf/budgets.json`): scroll frame build times on a 10,000-row list (`perf-linux`), the web build's initial load (`client-build-web`), Android cold start on the emulator (`perf-android`); fixes | all | The three checks are failing CI gates; memory and real-device timings recorded in the release checklist |
 | M5-03 | Desktop update notice: a version check that opens the release page; `auto_updater` is evaluated once builds are signed (spike S7) | — | A build older than the latest release shows the notice |
-| M5-05 | Packaging: MSIX and Inno Setup, `.dmg`, Flatpak manifest, AppImage, `.deb`, web container image (all unsigned) | M2-12 | Each installs and runs on a clean machine or container |
+| M5-05 | Packaging, all unsigned, in four tasks: Windows MSIX and Inno Setup installer; macOS `.dmg`; Linux AppImage, `.deb` and Flatpak manifest; web container image | M2-12 | Each package installs and launches on a clean runner or container in the `client-build-dry-run` run of the pull request (Windows: `smoke-windows`) |
 | M5-07 | User documentation: `docs/` page for the client (install, connect, link a device, offline), reverse-proxy notes for the web build, `docs/SUBSONIC_CLIENTS.md` cross-link | — | Docs are timeless-rule compliant |
-| M5-08 | Licence review: exception wording approved by copyright holders; in-app licences screen complete, including fonts; LGPL notices for libmpv | — | Sign-off recorded |
+| M5-08 | Licence review: exception wording approved by copyright holders; in-app licences screen complete, including fonts; LGPL notices for libmpv | — | Automated: `test/app/licenses/` (the client licence, both fonts and every `assets/licenses/index.json` notice are registered, and every notice file is listed), the licences screen tests and goldens, and `tool/license_audit.dart` (manifest and files agree; a `media_kit_libs_*` package needs the mpv and FFmpeg notices). Sign-off recorded on the human checklist: the copyright holders approve the app-store permission wording in `client/LICENSE` and confirm the libmpv and FFmpeg builds in release artifacts are LGPL configurations |
 
 ## M6. Extended Surfaces
 
@@ -195,7 +196,7 @@ Not tracked as tasks and not part of any milestone's exit. Listed so nothing is 
 | K5 | iOS suspends the app during long background downloads | Medium | Low | Background `URLSession`; state machine tolerates arbitrary delays | Manual matrix |
 | K6 | Linux desktop variety (no Secret Service, no tray, Wayland quirks) | High | Low | Capability checks with clear messages; Flatpak as the primary tested path | Bug reports |
 | K7 | Windows SMTC plugin unmaintained | Medium | Medium | Spike S4; in-repo plugin fallback sized at about 300 lines | Spike answers "no" |
-| K8 | Web build size and start-up time are poor | Medium | Low (secondary target) | Deferred loading for M4 features; bundle-size report in CI | Initial load above 5 MB compressed |
+| K8 | Web build size and start-up time are poor | Medium | Low (secondary target) | Deferred loading for M4 features; initial-load size check in CI (`tool/perf/web_bundle_size.dart`) | Initial load above 5 MB compressed |
 | K9 | Light theme looks unlike the product | Medium | Low | Tokens only; mockups reviewed before M0-05 merges | Design review |
 | K10 | Server `main` changes a shape between `minServer` and release | Medium | Medium | Version matrix in nightly contract runs; `maxTestedServer` banner | Nightly failure on `main` |
 | K11 | macOS CI minutes cost | Medium | Low | Apple job path-filtered on PRs | Budget alert |
