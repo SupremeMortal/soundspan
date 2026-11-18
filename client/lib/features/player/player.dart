@@ -13,6 +13,7 @@ export 'lyrics_providers.dart'
 export 'ui/lyrics_view.dart'
     show LyricsPanel, LyricsSheet, LyricsView, showLyricsSheet;
 export 'ui/mini_player.dart' show MiniPlayer;
+export 'ui/now_playing_announcer.dart' show NowPlayingAnnouncer;
 export 'ui/now_playing_overlay.dart' show NowPlayingOverlay, QueuePanel;
 export 'ui/now_playing_screen.dart' show NowPlayingScreen, NowPlayingTitle;
 export 'ui/player_bar.dart'

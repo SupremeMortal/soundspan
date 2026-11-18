@@ -3,6 +3,7 @@
 import 'package:flutter/gestures.dart' show PointerDeviceKind;
 import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:soundspan/app/router/routes.dart';
 import 'package:soundspan/shared/domain/domain.dart';
 import 'package:soundspan/shared/widgets/media_card.dart';
@@ -64,15 +65,18 @@ void main() {
     expect(find.byTooltip('Play'), findsNothing);
 
     // Tab through the controls until a card has keyboard focus.
+    var focused = find.byType(MediaCard).first;
     for (var i = 0; i < 20; i++) {
       await tester.sendKeyEvent(LogicalKeyboardKey.tab);
       await tester.pump();
-      if (find.byKey(MediaCard.focusRingKey).evaluate().isNotEmpty) break;
+      final node = FocusManager.instance.primaryFocus?.context;
+      if (node == null) continue;
+      final card = node.findAncestorWidgetOfExactType<MediaCard>();
+      if (card != null) {
+        focused = find.byWidget(card);
+        break;
+      }
     }
-    final focused = find.ancestor(
-      of: find.byKey(MediaCard.focusRingKey),
-      matching: find.byType(MediaCard),
-    );
 
     expect(playButton(focused), findsOneWidget);
     await rig.close(tester);

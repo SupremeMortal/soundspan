@@ -2555,6 +2555,24 @@ abstract class AppLocalizations {
   /// **'Skip forward {seconds} seconds'**
   String playerSkipForward(int seconds);
 
+  /// Spoken politely by the screen reader when playback moves to another track.
+  ///
+  /// In en, this message translates to:
+  /// **'Now playing {title} by {artist}'**
+  String playerAnnounceTrack(String title, String artist);
+
+  /// Spoken politely by the screen reader when playback moves to a track whose artist is unknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Now playing {title}'**
+  String playerAnnounceTrackNoArtist(String title);
+
+  /// Spoken politely by the screen reader when playback moves to a podcast episode: the episode title, then the podcast title.
+  ///
+  /// In en, this message translates to:
+  /// **'{title}, {podcast}'**
+  String playerAnnounceEpisode(String title, String podcast);
+
   /// Tooltip and screen-reader label of the player's episode speed menu button.
   ///
   /// In en, this message translates to:

@@ -52,6 +52,8 @@ class NowPlayingOverlay extends ConsumerWidget {
       bindings: {const SingleActivator(LogicalKeyboardKey.escape): close},
       child: Focus(
         autofocus: true,
+        // Holds focus for the screen's keys; never a Tab stop or ringed.
+        skipTraversal: true,
         child: Material(
           color: context.colors.surface,
           child: Backdrop(

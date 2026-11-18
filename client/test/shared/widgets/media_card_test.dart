@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:soundspan/app/theme/extensions.dart';
+import 'package:soundspan/app/theme/focus_ring.dart';
 import 'package:soundspan/shared/widgets/artwork.dart';
 import 'package:soundspan/shared/widgets/media_card.dart';
 import 'package:soundspan/shared/widgets/mosaic_artwork.dart';
@@ -121,26 +122,24 @@ void main() {
   testWidgets('focus shows the ring', (tester) async {
     var taps = 0;
     await tester.pumpApp(card(onTap: () => taps++));
-    expect(find.byKey(MediaCard.focusRingKey), findsNothing);
+    final ring = find.byKey(FocusRingLayer.paintKey);
+    expect(ring, paintsNothing);
 
     await tester.sendKeyEvent(LogicalKeyboardKey.tab);
     await tester.pump();
 
-    expect(find.byKey(MediaCard.focusRingKey), findsOneWidget);
-    final ring = tester.widget<DecoratedBox>(
-      find.descendant(
-        of: find.byKey(MediaCard.focusRingKey),
-        matching: find.byType(DecoratedBox),
-      ),
-    );
-    final border = (ring.decoration as BoxDecoration).border! as Border;
     final context = tester.element(find.byType(MediaCard));
-    expect(border.top.color, context.colors.brand);
-    expect(border.top.width, 2);
     // 2 px ring, 2 px outside the card.
     expect(
-      tester.getSize(find.byKey(MediaCard.focusRingKey)),
-      tester.getSize(find.byType(MediaCard)) + const Offset(8, 8),
+      ring,
+      paints..rrect(
+        rrect: RRect.fromRectAndRadius(
+          tester.getRect(find.byType(MediaCard)).inflate(3),
+          const Radius.circular(FocusRingLayer.radius),
+        ),
+        color: context.colors.brand,
+        strokeWidth: 2,
+      ),
     );
 
     await tester.sendKeyEvent(LogicalKeyboardKey.enter);

@@ -6,6 +6,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:soundspan/app/l10n/app_locales.dart';
 import 'package:soundspan/app/l10n/generated/app_localizations.dart';
+import 'package:soundspan/app/text_scale.dart';
+import 'package:soundspan/app/theme/focus_ring.dart';
 import 'package:soundspan/app/theme/theme.dart';
 import 'package:soundspan/core/connectivity/reachability.dart';
 import 'package:soundspan/core/storage/providers.dart';
@@ -138,6 +140,9 @@ extension PumpApp on WidgetTester {
           highContrastTheme: SoundspanTheme.lightHighContrast,
           highContrastDarkTheme: SoundspanTheme.darkHighContrast,
           themeMode: theme,
+          builder: (context, child) => AppTextScale(
+            child: FocusRingLayer(child: child ?? const SizedBox.shrink()),
+          ),
           locale: locale,
           localizationsDelegates: appHasLocale
               ? appLocalizationsDelegates

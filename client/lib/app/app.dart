@@ -6,6 +6,8 @@ import 'package:soundspan/app/desktop/keep_playing_prompt.dart';
 import 'package:soundspan/app/l10n/app_locales.dart';
 import 'package:soundspan/app/l10n/generated/app_localizations.dart';
 import 'package:soundspan/app/router/routes.dart';
+import 'package:soundspan/app/text_scale.dart';
+import 'package:soundspan/app/theme/focus_ring.dart';
 import 'package:soundspan/app/theme/theme.dart';
 import 'package:soundspan/app/volatile_storage_notice.dart';
 import 'package:soundspan/core/storage/app/app_settings_store.dart';
@@ -59,8 +61,14 @@ class SoundspanApp extends ConsumerWidget {
     return MaterialApp.router(
       routerConfig: ref.watch(routerProvider),
       debugShowCheckedModeBanner: false,
-      builder: (context, child) => KeepPlayingPrompt(
-        child: VolatileStorageNotice(child: child ?? const SizedBox.shrink()),
+      builder: (context, child) => AppTextScale(
+        child: FocusRingLayer(
+          child: KeepPlayingPrompt(
+            child: VolatileStorageNotice(
+              child: child ?? const SizedBox.shrink(),
+            ),
+          ),
+        ),
       ),
       onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
       localizationsDelegates: appLocalizationsDelegates,

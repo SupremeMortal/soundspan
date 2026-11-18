@@ -35,7 +35,7 @@ Future<void> showQueueSheet(
           bindings: {
             closeActivator: () => Navigator.of(sheetContext).maybePop(),
           },
-          child: Focus(autofocus: true, child: sheet),
+          child: Focus(autofocus: true, skipTraversal: true, child: sheet),
         );
       }
       return sheet;

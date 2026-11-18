@@ -210,9 +210,6 @@ class TrackRow extends ConsumerStatefulWidget {
   /// action.
   final Map<CustomSemanticsAction, VoidCallback> semanticActions;
 
-  /// The key of the focus ring while it is shown.
-  static const Key focusRingKey = ValueKey('TrackRow.focusRing');
-
   /// The key of the equaliser bars of the playing row.
   static const Key playingIndicatorKey = ValueKey('TrackRow.playing');
 
@@ -417,29 +414,13 @@ class _TrackRowState extends ConsumerState<TrackRow> {
       overflow: onMenu == null ? null : _OverflowButton(onMenu: onMenu),
     );
 
-    content = Stack(
-      children: [
-        DecoratedBox(
-          key: TrackRow.backgroundKey,
-          decoration: BoxDecoration(
-            color: fill,
-            borderRadius: BorderRadius.circular(Radii.small),
-          ),
-          child: content,
-        ),
-        if (_focused)
-          Positioned.fill(
-            child: IgnorePointer(
-              key: TrackRow.focusRingKey,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  border: Border.all(color: colors.brand, width: 2),
-                  borderRadius: BorderRadius.circular(Radii.small),
-                ),
-              ),
-            ),
-          ),
-      ],
+    content = DecoratedBox(
+      key: TrackRow.backgroundKey,
+      decoration: BoxDecoration(
+        color: fill,
+        borderRadius: BorderRadius.circular(Radii.small),
+      ),
+      child: content,
     );
 
     if (!enabled) {

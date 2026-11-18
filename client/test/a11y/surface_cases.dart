@@ -25,6 +25,7 @@ import 'package:soundspan/features/downloads/ui/download_actions.dart';
 import 'package:soundspan/features/listen_together/ui/listen_together_screen.dart';
 import 'package:soundspan/features/player/player.dart';
 import 'package:soundspan/features/podcasts/podcasts.dart';
+import 'package:soundspan/features/settings/ui/storage_settings_screen.dart';
 import 'package:soundspan/shared/widgets/action_bar.dart';
 import 'package:soundspan/shared/widgets/app_banner.dart';
 import 'package:soundspan/shared/widgets/track_row.dart';
@@ -98,6 +99,8 @@ Future<void> _pumpPlayerSurface(
         : Router.withConfig(config: router),
     size: options.size,
     theme: options.theme,
+    textScale: options.textScale,
+    highContrast: options.highContrast,
     overrides: overrides,
   );
   container.read(playbackControllerProvider);
@@ -300,6 +303,7 @@ final List<ScreenCase> surfaceCases = [
         ],
         () async {
           await tester.ensureVisible(find.text(label).first);
+          await tester.pumpAndSettle();
           await tester.tap(find.text(label).first);
         },
       ),
@@ -308,7 +312,18 @@ final List<ScreenCase> surfaceCases = [
     name: 'Clear cache dialog',
     pump: (tester, options) =>
         _pumpAndOpen(tester, options, RoutePaths.settingsStorage, () async {
-          await tester.ensureVisible(find.text('Clear cache').first);
+          // At large text sizes the row is below the built part of the list.
+          await tester.scrollUntilVisible(
+            find.text('Clear cache'),
+            200,
+            scrollable: find
+                .descendant(
+                  of: find.byType(StorageSettingsScreen),
+                  matching: find.byType(Scrollable),
+                )
+                .first,
+          );
+          await tester.pumpAndSettle();
           await tester.tap(find.text('Clear cache').first);
         }),
   ),
@@ -339,6 +354,8 @@ final List<ScreenCase> surfaceCases = [
         const LocalDataTooNewScreen(profileId: 'p1'),
         size: options.size,
         theme: options.theme,
+        textScale: options.textScale,
+        highContrast: options.highContrast,
       );
       await tester.tap(find.text('Reset this server’s local data'));
       await tester.pumpAndSettle();
@@ -357,6 +374,8 @@ final List<ScreenCase> surfaceCases = [
         ),
         size: options.size,
         theme: options.theme,
+        textScale: options.textScale,
+        highContrast: options.highContrast,
         overrides: [
           ...listenTogetherOverrides(controller, repository),
           profilesProvider.overrideWith(
@@ -368,6 +387,7 @@ final List<ScreenCase> surfaceCases = [
       controller.emit(activeOf(sampleGroup(hostUserId: me)));
       await tester.pumpAndSettle();
       await tester.ensureVisible(find.byKey(ListenTogetherScreen.endKey));
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(ListenTogetherScreen.endKey));
       await tester.pumpAndSettle();
     },

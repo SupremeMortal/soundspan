@@ -1560,6 +1560,21 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String playerAnnounceTrack(String title, String artist) {
+    return 'Now playing $title by $artist';
+  }
+
+  @override
+  String playerAnnounceTrackNoArtist(String title) {
+    return 'Now playing $title';
+  }
+
+  @override
+  String playerAnnounceEpisode(String title, String podcast) {
+    return '$title, $podcast';
+  }
+
+  @override
   String get playerSpeed => 'Playback speed';
 
   @override
@@ -4036,6 +4051,21 @@ class AppLocalizationsEnXa extends AppLocalizationsEn {
   @override
   String playerSkipForward(int seconds) {
     return '[Šķîþ föŕŵåŕð $seconds šéçöñðš one two three]';
+  }
+
+  @override
+  String playerAnnounceTrack(String title, String artist) {
+    return '[Ñöŵ þļåýîñĝ $title bý $artist one two]';
+  }
+
+  @override
+  String playerAnnounceTrackNoArtist(String title) {
+    return '[Ñöŵ þļåýîñĝ $title one two]';
+  }
+
+  @override
+  String playerAnnounceEpisode(String title, String podcast) {
+    return '[$title, $podcast one]';
   }
 
   @override

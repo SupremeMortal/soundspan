@@ -91,6 +91,8 @@ class HomeScreen extends ConsumerWidget {
             },
             child: Focus(
               autofocus: true,
+              // Holds focus for the screen's keys; never a Tab stop or ringed.
+              skipTraversal: true,
               child: Column(
                 children: [
                   const OfflineBanner(),

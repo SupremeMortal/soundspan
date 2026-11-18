@@ -2039,6 +2039,29 @@
       "seconds": {"type": "int", "example": "15"}
     }
   },
+  "playerAnnounceTrack": "Now playing {title} by {artist}",
+  "@playerAnnounceTrack": {
+    "description": "Spoken politely by the screen reader when playback moves to another track.",
+    "placeholders": {
+      "title": {"type": "String", "example": "Blue in Green"},
+      "artist": {"type": "String", "example": "Miles Davis"}
+    }
+  },
+  "playerAnnounceTrackNoArtist": "Now playing {title}",
+  "@playerAnnounceTrackNoArtist": {
+    "description": "Spoken politely by the screen reader when playback moves to a track whose artist is unknown.",
+    "placeholders": {
+      "title": {"type": "String", "example": "Blue in Green"}
+    }
+  },
+  "playerAnnounceEpisode": "{title}, {podcast}",
+  "@playerAnnounceEpisode": {
+    "description": "Spoken politely by the screen reader when playback moves to a podcast episode: the episode title, then the podcast title.",
+    "placeholders": {
+      "title": {"type": "String", "example": "Episode 12"},
+      "podcast": {"type": "String", "example": "The Daily Show"}
+    }
+  },
   "playerSpeed": "Playback speed",
   "@playerSpeed": {
     "description": "Tooltip and screen-reader label of the player's episode speed menu button."

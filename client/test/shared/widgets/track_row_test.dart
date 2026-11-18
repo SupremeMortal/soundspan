@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:soundspan/app/theme/extensions.dart';
+import 'package:soundspan/app/theme/focus_ring.dart';
 import 'package:soundspan/shared/widgets/artwork.dart';
 import 'package:soundspan/shared/widgets/like_button.dart';
 import 'package:soundspan/shared/widgets/track_row.dart';
@@ -226,23 +227,28 @@ void main() {
     expect(fill(), colors.surfaceHover);
   });
 
-  testWidgets('keyboard focus shows a brand ring', (tester) async {
+  testWidgets('keyboard focus shows the focus ring around the row', (
+    tester,
+  ) async {
     var taps = 0;
     await tester.pumpApp(row(onTap: () => taps++));
-    expect(find.byKey(TrackRow.focusRingKey), findsNothing);
+    final ring = find.byKey(FocusRingLayer.paintKey);
+    expect(ring, paintsNothing);
 
     await tester.sendKeyEvent(LogicalKeyboardKey.tab);
     await tester.pump();
-    final ring = tester.widget<DecoratedBox>(
-      find.descendant(
-        of: find.byKey(TrackRow.focusRingKey),
-        matching: find.byType(DecoratedBox),
+    final colors = tester.element(find.byType(TrackRow)).colors;
+    expect(
+      ring,
+      paints..rrect(
+        rrect: RRect.fromRectAndRadius(
+          tester.getRect(find.byType(TrackRow)).inflate(3),
+          const Radius.circular(FocusRingLayer.radius),
+        ),
+        color: colors.brand,
+        strokeWidth: 2,
       ),
     );
-    final colors = tester.element(find.byType(TrackRow)).colors;
-    final border = (ring.decoration as BoxDecoration).border! as Border;
-    expect(border.top.color, colors.brand);
-    expect(border.top.width, 2);
 
     await tester.sendKeyEvent(LogicalKeyboardKey.enter);
     expect(taps, 1);

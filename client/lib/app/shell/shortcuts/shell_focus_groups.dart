@@ -1,13 +1,23 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
 
 import 'package:material_ui/material_ui.dart';
+import 'package:soundspan/app/shell/window_class.dart';
 
-/// The focus groups of the shell, in reading order: the sidebar (or rail,
-/// or navigation bar), the content, the right panel and the player (doc 09,
-/// Accessibility). F6 moves focus to the next group that is on screen and
-/// Shift+F6 to the previous one.
+/// The focus groups of the shell (doc 09, Accessibility). F6 moves focus to
+/// the next group that is on screen and has something focusable, Shift+F6
+/// to the previous one, wrapping. The order follows the window class: top
+/// bar, sidebar, content, right panel, player bar on expanded windows; rail,
+/// content, mini player on medium ones; content, mini player, navigation
+/// bar on compact ones.
 class ShellFocusGroups {
-  /// The navigation group.
+  /// The window class the shell lays out for, which sets the order of
+  /// [groups]; the shell keeps it current.
+  WindowClass windowClass = WindowClass.expanded;
+
+  /// The top bar group.
+  final FocusNode topBar = _groupNode('shell.focus.topBar');
+
+  /// The navigation group: the sidebar, the rail or the navigation bar.
   final FocusNode navigation = _groupNode('shell.focus.navigation');
 
   /// The content group.
@@ -19,8 +29,12 @@ class ShellFocusGroups {
   /// The player bar or mini player group.
   final FocusNode player = _groupNode('shell.focus.player');
 
-  /// The groups in reading order.
-  List<FocusNode> get groups => [navigation, content, rightPanel, player];
+  /// The groups in F6 order for [windowClass].
+  List<FocusNode> get groups => switch (windowClass) {
+    WindowClass.compact => [content, player, navigation],
+    WindowClass.medium ||
+    WindowClass.expanded => [topBar, navigation, content, rightPanel, player],
+  };
 
   static FocusNode _groupNode(String label) =>
       FocusNode(debugLabel: label, skipTraversal: true, canRequestFocus: false);
@@ -79,7 +93,7 @@ class ShellFocusGroups {
 
   /// Releases the nodes.
   void dispose() {
-    for (final group in groups) {
+    for (final group in [topBar, navigation, content, rightPanel, player]) {
       group.dispose();
     }
   }

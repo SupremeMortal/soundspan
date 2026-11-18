@@ -21,6 +21,7 @@ import 'package:soundspan/features/listen_together/listen_together.dart';
 import 'package:soundspan/features/listen_together/ui/listen_together_screen.dart'
     deferred as listen_together_screen;
 import 'package:soundspan/features/mixes/mixes.dart';
+import 'package:soundspan/features/player/player.dart';
 import 'package:soundspan/features/playlist/playlist.dart';
 import 'package:soundspan/features/podcasts/podcasts.dart';
 import 'package:soundspan/features/search/search.dart';
@@ -186,47 +187,51 @@ StatefulShellRoute buildShellRoute(
       child: ProfileScope(
         child: OutboxNoticeListener(
           child: PlayNoticeListener(
-            child: ListenTogetherNoticeListener(
-              child: Consumer(
-                builder: (context, ref, shellChild) => AppShell(
-                  selectedIndex: branch,
-                  onDestinationSelected: (index) =>
-                      shell.goBranch(index, initialLocation: index == branch),
-                  onSearch: (query) => router.go(searchLocation(query)),
-                  onSearchChanged: branch == ShellDestination.search.index
-                      ? (query) => router.go(searchLocation(query))
-                      : null,
-                  onBack: canBack
-                      ? () {
-                          history.back(branch);
-                          router.pop();
-                        }
-                      : null,
-                  onForward: history.canForward(branch)
-                      ? () {
-                          final target = history.forward(branch);
-                          // Pushed onto a detail so the branch's stack survives.
-                          if (target != null) {
-                            DetailNavigation.openLocation(router, target);
+            child: NowPlayingAnnouncer(
+              child: ListenTogetherNoticeListener(
+                child: Consumer(
+                  builder: (context, ref, shellChild) => AppShell(
+                    selectedIndex: branch,
+                    onDestinationSelected: (index) =>
+                        shell.goBranch(index, initialLocation: index == branch),
+                    onSearch: (query) => router.go(searchLocation(query)),
+                    onSearchChanged: branch == ShellDestination.search.index
+                        ? (query) => router.go(searchLocation(query))
+                        : null,
+                    onBack: canBack
+                        ? () {
+                            history.back(branch);
+                            router.pop();
                           }
-                        }
-                      : null,
-                  openPlaylistId: openPlaylistIdOf(state.uri),
-                  onExplore: () =>
-                      DetailNavigation.openLocation(router, RoutePaths.explore),
-                  onVibe: ref.watch(vibeAvailableProvider)
-                      ? () => DetailNavigation.openLocation(
-                          router,
-                          RoutePaths.vibe,
-                        )
-                      : null,
-                  onListenTogether: () => DetailNavigation.openLocation(
-                    router,
-                    RoutePaths.listenTogether,
+                        : null,
+                    onForward: history.canForward(branch)
+                        ? () {
+                            final target = history.forward(branch);
+                            // Pushed onto a detail so the branch's stack survives.
+                            if (target != null) {
+                              DetailNavigation.openLocation(router, target);
+                            }
+                          }
+                        : null,
+                    openPlaylistId: openPlaylistIdOf(state.uri),
+                    onExplore: () => DetailNavigation.openLocation(
+                      router,
+                      RoutePaths.explore,
+                    ),
+                    onVibe: ref.watch(vibeAvailableProvider)
+                        ? () => DetailNavigation.openLocation(
+                            router,
+                            RoutePaths.vibe,
+                          )
+                        : null,
+                    onListenTogether: () => DetailNavigation.openLocation(
+                      router,
+                      RoutePaths.listenTogether,
+                    ),
+                    child: shellChild!,
                   ),
-                  child: shellChild!,
+                  child: shell,
                 ),
-                child: shell,
               ),
             ),
           ),

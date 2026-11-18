@@ -269,6 +269,8 @@ class _Lobby extends ConsumerWidget {
         },
         child: Focus(
           autofocus: true,
+          // Holds focus for the screen's keys; never a Tab stop or ringed.
+          skipTraversal: true,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [

@@ -115,6 +115,8 @@ class _ServerExitDialogState extends ConsumerState<ServerExitDialog> {
     return PopScope(
       canPop: !_running,
       child: AlertDialog(
+        // Scrolls rather than overflows at large text sizes.
+        scrollable: true,
         title: Text(
           signOut
               ? l10n.settingsServersSignOutTitle(server)

@@ -172,6 +172,7 @@ class _AdaptiveShellState extends State<AdaptiveShell> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final windowClass = windowClassOf(constraints.biggest);
+        widget.focusGroups?.windowClass = windowClass;
         final content = KeyedSubtree(key: _contentKey, child: widget.child);
         return WindowClassScope(
           windowClass: windowClass,
@@ -195,6 +196,14 @@ class _AdaptiveShellState extends State<AdaptiveShell> {
     container: true,
     label: AppLocalizations.of(context).navMainLabel,
     child: ShellFocusGroup(group: widget.focusGroups?.navigation, child: child),
+  );
+
+  /// The main navigation's semantics node, for the expanded sidebar, whose
+  /// focus group holds the playlists under the destinations as well.
+  Widget _navigationSemantics(BuildContext context, Widget child) => Semantics(
+    container: true,
+    label: AppLocalizations.of(context).navMainLabel,
+    child: FocusTraversalGroup(child: child),
   );
 
   Widget _contentGroup(Widget content) =>
@@ -308,7 +317,8 @@ class _AdaptiveShellState extends State<AdaptiveShell> {
       body: SafeArea(
         child: Column(
           children: [
-            ?widget.topBar,
+            if (widget.topBar case final topBar?)
+              ShellFocusGroup(group: widget.focusGroups?.topBar, child: topBar),
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.all(Spacing.x8),
@@ -327,70 +337,74 @@ class _AdaptiveShellState extends State<AdaptiveShell> {
                         ),
                         child: Material(
                           type: MaterialType.transparency,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              _navigation(
-                                context,
-                                Padding(
-                                  padding: const EdgeInsets.all(Spacing.x8),
-                                  child: Column(
-                                    children: [
-                                      for (final (index, destination)
-                                          in ShellDestination.values.indexed)
-                                        _SidebarDestination(
-                                          label: destination.label(l10n),
-                                          icon: index == widget.selectedIndex
-                                              ? destination.selectedIcon
-                                              : destination.icon,
-                                          selected:
-                                              index == widget.selectedIndex,
-                                          collapsed: collapsed,
-                                          onTap: () => widget
-                                              .onDestinationSelected(index),
-                                        ),
-                                      if (widget.onExplore
-                                          case final onExplore?)
-                                        _SidebarDestination(
-                                          label: l10n.navExplore,
-                                          icon: Icons.explore_outlined,
-                                          selected: false,
-                                          collapsed: collapsed,
-                                          onTap: onExplore,
-                                        ),
-                                      if (widget.onVibe case final onVibe?)
-                                        _SidebarDestination(
-                                          key: AdaptiveShell.vibeKey,
-                                          label: l10n.navVibe,
-                                          icon: Icons.graphic_eq_rounded,
-                                          selected: false,
-                                          collapsed: collapsed,
-                                          onTap: onVibe,
-                                        ),
-                                      if (widget.onListenTogether
-                                          case final onListenTogether?)
-                                        _SidebarDestination(
-                                          key: AdaptiveShell.listenTogetherKey,
-                                          label: widget.inListenTogetherGroup
-                                              ? l10n.listenTogetherInGroup
-                                              : l10n.listenTogetherTitle,
-                                          icon: Icons.groups_rounded,
-                                          selected: false,
-                                          collapsed: collapsed,
-                                          dot: widget.inListenTogetherGroup,
-                                          onTap: onListenTogether,
-                                        ),
-                                    ],
+                          child: ShellFocusGroup(
+                            group: widget.focusGroups?.navigation,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                _navigationSemantics(
+                                  context,
+                                  Padding(
+                                    padding: const EdgeInsets.all(Spacing.x8),
+                                    child: Column(
+                                      children: [
+                                        for (final (index, destination)
+                                            in ShellDestination.values.indexed)
+                                          _SidebarDestination(
+                                            label: destination.label(l10n),
+                                            icon: index == widget.selectedIndex
+                                                ? destination.selectedIcon
+                                                : destination.icon,
+                                            selected:
+                                                index == widget.selectedIndex,
+                                            collapsed: collapsed,
+                                            onTap: () => widget
+                                                .onDestinationSelected(index),
+                                          ),
+                                        if (widget.onExplore
+                                            case final onExplore?)
+                                          _SidebarDestination(
+                                            label: l10n.navExplore,
+                                            icon: Icons.explore_outlined,
+                                            selected: false,
+                                            collapsed: collapsed,
+                                            onTap: onExplore,
+                                          ),
+                                        if (widget.onVibe case final onVibe?)
+                                          _SidebarDestination(
+                                            key: AdaptiveShell.vibeKey,
+                                            label: l10n.navVibe,
+                                            icon: Icons.graphic_eq_rounded,
+                                            selected: false,
+                                            collapsed: collapsed,
+                                            onTap: onVibe,
+                                          ),
+                                        if (widget.onListenTogether
+                                            case final onListenTogether?)
+                                          _SidebarDestination(
+                                            key:
+                                                AdaptiveShell.listenTogetherKey,
+                                            label: widget.inListenTogetherGroup
+                                                ? l10n.listenTogetherInGroup
+                                                : l10n.listenTogetherTitle,
+                                            icon: Icons.groups_rounded,
+                                            selected: false,
+                                            collapsed: collapsed,
+                                            dot: widget.inListenTogetherGroup,
+                                            onTap: onListenTogether,
+                                          ),
+                                      ],
+                                    ),
                                   ),
                                 ),
-                              ),
-                              Expanded(
-                                child: collapsed
-                                    ? const SizedBox.shrink()
-                                    : widget.sidebarPlaylists ??
-                                          const SizedBox.shrink(),
-                              ),
-                            ],
+                                Expanded(
+                                  child: collapsed
+                                      ? const SizedBox.shrink()
+                                      : widget.sidebarPlaylists ??
+                                            const SizedBox.shrink(),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),

@@ -262,6 +262,8 @@ class _DragToDismissState extends State<_DragToDismiss>
     },
     child: Focus(
       autofocus: true,
+      // Holds focus for the screen's keys; never a Tab stop or ringed.
+      skipTraversal: true,
       child: LayoutBuilder(
         builder: (context, constraints) {
           _height = math.max(1, constraints.maxHeight);

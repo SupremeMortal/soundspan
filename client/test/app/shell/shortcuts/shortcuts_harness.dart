@@ -45,6 +45,15 @@ class ShortcutRecorder implements TrackLikes {
 /// The key of the harness's text field.
 const Key textFieldKey = Key('harness.text');
 
+/// The key of the harness's button in the top bar.
+const Key topBarButtonKey = Key('harness.topBar');
+
+/// The keys of the harness's two buttons under the sidebar's destinations.
+const List<Key> sidebarPlaylistKeys = [
+  Key('harness.playlist.1'),
+  Key('harness.playlist.2'),
+];
+
 /// The key of the harness's button in the content.
 const Key contentButtonKey = Key('harness.button');
 
@@ -53,7 +62,9 @@ const Key contentButtonKey = Key('harness.button');
 /// controller; [back] and [forward] decide whether Back and Forward have
 /// somewhere to go. The controller is created, as at profile activation.
 /// With [rightPanel] the shell has a right panel and with
-/// [playerBar] a player bar, each holding one button.
+/// [playerBar] a player bar, each holding one button; with [topBar] a top
+/// bar holding one button and with [sidebarPlaylists] two buttons under the
+/// sidebar's destinations.
 Future<ProviderContainer> pumpShortcuts(
   WidgetTester tester, {
   required PlayerRig rig,
@@ -64,6 +75,8 @@ Future<ProviderContainer> pumpShortcuts(
   bool rightPanel = false,
   bool playerBar = true,
   bool refreshable = true,
+  bool topBar = false,
+  bool sidebarPlaylists = false,
   List<Override> overrides = const [],
 }) async {
   final groups = ShellFocusGroups();
@@ -98,6 +111,25 @@ Future<ProviderContainer> pumpShortcuts(
         selectedIndex: 0,
         onDestinationSelected: (_) {},
         focusGroups: groups,
+        topBar: topBar
+            ? TextButton(
+                key: topBarButtonKey,
+                onPressed: () {},
+                child: const Text('Top bar'),
+              )
+            : null,
+        sidebarPlaylists: sidebarPlaylists
+            ? Column(
+                children: [
+                  for (final key in sidebarPlaylistKeys)
+                    TextButton(
+                      key: key,
+                      onPressed: () {},
+                      child: const Text('Playlist'),
+                    ),
+                ],
+              )
+            : null,
         rightPanel: rightPanel
             ? Center(
                 child: TextButton(

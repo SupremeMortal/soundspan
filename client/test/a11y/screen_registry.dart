@@ -30,10 +30,16 @@ import '../helpers/test_root.dart';
 import 'registry_content.dart';
 import 'surface_cases.dart';
 
-/// How a [ScreenCase] is pumped: the window [size] and the [theme].
+/// How a [ScreenCase] is pumped: the window [size], the [theme], the
+/// operating system's [textScale] and whether it asks for [highContrast].
 class PumpOptions {
   /// Creates the options.
-  const new({required this.size, required this.theme});
+  const new({
+    required this.size,
+    required this.theme,
+    this.textScale = 1.0,
+    this.highContrast = false,
+  });
 
   /// The window size.
   final Size size;
@@ -41,8 +47,29 @@ class PumpOptions {
   /// Dark or light.
   final ThemeMode theme;
 
+  /// The text scale the operating system asks for.
+  final double textScale;
+
+  /// Whether the operating system asks for high contrast.
+  final bool highContrast;
+
   @override
-  String toString() => '${size.width.toInt()} ${theme.name}';
+  String toString() => [
+    '${size.width.toInt()} ${theme.name}',
+    if (textScale != 1.0) 'text ${textScale}x',
+    if (highContrast) 'high contrast',
+  ].join(' ');
+}
+
+/// Sets the operating system's text scale and high-contrast request of
+/// [options] on [tester]'s platform dispatcher until the test ends.
+void applyPlatformOptions(WidgetTester tester, PumpOptions options) {
+  tester.platformDispatcher
+    ..textScaleFactorTestValue = options.textScale
+    ..accessibilityFeaturesTestValue = FakeAccessibilityFeatures(
+      highContrast: options.highContrast,
+    );
+  addTearDown(tester.platformDispatcher.clearAllTestValues);
 }
 
 /// One screen, or one surface that is not a route, of the accessibility
@@ -145,6 +172,7 @@ Future<TestRoot> pumpRoute(
   List<Override> overrides = const [],
   RegistryContent? content,
 }) async {
+  applyPlatformOptions(tester, options);
   final root = await tester.pumpSoundspanApp(
     stored: StoredProfile.signedIn,
     size: options.size,

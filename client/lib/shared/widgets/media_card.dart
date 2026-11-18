@@ -84,9 +84,6 @@ class MediaCard extends StatefulWidget {
   /// The space between the card's edge and its content.
   static const double padding = Spacing.x8;
 
-  /// The key of the focus ring while it is shown.
-  static const Key focusRingKey = ValueKey('MediaCard.focusRing');
-
   /// The height of a card [width] wide at the ambient text scale.
   static double extentFor(BuildContext context, {required double width}) {
     final lines = _textLines(context);
@@ -238,27 +235,6 @@ class _MediaCardState extends State<MediaCard> {
                         ),
                         child: content,
                       ),
-                      if (_focused)
-                        Positioned(
-                          left: -_ringOutset,
-                          top: -_ringOutset,
-                          right: -_ringOutset,
-                          bottom: -_ringOutset,
-                          child: IgnorePointer(
-                            key: MediaCard.focusRingKey,
-                            child: DecoratedBox(
-                              decoration: BoxDecoration(
-                                border: Border.all(
-                                  color: colors.brand,
-                                  width: 2,
-                                ),
-                                borderRadius: BorderRadius.circular(
-                                  Radii.small + _ringOutset,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
                     ],
                   ),
                 ),
@@ -269,9 +245,6 @@ class _MediaCardState extends State<MediaCard> {
       },
     );
   }
-
-  /// The 2 px ring drawn 2 px outside the card.
-  static const double _ringOutset = 4;
 }
 
 /// The 40 px `accent` play button over the artwork of a hovered card.

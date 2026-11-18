@@ -253,7 +253,12 @@ class _ShellShortcutsState extends ConsumerState<ShellShortcuts> {
         child: Actions(
           actions: _actions(),
           child: DesktopMenuBar(
-            child: Focus(focusNode: _anchor, autofocus: true, child: scoped),
+            child: Focus(
+              focusNode: _anchor,
+              autofocus: true,
+              skipTraversal: true,
+              child: scoped,
+            ),
           ),
         ),
       ),
