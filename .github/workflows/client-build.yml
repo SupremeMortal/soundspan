@@ -635,9 +635,11 @@ jobs:
             cmp "web/$icon" "build/web/$icon"
           done
 
-      - name: Bundle-size report
+      # The gzip-compressed initial load against the 5 MB budget of
+      # tool/perf/budgets.json (doc 13, Risk Register K8).
+      - name: Initial-load bundle size
         working-directory: client
-        run: tool/web_bundle_report.sh build/web >> "$GITHUB_STEP_SUMMARY"
+        run: dart run tool/perf/web_bundle_size.dart --dir build/web
 
       - name: Name the artifact
         run: |

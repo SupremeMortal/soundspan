@@ -78,6 +78,7 @@ jobs:
           has() { grep -Eq "$1" <<< "$changed" && echo true || echo false; }
           device="$(has '^(client/lib/core/playback/engines/|client/integration_test/|client/lib/platform/player_engine/|client/lib/core/playback/media_controls/|client/lib/platform/media_controls/|client/android/|client/ios/|client/windows/|client/packages/soundspan_smtc/|\.github/workflows/client-device-tests\.yml$)')"
           desktop_integration="$(has '^(client/integration_test/desktop/|client/lib/app/|client/lib/platform/|client/linux/|client/windows/|client/macos/|client/pubspec\.lock$|\.github/workflows/client-device-tests\.yml$)')"
+          perf="$(has '^(client/integration_test/perf_scroll_test\.dart$|client/test_driver/perf_driver\.dart$|client/lib/shared/widgets/|client/lib/features/library/|client/lib/app/|client/tool/perf/|client/pubspec\.lock$|\.github/workflows/client-device-tests\.yml$)')"
           patrol="$(has '^(client/integration_test/patrol/|client/android/|client/lib/core/playback/|client/lib/core/downloads/|client/lib/platform/downloader/|client/lib/features/connect/|client/pubspec\.lock$|\.github/workflows/client-device-tests\.yml$)')"
           {
             echo "client=$(has '^(client/|\.github/workflows/client-[^/]*\.yml$|\.github/actions/client-flutter/)')"
@@ -94,12 +95,15 @@ jobs:
           } | tee -a "$GITHUB_OUTPUT"
           # The job groups of client-device-tests.yml, separated by spaces:
           # the engine suite when `device` is true, the desktop suite when the
-          # desktop app paths changed, and the patrol suite when the Patrol
-          # paths changed; `none` when there is none.
+          # desktop app paths changed, the patrol suite when the Patrol
+          # paths changed, and the perf suite when the scroll test, the
+          # widgets and screens it measures or the perf tools changed;
+          # `none` when there is none.
           suites=""
           [[ "$device" == true ]] && suites+=" engine"
           [[ "$desktop_integration" == true ]] && suites+=" desktop"
           [[ "$patrol" == true ]] && suites+=" patrol"
+          [[ "$perf" == true ]] && suites+=" perf"
           suites="${suites# }"
           echo "device_suites=${suites:-none}" | tee -a "$GITHUB_OUTPUT"
 
@@ -542,9 +546,12 @@ jobs:
             cmp "web/$icon" "build/web/$icon"
           done
 
-      - name: Bundle-size report
+      # The gzip-compressed initial load against the 5 MB budget of
+      # tool/perf/budgets.json (doc 13, Risk Register K8); the table goes to
+      # the job summary.
+      - name: Initial-load bundle size
         working-directory: client
-        run: tool/web_bundle_report.sh build/web >> "$GITHUB_STEP_SUMMARY"
+        run: dart run tool/perf/web_bundle_size.dart --dir build/web
 
   client-web-integration:
     name: client-web-integration
@@ -713,7 +720,8 @@ jobs:
 
   # The engine conformance suite on an Android emulator, an iOS simulator,
   # macOS, headless Chrome, Linux and Windows, the desktop integration tests
-  # on Linux, Windows and macOS, and the Patrol suite on an Android emulator
+  # on Linux, Windows and macOS, the Patrol suite on an Android emulator,
+  # and the perf suite on Linux and an Android emulator
   # (client-device-tests.yml), each group when its paths changed.
   client-device-tests:
     name: client-device-tests

@@ -242,7 +242,7 @@ Implemented with `Shortcuts`/`Actions` at the shell so they are discoverable to 
 - Position updates repaint only the `SeekBar` (its own `RepaintBoundary` and listenable), never the player bar.
 - Images decode at display size (`memCacheWidth`). Grids precache one screen ahead on idle.
 - Shelves build lazily as they scroll into view.
-- Budgets from the design document are checked by `integration_test/perf_scroll_test.dart` (frame timings on a 10,000-row list in profile mode) and by the manual memory run each release.
+- The resource budget of the design document is checked in CI where a runner can measure it, with every threshold in `client/tool/perf/budgets.json` ([11](11-testing-and-ci.md), Perf suite): `integration_test/perf_scroll_test.dart` flings and drags the Library Songs screen over a fake paged source of 10,000 tracks (pages resolve after 50 ms, placeholder artwork) inside `watchPerformance` in profile mode on Linux, and the 90th-percentile frame build time must be at most 8.0 ms and the 99th at most 16.0 ms (raster time is reported, not gated: the runner renders in software); the web build's initial load must be at most 5 MB gzip-compressed; the release APK's median cold start on the Android emulator must be at most 3,000 ms. A threshold is raised only when profiling shows the excess is runner noise, never above 16.6 ms for the 90th percentile or 5,000 ms for the cold start, and the measured values and the reason are then written here. Memory figures and real-device timings (2 s cold start on a mid-range Android phone, 60 fps on a 10,000-track library on a mid-range phone and an iPhone) are measured with the platform profiler each release and recorded on the human checklist.
 
 ## Localization
 
