@@ -61,6 +61,7 @@ jest.mock("../../utils/redis", () => ({
 }));
 
 import router from "../mixes";
+import { withClientSurfaceValidation } from "./helpers/expectClientSurfaceResponse";
 
 function getHandler(path: string, method: "get" | "post" | "put" | "delete") {
     const layer = (router as any).stack.find(
@@ -90,7 +91,10 @@ function createRes() {
 }
 
 describe("mixes route runtime", () => {
-    const getMixes = getHandler("/", "get");
+    const getMixes = withClientSurfaceValidation(
+        "listMixes",
+        getHandler("/", "get"),
+    );
     const generateMood = getHandler("/mood", "post");
     const getMoodPresetsStatic = getHandler("/mood/presets", "get");
     const saveMoodPrefs = getHandler("/mood/save-preferences", "post");
@@ -100,7 +104,10 @@ describe("mixes route runtime", () => {
     const backfillMoodBuckets = getHandler("/mood/buckets/backfill", "post");
     const refreshMixes = getHandler("/refresh", "post");
     const saveMixAsPlaylist = getHandler("/:id/save", "post");
-    const getSingleMix = getHandler("/:id", "get");
+    const getSingleMix = withClientSurfaceValidation(
+        "getMix",
+        getHandler("/:id", "get"),
+    );
 
     beforeEach(() => {
         jest.clearAllMocks();
@@ -112,9 +119,13 @@ describe("mixes route runtime", () => {
         programmaticPlaylistService.generateAllMixes.mockResolvedValue([
             {
                 id: "mix-1",
+                type: "era",
                 name: "Mix One",
+                description: "Music from one era",
                 trackIds: ["t-1", "t-2"],
+                coverUrls: ["/covers/a.jpg"],
                 trackCount: 2,
+                color: "linear-gradient(to bottom, #000, #111)",
             },
         ]);
         programmaticPlaylistService.generateMoodOnDemand.mockResolvedValue({
@@ -164,7 +175,18 @@ describe("mixes route runtime", () => {
         expect(unauthorizedRes.statusCode).toBe(401);
 
         redisClient.get.mockResolvedValueOnce(
-            JSON.stringify([{ id: "cached", trackIds: [], trackCount: 0 }]),
+            JSON.stringify([
+                {
+                    id: "cached",
+                    type: "top-tracks",
+                    name: "Cached Mix",
+                    description: "Cached",
+                    trackIds: [],
+                    coverUrls: [],
+                    trackCount: 0,
+                    color: "linear-gradient(to bottom, #000, #111)",
+                },
+            ]),
         );
         const cachedReq = { user: { id: "u1" } } as any;
         const cachedRes = createRes();
@@ -181,6 +203,18 @@ describe("mixes route runtime", () => {
             programmaticPlaylistService.generateAllMixes,
         ).toHaveBeenCalledWith("u1");
         expect(redisClient.setEx).toHaveBeenCalled();
+    });
+
+    it("answers 500 when mix generation fails", async () => {
+        programmaticPlaylistService.generateAllMixes.mockRejectedValueOnce(
+            new Error("generation failed"),
+        );
+        const res = createRes();
+
+        await getMixes({ user: { id: "u1" } } as any, res);
+
+        expect(res.statusCode).toBe(500);
+        expect(res.body).toEqual({ error: "Failed to get mixes" });
     });
 
     it("validates and generates mood mixes", async () => {
@@ -420,11 +454,35 @@ describe("mixes route runtime", () => {
             JSON.stringify([
                 {
                     id: "mix-1",
+                    type: "era",
                     name: "Mix One",
+                    description: "Music from one era",
                     trackIds: ["t-2", "t-1"],
+                    coverUrls: ["/covers/a.jpg"],
                     trackCount: 2,
+                    color: "linear-gradient(to bottom, #000, #111)",
                 },
             ]),
+        );
+        prisma.track.findMany.mockResolvedValueOnce(
+            ["t-1", "t-2"].map((id, index) => ({
+                id,
+                albumId: "al-1",
+                title: `Track ${index + 1}`,
+                trackNo: index + 1,
+                discNo: 1,
+                duration: 200 + index,
+                loudnessLufs: null,
+                truePeakDb: null,
+                album: {
+                    id: "al-1",
+                    title: "Album One",
+                    coverUrl: "/covers/a.jpg",
+                    albumLoudnessLufs: null,
+                    albumTruePeakDb: null,
+                    artist: { id: "ar-1", name: "A1", mbid: null },
+                },
+            })),
         );
         const singleReq = {
             user: { id: "u1" },
@@ -437,5 +495,14 @@ describe("mixes route runtime", () => {
             "t-2",
             "t-1",
         ]);
+
+        redisClient.get.mockRejectedValueOnce(new Error("redis down"));
+        const singleFailRes = createRes();
+        await getSingleMix(
+            { user: { id: "u1" }, params: { id: "mix-1" } } as any,
+            singleFailRes,
+        );
+        expect(singleFailRes.statusCode).toBe(500);
+        expect(singleFailRes.body).toEqual({ error: "Failed to get mix" });
     });
 });

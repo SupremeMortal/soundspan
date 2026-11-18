@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- The contract suite's podcast feed, served by the podcast-feed service of
+     compose.yaml with the episode files fixtures/generate.sh writes. -->
+<rss version="2.0" xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd">
+  <channel>
+    <title>Contract Cast</title>
+    <link>http://podcast-feed/</link>
+    <description>The contract suite's fixture podcast.</description>
+    <language>en</language>
+    <itunes:author>Contract Host</itunes:author>
+    <item>
+      <title>Second Signal</title>
+      <description>The newer fixture episode.</description>
+      <guid isPermaLink="false">contract-cast-2</guid>
+      <pubDate>Tue, 02 Jan 2024 12:00:00 GMT</pubDate>
+      <enclosure url="http://podcast-feed/episode-2.mp3" type="audio/mpeg" length="0"/>
+      <itunes:duration>8</itunes:duration>
+    </item>
+    <item>
+      <title>First Signal</title>
+      <description>The older fixture episode.</description>
+      <guid isPermaLink="false">contract-cast-1</guid>
+      <pubDate>Mon, 01 Jan 2024 12:00:00 GMT</pubDate>
+      <enclosure url="http://podcast-feed/episode-1.mp3" type="audio/mpeg" length="0"/>
+      <itunes:duration>6</itunes:duration>
+    </item>
+  </channel>
+</rss>

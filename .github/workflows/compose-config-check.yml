@@ -4,12 +4,14 @@ on:
   pull_request:
     branches: [main]
     paths:
+      - docker-compose.yml
       - docker-compose.local.yml
       - docker-compose.dev.yml
       - .github/workflows/compose-config-check.yml
   push:
     branches: [main]
     paths:
+      - docker-compose.yml
       - docker-compose.local.yml
       - docker-compose.dev.yml
       - .github/workflows/compose-config-check.yml
@@ -17,10 +19,6 @@ on:
 
 permissions:
   contents: read
-
-concurrency:
-  group: compose-config-check-${{ github.ref }}
-  cancel-in-progress: true
 
 jobs:
   compose-config:
@@ -48,3 +46,19 @@ jobs:
 
       - name: Validate dev DCLAP provider profile
         run: docker compose -f docker-compose.dev.yml --profile vibe-provider-dclap config --quiet
+
+      - name: Start root compose PostgreSQL and Redis
+        env:
+          POSTGRES_PASSWORD: compose-check-postgres-password
+          SESSION_SECRET: compose-check-session-secret-0123456789abcdef
+          SETTINGS_ENCRYPTION_KEY: compose-check-settings-key-0123456789abcdef
+          INTERNAL_API_SECRET: compose-check-internal-secret-0123456789abcdef
+        run: |
+          status=0
+          docker compose -f docker-compose.yml up -d --wait --wait-timeout 120 postgres redis || status=$?
+          docker compose -f docker-compose.yml ps -a postgres redis
+          if [ "$status" -ne 0 ]; then
+            docker compose -f docker-compose.yml logs postgres redis
+          fi
+          docker compose -f docker-compose.yml down -v
+          exit "$status"

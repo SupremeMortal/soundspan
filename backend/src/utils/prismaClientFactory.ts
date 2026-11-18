@@ -1,6 +1,10 @@
 import { PrismaClient, Prisma } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 
+const { resolveDatabaseUrl } = require("../../databaseUrl") as {
+    resolveDatabaseUrl: (environment: NodeJS.ProcessEnv) => string | undefined;
+};
+
 // First keepalive probe after 10s idle. Node then applies its own probe
 // cadence (TCP_KEEPINTVL=1s, TCP_KEEPCNT=10) rather than kernel defaults.
 const KEEP_ALIVE_INITIAL_DELAY_MS = 10_000;
@@ -11,7 +15,7 @@ export interface CreatePrismaClientOptions {
     /** Seconds to wait for a free pooled connection before erroring. */
     poolTimeoutSeconds?: number;
     log?: Prisma.PrismaClientOptions["log"];
-    /** Overrides process.env.DATABASE_URL when provided. */
+    /** Overrides the resolved DATABASE_URL (or POSTGRES_* components) when provided. */
     databaseUrl?: string;
 }
 
@@ -47,7 +51,9 @@ export function createPrismaClient(
         );
     }
 
-    const databaseUrl = options.databaseUrl ?? process.env.DATABASE_URL;
+    // Resolve here rather than relying on config.ts having rewritten
+    // DATABASE_URL: db.ts can be imported before config.ts finishes loading.
+    const databaseUrl = options.databaseUrl ?? resolveDatabaseUrl(process.env);
     const schema = schemaFromDatabaseUrl(databaseUrl);
     const adapter = new PrismaPg(
         {

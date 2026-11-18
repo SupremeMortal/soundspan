@@ -23,7 +23,23 @@ jest.mock("../../services/lyrics", () => ({
     clearLyricsCache: jest.fn(),
 }));
 
+// Dependencies of the real lyrics service, which one test runs end to end.
+jest.mock("axios", () => ({ get: jest.fn() }));
+jest.mock("../../utils/db", () => ({
+    prisma: {
+        trackLyrics: { findUnique: jest.fn(), upsert: jest.fn() },
+        track: { findUnique: jest.fn() },
+    },
+}));
+jest.mock("../../utils/redis", () => ({
+    redisClient: { get: jest.fn(), setEx: jest.fn() },
+}));
+
+import axios from "axios";
 import router from "../lyrics";
+import { withClientSurfaceValidation } from "./helpers/expectClientSurfaceResponse";
+import { prisma } from "../../utils/db";
+import { redisClient } from "../../utils/redis";
 import { logger } from "../../utils/logger";
 import { getLyrics, clearLyricsCache } from "../../services/lyrics";
 
@@ -71,7 +87,10 @@ function createRes() {
 }
 
 describe("lyrics routes runtime", () => {
-    const getLyricsHandler = getHandler("/:trackId", "get");
+    const getLyricsHandler = withClientSurfaceValidation(
+        "getLyrics",
+        getHandler("/:trackId", "get"),
+    );
     const deleteLimiterHandler = getHandler("/:trackId", "delete", 0);
     const deleteLyricsHandler = getHandler("/:trackId", "delete", 1);
 
@@ -143,6 +162,98 @@ describe("lyrics routes runtime", () => {
             duration: undefined,
         });
         expect(res.statusCode).toBe(200);
+    });
+
+    it.each([
+        [
+            "plain-only",
+            {
+                syncedLyrics: null,
+                plainLyrics: "Only plain",
+                source: "lrclib",
+                synced: false,
+            },
+        ],
+        [
+            "none",
+            {
+                syncedLyrics: null,
+                plainLyrics: null,
+                source: "none",
+                synced: false,
+            },
+        ],
+    ])("returns %s lyrics", async (_label, lyrics) => {
+        mockGetLyrics.mockResolvedValueOnce(lyrics);
+        const res = createRes();
+
+        await getLyricsHandler(
+            { params: { trackId: "track-3" }, query: {} } as any,
+            res,
+        );
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body).toEqual(lyrics);
+    });
+
+    it("a value that is not a library track id answers 200 from the external lookup using the query parameters", async () => {
+        const { getLyrics: realGetLyrics } = jest.requireActual(
+            "../../services/lyrics",
+        );
+        mockGetLyrics.mockImplementationOnce(realGetLyrics);
+        (prisma.trackLyrics.findUnique as jest.Mock).mockResolvedValue(null);
+        (prisma.track.findUnique as jest.Mock).mockResolvedValue(null);
+        (redisClient.get as jest.Mock).mockResolvedValue(null);
+        (redisClient.setEx as jest.Mock).mockResolvedValue("OK");
+        const mockAxiosGet = axios.get as jest.Mock;
+        mockAxiosGet.mockResolvedValue({
+            data: {
+                id: 1,
+                trackName: "Remote Song",
+                artistName: "Remote Artist",
+                albumName: "Remote Album",
+                duration: 200,
+                instrumental: false,
+                plainLyrics: "Remote line",
+                syncedLyrics: "[00:01.00] Remote line",
+            },
+        });
+        const res = createRes();
+
+        await getLyricsHandler(
+            {
+                params: { trackId: "ym.abc123" },
+                query: {
+                    artist: "Remote Artist",
+                    title: "Remote Song",
+                    album: "Remote Album",
+                    duration: "200",
+                },
+            } as any,
+            res,
+        );
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body).toEqual({
+            syncedLyrics: "[00:01.00] Remote line",
+            plainLyrics: "Remote line",
+            source: "lrclib",
+            synced: true,
+        });
+        expect(prisma.track.findUnique).toHaveBeenCalledWith(
+            expect.objectContaining({
+                where: expect.objectContaining({ id: "ym.abc123" }),
+            }),
+        );
+        expect(mockAxiosGet).toHaveBeenCalledWith(
+            expect.stringContaining("lrclib.net/api/get"),
+            expect.objectContaining({
+                params: expect.objectContaining({
+                    artist_name: "Remote Artist",
+                    track_name: "Remote Song",
+                }),
+            }),
+        );
     });
 
     it("returns 504 when lyrics lookup exceeds route timeout", async () => {

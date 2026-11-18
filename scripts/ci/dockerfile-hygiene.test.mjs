@@ -9,6 +9,7 @@ const repoRoot = path.resolve(import.meta.dirname, "../..");
 const dockerfilePaths = [
     "Dockerfile",
     "backend/Dockerfile",
+    "client/docker/web/Dockerfile",
     "frontend/Dockerfile",
     "services/audio-analyzer/Dockerfile",
     "services/tidal-streamer/Dockerfile",

@@ -190,6 +190,7 @@ describe("search service", () => {
                 name: "Fallback Artist",
                 mbid: "mbid-2",
                 heroUrl: "https://hero",
+                matchedBy: "trigram",
                 rank: 0.72,
             },
         ]);
@@ -217,6 +218,7 @@ describe("search service", () => {
                 name: "Recovered Artist",
                 mbid: "mbid-3",
                 heroUrl: null,
+                matchedBy: "trigram",
                 rank: 0.64,
             },
         ]);
@@ -296,6 +298,7 @@ describe("search service", () => {
                 artistName: "Artist 2",
                 year: null,
                 coverUrl: null,
+                matchedBy: "trigram",
                 rank: 0.58,
             },
         ]);
@@ -331,6 +334,7 @@ describe("search service", () => {
                 truePeakDb: null,
                 albumLoudnessLufs: null,
                 albumTruePeakDb: null,
+                matchedBy: "trigram",
                 rank: 0.81,
             },
         ]);
@@ -386,7 +390,9 @@ describe("search service", () => {
                 .mockResolvedValueOnce([])
                 .mockResolvedValueOnce([row]);
 
-            await expect(run()).resolves.toEqual([row]);
+            await expect(run()).resolves.toEqual([
+                { ...row, matchedBy: "trigram" },
+            ]);
 
             expect(prisma.$queryRaw).toHaveBeenCalledTimes(2);
             expect(prisma.artist.findMany).not.toHaveBeenCalled();
@@ -1239,6 +1245,7 @@ describe("search service", () => {
                 name: "Remote Only Artist",
                 mbid: "mbid-remote",
                 heroUrl: null,
+                matchedBy: "trigram",
                 rank: 0.76,
             },
         ]);

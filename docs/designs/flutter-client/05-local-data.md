@@ -10,9 +10,10 @@ Status: design phase.
 ├── logs/app.0.log … app.4.log
 └── profiles/<profileId>/
     ├── state.db                                # StateDatabase: durable user state
-    ├── media/<sha1(playbackId)[0:2]>/<sha1(playbackId)>.<ext>
+    ├── media/<sha1(itemKey)[0:2]>/<sha1(itemKey)>.<ext>
     ├── media/<…>.part                          # Transfer in progress
-    └── art/<sha1(ref)>.img                     # Artwork pinned for downloaded items and OS media controls
+    ├── art/<sha1(ref)>.img                     # Artwork pinned for downloaded items
+    └── art/now-playing.img                     # The current item's artwork for OS media controls
 
 <appCache>/                                     # getApplicationCacheDirectory(); the OS may purge it
 └── profiles/<profileId>/
@@ -20,7 +21,7 @@ Status: design phase.
     └── images/                                 # flutter_cache_manager store
 ```
 
-- File names are derived from a hash because a `playbackId` is opaque and must never be interpreted, even as a file name. The extension comes from the response `Content-Type` (`audio/mpeg` → `mp3`, `audio/flac` → `flac`, `audio/mp4` → `m4a`, `audio/ogg` → `ogg`, `audio/webm` → `webm`, otherwise `bin`); engines sniff content, so the extension is a convenience for debugging.
+- File names are derived from a hash because a `playbackId` is opaque and must never be interpreted, even as a file name. The hash is the lower-case hex SHA-1 of the item's `itemKey` (`t:<playbackId>` or `e:<podcastId>:<episodeId>`, see `download_items`), so tracks and episodes share one scheme, and the same hash is the transfer's task id. The extension comes from the response `Content-Type` (`audio/mpeg` → `mp3`, `audio/flac` → `flac`, `audio/mp4` → `m4a`, `audio/ogg` → `ogg`, `audio/webm` → `webm`, otherwise `bin`); engines sniff content, so the extension is a convenience for debugging.
 - The two-character fan-out keeps directories small on large libraries.
 - `media/` is excluded from cloud backup: iOS and macOS set `NSURLIsExcludedFromBackupKey` on the directory; Android lists it under `<exclude>` in `data_extraction_rules.xml`.
 - On web there are no files. `app.db` and both profile databases are drift WASM databases named `app`, `p_<profileId>_state`, `p_<profileId>_cache`.
@@ -68,7 +69,7 @@ class AppSettings extends Table {            // key/value
 }
 ```
 
-App settings keys: `activeProfileId`, `themeMode` (`system|dark|light`), `locale`, `window.bounds`, `window.maximized`, `closeToTray`.
+App settings keys: `activeProfileId`, `themeMode` (`system|dark|light`), `locale`, `window.bounds`, `window.maximized`, `closeToTray`, `window.useSystemTitleBar` (off when not set; [10](10-platform-integration.md#window-title-bar)), `update.check` (on when not set), `update.lastCheckedAt`, `update.dismissedVersion` (the desktop update notice, [10](10-platform-integration.md#update-notice)).
 
 ## `StateDatabase` (`state.db`)
 
@@ -91,6 +92,7 @@ class DownloadItems extends Table {
   TextColumn get metaJson => text()();             // TrackMeta / episode meta: enough to render and play offline
   TextColumn get quality => text().nullable()();   // As resolved by the server
   TextColumn get status => textEnum<DownloadStatus>()();
+  TextColumn get waitingFor => text().nullable()(); // Why a queued or paused item is not running: space, wifi
   TextColumn get taskId => text().nullable()();    // background_downloader task id
   TextColumn get downloadUrl => text().nullable()();
   TextColumn get etag => text().nullable()();
@@ -100,6 +102,7 @@ class DownloadItems extends Table {
   TextColumn get relativePath => text().nullable()();   // Under profiles/<id>/media
   TextColumn get failureCode => text().nullable()();
   IntColumn get attempts => integer().withDefault(const Constant(0))();
+  DateTimeColumn get nextAttemptAt => dateTime().nullable()(); // failedRetryable only: when the retry is due, so it survives a restart (schema v2)
   BoolColumn get serverConfirmed => boolean().withDefault(const Constant(false))();
   DateTimeColumn get requestedAt => dateTime()();
   DateTimeColumn get completedAt => dateTime().nullable()();
@@ -119,7 +122,25 @@ class Outbox extends Table {
 }
 ```
 
-`device_settings` keys: `quality.wifi`, `quality.cellular`, `quality.download` (each `serverDefault|original|high|medium|low`), `downloads.wifiOnly`, `downloads.quotaBytes`, `downloads.autoCacheBytes`, `playback.volume`, `playback.speed.podcast`, `playback.skipSeconds`, `offline.forced`.
+The other tables. `DateTime` columns are UTC ISO-8601 text. A column listed as "text (values …)" is plain `text()` holding those strings.
+
+| Table | Columns |
+|---|---|
+| `device_settings` | `key` text PK; `value` text not null (JSON-encoded) |
+| `queue_snapshot` | `position` integer PK (index in canonical order, from 0); `queueItemId` text not null unique; `kind` text (values `track`, `episode`); `itemJson` text not null (the serialized `QueueItem`: track or episode with everything needed to show and play it, including its queue context) |
+| `queue_meta` | `id` integer PK with `CHECK (id = 1)`; `currentQueueItemId` text null; `positionMs` integer default 0; `shuffleOrderJson` text null (JSON array of canonical indices, the whole shuffle permutation; null means shuffle off); `repeatMode` text default `off` (values `off`, `all`, `one`); `contextJson` text null (the `QueueContext`); `revision` integer default 0; `updatedAt` datetime not null |
+| `download_collections` | `kind` text (values `track`, `album`, `playlist`, `episode`); `refId` text (track: the `playbackId`; album and playlist: their id; episode: `<podcastId>:<episodeId>`); `title` text not null; `metaJson` text not null (subtitle, artwork ref: enough to render the row offline); `status` text not null (a plain state name such as `resolving`, `ready`, `blocked`, never a compound string); `blockedReason` text null (`serverQuota`, `disabledByServer`); `detailJson` text null (state detail, for example the three byte values of a server-quota refusal); `quality` text null; `requestedAt` datetime not null; `resolvedAt` datetime null. PK `(kind, refId)` |
+| `download_membership` | `kind` text; `refId` text; `itemKey` text; `position` integer not null (track order inside the collection). PK `(kind, refId, itemKey)`; FK `(kind, refId)` → `download_collections` on delete cascade; FK `itemKey` → `download_items(itemKey)` on delete cascade |
+| `play_sessions` | `sessionId` text PK (client UUID); `queueItemId` text not null; `playbackId` text not null; `metaJson` text not null (`TrackMeta`); `playedAt` datetime not null (instant the play started); `listenedMs` integer default 0; `updatedAt` datetime not null |
+| `search_history` | `query` text PK with `COLLATE NOCASE`; `lastUsedAt` datetime not null |
+
+- `MediaType` (`track`, `episode`) and `DownloadStatus` (`queued`, `running`, `verifying`, `completed`, `paused`, `failedRetryable`, `failedPermanent`, `unavailable`, `missing`, `revoked`) are defined by the storage layer. "Confirmed" is the `serverConfirmed` flag; "deleted" is the absence of a row.
+- `download_items.waitingFor` holds wait reasons only; `failureCode` holds only failure and unavailability codes (including the server's `reason`).
+- Indexes: `outbox(entityKey)`, `outbox(nextAttemptAt)`, `download_items(status)`, `download_membership(itemKey)`.
+- A `playbackId` is stored verbatim wherever it appears and is never parsed or prefixed beyond the `itemKey` format above.
+- The tables exist on web too; the download tables stay empty there.
+
+`device_settings` keys: `quality.wifi`, `quality.cellular`, `quality.download` (each `serverDefault|original|high|medium|low`), `downloads.wifiOnly`, `downloads.quotaBytes`, `downloads.autoCacheBytes`, `downloads.lastReconciledAt` (ISO-8601 UTC time of the last successful reconciliation server pass), `playback.volume`, `playback.speed.podcast`, `playback.skipSeconds`, `offline.forced`, `versionNotice.dismissed` (the server version whose "newer than tested" notice was dismissed, or `unknown`).
 
 Metadata needed to render and play a downloaded item offline is stored on the `download_items` row itself (`metaJson`), so offline playback never depends on `cache.db`.
 
@@ -134,7 +155,7 @@ Normalized entity tables plus an ordered-list table for pages.
 | `artists` | `id` | `json`, `name`, `fetchedAt`, `detailFetchedAt` |
 | `playlists` | `id` | `json`, `name`, `fetchedAt`, `detailFetchedAt` |
 | `podcasts`, `episodes` | `id` | `json`, `fetchedAt` |
-| `lists` | `listKey` | `total`, `fetchedAt`, `complete` |
+| `lists` | `listKey` | `total`, `fetchedAt`, `complete`, `lastReadAt` (when the list was last read; pruning uses it) |
 | `list_entries` | `(listKey, position)` | `entityKind`, `entityKey` |
 | `blobs` | `key` | `json`, `fetchedAt` — for one-off payloads: home shelves, lyrics, artist detail extras |
 
@@ -166,34 +187,73 @@ class Cached<T> {
 | Album, artist, playlist detail | 10 min | Playlist detail is invalidated by any local edit to it |
 | Home shelves | 5 min | |
 | Search results | 2 min | Not shown offline unless the query matches the cache exactly |
-| Lyrics | 30 days | |
+| Lyrics | 30 days | "No lyrics found" is fresh for 24 hours, so lyrics added on the server appear the next day |
 | Podcast detail | 10 min | |
 
 Offline, every cached value is shown regardless of age.
 
+`Swr` (`lib/shared/data/swr.dart`) implements these rules once for every `Stream<Cached<T>>`. While a fetch runs, the cached value is emitted with `refreshing: true`; concurrent listeners of one key share one fetch; every fetch outcome goes to `ReachabilityController.reportCallOutcome` (an `Offline` failure is a failed call, any other outcome a response). When the server is not reachable and nothing is cached, the stream errors with `Offline`. Each read has a `refresh…` method for pull-to-refresh that fetches whatever the age and throws `Offline` while the server is not reachable.
+
+Where each read is stored (`CacheStore`, `lib/shared/data/cache_store.dart`):
+
+- Album, artist and playlist detail: the whole detail as the blob `album:<id>`, `artist:<id>` or `playlist:<id>`, read back from it, together with an upsert of the entity row with `detailFetchedAt` and, for albums and playlists, a page write of the tracks as the list `album:<id>:tracks` or `playlist:<id>`, in one transaction.
+- Home shelves: one blob per shelf, `home:<shelf>`.
+- Lyrics: one blob per track, `lyrics:<tracks.key>`, holding the synced lines, the plain text or the absence of lyrics. A track with neither a library id nor a `playbackId` has no lyrics and is not looked up.
+- Subscribed podcasts: a page write of the podcast rows as the list `podcasts:subscribed`. Podcast detail: the podcast row and a page write of the episode rows as the list `podcast:<id>:episodes`, in one transaction; the detail is a cache miss when the podcast row is gone or an episode row fails to decode. Subscribing and unsubscribing mark `podcasts:subscribed` stale (its `fetchedAt` set to the epoch) so the next read fetches it; posted episode progress is written into the cached episode row.
+- Search results: one blob per page, `search:<query>:<filter>` with `:<offset>` appended after the first page, so a page is served offline only for that exact query, filter and offset.
+- Library list pages: page writes into `lists` and `list_entries`; reading a list marks it read for pruning.
+
+Library lists are read through `PagedSource<T>` (`lib/shared/domain/paged_source.dart`, implemented by `CachedPagedSource` in `lib/shared/data/paged_source_impl.dart`), not `Stream<Cached<T>>`:
+
+- Each source watches its list in the cache. The cached `total` and items are emitted first; an item is placed by its `list_entries.position`, so a list cached with gaps keeps them, and an index with no entry reads as not loaded.
+- `ensureVisible(first, last)` loads the pages from the one holding `first` to the one after the one holding `last`, skipping pages past the known end, pages in flight, and fresh pages. A page is as old as the oldest `fetchedAt` of the entity rows it holds (an empty list is as old as its `lists.fetchedAt`), so a page written later does not make an earlier one look fresh. Pages are fetched only while the server is reachable, and every outcome goes to `reportCallOutcome`.
+- A failed page sets `refreshError` and keeps what is loaded. `refresh()` fetches the pages covering the last visible range whatever their age; offline it sets `refreshError` to `Offline` and fetches nothing.
+- Without a server `total`, the last page's end becomes the total; an empty page past the end leaves the known total as it is.
+- Offset lists pass a `nextCursor` the server sent back with the next page (artists). The keyset list (liked tracks) holds its cursors in memory and loads pages in order from the last page whose cursor is known.
+- List keys: the query types `AlbumQuery`, `ArtistQuery` and `TrackQuery` build them from their non-null parameters in a fixed order (`albums?artistId=…&filter=…&sort=…&origin=…`, `artists?filter=…&sort=…&origin=…`, `tracks?albumId=…&sort=…&origin=…`); liked tracks are `liked` and the playlists list `playlists`.
+
 ### Pruning
 
-Runs at start-up after the first frame and when `cache.db` exceeds 64 MB: delete `lists` not read for 30 days with their entries, then entities referenced by no list and no `blobs` row. The image store is capped at 500 MB and 30 days by the cache manager configuration.
+Runs at start-up after the first frame (the post-first-frame task `startCachePruning` prunes each profile container's `cache.db` once, when the container becomes active) and when `cache.db` exceeds 64 MB (`(page_count − freelist_count) × page_size`): in one transaction, delete `lists` not read for 30 days with their entries and `blobs` not fetched for 30 days, then every entity row no `list_entries` row references. A blob never keeps an entity alive by itself; data that needs its entities kept stores them as a list. If `cache.db` is still above 64 MB, the least recently read lists are deleted 50 at a time, with the entities they leave unreferenced, until it is under the limit or no list is left. The image store is capped at about 500 MB (as 10,000 images, see Image Cache) and 30 days by the cache manager configuration.
 
 ## Image Cache
 
 `cached_network_image` with a per-profile `CacheManager`:
 
-- Store directory `…/profiles/<id>/images`. Cache key = `sha1(ref) + ":" + size`, independent of the URL, so a rotated `?token=` on web does not miss.
+- Store directory `…/profiles/<id>/images`, which also holds the store's index (`index.json`); on web the package's default store. The store expires an image 30 days after it was fetched. `flutter_cache_manager` limits a store by object count, not bytes, so the 500 MB cap is `maxNrOfCacheObjects: 10000` (about 50 KB per cover).
+- Cache key = `sha1(ref) + ":" + size`, independent of the URL, so a rotated `?token=` on web does not miss.
 - Requests carry `authHeaders` on native targets. On web the URL carries `?token=`.
 - `memCacheWidth` is set to the same snapped pixel size requested from the server. `PaintingBinding.instance.imageCache` is capped at 100 MB and 300 images on desktop, 60 MB and 200 images on mobile.
 - Artwork for downloaded items and for the current track's OS media controls is copied to `profiles/<id>/art/`, which is not purgeable.
 
 ## Migrations
 
-- Each database class has its own `schemaVersion`. `drift_dev schema dump` writes a JSON schema per version to `client/drift_schemas/<db>/`; `drift_dev schema generate` produces the helpers used by migration tests.
+- Each database class has its own `schemaVersion`. `tool/gen.sh` runs, per database, `drift_dev schema dump` (a JSON schema per version in `client/drift_schemas/<db>/`), `drift_dev schema steps` (the `stepByStep` helper, `<db>_database.steps.g.dart` next to the database class) and `drift_dev schema generate` (the helpers used by migration tests, in `client/test/core/storage/generated_migrations/<db>/`). CI runs `tool/gen.sh` and fails on a diff, so a table change without a new version does not merge.
+- `DateTime` columns are stored as ISO-8601 text (`store_date_time_values_as_text` in `client/build.yaml`) and written in UTC.
 - `AppDatabase` and `StateDatabase`: stepwise `MigrationStrategy.onUpgrade` using drift's `stepByStep`. Every version bump adds a test that opens a database at each earlier version with representative rows, migrates, and validates the schema and the data.
 - `CacheDatabase`: `onUpgrade` drops all tables and recreates them. A failure to open deletes the file and retries once.
-- Downgrade (an older app opening a newer `state.db`): refuse to open, show "This data was written by a newer version of the app", and offer to reset the profile's local state. Never silently delete downloads.
-- All databases run with `PRAGMA journal_mode = WAL`, `foreign_keys = ON`, `synchronous = NORMAL`, opened on a background isolate through `drift_flutter` (`driftDatabase(name:, native: DriftNativeOptions(databaseDirectory: …))`).
+- Downgrade (an older app opening a newer `app.db` or `state.db`): `onUpgrade` throws `DatabaseTooNewException` (database, found version, supported version) before touching the file. For `state.db` the app refuses to open, shows "This data was written by a newer version of the app", and offer to reset the profile's local state. Never silently delete downloads.
+- All databases run with `PRAGMA journal_mode = WAL`, `foreign_keys = ON`, `synchronous = NORMAL`, opened on a background isolate through `drift_flutter` (`driftDatabase(name:, native: DriftNativeOptions(databasePath: …))`; `databasePath` rather than `databaseDirectory`, because `databaseDirectory` names the file `<name>.sqlite` and the files are `app.db`, `state.db` and `cache.db`). The native `DatabaseOpener` sets WAL and `synchronous` in drift's per-connection `setup`; the databases set `foreign_keys` in `beforeOpen`. Deleting a database removes its `-wal` and `-shm` files too.
 
 ## Web Storage
 
-- drift WASM: `web/sqlite3.wasm` and `web/drift_worker.js` are shipped with the build. drift chooses the best storage the browser offers. Without cross-origin isolation headers (which the design rules out because they break third-party artwork), that is the OPFS dedicated-worker mode where available and IndexedDB otherwise. Both satisfy the client's needs; verify in spike S6.
+- drift WASM: `web/sqlite3.wasm` and `web/drift_worker.js` are shipped with the build. drift chooses the best storage the browser offers. Without cross-origin isolation headers (which the design rules out because they break third-party artwork), that is OPFS through drift's shared worker in Firefox and IndexedDB through the shared worker in Chromium and Safari. Both persist across reloads and open the three databases of one profile in one tab (see Spike S6 finding).
 - `state.db` on web holds the queue snapshot, outbox, and settings. Download tables exist but stay empty.
-- Private browsing can make storage unavailable. `DatabaseOpener` falls back to an in-memory database and shows a one-time notice that nothing will be remembered.
+- Private browsing can make storage unavailable. When the WASM open throws or drift can only offer in-memory storage, `DatabaseOpener` falls back to an in-memory database and reports `isVolatile`, and the app shows a one-time notice that nothing will be remembered.
+- `DatabaseOpener.delete` on web removes the named database from whichever storage drift reports it in.
+
+## Spike S6 finding
+
+A minimal Flutter web build opened three drift WASM databases named `app`, `p_spike_state` and `p_spike_cache` in one tab through `driftDatabase(name:, web: DriftWebOptions(...))`, served by a static server that sends no `Cross-Origin-Opener-Policy` or `Cross-Origin-Embedder-Policy` header. Each database incremented a counter row; the page was then reloaded and the counters read again.
+
+| Browser | Answer | Storage drift chose (all three databases) | Missing features reported | `crossOriginIsolated` | Counters after reload |
+|---|---|---|---|---|---|
+| Chromium 153.0.8010.12 (headless, Linux) | Yes | `sharedIndexedDb` | `dedicatedWorkersInSharedWorkers`, `sharedArrayBuffers` | false | 2, 2, 2 |
+| Firefox 155.0 (headless, Linux) | Yes | `opfsShared` | `sharedArrayBuffers` | false | 2, 2, 2 |
+| Safari 27.2 (macOS 26, through `safaridriver`) | Yes | `sharedIndexedDb` | `dedicatedWorkersInSharedWorkers`, `sharedArrayBuffers` | false | 2, 2, 2 |
+
+Package versions: Flutter 3.50.0 (Dart 3.14.0), `drift` 2.35.4, `drift_flutter` 0.3.1, `sqlite3` 3.9.1 (`sqlite3.wasm` from the `sqlite3-3.9.1` release), `drift_worker.js` from the `drift-2.35.4` release.
+
+None of the browsers fell back to `inMemory` or `unsafeIndexedDb`, so the design stands: the web `DatabaseOpener` lets drift choose, and the IndexedDB-only fallback is not needed. `opfsLocks` is never chosen without cross-origin isolation because it needs `SharedArrayBuffer`.
+
+**OIDC on the same-origin web build: no.** `redirectForResolution` in `backend/src/routes/auth/oidc.ts` sends every successful callback to `loginRedirect("ssoCode", …)`, which `webRedirectTarget` fixes to the web UI's `/login` page; `returnTo` only chooses where that page navigates afterwards. The web UI's `useOidcCodeExchange` (`frontend/app/login/page.tsx`) redeems the code at once, and `oidcExchangeHandler` takes it with a one-time `takeOnce` and requires the `httpOnly` flow-binding cookie (`hasMatchingFlowBinding`). A Flutter build on the same origin therefore never receives a code it could exchange, and the only tokens it could reach are the web UI's own entries in `localStorage`, which are not an endpoint. Web offers password sign-in only.

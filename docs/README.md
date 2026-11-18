@@ -9,7 +9,8 @@ This index is the central navigation page for all project documentation under `d
 1. Read [`../README.md`](../README.md) for the product overview
 2. Follow the deploy flow in [`DEPLOYMENT.md`](DEPLOYMENT.md)
 3. Read [`USAGE_GUIDE.md`](USAGE_GUIDE.md) for navigation, playback, and admin basics
-4. Configure essentials via [`CONFIGURATION_AND_SECURITY.md`](CONFIGURATION_AND_SECURITY.md)
+4. Install the apps for phones, computers, and offline listening with [`CLIENT_APPS.md`](CLIENT_APPS.md)
+5. Configure essentials via [`CONFIGURATION_AND_SECURITY.md`](CONFIGURATION_AND_SECURITY.md)
 
 ### Operators enabling integrations
 
@@ -45,6 +46,7 @@ This index is the central navigation page for all project documentation under `d
 | ---------------------------------------------------------------------------------------------- | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
 | [`../README.md`](../README.md)                                                                 | Everyone                 | Product overview, highlights, and quick start                                                                                                   |
 | [`USAGE_GUIDE.md`](USAGE_GUIDE.md)                                                             | Users                    | Navigation, playback behavior, keyboard shortcuts, and administration                                                                           |
+| [`CLIENT_APPS.md`](CLIENT_APPS.md)                                                             | Users                    | Installing the soundspan apps, connecting and signing in, offline listening, car and system controls, privacy, and troubleshooting           |
 | [`DEPLOYMENT.md`](DEPLOYMENT.md)                                                               | Self-hosters/operators   | Docker run/compose deployment modes, release channels, and updates                                                                              |
 | [`BACKUP_AND_RESTORE.md`](BACKUP_AND_RESTORE.md)                                               | Admins/self-hosters      | What an Admin-page backup restores, what you lose since the last one, and restoring it on a fresh install                                       |
 | [`UPGRADING.md`](UPGRADING.md)                                                                 | Users/operators          | Operator-facing notes for upgrades that need action, newest first; unlisted releases are drop-in                                                |
@@ -93,6 +95,8 @@ This index is the central navigation page for all project documentation under `d
 | [`designs/durable-track-identity.md`](designs/durable-track-identity.md)                                     | Shipped      | Durable local track identity, soft removal, revival, and retention purge design |
 | [`designs/federated-library-sharing.md`](designs/federated-library-sharing.md)                               | Shipped      | Federated library-sharing product and protocol design                           |
 | [`designs/federated-library-sharing-implementation.md`](designs/federated-library-sharing-implementation.md) | Implemented  | Delivery plan and implementation record for federated library sharing           |
+| [`designs/flutter-client.md`](designs/flutter-client.md)                                                     | Design phase | First-party Flutter client for Android, iOS, desktop, and web: product design   |
+| [`designs/flutter-client/README.md`](designs/flutter-client/README.md)                                       | Design phase | Implementation plan for the Flutter client                                      |
 
 ## Compatibility and Brand
 

@@ -52,7 +52,13 @@ export type ResolvedPlayback = {
     /** The library-vocabulary quality that was requested or saved. */
     libraryQuality: PlaybackQuality;
 } & (
-    | { kind: "t"; trackId: string; quality: PlaybackQuality }
+    | {
+          kind: "t";
+          trackId: string;
+          quality: PlaybackQuality;
+          /** Whether the library stream records a play; false for `report=0`. */
+          recordPlay: boolean;
+      }
     | { kind: "td"; tidalId: number; quality: string }
     | {
           kind: "ym";
@@ -68,6 +74,11 @@ export interface ResolvePlaybackInput {
     parsed: ParsedPlaybackId;
     /** Requested quality; absent means the user's saved playback quality. */
     quality?: PlaybackQuality;
+    /**
+     * False when the stream must not record a play (`report=0`); absent means
+     * true. Only library tracks record plays on stream.
+     */
+    recordPlay?: boolean;
 }
 
 const NO_MIDDLEWARE: PlaybackMiddleware = {
@@ -110,6 +121,7 @@ async function resolveLibrary(
     userId: string,
     trackId: string,
     requested: PlaybackQuality | undefined,
+    recordPlay: boolean,
 ): Promise<ResolvedPlayback> {
     const track = await prisma.track.findUnique({
         where: { id: trackId, ...TRACK_VISIBLE_WHERE },
@@ -123,6 +135,7 @@ async function resolveLibrary(
         kind: "t",
         trackId,
         quality,
+        recordPlay,
         libraryQuality: quality,
         middleware: NO_MIDDLEWARE,
     };
@@ -189,10 +202,10 @@ export async function resolvePlayback(
     userId: string,
     input: ResolvePlaybackInput,
 ): Promise<ResolvedPlayback> {
-    const { parsed, quality } = input;
+    const { parsed, quality, recordPlay = true } = input;
     switch (parsed.kind) {
         case "t":
-            return resolveLibrary(userId, parsed.trackId, quality);
+            return resolveLibrary(userId, parsed.trackId, quality, recordPlay);
         case "td":
             return resolveTidal(userId, parsed.tidalId, quality);
         case "ym":

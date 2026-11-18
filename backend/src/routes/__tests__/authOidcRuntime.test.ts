@@ -176,6 +176,7 @@ const runDummyBcrypt = jest.fn();
 jest.mock("../../utils/dummyCredential", () => ({ runDummyBcrypt }));
 
 import router from "../auth";
+import { expectClientSurfaceResponse } from "./helpers/expectClientSurfaceResponse";
 
 type Method = "get" | "post" | "delete";
 
@@ -327,6 +328,7 @@ describe("OIDC auth routes", () => {
             oidcEnabled: true,
             oidcProviderName: "Company SSO",
         });
+        expectClientSurfaceResponse("getAuthConfig", res);
     });
 
     it.each([
@@ -1784,6 +1786,7 @@ describe("OIDC auth routes", () => {
         );
         expect(disabled.statusCode).toBe(403);
         expect(disabled.body).toEqual({ error: "Local login is disabled" });
+        expectClientSurfaceResponse("login", disabled);
     });
 
     it("rejects null hashes without bcrypt in password-change and 2FA-disable routes", async () => {

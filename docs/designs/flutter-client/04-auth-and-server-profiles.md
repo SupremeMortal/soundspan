@@ -29,7 +29,7 @@ Stored in `AppDatabase.profiles` ([05](05-local-data.md)). Secrets are never in 
 | `authKind` | `password` \| `deviceLink` \| `apiKey` | |
 | `deviceId` | UUID v4 | Generated on creation. Sent as offline `deviceId` and `X-Playback-Device-Id`. Not a secret. |
 | `credentialCreatedAt` | UTC timestamp | For API keys: when the key was issued, to compute expiry |
-| `credentialExpiresAt` | UTC timestamp, nullable | From `GET /api-keys` when the key can be identified; else `credentialCreatedAt + 90 days` |
+| `credentialExpiresAt` | UTC timestamp, nullable | Device link: from `GET /api-keys` when the key can be identified, else `credentialCreatedAt + 90 days`. Pasted API key: null (unknown) |
 | `serverVersion` | text | Last seen `info.version` |
 | `features` | JSON | Last `GET /system/features` body, subset used by the client |
 | `featuresFetchedAt` | UTC timestamp | |
@@ -48,7 +48,7 @@ Uniqueness: `(baseUrl, userId)`. Adding the same pair again updates the existing
 | `p/<profileId>/access` | Access JWT (stored so a cold start does not need a refresh round-trip) |
 | `p/<profileId>/apikey` | API key |
 
-`flutter_secure_storage` options: Android `encryptedSharedPreferences: true`; iOS and macOS `accessibility: first_unlock_this_device` (background playback after a reboot needs the key before the first foreground, and it must not migrate to another device); Linux libsecret; Windows Credential Manager. On web the implementation keeps tokens in memory and mirrors them to `sessionStorage` so a reload keeps the session; nothing is written to `localStorage`.
+`flutter_secure_storage` options: Android uses the plugin's default storage (AES-GCM with an RSA-OAEP key wrapped in the Android Keystore; the plugin removed `encryptedSharedPreferences` in its version 11 and migrates any data stored that way); iOS and macOS `accessibility: first_unlock_this_device` (background playback after a reboot needs the key before the first foreground, and it must not migrate to another device); Linux libsecret; Windows Credential Manager. A `PlatformException` from the plugin surfaces as `SecretStoreUnavailable`. On web the implementation keeps tokens in memory and mirrors them to `sessionStorage` so a reload keeps the session; nothing is written to `localStorage`. A new web store loads the `sessionStorage` entries whose key starts with `p/`, and when `sessionStorage` throws the store keeps working from memory.
 
 Deleting a profile deletes its three keys, its directory tree, and its row, in that order.
 
@@ -103,9 +103,12 @@ Rules:
 | Timeout | `timeout` | The server did not answer |
 | `HandshakeException`, `TlsException`, certificate verify failed | `tls` | The server's certificate is not trusted by this device |
 | HTTP 401 or 403 on `/api/health` | `blockedByProxy` | Something in front of the server requires its own login |
-| HTTP 404 or non-JSON 200 | `notSoundspan` | That address is not a soundspan server (check the path) |
-| HTTP 5xx without a health body | `serverError` | |
+| HTTP 404, any other 4xx, a 3xx that is not followed, a 200 without a health body, or a final URL that does not end in `/api/health` | `notSoundspan` | That address is not a soundspan server (check the path) |
+| HTTP 5xx without a health body, or still 503 after 30 s | `serverError` | |
+| A fourth redirect, a redirect to a scheme other than `http(s)`, or from `https` to `http` | `redirectRefused` | |
 | Web only: `DioExceptionType.connectionError` with no response | `corsOrNetwork` | Shows `ALLOWED_ORIGINS` instructions with this app's origin |
+
+`dart:io` and `dio` error types are inspected only in `soundspan_api` (`ProbeClient`, which reports a `TransportFailure`); `classifyProbeFailure` in `lib/core/auth/probe/` maps that or the status to the class. A native transport failure of no recognised kind counts as `timeout`. When `/api/auth/config` or `/api/onboarding/status` fails, the class follows the `ApiException`: `Unauthenticated` and `Forbidden` are `blockedByProxy`, `ServerError` and `Upstream` are `serverError`, `Offline` is `corsOrNetwork` on web and `timeout` elsewhere, and anything else is `notSoundspan`. When every candidate fails, the reported failure is the first that received an HTTP response, or else the first candidate's.
 
 On web a CORS rejection is indistinguishable from a network failure in the Fetch API, so the web message covers both and puts the origin string in a copyable field.
 
@@ -156,7 +159,14 @@ After success the client calls `GET /api/auth/me` (role, display name) and `GET 
 
 ### Pasted API Key
 
-A single field; the key is validated with `GET /api/auth/me`. Expiry is looked up as above when the key's name can be matched (it usually cannot; the user is told the key's expiry is unknown and that the app will prompt when the server rejects it).
+`ApiKeySignIn` (`lib/core/auth/api_key_sign_in.dart`) and `ApiKeyForm` (`lib/features/connect/ui/api_key_form.dart`).
+
+- The form has one obscured field with a show/hide toggle, a Paste button that reads the clipboard, and Sign in. Autocorrect, suggestions and autofill are off; the field is cleared on success and when the form leaves the screen.
+- Input is normalized by removing all whitespace and line breaks. An empty result, one longer than 256 characters, or one with a character outside printable ASCII is refused locally (`ApiKeyFailure.malformed`) without a request; the server decides everything else about the key.
+- The key is validated with `GET /api/auth/me` sent as `X-API-Key`: 401 or 403 → `rejected` (inline error), 429 → `rateLimited` (countdown from `Retry-After`), any other error propagates. The capability refresh and version gate run before anything is stored, so a server below `minServer` leaves no profile and no secret.
+- The key is stored at `p/<profileId>/apikey` and the profile written with `authKind = apiKey` from the `/auth/me` body, or the credential of the existing `(baseUrl, userId)` profile replaced. `credentialCreatedAt` is the sign-in time and `credentialExpiresAt` is null: a pasted key carries no name to find it by in `GET /api-keys`, so its expiry is unknown. The form says so ("You will be asked to sign in again when the server stops accepting it"), and no expiry warning is shown for such a profile.
+- The key is never logged, never put in an exception message, and never passed as a route parameter or extra.
+- On web the form and its entry points are not built. A server that offers neither local login nor single sign-on shows "This server offers no sign-in method this app can use in a browser" with "Open in browser" (the server address).
 
 ## Session Lifecycle
 
@@ -175,6 +185,9 @@ A single field; the key is validated with `GET /api/auth/me`. Expiry is looked u
 - `KeyExpiryMonitor` computes days remaining from `credentialExpiresAt` on start and once a day.
 - From 14 days before expiry: a persistent banner on Home ("This device's link expires in N days · Link again") and one local notification (re-shown at 3 days and 1 day).
 - "Link again" runs the device-link flow for the same server. On success the new key replaces the old one in `SecretStore`, and the old key is revoked with `DELETE /api/api-keys/current` sent **with the old key** before it is discarded (P6). If that call fails, the old key is simply dropped; it expires on its own.
+- Monitor details: `daysRemaining` is the time to `credentialExpiresAt` in days, rounded up; 15 or more is no warning, 1 to 14 is "expires in N days" ("today" for 1), 0 or less is "expired" (banner only, no notification). It evaluates when the profile scope starts, every 24 hours, when the app returns to the foreground and when the profile's row changes (a re-link). The last notified threshold (14, 3 or 1) is stored per credential in `device_settings` under `keyExpiry.notified` as `{ credentialCreatedAt, threshold }`, so a restart does not notify twice and a new key starts over; a profile first seen at 2 days shows one notification, not two. Notification permission is requested when a notification is first due; when it is refused the banner is the only warning. The notification uses the Android channel `io.soundspan.app.account` ("Account") and its payload `relink:<profileId>` opens the re-link flow.
+- "Link again" opens `/connect/sign-in?profile=<id>&relink=1`: the device-link panel with the profile's server fixed. The device name starts at the default name, because the previous one is not stored. `RelinkUseCase` (`lib/core/auth/relink.dart`) reads the old key, runs the device-link sign-in, and when the code belongs to another user of the server signs that user in as a separate profile and leaves the old profile and key untouched. Otherwise the profile takes the new key, dates and `state = active`, and the old key is revoked (5 s budget; any failure is logged without the key and ignored). The same flow serves a profile signed out by a rejected key; cache, downloads and outbox are kept.
+- Settings → Servers shows "Link expires <date>", or "Link expiry unknown" when `credentialExpiresAt` is null, on every API-key profile.
 
 ### Sign-Out
 
@@ -187,18 +200,32 @@ A single field; the key is validated with `GET /api/auth/me`. Expiry is looked u
 
 Steps 3 and 4 are best-effort with short timeouts; sign-out always completes locally.
 
+`SignOutSequence` (`lib/app/session/sign_out_sequence.dart`) runs these steps; it sits above `core` because it touches playback, sync and auth.
+
+- Steps 1 and 2 are the `SignOutParticipant`s registered in `signOutParticipantsProvider` (profile scope), in registration order: playback stops, which ends the open play, and waits until the play is written to the outbox; then the socket closes; then, where `PlatformCapabilities.canDownload`, downloads stop. A participant that throws is logged and the next one runs. "Remove this server" runs each participant's `beforeRemove` after its `onSignOut`, before step 3. A participant that also implements `ReportsDownloads` and reports at least one downloaded item makes the sign-out dialog offer "Also remove downloads (N items, size)", unticked, and the remove dialog say "Downloads on this device for this server will be deleted."; with none, neither is shown.
+- `DownloadsSignOutParticipant` (`lib/app/session/downloads_sign_out_participant.dart`) is the downloads participant. `onSignOut` disposes the profile's `DownloadScheduler`, so nothing starts and no retry timer fires, cancels every live task of the group `p:<profileId>` with its `.part` file, and applies `TaskLost` to `running` rows, so they are `queued` for the next sign-in; with "Also remove downloads" ticked it then calls `DownloadController.removeAll`, which unpins every collection as `unpin` does (files and rows deleted, `offlineDelete` queued for tracks) and removes any item left in none. Completed files, rows and collections are otherwise left as they are. `beforeRemove` queues `offlineDelete` (batches of at most 500) for every track item that is `serverConfirmed` or `completed`, so the outbox pass of step 3 sends them, then deletes the profile's `media/` and `art/` trees (`MediaFiles.deleteTree`) before `ProfileRepository.delete` removes the rest. Each step catches and logs by error type only; cancelling has a 5 s budget and deleting files 10 s, after which the step is abandoned. Anything not sent stays in the outbox for the next sign-in to the same account, or goes with `state.db` on removal; the server then keeps this device's records until they are cleared there.
+- Step 3 is one outbox pass. Steps 3 and 4 each have a 5 s budget; a timeout or an error is logged by its type only and ignored, and unsent operations stay in `state.db`.
+- Step 4 uses a one-off client built from the stored credential, for the active profile as for an inactive one: `authKind == password` sends `POST /api/auth/logout`, `deviceLink` and `apiKey` send `DELETE /api/api-keys/current`.
+- Step 5 deletes the three secret keys and sets `state = signedOut`. A failure here propagates: the profile stays signed in and the dialog shows an error. For the active profile, `ProfileRuntime.reload` then disposes its container and creates it again, so the router shows `/connect/sign-in` with the server and username prefilled.
+- Signing out of an inactive profile skips steps 1 to 3, except that `cancelDownloadTasks(downloader, profileId)` cancels the OS tasks of its group through the root `Downloader` without opening its database (5 s budget); its `running` rows are queued by the scheduler when the profile is active again. Removing an inactive profile does the same, deletes its media with the profile directory, and attempts no server delete (there is no session to flush with), which is logged at `info`.
+- "Remove this server" ends with `ProfileRepository.delete` (directory trees, databases, row). When the removed profile was active, the most recently used remaining profile in state `active` becomes active first, or none (the router shows `/connect`). Its dialog counts the outbox's pending operations (for an inactive profile, read from its `state.db`) and, when there are any, says "N changes have not been sent to the server and will be lost" and confirms with "Remove anyway".
+- While a sequence runs, its dialog shows progress and cannot be dismissed.
+
 ## Capability Discovery and Version Gate
 
 Runs after sign-in, on every app start, and on resume after more than one hour in the background. Implemented by `CapabilityRefresher`.
 
 ```dart
 class ServerCapabilities {
-  final Version serverVersion;
+  final Version? serverVersion;                                  // null: unknown
   final bool audioAnalysis, discovery, autoPlaylists, federation, vibe;
-  final double loudnessTargetLufs;
+  final double loudnessTargetLufs;                               // -18 when absent
   final bool hasP6SelfRevoke, hasP7PlayMarker, hasP8PlayedAt;   // derived from version
+  final DateTime? fetchedAt;                                     // null: never refreshed
 }
 ```
+
+- The version and feature notices described below appear only once a refresh has run (`fetchedAt` set), so a profile that has just signed in shows no "version unknown" notice before its first refresh returns.
 
 - `GET /api/docs.json` is requested with `Accept: application/json` and decoded with a streaming JSON reader that stops after `info.version`, because the document is large. A 401/403/404 here (docs disabled by a proxy) falls back to `GET /api/health` → `version`, and if that is `unknown` the client proceeds as "version unknown" with a dismissible warning.
 - `Version` is parsed as semver; pre-release tags compare lower than the release.
@@ -217,6 +244,6 @@ class ServerCapabilities {
 ## Multiple Profiles
 
 - `Settings → Servers` lists profiles ordered by `lastUsedAt`, with state, server version, and storage used.
-- Switching: `ProfileRuntime.switchTo(id)` pauses playback, awaits disposal of the old profile container (databases closed, socket closed, downloader tasks of the old profile left running in the OS and re-attached when that profile is active again), then creates the new container. The UI shows a 150 ms cross-fade; nothing from the old profile is readable during or after it.
+- Switching: `ProfileRuntime.switchTo(id)` pauses playback, awaits disposal of the old profile container (databases closed, socket closed, downloader tasks of the old profile left running in the OS and re-attached when that profile is active again), then creates the new container. The old profile's UI is removed when the switch starts and the new one fades in over 150 ms (no animation with reduced motion); nothing from the old profile is readable during or after it.
 - Downloads of an inactive profile continue in the OS scheduler on mobile; their completion callbacks are queued in `state.db` of that profile by a small root-scope handler that opens the database only long enough to record the result.
 - Deep links that name a server (`soundspan://link?server=`) match an existing profile by normalized base URL before offering to add a new one.

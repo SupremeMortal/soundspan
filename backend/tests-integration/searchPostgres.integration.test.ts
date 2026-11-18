@@ -60,6 +60,7 @@ describeWithPostgres("search relevance PostgreSQL behavior", () => {
                 artistId: ARTIST_ID,
                 title: "Pablo Honey",
                 primaryType: "Album",
+                coverUrl: "native:albums/pablo-honey.jpg",
             },
         });
         await seedTrack("search-creep", "Creep", 1);
@@ -80,7 +81,10 @@ describeWithPostgres("search relevance PostgreSQL behavior", () => {
         });
 
         expect(results).toContainEqual(
-            expect.objectContaining({ id: "search-creep" }),
+            expect.objectContaining({
+                id: "search-creep",
+                albumCoverUrl: "native:albums/pablo-honey.jpg",
+            }),
         );
     });
 
@@ -90,6 +94,7 @@ describeWithPostgres("search relevance PostgreSQL behavior", () => {
         expect(results).toContainEqual(
             expect.objectContaining({
                 id: "search-creep",
+                albumCoverUrl: "native:albums/pablo-honey.jpg",
                 rank: expect.any(Number),
             }),
         );

@@ -3,12 +3,11 @@
 
 ## The mobile story
 
-soundspan's mobile story is deliberate: there is no native soundspan app, and none is planned.
+There are three ways to use soundspan on a phone:
 
-- **PWA** for the full soundspan experience: install the web app from your mobile browser for discovery, Vibe, podcasts, audiobooks, admin, and the native player.
-- **Subsonic clients** for native ergonomics: offline caching, Android Auto / CarPlay, platform audio integration, and battery-friendly playback through soundspan's OpenSubsonic-compatible `/rest` API.
-
-Both are first-class. Use the PWA when you want everything soundspan does; use a Subsonic client when you want a native music player.
+- **The soundspan app** for Android: background playback, lock-screen and Android Auto controls, downloads for offline listening, and soundspan's own features, signed in to your soundspan account. See [`CLIENT_APPS.md`](CLIENT_APPS.md).
+- **The installable web app (PWA)** for everything the web UI offers, administration included, on any phone with a current browser and nothing to download.
+- **Subsonic clients** when you prefer a particular music player, or on iOS, where there is no soundspan app download: they connect through soundspan's OpenSubsonic-compatible `/rest` API with an app password.
 
 The authoritative protocol contract is [`OPENSUBSONIC_COMPATIBILITY.md`](OPENSUBSONIC_COMPATIBILITY.md). This page is the client-facing view of that contract.
 

@@ -23,6 +23,12 @@ import {
     playbackTrackInputSchema,
     resolvePlaybackInput,
 } from "../services/playback/playbackInput";
+import { parsePlaybackId } from "../services/playback/playbackId";
+import {
+    MIN_LISTENED_MS,
+    parseListenedMs,
+    parsePlayedAt,
+} from "../services/playback/playReport";
 
 const router = Router();
 
@@ -71,11 +77,61 @@ const playSchema = z
         }
     });
 
+/** Options shared by every play insert path. */
+interface RecordPlayOptions {
+    /** Client-reported start of the play; absent means "now" and no repeat check. */
+    playedAt?: Date;
+    /** Client-reported audible time in milliseconds; absent stores `NULL`. */
+    listenedMs?: number;
+}
+
+/** The single track column a play row references. */
+type PlayTrackReference =
+    | { trackId: string }
+    | { trackTidalId: string }
+    | { trackYtMusicId: string };
+
+/**
+ * With a client-supplied `playedAt`, returns the play already recorded for
+ * the same user, track and instant, so an outbox retry is not counted twice.
+ * Without one there is no repeat check.
+ */
+async function findRepeatedPlay(
+    userId: string,
+    reference: PlayTrackReference,
+    playedAt: Date | undefined,
+) {
+    if (!playedAt) {
+        return null;
+    }
+    return prisma.play.findFirst({
+        where: { userId, ...reference, playedAt },
+    });
+}
+
 /** Persists a library play and forwards the scrobble reference. */
-async function recordLibraryPlay(userId: string, trackId: string) {
-    const playedAt = new Date();
+async function recordLibraryPlay(
+    userId: string,
+    trackId: string,
+    options: RecordPlayOptions = {},
+) {
+    const repeated = await findRepeatedPlay(
+        userId,
+        { trackId },
+        options.playedAt,
+    );
+    if (repeated) {
+        return repeated;
+    }
+    const playedAt = options.playedAt ?? new Date();
     const play = await prisma.play.create({
-        data: { userId, trackId, source: "LIBRARY", playedAt },
+        data: {
+            userId,
+            trackId,
+            source: "LIBRARY",
+            playedAt,
+            listenedMs: options.listenedMs,
+        },
     });
     forwardTrackReferenceIsolated({
         userId,
@@ -91,6 +147,7 @@ async function recordLibraryPlay(userId: string, trackId: string) {
 async function recordRemotePlay(
     userId: string,
     ref: { trackTidalId: string | null; trackYtMusicId: string | null },
+    options: RecordPlayOptions = {},
 ) {
     const row = ref.trackTidalId
         ? await prisma.trackTidal.findUnique({
@@ -102,7 +159,17 @@ async function recordRemotePlay(
     if (!row) {
         throw new PlaybackInputError("TRACK_NOT_FOUND", "Track not found");
     }
-    const playedAt = new Date();
+    const repeated = await findRepeatedPlay(
+        userId,
+        ref.trackTidalId
+            ? { trackTidalId: ref.trackTidalId }
+            : { trackYtMusicId: ref.trackYtMusicId! },
+        options.playedAt,
+    );
+    if (repeated) {
+        return repeated;
+    }
+    const playedAt = options.playedAt ?? new Date();
     const play = await prisma.play.create({
         data: ref.trackTidalId
             ? {
@@ -110,12 +177,14 @@ async function recordRemotePlay(
                   trackTidalId: ref.trackTidalId,
                   source: "TIDAL",
                   playedAt,
+                  listenedMs: options.listenedMs,
               }
             : {
                   userId,
                   trackYtMusicId: ref.trackYtMusicId!,
                   source: "YOUTUBE_MUSIC",
                   playedAt,
+                  listenedMs: options.listenedMs,
               },
     });
     forwardScrobbleIsolated({
@@ -292,123 +361,31 @@ router.delete("/history", async (req, res) => {
     }
 });
 
-/**
- * @openapi
- * /api/plays:
- *   post:
- *     summary: Log a new play for a track
- *     tags: [Plays]
- *     security:
- *       - apiKeyAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             oneOf:
- *               - type: object
- *                 required: [playbackId]
- *                 description: >-
- *                   Source-agnostic track reference. When present it wins and
- *                   any legacy identifier fields are ignored.
- *                 properties:
- *                   playbackId:
- *                     type: string
- *                     minLength: 1
- *                     description: "Opaque track identifier. Do not parse."
- *                   metadata:
- *                     type: object
- *                     description: >-
- *                       Display metadata, used only when a TIDAL or YouTube
- *                       Music track row must be created. Missing metadata in
- *                       that case answers 400 METADATA_REQUIRED.
- *                     required: [title, artist, album, durationSec]
- *                     properties:
- *                       title: { type: string, minLength: 1 }
- *                       artist: { type: string, minLength: 1 }
- *                       album: { type: string, minLength: 1 }
- *                       durationSec: { type: integer, minimum: 0 }
- *                       artworkUrl: { type: string, minLength: 1 }
- *                       isrc: { type: string, minLength: 1 }
- *               - type: object
- *                 required: [trackId]
- *                 not:
- *                   anyOf:
- *                     - required: [tidalTrackId]
- *                     - required: [youtubeVideoId]
- *                 properties:
- *                   trackId:
- *                     type: string
- *                     minLength: 1
- *                     description: Local library track ID
- *               - type: object
- *                 required: [tidalTrackId, title, artist, album, duration]
- *                 not:
- *                   anyOf:
- *                     - required: [trackId]
- *                     - required: [youtubeVideoId]
- *                 properties:
- *                   tidalTrackId:
- *                     type: integer
- *                     minimum: 1
- *                   title:
- *                     type: string
- *                     minLength: 1
- *                   artist:
- *                     type: string
- *                     minLength: 1
- *                   album:
- *                     type: string
- *                     minLength: 1
- *                   duration:
- *                     type: integer
- *                     minimum: 0
- *                     description: Track duration in seconds
- *                   thumbnailUrl:
- *                     type: string
- *                     minLength: 1
- *               - type: object
- *                 required: [youtubeVideoId, title, artist, album, duration]
- *                 not:
- *                   anyOf:
- *                     - required: [trackId]
- *                     - required: [tidalTrackId]
- *                 properties:
- *                   youtubeVideoId:
- *                     type: string
- *                     minLength: 1
- *                   title:
- *                     type: string
- *                     minLength: 1
- *                   artist:
- *                     type: string
- *                     minLength: 1
- *                   album:
- *                     type: string
- *                     minLength: 1
- *                   duration:
- *                     type: integer
- *                     minimum: 0
- *                     description: Track duration in seconds
- *                   thumbnailUrl:
- *                     type: string
- *                     minLength: 1
- *     responses:
- *       200:
- *         description: Play logged successfully
- *       400:
- *         description: Invalid request body, or a coded playbackId error (INVALID_PLAYBACK_ID, METADATA_REQUIRED)
- *       401:
- *         description: Not authenticated
- *       404:
- *         description: Track not found (code TRACK_NOT_FOUND for a playbackId)
- *       409:
- *         description: Source unavailable (code SOURCE_UNAVAILABLE)
- */
 // POST /plays
 router.post("/", async (req, res) => {
     try {
         const userId = req.user!.id;
+        const parsedPlayedAt = parsePlayedAt(req.body?.playedAt, new Date());
+        if (!parsedPlayedAt.ok) {
+            return sendRouteError(res, 400, "Invalid playedAt", {
+                code: "INVALID_PLAYED_AT",
+            });
+        }
+        const parsedListenedMs = parseListenedMs(req.body?.listenedMs);
+        if (!parsedListenedMs.ok) {
+            return sendRouteError(res, 400, "Invalid listenedMs", {
+                code: "INVALID_LISTENED_MS",
+            });
+        }
+        const recordOptions: RecordPlayOptions = {
+            playedAt: parsedPlayedAt.playedAt,
+            listenedMs: parsedListenedMs.listenedMs,
+        };
+        // Checked once the request shape is valid and before any database
+        // access, so a too-short play never has a side effect.
+        const belowMinimumListen =
+            recordOptions.listenedMs !== undefined &&
+            recordOptions.listenedMs < MIN_LISTENED_MS;
 
         // A playbackId wins over every legacy identifier field.
         if (typeof req.body?.playbackId === "string") {
@@ -416,14 +393,25 @@ router.post("/", async (req, res) => {
                 playbackId: req.body.playbackId,
                 metadata: req.body.metadata,
             });
+            if (belowMinimumListen) {
+                if (!parsePlaybackId(input.playbackId)) {
+                    return sendRouteError(res, 400, "Invalid playbackId", {
+                        code: "INVALID_PLAYBACK_ID",
+                    });
+                }
+                return res.json({ recorded: false });
+            }
             const ref = await resolvePlaybackInput(userId, input);
             const play = ref.trackId
-                ? await recordLibraryPlay(userId, ref.trackId)
-                : await recordRemotePlay(userId, ref);
+                ? await recordLibraryPlay(userId, ref.trackId, recordOptions)
+                : await recordRemotePlay(userId, ref, recordOptions);
             return res.json(play);
         }
 
         const payload = playSchema.parse(req.body);
+        if (belowMinimumListen) {
+            return res.json({ recorded: false });
+        }
 
         if (payload.trackId) {
             // Verify local track exists
@@ -435,7 +423,11 @@ router.post("/", async (req, res) => {
                 return res.status(404).json({ error: "Track not found" });
             }
 
-            const play = await recordLibraryPlay(userId, payload.trackId);
+            const play = await recordLibraryPlay(
+                userId,
+                payload.trackId,
+                recordOptions,
+            );
 
             return res.json(play);
         }
@@ -464,13 +456,22 @@ router.post("/", async (req, res) => {
                 isrc: resolvedMetadata.isrc,
                 explicit: resolvedMetadata.explicit,
             });
-            const playedAt = new Date();
+            const repeated = await findRepeatedPlay(
+                userId,
+                { trackTidalId: ensured.id },
+                recordOptions.playedAt,
+            );
+            if (repeated) {
+                return res.json(repeated);
+            }
+            const playedAt = recordOptions.playedAt ?? new Date();
             const play = await prisma.play.create({
                 data: {
                     userId,
                     trackTidalId: ensured.id,
                     source: "TIDAL",
                     playedAt,
+                    listenedMs: recordOptions.listenedMs,
                 },
             });
             forwardScrobbleIsolated({
@@ -509,13 +510,22 @@ router.post("/", async (req, res) => {
             duration: resolvedMetadata.duration,
             thumbnailUrl: resolvedMetadata.thumbnailUrl,
         });
-        const playedAt = new Date();
+        const repeated = await findRepeatedPlay(
+            userId,
+            { trackYtMusicId: ensured.id },
+            recordOptions.playedAt,
+        );
+        if (repeated) {
+            return res.json(repeated);
+        }
+        const playedAt = recordOptions.playedAt ?? new Date();
         const play = await prisma.play.create({
             data: {
                 userId,
                 trackYtMusicId: ensured.id,
                 source: "YOUTUBE_MUSIC",
                 playedAt,
+                listenedMs: recordOptions.listenedMs,
             },
         });
 
@@ -575,6 +585,17 @@ router.post("/", async (req, res) => {
  *               items:
  *                 type: object
  *                 properties:
+ *                   id:
+ *                     type: string
+ *                   playedAt:
+ *                     type: string
+ *                     format: date-time
+ *                   source:
+ *                     type: string
+ *                   listenedMs:
+ *                     type: integer
+ *                     nullable: true
+ *                     description: Audible time in milliseconds; null when not measured
  *                   track:
  *                     type: object
  *                     properties:
@@ -633,6 +654,7 @@ router.get("/", async (req, res) => {
                             id: play.id,
                             playedAt: play.playedAt,
                             source: play.source,
+                            listenedMs: play.listenedMs,
                             track: toHistoryTrackShape(
                                 normalized,
                                 Boolean(play.track.removedAt),
@@ -645,6 +667,7 @@ router.get("/", async (req, res) => {
                             id: play.id,
                             playedAt: play.playedAt,
                             source: play.source,
+                            listenedMs: play.listenedMs,
                             track: toHistoryTrackShape(normalized),
                         };
                     }
@@ -656,6 +679,7 @@ router.get("/", async (req, res) => {
                             id: play.id,
                             playedAt: play.playedAt,
                             source: play.source,
+                            listenedMs: play.listenedMs,
                             track: toHistoryTrackShape(normalized),
                         };
                     }

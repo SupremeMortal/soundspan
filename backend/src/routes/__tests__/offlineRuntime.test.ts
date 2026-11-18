@@ -56,6 +56,7 @@ jest.mock("../../services/offline/resolveOfflineItems", () => ({
 
 import router from "../offline";
 import { prisma as prismaClient } from "../../utils/db";
+import { withClientSurfaceValidation } from "./helpers/expectClientSurfaceResponse";
 
 const mockUserSettingsFindUnique = prismaClient.userSettings
     .findUnique as jest.Mock;
@@ -106,7 +107,10 @@ describe("offline routes runtime", () => {
     const postTrackComplete = getHandler("post", "/tracks/:id/complete");
     const getAlbums = getHandler("get", "/albums");
     const deleteAlbum = getHandler("delete", "/albums/:id");
-    const getStats = getHandler("get", "/stats");
+    const getStats = withClientSurfaceValidation(
+        "getOfflineStats",
+        getHandler("get", "/stats"),
+    );
 
     beforeEach(() => {
         jest.clearAllMocks();
@@ -790,6 +794,31 @@ describe("offline routes runtime", () => {
             availableMb: 5040,
             percentUsed: (80 / 5120) * 100,
             trackCount: 5,
+        });
+    });
+
+    it("adds the device's totals when deviceId is given", async () => {
+        const deviceId = "6f1d2c9e-8a3b-4c57-9d0e-1b2a3c4d5e6f";
+        mockCachedTrackAggregate
+            .mockResolvedValueOnce({ _sum: { fileSizeMb: 80 }, _count: 5 })
+            .mockResolvedValueOnce({ _sum: { fileSizeMb: null }, _count: 0 });
+
+        const req = {
+            session: {},
+            query: { deviceId },
+            user: { id: "u1", username: "u1", role: "user" },
+        } as any;
+        const res = createRes();
+        await getStats(req, res);
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body).toEqual({
+            usedMb: 80,
+            maxMb: 2048,
+            availableMb: 1968,
+            percentUsed: (80 / 2048) * 100,
+            trackCount: 5,
+            device: { deviceId, usedMb: 0, trackCount: 0 },
         });
     });
 

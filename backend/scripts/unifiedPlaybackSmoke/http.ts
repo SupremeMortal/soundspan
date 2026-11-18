@@ -1,3 +1,4 @@
+import { io, type Socket } from "socket.io-client";
 import {
     assertSmoke,
     bearer,
@@ -11,6 +12,31 @@ export function jsonHeaders(
     return { "Content-Type": "application/json", ...headers };
 }
 
+/**
+ * Fails the run when the backend's response validation replaced a body with
+ * `RESPONSE_SCHEMA_MISMATCH`, naming the request that drifted from its schema.
+ */
+export async function assertNoSchemaMismatch(
+    method: string,
+    route: string,
+    response: Response,
+): Promise<void> {
+    const type = response.headers.get("content-type") ?? "";
+    if (!type.includes("application/json")) return;
+    const body: unknown = await response
+        .clone()
+        .json()
+        .catch(() => null);
+    const code =
+        body !== null && typeof body === "object"
+            ? (body as Record<string, unknown>).code
+            : undefined;
+    assertSmoke(
+        code !== "RESPONSE_SCHEMA_MISMATCH",
+        `${method} ${route} failed response validation: ${JSON.stringify(body)}`,
+    );
+}
+
 export async function send(
     baseUrl: string,
     method: string,
@@ -18,11 +44,13 @@ export async function send(
     headers: Record<string, string>,
     body?: unknown,
 ): Promise<Response> {
-    return await fetchBounded(`${baseUrl}${route}`, {
+    const response = await fetchBounded(`${baseUrl}${route}`, {
         method,
         headers: body === undefined ? headers : jsonHeaders(headers),
         body: body === undefined ? undefined : JSON.stringify(body),
     });
+    await assertNoSchemaMismatch(method, route, response);
+    return response;
 }
 
 export async function sendJson(
@@ -62,3 +90,24 @@ export interface Credentials {
 }
 
 export const bearerHeaders = bearer;
+
+/** Opens a Listen Together socket authenticated with `apiKey`. */
+export function connectSocket(
+    baseUrl: string,
+    apiKey: string,
+): Promise<Socket> {
+    return new Promise((resolve, reject) => {
+        const socket = io(`${baseUrl}/listen-together`, {
+            path: "/socket.io/listen-together",
+            auth: { apiKey },
+            transports: ["websocket"],
+            reconnection: false,
+            timeout: 15_000,
+        });
+        socket.once("connect", () => resolve(socket));
+        socket.once("connect_error", (error) => {
+            socket.close();
+            reject(error);
+        });
+    });
+}

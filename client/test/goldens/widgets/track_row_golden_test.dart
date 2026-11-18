@@ -1,0 +1,152 @@
+// SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
+
+@Tags(['golden'])
+library;
+
+import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
+import 'package:soundspan/shared/domain/playback_id.dart';
+import 'package:soundspan/shared/providers/now_playing.dart';
+import 'package:soundspan/shared/widgets/track_row.dart';
+
+import '../../helpers/golden.dart';
+
+const Duration _duration = Duration(minutes: 3, seconds: 41);
+
+/// Index (liked), thumbnail (not liked), with the album column, selected,
+/// disabled, and both skeletons; the first two and the disabled row have
+/// the overflow button.
+Widget _rows(BuildContext context) => Padding(
+  padding: const EdgeInsets.all(16),
+  child: Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      TrackRow(
+        title: 'Come Together',
+        artist: 'The Beatles',
+        album: 'Abbey Road',
+        duration: _duration,
+        leading: const TrackRowLeading.index(1),
+        onTap: () {},
+        liked: true,
+        onToggleLike: () {},
+        onMenu: (_) {},
+      ),
+      TrackRow(
+        title: 'So What',
+        artist: 'Miles Davis',
+        album: 'Kind of Blue',
+        duration: const Duration(minutes: 9, seconds: 22),
+        leading: const TrackRowLeading.thumbnail('album-2'),
+        onTap: () {},
+        onToggleLike: () {},
+        onMenu: (_) {},
+      ),
+      TrackRow(
+        title: 'A title far too long to fit on one line of any window',
+        artist: 'An artist with a long name, featuring several others',
+        album: 'An album with a long title as well',
+        duration: const Duration(hours: 1, minutes: 2, seconds: 3),
+        leading: const TrackRowLeading.thumbnail('album-3'),
+        showAlbumColumn: true,
+        onTap: () {},
+      ),
+      TrackRow(
+        title: 'Feeling Good',
+        artist: 'Nina Simone',
+        album: 'I Put a Spell on You',
+        duration: const Duration(minutes: 2, seconds: 53),
+        leading: const TrackRowLeading.index(4),
+        selected: true,
+        onTap: () {},
+      ),
+      TrackRow(
+        title: 'Not Here',
+        artist: 'Somebody',
+        duration: const Duration(seconds: 9),
+        leading: const TrackRowLeading.index(5),
+        enabled: false,
+        disabledReason: 'Not available offline',
+        onTap: () {},
+        onMenu: (_) {},
+      ),
+      const TrackRowSkeleton(withThumbnail: true),
+      const TrackRowSkeleton(withThumbnail: false),
+    ],
+  ),
+);
+
+/// The current track, as an album row and as a thumbnail row (with the
+/// album column from 800), then a row of another track. Tickers are off so
+/// the moving bars are drawn at rest.
+Widget _playingRows(BuildContext context) => TickerMode(
+  enabled: false,
+  child: Padding(
+    padding: const EdgeInsets.all(16),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        TrackRow(
+          title: 'Come Together',
+          artist: 'The Beatles',
+          album: 'Abbey Road',
+          duration: _duration,
+          leading: const TrackRowLeading.index(1),
+          playbackId: _current,
+          onTap: () {},
+          liked: true,
+          onToggleLike: () {},
+        ),
+        TrackRow(
+          title: 'Come Together',
+          artist: 'The Beatles',
+          album: 'Abbey Road',
+          duration: _duration,
+          leading: const TrackRowLeading.thumbnail('album-1'),
+          showAlbumColumn: MediaQuery.sizeOf(context).width >= 800,
+          playbackId: _current,
+          onTap: () {},
+        ),
+        TrackRow(
+          title: 'So What',
+          artist: 'Miles Davis',
+          album: 'Kind of Blue',
+          duration: const Duration(minutes: 9, seconds: 22),
+          leading: const TrackRowLeading.index(2),
+          playbackId: const PlaybackId('pb-other'),
+          onTap: () {},
+        ),
+      ],
+    ),
+  ),
+);
+
+const PlaybackId _current = PlaybackId('pb-current');
+
+void main() {
+  goldenMatrix(
+    'track_row',
+    sizes: const [Size(390, 440), Size(800, 440), Size(1440, 440)],
+    builder: _rows,
+  );
+  goldenMatrix(
+    'track_row',
+    sizes: const [Size(390, 720), Size(1440, 720)],
+    themes: const [ThemeMode.dark],
+    textScales: const [2],
+    builder: _rows,
+  );
+  for (final playing in [true, false]) {
+    goldenMatrix(
+      playing ? 'track_row_playing' : 'track_row_paused',
+      sizes: const [Size(390, 240), Size(800, 240), Size(1440, 240)],
+      overrides: [
+        nowPlayingProvider.overrideWithValue((
+          playbackId: _current,
+          playing: playing,
+        )),
+      ],
+      builder: _playingRows,
+    );
+  }
+}

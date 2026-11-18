@@ -69,34 +69,6 @@ import {
 export const radioRouter = Router();
 const VIBE_FALLBACK_QUERY_LIMIT = 400;
 /**
- * @openapi
- * /api/library/genres:
- *   get:
- *     summary: Get list of genres in the library with track counts
- *     tags: [Library]
- *     security:
- *       - apiKeyAuth: []
- *     responses:
- *       200:
- *         description: List of genres with track counts
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 genres:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       genre:
- *                         type: string
- *                       count:
- *                         type: integer
- *       401:
- *         description: Not authenticated
- */
-/**
  * Handles GET /api/library/genres.
  */
 export async function handleGetGenres(req: Request, res: Response) {
@@ -107,35 +79,6 @@ export async function handleGetGenres(req: Request, res: Response) {
 radioRouter.get("/genres", asyncHandler(handleGetGenres));
 
 /**
- * @openapi
- * /api/library/decades:
- *   get:
- *     summary: Get available decades in the library with track counts
- *     tags: [Library]
- *     security:
- *       - apiKeyAuth: []
- *     responses:
- *       200:
- *         description: List of decades with track counts (only decades with 15+ tracks)
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 decades:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       decade:
- *                         type: integer
- *                         example: 1990
- *                       count:
- *                         type: integer
- *       401:
- *         description: Not authenticated
- */
-/**
  * Handles GET /api/library/decades.
  */
 export async function handleGetDecades(req: Request, res: Response) {
@@ -145,53 +88,6 @@ export async function handleGetDecades(req: Request, res: Response) {
 
 radioRouter.get("/decades", asyncHandler(handleGetDecades));
 
-/**
- * @openapi
- * /api/library/radio:
- *   get:
- *     summary: Get tracks for a library-based radio station
- *     tags: [Library]
- *     security:
- *       - apiKeyAuth: []
- *     parameters:
- *       - in: query
- *         name: type
- *         required: true
- *         schema:
- *           type: string
- *           enum: [all, liked, discovery, favorites, decade, genre, mood, workout, artist, artist-name, vibe]
- *         description: Radio station type
- *       - in: query
- *         name: value
- *         schema:
- *           type: string
- *         description: Value for the radio type (e.g. decade year, genre name, artist ID, track ID)
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *           default: 50
- *         description: Number of tracks to return
- *     responses:
- *       200:
- *         description: Radio tracks queue
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 tracks:
- *                   type: array
- *                   items:
- *                     type: object
- *                 sourceFeatures:
- *                   type: object
- *                   description: Source track audio features (only for vibe mode)
- *       400:
- *         description: Radio type is required
- *       401:
- *         description: Not authenticated
- */
 /**
  * Handles GET /api/library/radio.
  */

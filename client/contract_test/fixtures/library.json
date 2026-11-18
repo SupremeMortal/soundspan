@@ -1,0 +1,336 @@
+{
+  "artists": [
+    {
+      "name": "Contract Aurora",
+      "albums": [
+        {
+          "title": "First Light",
+          "year": 2001,
+          "tracks": [
+            {
+              "title": "Aster Tone",
+              "disc": 1,
+              "track": 1,
+              "frequencyHz": 220,
+              "seconds": 30
+            },
+            {
+              "title": "Birch Tone",
+              "disc": 1,
+              "track": 2,
+              "frequencyHz": 230,
+              "seconds": 3
+            },
+            {
+              "title": "Cedar Tone",
+              "disc": 1,
+              "track": 3,
+              "frequencyHz": 240,
+              "seconds": 3
+            },
+            {
+              "title": "Delta Tone",
+              "disc": 1,
+              "track": 4,
+              "frequencyHz": 250,
+              "seconds": 3
+            },
+            {
+              "title": "Ember Tone",
+              "disc": 1,
+              "track": 5,
+              "frequencyHz": 260,
+              "seconds": 3
+            },
+            {
+              "title": "Fjord Tone",
+              "disc": 1,
+              "track": 6,
+              "frequencyHz": 270,
+              "seconds": 3
+            },
+            {
+              "title": "Grove Tone",
+              "disc": 1,
+              "track": 7,
+              "frequencyHz": 280,
+              "seconds": 3
+            }
+          ]
+        },
+        {
+          "title": "Long Evening",
+          "year": 2004,
+          "tracks": [
+            {
+              "title": "Harbor Tone",
+              "disc": 1,
+              "track": 1,
+              "frequencyHz": 290,
+              "seconds": 3
+            },
+            {
+              "title": "Iris Tone",
+              "disc": 1,
+              "track": 2,
+              "frequencyHz": 300,
+              "seconds": 3
+            },
+            {
+              "title": "Juniper Tone",
+              "disc": 1,
+              "track": 3,
+              "frequencyHz": 310,
+              "seconds": 3
+            },
+            {
+              "title": "Kestrel Tone",
+              "disc": 1,
+              "track": 4,
+              "frequencyHz": 320,
+              "seconds": 3
+            },
+            {
+              "title": "Lumen Tone",
+              "disc": 2,
+              "track": 1,
+              "frequencyHz": 330,
+              "seconds": 3
+            },
+            {
+              "title": "Meadow Tone",
+              "disc": 2,
+              "track": 2,
+              "frequencyHz": 340,
+              "seconds": 3
+            },
+            {
+              "title": "Nectar Tone",
+              "disc": 2,
+              "track": 3,
+              "frequencyHz": 350,
+              "seconds": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Contract Basalt",
+      "albums": [
+        {
+          "title": "Stone Garden",
+          "year": 2010,
+          "tracks": [
+            {
+              "title": "Opal Tone",
+              "disc": 1,
+              "track": 1,
+              "frequencyHz": 360,
+              "seconds": 3,
+              "lyrics": "[00:00.00]Contract line one\n[00:01.50]Contract line two"
+            },
+            {
+              "title": "Pine Tone",
+              "disc": 1,
+              "track": 2,
+              "frequencyHz": 370,
+              "seconds": 3
+            },
+            {
+              "title": "Quartz Tone",
+              "disc": 1,
+              "track": 3,
+              "frequencyHz": 380,
+              "seconds": 3
+            },
+            {
+              "title": "River Tone",
+              "disc": 1,
+              "track": 4,
+              "frequencyHz": 390,
+              "seconds": 3
+            },
+            {
+              "title": "Sable Tone",
+              "disc": 1,
+              "track": 5,
+              "frequencyHz": 400,
+              "seconds": 3
+            },
+            {
+              "title": "Tundra Tone",
+              "disc": 1,
+              "track": 6,
+              "frequencyHz": 410,
+              "seconds": 3
+            },
+            {
+              "title": "Umber Tone",
+              "disc": 1,
+              "track": 7,
+              "frequencyHz": 420,
+              "seconds": 3
+            }
+          ]
+        },
+        {
+          "title": "Quiet Fault",
+          "year": 2013,
+          "tracks": [
+            {
+              "title": "Vale Tone",
+              "disc": 1,
+              "track": 1,
+              "frequencyHz": 430,
+              "seconds": 3
+            },
+            {
+              "title": "Willow Tone",
+              "disc": 1,
+              "track": 2,
+              "frequencyHz": 440,
+              "seconds": 3
+            },
+            {
+              "title": "Xenon Tone",
+              "disc": 1,
+              "track": 3,
+              "frequencyHz": 450,
+              "seconds": 3
+            },
+            {
+              "title": "Yarrow Tone",
+              "disc": 1,
+              "track": 4,
+              "frequencyHz": 460,
+              "seconds": 3
+            },
+            {
+              "title": "Zephyr Tone",
+              "disc": 1,
+              "track": 5,
+              "frequencyHz": 470,
+              "seconds": 3
+            },
+            {
+              "title": "Alder Tone",
+              "disc": 1,
+              "track": 6,
+              "frequencyHz": 480,
+              "seconds": 3
+            },
+            {
+              "title": "Brook Tone",
+              "disc": 1,
+              "track": 7,
+              "frequencyHz": 490,
+              "seconds": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Contract Cinder",
+      "albums": [
+        {
+          "title": "Ember Lines",
+          "year": 2018,
+          "tracks": [
+            {
+              "title": "Cove Tone",
+              "disc": 1,
+              "track": 1,
+              "frequencyHz": 500,
+              "seconds": 3
+            },
+            {
+              "title": "Dune Tone",
+              "disc": 1,
+              "track": 2,
+              "frequencyHz": 510,
+              "seconds": 3
+            },
+            {
+              "title": "Echo Tone",
+              "disc": 1,
+              "track": 3,
+              "frequencyHz": 520,
+              "seconds": 3
+            },
+            {
+              "title": "Flint Tone",
+              "disc": 1,
+              "track": 4,
+              "frequencyHz": 530,
+              "seconds": 3
+            },
+            {
+              "title": "Glade Tone",
+              "disc": 1,
+              "track": 5,
+              "frequencyHz": 540,
+              "seconds": 3
+            },
+            {
+              "title": "Heath Tone",
+              "disc": 1,
+              "track": 6,
+              "frequencyHz": 550,
+              "seconds": 3
+            }
+          ]
+        },
+        {
+          "title": "Ash Weather",
+          "year": 2021,
+          "tracks": [
+            {
+              "title": "Inlet Tone",
+              "disc": 1,
+              "track": 1,
+              "frequencyHz": 560,
+              "seconds": 3
+            },
+            {
+              "title": "Jade Tone",
+              "disc": 1,
+              "track": 2,
+              "frequencyHz": 570,
+              "seconds": 3
+            },
+            {
+              "title": "Knoll Tone",
+              "disc": 1,
+              "track": 3,
+              "frequencyHz": 580,
+              "seconds": 3
+            },
+            {
+              "title": "Larch Tone",
+              "disc": 1,
+              "track": 4,
+              "frequencyHz": 590,
+              "seconds": 3
+            },
+            {
+              "title": "Moss Tone",
+              "disc": 1,
+              "track": 5,
+              "frequencyHz": 600,
+              "seconds": 3
+            },
+            {
+              "title": "North Tone",
+              "disc": 1,
+              "track": 6,
+              "frequencyHz": 610,
+              "seconds": 3
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

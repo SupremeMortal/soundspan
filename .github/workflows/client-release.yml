@@ -1,0 +1,189 @@
+name: Client Release
+
+# A client-v<version> tag becomes a draft pre-release with the unsigned
+# artifacts of client-build.yml, SHA256SUMS, build-provenance attestations
+# and notes from the Client changelog. Approving the client-release
+# environment pushes the web container image to GHCR and publishes the
+# release as a pre-release. client-quality.yml runs the
+# tag validation and notes scripts as client-release-dry-run on pull requests.
+
+on:
+  push:
+    tags:
+      - "client-v*"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: client-release-${{ github.ref_name }}
+  cancel-in-progress: false
+
+env:
+  TAG: ${{ github.ref_name }}
+
+jobs:
+  validate:
+    name: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    outputs:
+      version: ${{ steps.tag.outputs.version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Set up Flutter
+        uses: ./.github/actions/client-flutter
+
+      - name: Validate the tag against pubspec.yaml
+        id: tag
+        working-directory: client
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(dart run tool/release/validate_tag.dart --tag "$TAG" --pubspec pubspec.yaml)"
+          echo "version=$version" | tee -a "$GITHUB_OUTPUT"
+
+  build:
+    name: build
+    needs: validate
+    uses: ./.github/workflows/client-build.yml
+    with:
+      version: ${{ needs.validate.outputs.version }}
+      build-number: "${{ github.run_number }}"
+
+  draft-release:
+    name: draft-release
+    needs: [validate, build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      VERSION: ${{ needs.validate.outputs.version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Fail if a release for the tag exists
+        shell: bash
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "A release for $TAG already exists; it is left unchanged." >&2
+            exit 1
+          fi
+
+      - name: Changelog at the previous client tag
+        id: previous
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --force --tags origin
+          previous="$(git describe --tags --abbrev=0 --match 'client-v*' "$TAG^" 2>/dev/null || true)"
+          if [[ -n "$previous" ]]; then
+            echo "Previous client tag: $previous"
+            git show "$previous:CHANGELOG.md" > "$RUNNER_TEMP/previous-CHANGELOG.md"
+            echo "args=--previous-changelog $RUNNER_TEMP/previous-CHANGELOG.md" >> "$GITHUB_OUTPUT"
+          else
+            echo "No previous client tag; every Client bullet is included."
+            echo "args=" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up Flutter
+        uses: ./.github/actions/client-flutter
+
+      - name: Write the release notes
+        working-directory: client
+        shell: bash
+        env:
+          PREVIOUS_ARGS: ${{ steps.previous.outputs.args }}
+        run: |
+          set -euo pipefail
+          # shellcheck disable=SC2086 # PREVIOUS_ARGS is empty or one option and a path without spaces
+          dart run tool/release/release_notes.dart \
+            --changelog ../CHANGELOG.md $PREVIOUS_ARGS \
+            --version "$VERSION" --repository "$GITHUB_REPOSITORY" \
+            --out "$RUNNER_TEMP/release-notes.md"
+
+      - name: Download release files
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: client-release-files
+          path: release
+
+      - name: Verify SHA256SUMS
+        working-directory: release
+        run: |
+          sha256sum --check --strict SHA256SUMS
+          ls -l
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: release/*
+
+      - name: Create the draft pre-release
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release create "$TAG" release/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --verify-tag \
+            --draft \
+            --prerelease \
+            --title "soundspan client $VERSION" \
+            --notes-file "$RUNNER_TEMP/release-notes.md"
+
+  publish:
+    name: publish
+    needs: [validate, draft-release]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # The environment's required reviewers are the approval step.
+    environment: client-release
+    permissions:
+      contents: write
+      packages: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      VERSION: ${{ needs.validate.outputs.version }}
+    steps:
+      - name: Download release files
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: client-release-files
+          path: release
+
+      - name: Verify SHA256SUMS
+        working-directory: release
+        run: sha256sum --check --strict SHA256SUMS
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # ghcr.io/<owner>/<repository>-client-web:<version>, lower-cased as
+      # GHCR requires (doc 11, client-release.yml).
+      - name: Push the web image
+        run: |
+          set -euo pipefail
+          image="ghcr.io/${GITHUB_REPOSITORY,,}-client-web:$VERSION"
+          gunzip -c "release/soundspan-$VERSION-web-image.tar.gz" | docker load
+          docker tag "soundspan-client-web:$VERSION" "$image"
+          docker push "$image"
+          echo "Pushed $image" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Publish the pre-release
+        run: gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --draft=false --prerelease

@@ -142,6 +142,7 @@ jest.mock("../../services/vibeVocabulary", () => ({
 }));
 
 import router from "../vibe";
+import { withClientSurfaceValidation } from "./helpers/expectClientSurfaceResponse";
 import { findSimilarTracks } from "../../services/hybridSimilarity";
 
 const mockFindSimilarTracks = findSimilarTracks as jest.Mock;
@@ -184,8 +185,14 @@ function createRes() {
 }
 
 describe("vibe canonical error response shape", () => {
-    const similarHandler = getGetHandler("/similar/:trackId");
-    const searchHandler = getPostHandler("/search");
+    const similarHandler = withClientSurfaceValidation(
+        "getSimilarTracks",
+        getGetHandler("/similar/:trackId"),
+    );
+    const searchHandler = withClientSurfaceValidation(
+        "searchVibe",
+        getPostHandler("/search"),
+    );
     const statusHandler = getGetHandler("/status");
 
     beforeEach(() => {

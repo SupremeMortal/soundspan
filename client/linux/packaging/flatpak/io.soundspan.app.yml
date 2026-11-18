@@ -1,0 +1,166 @@
+# SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception
+#
+# Flatpak manifest of the soundspan client (doc 10, Linux). The prebuilt
+# Flutter bundle comes from the tagged GitHub release; libmpv is built from
+# source with FFmpeg from the runtime (which has the FLAC, MP3, AAC, Opus and
+# Vorbis decoders). Every source is pinned: archives by SHA-256, git sources
+# by commit. build_flatpak.sh builds a copy of this file whose soundspan
+# source is a local tarball; this file is what Flathub builds.
+app-id: io.soundspan.app
+runtime: org.freedesktop.Platform
+runtime-version: '26.08'
+sdk: org.freedesktop.Sdk
+command: soundspan
+finish-args:
+  - --share=network
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --socket=pulseaudio
+  - --device=dri
+  - --talk-name=org.freedesktop.secrets
+  # The MPRIS bus name carries an .instance<pid> suffix.
+  - --own-name=org.mpris.MediaPlayer2.soundspan.*
+  - --talk-name=org.kde.StatusNotifierWatcher
+  # The tray icon owns org.kde.StatusNotifierItem-<pid>-<n> (the name is fixed
+  # by tray_manager's cnativeapi); without this the bus proxy refuses the name,
+  # the icon vanishes and close-to-tray hides the window with nothing left to
+  # bring it back. Flatpak accepts a wildcard only as a whole trailing ".*"
+  # element, so org.kde.* is the narrowest grant that covers the name.
+  - --own-name=org.kde.*
+  # The runtime ships no cursor themes, and the default Xcursor search path
+  # misses the host's themes mounted under /run/host; without this only the
+  # fallback arrow loads and the hand (pointer) cursor never shows.
+  - --env=XCURSOR_PATH=/run/host/user-share/icons:/run/host/share/icons
+cleanup:
+  - /include
+  - /lib/pkgconfig
+  - /share/pkgconfig
+  - /share/doc
+  - /share/man
+  - '*.a'
+  - '*.la'
+modules:
+  # Subtitle renderer; mpv requires it even for audio.
+  - name: libass
+    buildsystem: meson
+    config-opts:
+      - --libdir=lib
+      - -Ddefault_library=shared
+      - -Dtest=disabled
+      - -Dcompare=disabled
+      - -Dprofile=disabled
+      - -Dfuzz=disabled
+      - -Dcheckasm=disabled
+    sources:
+      - type: archive
+        url: https://github.com/libass/libass/releases/download/0.17.5/libass-0.17.5.tar.xz
+        sha256: 2dca25c0e0c837ddf00b52011b3f82cac1e4ddd3ad018227806b0c2288864acc
+
+  # Rendering library mpv requires. A git source: the release archives leave
+  # out the submodules (jinja, markupsafe, fast_float) the build needs.
+  - name: libplacebo
+    buildsystem: meson
+    config-opts:
+      - --libdir=lib
+      - -Dvulkan=disabled
+      - -Dopengl=disabled
+      - -Dd3d11=disabled
+      - -Dglslang=disabled
+      - -Dshaderc=disabled
+      - -Dlcms=disabled
+      - -Dlibdovi=disabled
+      - -Dunwind=disabled
+      - -Dxxhash=disabled
+      - -Ddemos=false
+      - -Dtests=false
+    sources:
+      - type: git
+        url: https://github.com/haasn/libplacebo.git
+        tag: v7.360.1
+        commit: cee9b076f2c63104ccfd497fa79c39a867293ec4
+
+  # libmpv only: no player binary, no scripting, PulseAudio output only, no
+  # video outputs. The sandbox has the PulseAudio socket (served by
+  # pipewire-pulse on PipeWire desktops) and no PipeWire socket; mpv's
+  # PipeWire output would fail to connect on every audio-output init, and
+  # tearing it down can stall mpv's core for 20 s or more.
+  - name: mpv
+    buildsystem: meson
+    config-opts:
+      - --libdir=lib
+      - -Dlibmpv=true
+      - -Dcplayer=false
+      - -Dpulse=enabled
+      - -Dpipewire=disabled
+      - -Dalsa=disabled
+      - -Djack=disabled
+      - -Doss-audio=disabled
+      - -Dsndio=disabled
+      - -Dlua=disabled
+      - -Djavascript=disabled
+      - -Dlibarchive=disabled
+      - -Dlibbluray=disabled
+      - -Ddvdnav=disabled
+      - -Dcdda=disabled
+      - -Ddvbin=disabled
+      - -Dlibavdevice=disabled
+      - -Drubberband=disabled
+      - -Dvapoursynth=disabled
+      - -Dzimg=disabled
+      - -Dlcms2=disabled
+      - -Djpeg=disabled
+      - -Duchardet=disabled
+      - -Dgl=disabled
+      - -Degl=disabled
+      - -Dvulkan=disabled
+      - -Dshaderc=disabled
+      - -Dspirv-cross=disabled
+      - -Dx11=disabled
+      - -Dwayland=disabled
+      - -Ddrm=disabled
+      - -Dgbm=disabled
+      - -Dvaapi=disabled
+      - -Dvdpau=disabled
+      - -Dcuda-hwaccel=disabled
+      - -Dcuda-interop=disabled
+      - -Dcaca=disabled
+      - -Dsixel=disabled
+      - -Dmanpage-build=disabled
+    sources:
+      - type: git
+        url: https://github.com/mpv-player/mpv.git
+        tag: v0.41.0
+        commit: 41f6a645068483470267271e1d09966ca3b9f413
+
+  # The prebuilt Flutter bundle under /app/lib/soundspan, the launcher
+  # /app/bin/soundspan, and the desktop file, icons and metainfo the .deb
+  # and the AppImage install too (common.sh).
+  - name: soundspan
+    buildsystem: simple
+    build-options:
+      env:
+        SOUNDSPAN_VERSION: 0.1.0
+    build-commands:
+      - install -d /app/lib/soundspan /app/bin
+      - cp -a bundle/. /app/lib/soundspan/
+      - ln -s ../lib/soundspan/soundspan /app/bin/soundspan
+      - bash -c '. packaging/common.sh && install_desktop_metadata /app "$SOUNDSPAN_VERSION"'
+    sources:
+      # The release tarball of the version above; the SHA-256 is the one its
+      # release's SHA256SUMS lists.
+      - type: archive
+        url: https://github.com/soundspan/soundspan/releases/download/client-v0.1.0/soundspan-0.1.0-linux-x64-unsigned.tar.gz
+        sha256: 0000000000000000000000000000000000000000000000000000000000000000
+        strip-components: 0
+      - type: file
+        path: ../common.sh
+        dest: packaging
+      - type: file
+        path: ../io.soundspan.app.desktop
+        dest: packaging
+      - type: file
+        path: ../io.soundspan.app.metainfo.xml
+        dest: packaging
+      - type: dir
+        path: ../icons
+        dest: packaging/icons

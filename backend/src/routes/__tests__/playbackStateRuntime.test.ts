@@ -47,6 +47,7 @@ jest.mock("../../utils/db", () => ({
 }));
 
 import router from "../playbackState";
+import { withClientSurfaceValidation } from "./helpers/expectClientSurfaceResponse";
 import { requireAuth } from "../../middleware/auth";
 import { playbackStateLimiter } from "../../middleware/rateLimiter";
 import { prisma as prismaClient, Prisma as PrismaClient } from "../../utils/db";
@@ -98,6 +99,29 @@ function createRes() {
     return res;
 }
 
+/**
+ * A complete stored playback-state row, as Prisma returns it, with
+ * `overrides` applied.
+ */
+function stateRow(overrides: Record<string, unknown> = {}) {
+    return {
+        userId: "u1",
+        deviceId: "legacy",
+        playbackType: "track",
+        trackId: null,
+        audiobookId: null,
+        podcastId: null,
+        queue: null,
+        currentIndex: 0,
+        isShuffle: false,
+        isPlaying: false,
+        currentTime: 0,
+        createdAt: new Date("2026-01-01T00:00:00.000Z"),
+        updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+        ...overrides,
+    };
+}
+
 function createForeignKeyError(constraint?: string): Error {
     return Object.assign(new Error("foreign key constraint failed"), {
         code: "P2003",
@@ -106,9 +130,18 @@ function createForeignKeyError(constraint?: string): Error {
 }
 
 describe("playbackState routes runtime", () => {
-    const getState = getHandler("get", "/");
-    const postState = getHandler("post", "/");
-    const deleteState = getHandler("delete", "/");
+    const getState = withClientSurfaceValidation(
+        "getPlaybackState",
+        getHandler("get", "/"),
+    );
+    const postState = withClientSurfaceValidation(
+        "savePlaybackState",
+        getHandler("post", "/"),
+    );
+    const deleteState = withClientSurfaceValidation(
+        "clearPlaybackState",
+        getHandler("delete", "/"),
+    );
 
     beforeEach(() => {
         jest.clearAllMocks();
@@ -168,35 +201,54 @@ describe("playbackState routes runtime", () => {
 
     it("derives a playbackId for each stored music-track queue item", async () => {
         const queue = [
-            { id: "ckLocal1", title: "Local" },
-            { id: "ckPeer1", streamSource: "peer", title: "Peer" },
+            { id: "ckLocal1", title: "Local", duration: 180 },
+            {
+                id: "ckPeer1",
+                streamSource: "peer",
+                title: "Peer",
+                duration: 181,
+            },
             {
                 id: "tidal:42",
                 streamSource: "tidal",
                 tidalTrackId: 42,
                 title: "Tidal",
+                duration: 182,
             },
             {
                 id: "yt:vid1",
                 streamSource: "youtube",
                 youtubeVideoId: "vid1",
                 title: "YT Music",
+                duration: 183,
             },
             {
                 id: "yt:vid2",
                 streamSource: "youtube-direct",
                 youtubeVideoId: "vid2",
                 title: "YouTube",
+                duration: 184,
             },
-            { itemType: "episode", id: "pod:ep", title: "Episode" },
+            {
+                itemType: "episode",
+                id: "pod:ep",
+                title: "Episode",
+                podcastTitle: "Show",
+                podcastId: "pod",
+                episodeId: "ep",
+                coverUrl: null,
+                duration: 1800,
+            },
         ];
-        mockFindUnique.mockResolvedValueOnce({
-            id: "state-q",
-            userId: "u1",
-            deviceId: "device-A",
-            playbackType: "track",
-            queue,
-        });
+        mockFindUnique.mockResolvedValueOnce(
+            stateRow({
+                id: "state-q",
+                userId: "u1",
+                deviceId: "device-A",
+                playbackType: "track",
+                queue,
+            }),
+        );
         const res = createRes();
 
         await getState(
@@ -217,17 +269,19 @@ describe("playbackState routes runtime", () => {
     });
 
     it("derives queue playbackIds for a migrated legacy state", async () => {
-        mockFindUnique.mockResolvedValueOnce(null).mockResolvedValueOnce({
-            id: "legacy",
-            userId: "u1",
-            deviceId: "legacy",
-            playbackType: "track",
-            queue: [{ id: "ckLegacy1", title: "Legacy" }],
-            currentIndex: 0,
-            isShuffle: false,
-            isPlaying: false,
-            currentTime: 0,
-        });
+        mockFindUnique.mockResolvedValueOnce(null).mockResolvedValueOnce(
+            stateRow({
+                id: "legacy",
+                userId: "u1",
+                deviceId: "legacy",
+                playbackType: "track",
+                queue: [{ id: "ckLegacy1", title: "Legacy", duration: 200 }],
+                currentIndex: 0,
+                isShuffle: false,
+                isPlaying: false,
+                currentTime: 0,
+            }),
+        );
         mockUpsert.mockResolvedValue({});
         const res = createRes();
 
@@ -240,12 +294,14 @@ describe("playbackState routes runtime", () => {
     });
 
     it("gets state for a device-specific record", async () => {
-        mockFindUnique.mockResolvedValueOnce({
-            id: "state-1",
-            userId: "u1",
-            deviceId: "device-A",
-            playbackType: "track",
-        });
+        mockFindUnique.mockResolvedValueOnce(
+            stateRow({
+                id: "state-1",
+                userId: "u1",
+                deviceId: "device-A",
+                playbackType: "track",
+            }),
+        );
 
         const req = {
             user: { id: "u1" },
@@ -269,7 +325,7 @@ describe("playbackState routes runtime", () => {
     });
 
     it("falls back to legacy state and migrates it for non-legacy devices", async () => {
-        const legacyState = {
+        const legacyState = stateRow({
             id: "legacy-state",
             userId: "u1",
             deviceId: "legacy",
@@ -282,12 +338,12 @@ describe("playbackState routes runtime", () => {
             isShuffle: false,
             isPlaying: false,
             currentTime: 45,
-        };
+        });
 
         mockFindUnique
             .mockResolvedValueOnce(null)
             .mockResolvedValueOnce(legacyState);
-        mockUpsert.mockResolvedValueOnce({ id: "migrated" });
+        mockUpsert.mockResolvedValueOnce(stateRow({ id: "migrated" }));
 
         const req = {
             user: { id: "u1" },
@@ -324,7 +380,7 @@ describe("playbackState routes runtime", () => {
     });
 
     it("retries legacy migration once without a concurrently deleted audiobook", async () => {
-        const legacyState = {
+        const legacyState = stateRow({
             userId: "u1",
             deviceId: "legacy",
             playbackType: "audiobook",
@@ -336,7 +392,7 @@ describe("playbackState routes runtime", () => {
             isShuffle: false,
             isPlaying: true,
             currentTime: 45,
-        };
+        });
         mockFindUnique
             .mockResolvedValueOnce(null)
             .mockResolvedValueOnce(legacyState);
@@ -344,7 +400,7 @@ describe("playbackState routes runtime", () => {
             .mockRejectedValueOnce(
                 createForeignKeyError("PlaybackState_audiobookId_fkey"),
             )
-            .mockResolvedValueOnce({ id: "migrated-without-book" });
+            .mockResolvedValueOnce(stateRow({ id: "migrated-without-book" }));
 
         const res = createRes();
         await getState(
@@ -422,12 +478,14 @@ describe("playbackState routes runtime", () => {
     });
 
     it("sanitizes queue payload and upserts bounded values", async () => {
-        mockUpsert.mockResolvedValueOnce({
-            id: "state-2",
-            userId: "u1",
-            deviceId: "legacy",
-            playbackType: "track",
-        });
+        mockUpsert.mockResolvedValueOnce(
+            stateRow({
+                id: "state-2",
+                userId: "u1",
+                deviceId: "legacy",
+                playbackType: "track",
+            }),
+        );
 
         const req = {
             user: { id: "u1" },
@@ -520,12 +578,14 @@ describe("playbackState routes runtime", () => {
     });
 
     it("round-trips youtube-direct queue items with their audio format", async () => {
-        mockUpsert.mockResolvedValueOnce({
-            id: "state-yt-direct",
-            userId: "u1",
-            deviceId: "desktop",
-            playbackType: "track",
-        });
+        mockUpsert.mockResolvedValueOnce(
+            stateRow({
+                id: "state-yt-direct",
+                userId: "u1",
+                deviceId: "desktop",
+                playbackType: "track",
+            }),
+        );
 
         const req = {
             user: { id: "u1" },
@@ -577,12 +637,14 @@ describe("playbackState routes runtime", () => {
     });
 
     it("passes through podcast episode queue items and defaults tracks to itemType track", async () => {
-        mockUpsert.mockResolvedValueOnce({
-            id: "state-mixed",
-            userId: "u1",
-            deviceId: "legacy",
-            playbackType: "podcast",
-        });
+        mockUpsert.mockResolvedValueOnce(
+            stateRow({
+                id: "state-mixed",
+                userId: "u1",
+                deviceId: "legacy",
+                playbackType: "podcast",
+            }),
+        );
 
         const req = {
             user: { id: "u1" },
@@ -655,7 +717,7 @@ describe("playbackState routes runtime", () => {
     });
 
     it("falls back to DbNull when queue sanitization throws", async () => {
-        mockUpsert.mockResolvedValueOnce({ id: "state-3" });
+        mockUpsert.mockResolvedValueOnce(stateRow({ id: "state-3" }));
 
         const badItem: any = {};
         Object.defineProperty(badItem, "id", {
@@ -687,7 +749,7 @@ describe("playbackState routes runtime", () => {
     });
 
     it("does not overwrite persisted play intent when isPlaying is omitted", async () => {
-        mockUpsert.mockResolvedValueOnce({ id: "state-4" });
+        mockUpsert.mockResolvedValueOnce(stateRow({ id: "state-4" }));
 
         const req = {
             user: { id: "u1" },
@@ -743,10 +805,13 @@ describe("playbackState routes runtime", () => {
             .mockRejectedValueOnce(
                 createForeignKeyError("PlaybackState_audiobookId_fkey"),
             )
-            .mockResolvedValueOnce({
-                id: "state-without-deleted-book",
-                audiobookId: null,
-            });
+            .mockResolvedValueOnce(
+                stateRow({
+                    id: "state-without-deleted-book",
+                    playbackType: "audiobook",
+                    audiobookId: null,
+                }),
+            );
         const req = {
             user: { id: "u1" },
             header: () => "desktop",
@@ -777,10 +842,12 @@ describe("playbackState routes runtime", () => {
             }),
         );
         expect(res.statusCode).toBe(200);
-        expect(res.body).toEqual({
-            id: "state-without-deleted-book",
-            audiobookId: null,
-        });
+        expect(res.body).toEqual(
+            expect.objectContaining({
+                id: "state-without-deleted-book",
+                audiobookId: null,
+            }),
+        );
     });
 
     it("does not retry an audiobook FK violation more than once", async () => {

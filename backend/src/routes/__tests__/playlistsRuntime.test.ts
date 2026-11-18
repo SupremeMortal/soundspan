@@ -135,6 +135,7 @@ jest.mock("../../utils/playlistLogger", () => ({
 import { z } from "zod";
 import router from "../playlists";
 import { requireAdmin } from "../../middleware/auth";
+import { withClientSurfaceValidation } from "./helpers/expectClientSurfaceResponse";
 
 type HttpMethod = "get" | "post" | "put" | "delete";
 const MAX_ROUTE_HANDLERS = 4;
@@ -201,17 +202,53 @@ async function flushAsyncWork() {
     await new Promise((resolve) => setImmediate(resolve));
 }
 
+/** Scalar columns every playlist row has, as Prisma returns them. */
+const playlistColumns = {
+    name: "Playlist",
+    isPublic: false,
+    mixId: null,
+    spotifyPlaylistId: null,
+    spotifyPlaylistUrl: null,
+    createdAt: new Date("2026-01-01T00:00:00.000Z"),
+    updatedAt: new Date("2026-01-02T00:00:00.000Z"),
+    user: { username: "owner" },
+};
+
 describe("playlists route runtime", () => {
-    const listPlaylists = getHandler("/", "get");
-    const createPlaylist = getHandler("/", "post");
-    const getPlaylist = getHandler("/:id", "get");
-    const updatePlaylist = getHandler("/:id", "put");
+    const listPlaylists = withClientSurfaceValidation(
+        "listPlaylists",
+        getHandler("/", "get"),
+    );
+    const createPlaylist = withClientSurfaceValidation(
+        "createPlaylist",
+        getHandler("/", "post"),
+    );
+    const getPlaylist = withClientSurfaceValidation(
+        "getPlaylist",
+        getHandler("/:id", "get"),
+    );
+    const updatePlaylist = withClientSurfaceValidation(
+        "updatePlaylist",
+        getHandler("/:id", "put"),
+    );
     const hidePlaylist = getHandler("/:id/hide", "post");
     const unhidePlaylist = getHandler("/:id/hide", "delete");
-    const deletePlaylist = getHandler("/:id", "delete");
-    const addItem = getHandler("/:id/items", "post");
-    const removeItem = getHandler("/:id/items/:trackId", "delete");
-    const reorderItems = getHandler("/:id/items/reorder", "put");
+    const deletePlaylist = withClientSurfaceValidation(
+        "deletePlaylist",
+        getHandler("/:id", "delete"),
+    );
+    const addItem = withClientSurfaceValidation(
+        "addPlaylistItem",
+        getHandler("/:id/items", "post"),
+    );
+    const removeItem = withClientSurfaceValidation(
+        "removePlaylistItem",
+        getHandler("/:id/items/:trackId", "delete"),
+    );
+    const reorderItems = withClientSurfaceValidation(
+        "reorderPlaylistItems",
+        getHandler("/:id/items/reorder", "put"),
+    );
     const getPending = getHandler("/:id/pending", "get");
     const deletePending = getHandler("/:id/pending/:trackId", "delete");
     const previewPending = getHandler("/:id/pending/:trackId/preview", "get");
@@ -231,6 +268,11 @@ describe("playlists route runtime", () => {
             userId: "u1",
             name: "New Playlist",
             isPublic: false,
+            mixId: null,
+            spotifyPlaylistId: null,
+            spotifyPlaylistUrl: null,
+            createdAt: new Date("2026-01-01T00:00:00.000Z"),
+            updatedAt: new Date("2026-01-02T00:00:00.000Z"),
         });
         prisma.playlist.findUnique.mockResolvedValue({
             id: "pl-1",
@@ -248,6 +290,11 @@ describe("playlists route runtime", () => {
             userId: "u1",
             name: "Updated Playlist",
             isPublic: true,
+            mixId: null,
+            spotifyPlaylistId: null,
+            spotifyPlaylistUrl: null,
+            createdAt: new Date("2026-01-01T00:00:00.000Z"),
+            updatedAt: new Date("2026-01-02T00:00:00.000Z"),
         });
         prisma.playlist.delete.mockResolvedValue({
             id: "pl-1",
@@ -445,6 +492,7 @@ describe("playlists route runtime", () => {
         ]);
         prisma.playlist.findMany.mockResolvedValue([
             {
+                ...playlistColumns,
                 id: "pl-1",
                 userId: "u1",
                 name: "Mine",
@@ -462,9 +510,11 @@ describe("playlists route runtime", () => {
                 ],
             },
             {
+                ...playlistColumns,
                 id: "pl-2",
                 userId: "u2",
                 name: "Shared",
+                isPublic: true,
                 user: { username: "friend" },
                 _count: { items: 0 },
                 items: [],
@@ -695,6 +745,7 @@ describe("playlists route runtime", () => {
 
     it("keeps removed playlist tracks visible but flags them unplayable", async () => {
         prisma.playlist.findUnique.mockResolvedValueOnce({
+            ...playlistColumns,
             id: "pl-removed",
             userId: "u1",
             isPublic: false,
@@ -750,6 +801,7 @@ describe("playlists route runtime", () => {
 
     it("blocks adding a removed local track to a playlist", async () => {
         prisma.playlist.findUnique.mockResolvedValueOnce({
+            ...playlistColumns,
             id: "pl-1",
             userId: "u1",
             items: [],
@@ -780,6 +832,7 @@ describe("playlists route runtime", () => {
             ytMusicOAuthJson: null,
         });
         prisma.playlist.findUnique.mockResolvedValueOnce({
+            ...playlistColumns,
             id: "pl-oversized",
             userId: "u-oversized",
             isPublic: false,
@@ -865,6 +918,7 @@ describe("playlists route runtime", () => {
             ytMusicOAuthJson: null,
         });
         prisma.playlist.findUnique.mockResolvedValueOnce({
+            ...playlistColumns,
             id: "pl-bounded-resolution",
             userId: "u-bounded-resolution",
             isPublic: false,
@@ -993,6 +1047,7 @@ describe("playlists route runtime", () => {
             },
         ]);
         prisma.playlist.findUnique.mockResolvedValueOnce({
+            ...playlistColumns,
             id: "pl-1",
             userId: "u1",
             isPublic: false,
@@ -1139,6 +1194,7 @@ describe("playlists route runtime", () => {
             ytMusicOAuthJson: null,
         });
         prisma.playlist.findUnique.mockResolvedValueOnce({
+            ...playlistColumns,
             id: "pl-1",
             userId: "u1",
             isPublic: false,
@@ -1240,6 +1296,7 @@ describe("playlists route runtime", () => {
             ytMusicOAuthJson: null,
         });
         prisma.playlist.findUnique.mockResolvedValueOnce({
+            ...playlistColumns,
             id: "pl-1",
             userId: "u-conflict",
             isPublic: false,
@@ -1373,6 +1430,7 @@ describe("playlists route runtime", () => {
             ytMusicOAuthJson: null,
         });
         prisma.playlist.findUnique.mockResolvedValueOnce({
+            ...playlistColumns,
             id: "pl-1",
             userId: "u-no-provider",
             isPublic: false,
@@ -1429,6 +1487,7 @@ describe("playlists route runtime", () => {
             ytMusicOAuthJson: null,
         });
         prisma.playlist.findUnique.mockResolvedValueOnce({
+            ...playlistColumns,
             id: "pl-yt-public",
             userId: "u-yt-public",
             isPublic: false,

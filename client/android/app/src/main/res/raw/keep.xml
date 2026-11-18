@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Drawables audio_service looks up by the names Dart passes it (the
+     notification icon and the Like action), which the resource shrinker
+     cannot see referenced. -->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@drawable/ic_stat_soundspan,@drawable/ic_action_like,@drawable/ic_action_liked" />

@@ -22,6 +22,7 @@ import { sendFileFromRoot } from "../utils/sendFileFromRoot";
 import { config } from "../config";
 import { asyncHandler } from "../middleware/asyncHandler";
 import { sendFeatureDisabled } from "../utils/featureGate";
+import { SubscribePodcastRequest } from "../openapi/schemas/podcast";
 
 const router = Router();
 const ITUNES_DISCOVER_TIMEOUT_MS = 10000;
@@ -134,14 +135,12 @@ async function fetchPodcastGenre(genreId: PodcastGenreId) {
     }
 }
 
-const subscribeSchema = z
-    .object({
-        feedUrl: z.string().url().optional(),
-        itunesId: z.string().min(1).optional(),
-    })
-    .refine((body) => Boolean(body.feedUrl) || Boolean(body.itunesId), {
+const subscribeSchema = SubscribePodcastRequest.refine(
+    (body) => Boolean(body.feedUrl) || Boolean(body.itunesId),
+    {
         message: "feedUrl or itunesId is required",
-    });
+    },
+);
 
 /** @openapi
  * /api/podcasts/peers:
@@ -389,20 +388,6 @@ router.post("/sync-covers", requireAuth, async (req, res) => {
 router.use(requireAuthOrToken);
 
 /**
- * @openapi
- * /api/podcasts:
- *   get:
- *     summary: Get all podcasts the user is subscribed to
- *     tags: [Podcasts]
- *     security:
- *       - apiKeyAuth: []
- *     responses:
- *       200:
- *         description: List of subscribed podcasts with latest episodes
- *       401:
- *         description: Not authenticated
- */
-/**
  * GET /podcasts
  * Get all podcasts the user is subscribed to
  */
@@ -475,28 +460,6 @@ router.get("/", async (req, res) => {
     }
 });
 
-/**
- * @openapi
- * /api/podcasts/discover/top:
- *   get:
- *     summary: Get top podcasts from iTunes
- *     tags: [Podcasts]
- *     security:
- *       - apiKeyAuth: []
- *     parameters:
- *       - in: query
- *         name: limit
- *         required: false
- *         schema:
- *           type: integer
- *           default: 20
- *         description: Maximum number of podcasts to return (max 50)
- *     responses:
- *       200:
- *         description: List of top podcasts
- *       401:
- *         description: Not authenticated
- */
 /**
  * GET /podcasts/discover/top
  * Get top podcasts - just search iTunes like the search bar does
@@ -859,29 +822,6 @@ router.get("/preview/:itunesId", async (req, res) => {
 });
 
 /**
- * @openapi
- * /api/podcasts/{id}:
- *   get:
- *     summary: Get a specific podcast with full details and episodes
- *     tags: [Podcasts]
- *     security:
- *       - apiKeyAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: Podcast ID
- *     responses:
- *       200:
- *         description: Podcast details with episodes and user progress
- *       404:
- *         description: Podcast not found or not subscribed
- *       401:
- *         description: Not authenticated
- */
-/**
  * GET /podcasts/:id
  * Get a specific podcast with full details and episodes
  * Requires user to be subscribed
@@ -972,37 +912,6 @@ router.get("/:id", async (req, res) => {
     }
 });
 
-/**
- * @openapi
- * /api/podcasts/subscribe:
- *   post:
- *     summary: Subscribe to a podcast by RSS feed URL or iTunes ID
- *     tags: [Podcasts]
- *     security:
- *       - apiKeyAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               feedUrl:
- *                 type: string
- *                 description: RSS feed URL
- *               itunesId:
- *                 type: string
- *                 description: iTunes podcast ID
- *     responses:
- *       200:
- *         description: Subscribed successfully
- *       400:
- *         description: A valid feedUrl or itunesId is required
- *       404:
- *         description: Podcast not found in iTunes
- *       401:
- *         description: Not authenticated
- */
 /**
  * POST /podcasts/subscribe
  * Subscribe to a podcast by RSS feed URL or iTunes ID
@@ -1193,29 +1102,6 @@ router.post("/subscribe", async (req, res) => {
 });
 
 /**
- * @openapi
- * /api/podcasts/{id}/unsubscribe:
- *   delete:
- *     summary: Unsubscribe from a podcast
- *     tags: [Podcasts]
- *     security:
- *       - apiKeyAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: Podcast ID
- *     responses:
- *       200:
- *         description: Unsubscribed successfully
- *       404:
- *         description: Not subscribed to this podcast
- *       401:
- *         description: Not authenticated
- */
-/**
  * DELETE /podcasts/:id/unsubscribe
  * Unsubscribe from a podcast
  */
@@ -1389,44 +1275,6 @@ router.get("/:podcastId/episodes/:episodeId/cache-status", async (req, res) => {
     }
 });
 
-/**
- * @openapi
- * /api/podcasts/{podcastId}/episodes/{episodeId}/stream:
- *   get:
- *     summary: Stream a podcast episode
- *     tags: [Podcasts]
- *     security:
- *       - apiKeyAuth: []
- *     parameters:
- *       - in: path
- *         name: podcastId
- *         required: true
- *         schema:
- *           type: string
- *         description: Podcast ID
- *       - in: path
- *         name: episodeId
- *         required: true
- *         schema:
- *           type: string
- *         description: Episode ID
- *       - in: header
- *         name: Range
- *         required: false
- *         schema:
- *           type: string
- *         description: HTTP range header for partial content
- *     responses:
- *       200:
- *         description: Full podcast episode stream
- *         content: { "audio/mpeg": { schema: { type: string, format: binary } }, "video/mp4": { schema: { type: string, format: binary } }, "video/x-m4v": { schema: { type: string, format: binary } }, "video/m4v": { schema: { type: string, format: binary } }, "video/webm": { schema: { type: string, format: binary } } }
- *       206:
- *         description: Partial podcast episode stream
- *       404:
- *         description: Episode not found
- *       401:
- *         description: Not authenticated
- */
 /**
  * GET /podcasts/:podcastId/episodes/:episodeId/stream
  * Stream a podcast episode (from local cache or RSS URL)
@@ -1824,49 +1672,6 @@ router.get("/:podcastId/episodes/:episodeId/stream", async (req, res) => {
     }
 });
 
-/**
- * @openapi
- * /api/podcasts/{podcastId}/episodes/{episodeId}/progress:
- *   post:
- *     summary: Update playback progress for a podcast episode
- *     tags: [Podcasts]
- *     security:
- *       - apiKeyAuth: []
- *     parameters:
- *       - in: path
- *         name: podcastId
- *         required: true
- *         schema:
- *           type: string
- *         description: Podcast ID
- *       - in: path
- *         name: episodeId
- *         required: true
- *         schema:
- *           type: string
- *         description: Episode ID
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               currentTime:
- *                 type: number
- *                 description: Current playback position in seconds
- *               duration:
- *                 type: number
- *                 description: Total duration in seconds
- *               isFinished:
- *                 type: boolean
- *                 description: Whether the episode is finished
- *     responses:
- *       200:
- *         description: Progress updated successfully
- *       401:
- *         description: Not authenticated
- */
 /**
  * POST /podcasts/:podcastId/episodes/:episodeId/progress
  * Update playback progress for a podcast episode

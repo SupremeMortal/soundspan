@@ -1,0 +1,790 @@
+name: Client Build
+
+# Reusable release build of the Flutter client: one release-mode, unsigned
+# artifact per distributable target, then SHA256SUMS over all of them.
+# Called by client-quality.yml as a dry run on pull requests and by the
+# tag-triggered client-release.yml. Nothing here publishes anything.
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: Version for --build-name and the artifact names, for example 0.1.0
+        type: string
+        required: true
+      build-number:
+        description: Value for --build-number
+        type: string
+        required: true
+      ref:
+        description: Git ref to build; empty builds the calling ref
+        type: string
+        required: false
+        default: ""
+      macos:
+        description: Build the macOS artifacts; false skips build-macos and smoke-macos and leaves the macOS zip and disk image out of SHA256SUMS
+        type: boolean
+        required: false
+        default: true
+
+permissions:
+  contents: read
+
+env:
+  VERSION: ${{ inputs.version }}
+  BUILD_NUMBER: ${{ inputs.build-number }}
+
+jobs:
+  build-android:
+    name: build-android
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Set up Java
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      # setup-gradle prunes the Gradle home to the build's working set before
+      # saving (cache-cleanup) and splits it into content-keyed entries, so the
+      # Android jobs no longer restore one ~1.5 GB ~/.gradle/caches blob that
+      # stalls for minutes when the Actions cache service is slow.
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+        with:
+          cache-cleanup: on-success
+
+      - name: Set up Flutter
+        uses: ./.github/actions/client-flutter
+
+      # Universal APK; the template's release build type signs it with the
+      # debug key until signing is set up.
+      - name: Build release APK
+        working-directory: client
+        run: >-
+          flutter build apk --release
+          --build-name "$VERSION" --build-number "$BUILD_NUMBER"
+          --dart-define-from-file=config/release.json
+
+      - name: The APK has the adaptive launcher icon
+        working-directory: client
+        run: tool/ci/check_apk_icon.sh build/app/outputs/flutter-apk/app-release.apk
+
+      - name: The merged manifest has every doc 10 entry
+        working-directory: client
+        run: tool/ci/check_apk_manifest.sh build/app/outputs/flutter-apk/app-release.apk
+
+      - name: Name the artifact
+        run: |
+          mkdir -p dist
+          cp client/build/app/outputs/flutter-apk/app-release.apk "dist/soundspan-$VERSION-android-unsigned.apk"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: client-build-android
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 7
+
+  build-linux:
+    name: build-linux
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    # Ubuntu 22.04 sets the glibc floor of the binary (doc 10 baseline),
+    # whatever ubuntu-latest becomes.
+    container:
+      image: ubuntu:22.04@sha256:74b12b11ffa550fba1929ad4d8d16533c34f6612728469671afba1b03b66881c
+    steps:
+      # Everything the checkout, the Flutter install and the build need, as
+      # root in the container. sudo lets the composite action's own apt step
+      # run unchanged; it then finds every package installed.
+      - name: Install build packages
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends \
+            build-essential ca-certificates curl git jq sudo unzip xz-utils zip \
+            libstdc++-12-dev \
+            clang cmake ninja-build pkg-config libgtk-3-dev libx11-dev \
+            libxi-dev libmpv-dev libsecret-1-dev libjsoncpp-dev
+          # A Flutter SDK restored from the cache keeps the runner's owner.
+          git config --global --add safe.directory '*'
+
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Set up Flutter
+        uses: ./.github/actions/client-flutter
+
+      - name: Build Linux release
+        working-directory: client
+        run: >-
+          flutter build linux --release
+          --build-name "$VERSION" --build-number "$BUILD_NUMBER"
+          --dart-define-from-file=config/release.json
+          --dart-define=RELEASE_REPOSITORY="$GITHUB_REPOSITORY"
+
+      - name: Every shared library resolves
+        working-directory: client
+        run: tool/check_ldd.sh build/linux/x64/release/bundle
+
+      - name: Name the artifact
+        run: |
+          mkdir -p dist
+          tar -czf "dist/soundspan-$VERSION-linux-x64-unsigned.tar.gz" -C client/build/linux/x64/release bundle
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: client-build-linux
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 7
+
+  # The .deb and the AppImage from the Linux bundle, in the same Ubuntu
+  # 22.04 container as build-linux (doc 10, Linux; doc 11, client-build.yml).
+  package-linux:
+    name: package-linux
+    needs: build-linux
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    container:
+      image: ubuntu:22.04@sha256:74b12b11ffa550fba1929ad4d8d16533c34f6612728469671afba1b03b66881c
+    steps:
+      # The packaging tools, and the libraries linuxdeploy bundles into the
+      # AppImage (the bundle's GTK, libsecret and libmpv).
+      - name: Install packaging tools
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends \
+            appstream ca-certificates curl dpkg-dev file pkg-config \
+            libgtk-3-dev libmpv-dev libsecret-1-dev
+
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Download the Linux bundle
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: client-build-linux
+          path: linux-bundle
+
+      - name: Unpack the bundle
+        run: tar -xzf "linux-bundle/soundspan-$VERSION-linux-x64-unsigned.tar.gz" -C linux-bundle
+
+      - name: Build the .deb
+        run: bash client/linux/packaging/deb/build_deb.sh linux-bundle/bundle "$VERSION" dist
+
+      - name: Build the AppImage
+        run: bash client/linux/packaging/appimage/build_appimage.sh linux-bundle/bundle "$VERSION" dist
+
+      - name: Validate the AppStream metainfo
+        run: |
+          dpkg-deb -x "dist/soundspan-$VERSION-linux-amd64.deb" deb-root
+          appstreamcli validate --no-net deb-root/usr/share/metainfo/io.soundspan.app.metainfo.xml
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: client-build-linux-packages
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 7
+
+  # Installs and launches each Linux package in a clean container
+  # (client/linux/packaging/smoke.sh; doc 11, client-build.yml).
+  smoke-linux:
+    name: smoke-linux (${{ matrix.row }})
+    needs: package-linux
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - row: deb-ubuntu-22.04
+            kind: deb
+            image: ubuntu:22.04@sha256:74b12b11ffa550fba1929ad4d8d16533c34f6612728469671afba1b03b66881c
+            packages: xvfb dbus desktop-file-utils
+          - row: deb-ubuntu-24.04
+            kind: deb
+            image: ubuntu:24.04@sha256:73b999393d07f2bf65a40373778a44dc9a6d54ad7718d29247d8ff9413c4d6a8
+            packages: xvfb dbus desktop-file-utils
+          # Only GTK, Xvfb, D-Bus and the host's EGL and GLES libraries,
+          # which Flutter opens at run time and no AppImage bundles (Xvfb
+          # already brings Mesa's GLX and DRI drivers): no mpv, no ffmpeg.
+          - row: appimage-ubuntu-22.04
+            kind: appimage
+            image: ubuntu:22.04@sha256:74b12b11ffa550fba1929ad4d8d16533c34f6612728469671afba1b03b66881c
+            packages: libgtk-3-0 xvfb dbus libegl1 libgles2
+    container:
+      image: ${{ matrix.image }}
+    steps:
+      - name: Install the test environment
+        env:
+          DEBIAN_FRONTEND: noninteractive
+          PACKAGES: ${{ matrix.packages }}
+        run: |
+          apt-get update
+          # shellcheck disable=SC2086 # one word per package
+          apt-get install -y --no-install-recommends $PACKAGES
+
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Download the Linux packages
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: client-build-linux-packages
+          path: dist
+
+      - name: Install, launch and remove
+        env:
+          KIND: ${{ matrix.kind }}
+        run: bash client/linux/packaging/smoke.sh "$KIND" dist "$VERSION" smoke-logs
+
+      - name: Upload the app log
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: client-smoke-linux-logs-${{ matrix.row }}
+          path: smoke-logs
+          if-no-files-found: ignore
+          retention-days: 7
+
+  # The single-file Flatpak bundle from the Linux release tarball, on the VM
+  # because flatpak-builder sandboxes every module with bubblewrap (doc 10,
+  # Linux; doc 11, client-build.yml). libmpv and its modules are built from
+  # the sources the manifest pins; their build cache is kept between runs.
+  package-flatpak:
+    name: package-flatpak
+    needs: build-linux
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      FLATPAK_STATE_DIR: ${{ github.workspace }}/.flatpak-builder-state
+    steps:
+      - name: Install flatpak and flatpak-builder
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          sudo apt-get update
+          # elfutils is only a Recommends of flatpak-builder: it provides the
+          # eu-strip and eu-elfcompress that split each module's debug info.
+          sudo apt-get install -y --no-install-recommends appstream elfutils flatpak flatpak-builder
+          # Ubuntu's AppArmor otherwise denies bubblewrap a user namespace.
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Self-test of the manifest rewriting
+        run: bash client/linux/packaging/flatpak/build_flatpak_test.sh
+
+      - name: Lint the manifest and the metainfo
+        run: |
+          flatpak-builder --show-manifest client/linux/packaging/flatpak/io.soundspan.app.yml > /dev/null
+          bash -c '. client/linux/packaging/common.sh && install_desktop_metadata "$RUNNER_TEMP/metadata" "$VERSION"'
+          appstreamcli validate --no-net "$RUNNER_TEMP/metadata/share/metainfo/io.soundspan.app.metainfo.xml"
+
+      - name: Restore the flatpak-builder cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ env.FLATPAK_STATE_DIR }}
+          key: flatpak-builder-${{ hashFiles('client/linux/packaging/flatpak/io.soundspan.app.yml') }}
+          restore-keys: flatpak-builder-
+
+      - name: Download the Linux bundle
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: client-build-linux
+          path: linux-bundle
+
+      - name: Build the Flatpak bundle
+        run: |
+          set -o pipefail
+          bash client/linux/packaging/flatpak/build_flatpak.sh \
+            "linux-bundle/soundspan-$VERSION-linux-x64-unsigned.tar.gz" "$VERSION" dist \
+            2>&1 | tee flatpak-builder.log
+
+      - name: Upload the flatpak-builder log
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: client-flatpak-builder-log
+          path: flatpak-builder.log
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: client-build-linux-flatpak
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 7
+
+  # Installs the Flatpak bundle with its runtime from Flathub, checks its
+  # permissions and libraries, launches and removes it
+  # (client/linux/packaging/smoke.sh flatpak; doc 11, client-build.yml).
+  smoke-flatpak:
+    name: smoke-flatpak
+    needs: package-flatpak
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Install the test environment
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends dbus dbus-x11 flatpak xauth xvfb
+          # Ubuntu's AppArmor otherwise denies bubblewrap a user namespace.
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Download the Flatpak bundle
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: client-build-linux-flatpak
+          path: dist
+
+      - name: Install, check, launch and remove
+        run: bash client/linux/packaging/smoke.sh flatpak dist "$VERSION" smoke-logs
+
+      - name: Upload the app log
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: client-smoke-flatpak-logs
+          path: smoke-logs
+          if-no-files-found: ignore
+          retention-days: 7
+
+  build-windows:
+    name: build-windows
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Set up Flutter
+        uses: ./.github/actions/client-flutter
+
+      - name: Build Windows release
+        working-directory: client
+        shell: bash
+        run: >-
+          flutter build windows --release
+          --build-name "$VERSION" --build-number "$BUILD_NUMBER"
+          --dart-define-from-file=config/release.json
+          --dart-define=RELEASE_REPOSITORY="$GITHUB_REPOSITORY"
+
+      - name: Single instance
+        working-directory: client
+        shell: pwsh
+        run: tool/ci/single_instance_windows.ps1
+
+      # Doc 10: the MSVC runtime DLLs ship app-local, taken from the newest
+      # x64 CRT redistributable of the installed Visual Studio.
+      - name: Add the app-local MSVC runtime
+        shell: pwsh
+        run: |
+          $vs = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -property installationPath
+          $crt = Get-ChildItem -Directory -Path "$vs\VC\Redist\MSVC\*\x64\Microsoft.VC*.CRT" |
+            Sort-Object { [version]$_.Parent.Parent.Name } |
+            Select-Object -Last 1
+          if (-not $crt) { throw "No x64 MSVC CRT redistributable under $vs" }
+          Write-Output "MSVC runtime from $($crt.FullName)"
+          $release = "client\build\windows\x64\runner\Release"
+          Copy-Item -Path "$($crt.FullName)\*.dll" -Destination $release
+          foreach ($dll in 'msvcp140.dll', 'vcruntime140.dll', 'vcruntime140_1.dll') {
+            if (-not (Test-Path "$release\$dll")) { throw "$dll was not copied" }
+          }
+
+      - name: Name the artifact
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
+          Compress-Archive -Path client\build\windows\x64\runner\Release -DestinationPath "dist\soundspan-$env:VERSION-windows-x64-unsigned.zip"
+
+      # Inno Setup at one pinned version, unless the runner image has it.
+      - name: Set up Inno Setup
+        shell: pwsh
+        env:
+          INNO_URL: https://github.com/jrsoftware/issrc/releases/download/is-6_7_4/innosetup-6.7.4.exe
+          INNO_SHA256: a549929319f9120716677c685535ca4671e4b937b5fdc87e2585f32d8eb30e8c
+        run: |
+          $iscc = Get-Command iscc.exe -ErrorAction SilentlyContinue
+          if (-not $iscc) {
+            $default = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+            if (Test-Path $default) { $iscc = Get-Item $default }
+          }
+          if ($iscc) {
+            $path = if ($iscc.Source) { $iscc.Source } else { $iscc.FullName }
+          } else {
+            $setup = Join-Path $env:RUNNER_TEMP 'innosetup.exe'
+            Invoke-WebRequest -Uri $env:INNO_URL -OutFile $setup
+            $hash = (Get-FileHash -Algorithm SHA256 $setup).Hash.ToLowerInvariant()
+            if ($hash -ne $env:INNO_SHA256) { throw "Inno Setup checksum mismatch: $hash" }
+            $dir = Join-Path $env:RUNNER_TEMP 'innosetup'
+            Start-Process -FilePath $setup -Wait -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/SP-', '/CURRENTUSER', "/DIR=$dir"
+            $path = Join-Path $dir 'ISCC.exe'
+            if (-not (Test-Path $path)) { throw "ISCC.exe not installed at $path" }
+          }
+          Write-Output "ISCC at $path"
+          "ISCC=$path" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Build the Inno Setup installer
+        shell: pwsh
+        run: |
+          & $env:ISCC "/DAppVersion=$env:VERSION" "/O$(Resolve-Path dist)" client\windows\packaging\soundspan.iss
+          if ($LASTEXITCODE -ne 0) { throw "iscc exited with $LASTEXITCODE" }
+
+      # Last, because msix:create removes the runtime DLLs it put in Release.
+      - name: Build the MSIX package
+        working-directory: client
+        shell: pwsh
+        run: |
+          dart run msix:create --build-windows false --version "$env:VERSION.0" --output-path "$(Resolve-Path ..\dist)" --output-name "soundspan-$env:VERSION-windows-x64-unsigned"
+          if ($LASTEXITCODE -ne 0) { throw "msix:create exited with $LASTEXITCODE" }
+          Get-ChildItem ..\dist
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: client-build-windows
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 7
+
+  # Installs both Windows packages on a runner that never built the app
+  # (doc 11, client-build.yml).
+  smoke-windows:
+    name: smoke-windows
+    needs: build-windows
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.ref }}
+          sparse-checkout: client/windows/packaging
+
+      - name: Download the Windows packages
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: client-build-windows
+          path: dist
+
+      - name: Install, launch and uninstall
+        shell: powershell
+        run: >-
+          powershell -NoProfile -ExecutionPolicy Bypass
+          -File client\windows\packaging\smoke.ps1
+          -Dist dist -Version $env:VERSION -LogOut smoke-logs
+
+      - name: Upload the app log
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: client-smoke-windows-logs
+          path: smoke-logs
+          if-no-files-found: ignore
+          retention-days: 7
+
+  build-macos:
+    name: build-macos
+    if: inputs.macos
+    runs-on: macos-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Set up Flutter
+        uses: ./.github/actions/client-flutter
+
+      # Universal binary, ad-hoc signed by the toolchain.
+      - name: Build macOS release
+        working-directory: client
+        run: >-
+          flutter build macos --release
+          --build-name "$VERSION" --build-number "$BUILD_NUMBER"
+          --dart-define-from-file=config/release.json
+          --dart-define=RELEASE_REPOSITORY="$GITHUB_REPOSITORY"
+
+      # Re-signs the app ad hoc with the hardened runtime and the ad-hoc
+      # entitlements (macos/Runner/AdHoc.entitlements), then packs it with an /Applications symlink; the zip
+      # below holds the same re-signed app.
+      - name: Disk image
+        run: >-
+          client/macos/packaging/make_dmg.sh
+          client/build/macos/Build/Products/Release/soundspan.app
+          "$VERSION" dist
+
+      - name: Name the artifact
+        run: |
+          mkdir -p dist
+          ditto -c -k --keepParent client/build/macos/Build/Products/Release/soundspan.app "dist/soundspan-$VERSION-macos-universal-unsigned.zip"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: client-build-macos
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 7
+
+  # Mounts the disk image on a fresh runner, checks the bundle and its
+  # signature, and launches the app (client/macos/packaging/smoke.sh).
+  smoke-macos:
+    name: smoke-macos
+    needs: build-macos
+    if: inputs.macos
+    runs-on: macos-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Set up Flutter
+        uses: ./.github/actions/client-flutter
+
+      - name: Download the macOS artifacts
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: client-build-macos
+          path: ${{ runner.temp }}/macos
+
+      - name: Smoke test the disk image
+        working-directory: client
+        run: >-
+          macos/packaging/smoke.sh
+          "$RUNNER_TEMP/macos/soundspan-$VERSION-macos-universal-unsigned.dmg"
+          "$RUNNER_TEMP/smoke-macos"
+
+      - name: Upload the app log and the unified log
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: client-smoke-macos-logs
+          path: ${{ runner.temp }}/smoke-macos
+          if-no-files-found: ignore
+          retention-days: 7
+
+  build-web:
+    name: build-web
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Set up Flutter
+        uses: ./.github/actions/client-flutter
+
+      # Built for /app/, the same-origin path behind the server (doc 10).
+      - name: Build web release
+        working-directory: client
+        run: >-
+          flutter build web --release --base-href /app/
+          --build-name "$VERSION" --build-number "$BUILD_NUMBER"
+          --dart-define-from-file=config/release.json
+
+      - name: The bundle ships the drift WASM files
+        working-directory: client
+        run: |
+          test -s build/web/sqlite3.wasm
+          test -s build/web/drift_worker.js
+
+      - name: The bundle ships the committed icons
+        working-directory: client
+        run: |
+          for icon in favicon.png icons/Icon-192.png icons/Icon-512.png icons/Icon-maskable-192.png icons/Icon-maskable-512.png; do
+            cmp "web/$icon" "build/web/$icon"
+          done
+
+      # The gzip-compressed initial load against the 5 MB budget of
+      # tool/perf/budgets.json (doc 13, Risk Register K8).
+      - name: Initial-load bundle size
+        working-directory: client
+        run: dart run tool/perf/web_bundle_size.dart --dir build/web
+
+      - name: Name the artifact
+        run: |
+          mkdir -p dist
+          tar -czf "dist/soundspan-$VERSION-web.tar.gz" -C client/build web
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: client-build-web
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 7
+
+  # The optional web container image: nginx serving the bundle under /app/
+  # (client/docker/web, doc 10). The image is built from the bundle above,
+  # not from source, and saved as a release file; client-release.yml
+  # pushes it to GHCR after approval.
+  image-web:
+    name: image-web
+    needs: build-web
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.ref }}
+          sparse-checkout: client/docker/web
+
+      - name: Download the web bundle
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: client-build-web
+          path: ${{ runner.temp }}/web
+
+      - name: Unpack the bundle into the build context
+        run: |
+          mkdir -p client/docker/web/bundle
+          tar -xzf "$RUNNER_TEMP/web/soundspan-$VERSION-web.tar.gz" -C client/docker/web/bundle --strip-components=1
+          test -s client/docker/web/bundle/index.html
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - name: Build the image
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
+        with:
+          context: client/docker/web
+          platforms: linux/amd64
+          push: false
+          load: true
+          tags: soundspan-client-web:${{ inputs.version }}
+          labels: |
+            org.opencontainers.image.title=soundspan client (web)
+            org.opencontainers.image.version=${{ inputs.version }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+
+      - name: Save the image
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          docker save "soundspan-client-web:$VERSION" | gzip > "dist/soundspan-$VERSION-web-image.tar.gz"
+          ls -l dist
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: client-build-web-image
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 7
+
+  # Runs the saved image read-only as an arbitrary UID in group 0 and
+  # checks its redirects, headers and health (client/docker/web/smoke.sh).
+  smoke-web:
+    name: smoke-web
+    needs: image-web
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.ref }}
+          sparse-checkout: client/docker/web
+
+      - name: Download the image
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: client-build-web-image
+          path: ${{ runner.temp }}/image
+
+      - name: Smoke test the image
+        run: client/docker/web/smoke.sh "$RUNNER_TEMP/image/soundspan-$VERSION-web-image.tar.gz"
+
+  checksums:
+    name: checksums
+    needs: [build-android, build-linux, package-linux, smoke-linux, package-flatpak, smoke-flatpak, build-windows, smoke-windows, build-macos, smoke-macos, build-web, image-web, smoke-web]
+    # Runs after a skipped build-macos and smoke-macos too; any failed or cancelled build
+    # still skips it.
+    if: ${{ !cancelled() && !failure() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Set up Flutter
+        uses: ./.github/actions/client-flutter
+
+      - name: Download artifacts
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: client-build-*
+          path: release
+          merge-multiple: true
+
+      - name: Check artifacts and write SHA256SUMS
+        working-directory: client
+        env:
+          MACOS: ${{ inputs.macos }}
+        run: |
+          set -euo pipefail
+          args=(--dir ../release --version "$VERSION" --write-sums)
+          if [ "$MACOS" != true ]; then args+=(--no-macos); fi
+          dart run tool/release/check_artifacts.dart "${args[@]}"
+
+      - name: Verify SHA256SUMS
+        working-directory: release
+        run: |
+          sha256sum --check --strict SHA256SUMS
+          ls -l
+
+      - name: Upload release files
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: client-release-files
+          path: release/*
+          if-no-files-found: error
+          retention-days: 7

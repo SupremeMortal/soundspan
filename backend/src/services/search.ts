@@ -40,6 +40,8 @@ export interface ArtistSearchResult {
     heroUrl: string | null;
     summary?: string;
     rank: number;
+    /** Set when the row came from the trigram fallback: `rank` is a `similarity`. */
+    matchedBy?: "trigram";
     source?: "local" | "federated";
     peer?: SearchPeerResult | null;
 }
@@ -52,6 +54,8 @@ export interface AlbumSearchResult {
     year: number | null;
     coverUrl: string | null;
     rank: number;
+    /** Set when the row came from the trigram fallback: `rank` is a `similarity`. */
+    matchedBy?: "trigram";
     source?: "local" | "federated";
     peer?: SearchPeerResult | null;
 }
@@ -61,6 +65,8 @@ export interface TrackSearchResult {
     title: string;
     albumId: string;
     albumTitle: string;
+    /** The album's stored cover reference, resolved the same way as album search. */
+    albumCoverUrl?: string | null;
     artistId: string;
     artistName: string;
     duration: number;
@@ -69,6 +75,8 @@ export interface TrackSearchResult {
     albumLoudnessLufs?: number | null;
     albumTruePeakDb?: number | null;
     rank: number;
+    /** Set when the row came from the trigram fallback: `rank` is a `similarity`. */
+    matchedBy?: "trigram";
     source?: "local" | "federated";
     peer?: SearchPeerResult | null;
 }
@@ -213,6 +221,7 @@ export class SearchService {
         `;
         return rows.map(({ source: rowSource, peer, ...row }) => ({
             ...row,
+            matchedBy: "trigram" as const,
             ...(rowSource === "federated" && peer
                 ? { source: rowSource, peer }
                 : {}),
@@ -326,6 +335,7 @@ export class SearchService {
         `;
         return rows.map(({ source: rowSource, peer, ...row }) => ({
             ...row,
+            matchedBy: "trigram" as const,
             ...(rowSource === "federated" && peer
                 ? { source: rowSource, peer }
                 : {}),
@@ -444,7 +454,8 @@ export class SearchService {
         >`
             SELECT t.id, t.title, t."albumId", t.duration,
                    t."loudnessLufs", t."truePeakDb",
-                   a.title AS "albumTitle", a."albumLoudnessLufs",
+                   a.title AS "albumTitle", a."coverUrl" AS "albumCoverUrl",
+                   a."albumLoudnessLufs",
                    a."albumTruePeakDb", a."artistId", ar.name AS "artistName",
                    CASE WHEN t.origin = ${"FEDERATED"}::"TrackOrigin" THEN 'federated' END AS source,
                    ${peerSql} AS peer,
@@ -463,6 +474,7 @@ export class SearchService {
         `;
         return rows.map(({ source: rowSource, peer, ...row }) => ({
             ...row,
+            matchedBy: "trigram" as const,
             ...(rowSource === "federated" && peer
                 ? { source: rowSource, peer }
                 : {}),
@@ -516,6 +528,7 @@ export class SearchService {
           t."loudnessLufs",
           t."truePeakDb",
           a.title as "albumTitle",
+          a."coverUrl" as "albumCoverUrl",
           a."albumLoudnessLufs",
           a."albumTruePeakDb",
           a."artistId",

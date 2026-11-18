@@ -158,6 +158,7 @@ import {
     expectBoundedRandomQuery,
     expectNoUnboundedIdPoolFetch,
 } from "./libraryRuntime.helpers";
+import { withClientSurfaceValidation as validated } from "./helpers/expectClientSurfaceResponse";
 
 function remoteTidalLikedEntry(input: {
     id: string;
@@ -251,6 +252,8 @@ function matchedArtistAlbum(input: {
 }) {
     return {
         ...input,
+        artistId: "artist-matched",
+        year: null,
         coverUrl: null,
         tracks: [],
         federationPeer: null,
@@ -306,6 +309,8 @@ function albumDetailRow(
 ) {
     return {
         id,
+        title: `Album ${id}`,
+        year: null,
         artistId: "artist-1",
         rgMbid: location === "REMOTE" ? `remote:${id}` : id,
         matchedRgMbid,
@@ -316,14 +321,32 @@ function albumDetailRow(
 }
 
 describe("library catalog list runtime coverage", () => {
-    const recentlyListenedHandler = getHandler("get", "/recently-listened");
-    const recentlyAddedHandler = getHandler("get", "/recently-added");
-    const artistsHandler = getHandler("get", "/artists");
-    const artistByIdHandler = getHandler("get", "/artists/:id");
-    const albumsHandler = getHandler("get", "/albums");
-    const albumByIdHandler = getHandler("get", "/albums/:id");
-    const tracksHandler = getHandler("get", "/tracks");
-    const likedPlaylistHandler = getHandler("get", "/liked");
+    const recentlyListenedHandler = validated(
+        "listRecentlyListened",
+        getHandler("get", "/recently-listened"),
+    );
+    const recentlyAddedHandler = validated(
+        "listRecentlyAdded",
+        getHandler("get", "/recently-added"),
+    );
+    const artistsHandler = validated(
+        "listArtists",
+        getHandler("get", "/artists"),
+    );
+    const artistByIdHandler = validated(
+        "getArtist",
+        getHandler("get", "/artists/:id"),
+    );
+    const albumsHandler = validated("listAlbums", getHandler("get", "/albums"));
+    const albumByIdHandler = validated(
+        "getAlbum",
+        getHandler("get", "/albums/:id"),
+    );
+    const tracksHandler = validated("listTracks", getHandler("get", "/tracks"));
+    const likedPlaylistHandler = validated(
+        "listLikedTracks",
+        getHandler("get", "/liked"),
+    );
     const shuffleHandler = getHandler("get", "/tracks/shuffle");
     const coverArtHandler = getFinalHandler("get", "/cover-art{/:id}");
     const albumCoverHandler = getFinalHandler("get", "/album-cover/:mbid");
@@ -977,6 +1000,7 @@ describe("library catalog list runtime coverage", () => {
             albums: [
                 {
                     id: "album-db-1",
+                    artistId: "artist-1",
                     title: "Owned Album",
                     rgMbid: "rg-db-same",
                     location: "LIBRARY",
@@ -985,7 +1009,11 @@ describe("library catalog list runtime coverage", () => {
                     tracks: [
                         {
                             id: "track-1",
+                            origin: "LOCAL",
                             title: "Song One",
+                            duration: 200,
+                            trackNo: 1,
+                            discNo: 1,
                             loudnessLufs: -16.7,
                             truePeakDb: -1.1,
                             album: {
@@ -1186,6 +1214,22 @@ describe("library catalog list runtime coverage", () => {
         expect(res.body.albums).not.toContainEqual(
             expect.objectContaining({ id: "album-catalog" }),
         );
+
+        // Local library tracks carry a playbackId on both surfaces (#277).
+        const ownedAlbum = res.body.albums.find(
+            (album: any) => album.id === "album-db-1",
+        );
+        expect(ownedAlbum.tracks[0].playbackId).toBe("t.track-1");
+        const matched = res.body.topTracks.find(
+            (track: any) => track.id === "track-1",
+        );
+        expect(matched.playbackId).toBe("t.track-1");
+        // Last.fm-only placeholders are not in the library and stay unplayable.
+        const placeholder = res.body.topTracks.find(
+            (track: any) => track.title === "Song Two",
+        );
+        expect(placeholder.id).toMatch(/^lastfm-/);
+        expect(placeholder).not.toHaveProperty("playbackId");
     });
 
     it("short-caches an empty MusicBrainz discography", async () => {
@@ -1241,6 +1285,7 @@ describe("library catalog list runtime coverage", () => {
             ],
             albums: [
                 {
+                    artistId: "artist-1",
                     id: "album-owned",
                     title: "Owned Album",
                     rgMbid: "rg-owned",
@@ -1250,7 +1295,11 @@ describe("library catalog list runtime coverage", () => {
                     tracks: [
                         {
                             id: "track-owned",
+                            origin: "LOCAL",
                             title: "Owned Song",
+                            duration: 180,
+                            trackNo: 1,
+                            discNo: 1,
                             album: {
                                 id: "album-owned",
                                 title: "Owned Album",
@@ -1315,6 +1364,7 @@ describe("library catalog list runtime coverage", () => {
                 topTracks: [
                     expect.objectContaining({
                         id: "track-owned",
+                        playbackId: "t.track-owned",
                         userPlayCount: 2,
                     }),
                 ],
@@ -1338,6 +1388,7 @@ describe("library catalog list runtime coverage", () => {
             ],
             albums: [
                 {
+                    artistId: "artist-1",
                     id: "album-flags",
                     title: "Flag Album",
                     rgMbid: "rg-flags",
@@ -1348,6 +1399,9 @@ describe("library catalog list runtime coverage", () => {
                         {
                             id: "track-flags",
                             title: "Flagged Track",
+                            duration: 180,
+                            trackNo: 1,
+                            discNo: 1,
                             album: {
                                 id: "album-flags",
                                 title: "Flag Album",
@@ -1408,6 +1462,8 @@ describe("library catalog list runtime coverage", () => {
             ownedAlbums: [],
             albums: [
                 {
+                    artistId: "artist-1",
+                    year: null,
                     id: "local-detail-album",
                     title: "Local Detail Album",
                     rgMbid: "rg-local-detail",
@@ -1462,6 +1518,7 @@ describe("library catalog list runtime coverage", () => {
                     albumId: "remote-detail-album",
                     artistEntity: null,
                     albumEntity: {
+                        year: null,
                         id: "remote-detail-album",
                         title: "Remote detail album",
                         rgMbid: "remote:detail",
@@ -1490,6 +1547,8 @@ describe("library catalog list runtime coverage", () => {
             ownedAlbums: [],
             albums: [
                 {
+                    artistId: "artist-1",
+                    year: null,
                     id: "remote-detail-album",
                     title: "Remote detail album",
                     rgMbid: "remote:detail",
@@ -1499,6 +1558,8 @@ describe("library catalog list runtime coverage", () => {
                     federationPeer: null,
                 },
                 {
+                    artistId: "artist-1",
+                    year: null,
                     id: "other-remote-album",
                     title: "Other remote album",
                     rgMbid: "remote:other",
@@ -1617,6 +1678,7 @@ describe("library catalog list runtime coverage", () => {
                     albumId: "remote-shared-title",
                     artistEntity: null,
                     albumEntity: {
+                        year: null,
                         id: "remote-shared-title",
                         title: "Shared Title",
                         rgMbid: "remote:shared-title",
@@ -1645,6 +1707,8 @@ describe("library catalog list runtime coverage", () => {
             ownedAlbums: [],
             albums: [
                 {
+                    artistId: "artist-1",
+                    year: null,
                     id: "remote-shared-title",
                     title: "Shared Title",
                     rgMbid: "remote:shared-title",
@@ -1654,6 +1718,8 @@ describe("library catalog list runtime coverage", () => {
                     federationPeer: null,
                 },
                 {
+                    artistId: "artist-1",
+                    year: null,
                     id: "library-title",
                     title: "Library Title",
                     rgMbid: "22222222-2222-4222-8222-222222222222",
@@ -1795,6 +1861,7 @@ describe("library catalog list runtime coverage", () => {
             ],
             albums: [
                 {
+                    artistId: "artist-1",
                     id: "album-cacheless",
                     title: "Owned Cache Album",
                     rgMbid: "rg-owned-cacheless",
@@ -1901,6 +1968,7 @@ describe("library catalog list runtime coverage", () => {
     it("returns albums with ownership-aware filtering", async () => {
         mockAlbumFindMany.mockResolvedValueOnce([
             {
+                year: null,
                 id: "album-1",
                 title: "Album One",
                 artistId: "artist-1",
@@ -1910,6 +1978,7 @@ describe("library catalog list runtime coverage", () => {
                 artist: { id: "artist-1", mbid: "mbid-1", name: "Artist One" },
             },
             {
+                year: null,
                 id: "album-catalog",
                 title: "Catalog Skeleton",
                 artistId: "artist-1",
@@ -2100,6 +2169,7 @@ describe("library catalog list runtime coverage", () => {
     it("supports discovery filter with optional artist scoping", async () => {
         mockAlbumFindMany.mockResolvedValueOnce([
             {
+                year: null,
                 id: "album-discovery",
                 title: "Discovered Album",
                 artistId: "artist-discovery",
@@ -2200,6 +2270,10 @@ describe("library catalog list runtime coverage", () => {
             .mockResolvedValueOnce(null)
             .mockResolvedValueOnce({
                 id: "album-2",
+                title: "Album album-2",
+                year: null,
+                location: "LIBRARY",
+                matchedRgMbid: null,
                 artistId: "artist-2",
                 rgMbid: "rg-2",
                 coverUrl: "cover-2.jpg",
@@ -2211,6 +2285,10 @@ describe("library catalog list runtime coverage", () => {
             })
             .mockResolvedValueOnce({
                 id: "album-3",
+                title: "Album album-3",
+                year: null,
+                location: "LIBRARY",
+                matchedRgMbid: null,
                 artistId: "artist-3",
                 rgMbid: "rg-3",
                 coverUrl: "cover-3.jpg",
@@ -2219,7 +2297,15 @@ describe("library catalog list runtime coverage", () => {
                     mbid: "mbid-3",
                     name: "Artist Three",
                 },
-                tracks: [{ id: "track-1", title: "Track One" }],
+                tracks: [
+                    {
+                        id: "track-1",
+                        title: "Track One",
+                        duration: 180,
+                        trackNo: 1,
+                        discNo: 1,
+                    },
+                ],
             });
         mockOwnedAlbumFindUnique
             .mockResolvedValueOnce(null)
@@ -2261,11 +2347,151 @@ describe("library catalog list runtime coverage", () => {
                         id: "track-1",
                         playbackId: "t.track-1",
                         title: "Track One",
+                        duration: 180,
+                        trackNo: 1,
+                        discNo: 1,
                     },
                 ],
                 owned: true,
             }),
         );
+    });
+
+    describe("album preference of the requesting user", () => {
+        function preferenceTrackRows(where: any) {
+            const albumIds: string[] = where?.albumId?.in ?? [];
+            return [
+                { id: "liked-1", albumId: "album-liked" },
+                { id: "liked-2", albumId: "album-liked" },
+                { id: "mixed-1", albumId: "album-mixed" },
+                { id: "mixed-2", albumId: "album-mixed" },
+                { id: "plain-1", albumId: "album-plain" },
+            ].filter((row) => albumIds.includes(row.albumId));
+        }
+
+        beforeEach(() => {
+            mockTrackFindMany.mockImplementation(async ({ where }: any) =>
+                preferenceTrackRows(where),
+            );
+            mockLikedTrackFindMany.mockImplementation(async ({ where }: any) =>
+                ["liked-1", "liked-2", "mixed-1"]
+                    .filter((trackId) => where?.trackId?.in?.includes(trackId))
+                    .map((trackId) => ({
+                        trackId,
+                        likedAt: new Date("2026-11-01T00:00:00.000Z"),
+                    })),
+            );
+        });
+
+        function listRow(id: string) {
+            return {
+                year: null,
+                id,
+                title: `Album ${id}`,
+                artistId: "artist-1",
+                rgMbid: id,
+                location: "LIBRARY",
+                coverUrl: null,
+                artist: { id: "artist-1", mbid: null, name: "Artist" },
+                federationPeer: null,
+            };
+        }
+
+        it("answers liked for an album whose tracks the user liked and neutral otherwise in the album list", async () => {
+            mockAlbumFindMany.mockResolvedValueOnce([
+                listRow("album-liked"),
+                listRow("album-mixed"),
+                listRow("album-plain"),
+            ]);
+            mockAlbumCount.mockResolvedValueOnce(3);
+            const res = createRes();
+
+            await albumsHandler(
+                { query: { filter: "all" }, user: { id: "user-1" } } as any,
+                res,
+            );
+
+            expect(res.statusCode).toBe(200);
+            expect(
+                res.body.albums.map((album: any) => [
+                    album.id,
+                    album.preference,
+                ]),
+            ).toEqual([
+                ["album-liked", "liked"],
+                ["album-mixed", "neutral"],
+                ["album-plain", "neutral"],
+            ]);
+            expect(mockLikedTrackFindMany).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    where: expect.objectContaining({ userId: "user-1" }),
+                }),
+            );
+        });
+
+        it("answers disliked when the user disliked every track of an album", async () => {
+            mockDislikedEntityFindMany.mockResolvedValue([
+                {
+                    entityId: "plain-1",
+                    dislikedAt: new Date("2026-11-01T00:00:00.000Z"),
+                },
+            ]);
+            mockAlbumFindMany.mockResolvedValueOnce([listRow("album-plain")]);
+            mockAlbumCount.mockResolvedValueOnce(1);
+            const res = createRes();
+
+            await albumsHandler(
+                { query: { filter: "all" }, user: { id: "user-1" } } as any,
+                res,
+            );
+
+            expect(res.body.albums[0].preference).toBe("disliked");
+        });
+
+        it("answers the album detail's preference for the requesting user", async () => {
+            mockAlbumFindFirst
+                .mockResolvedValueOnce(
+                    albumDetailRow("album-liked", "LIBRARY", null),
+                )
+                .mockResolvedValueOnce(
+                    albumDetailRow("album-plain", "LIBRARY", null),
+                );
+
+            const likedRes = createRes();
+            await albumByIdHandler(
+                {
+                    params: { id: "album-liked" },
+                    query: { includeTracks: "false" },
+                    user: { id: "user-1" },
+                } as any,
+                likedRes,
+            );
+            const plainRes = createRes();
+            await albumByIdHandler(
+                {
+                    params: { id: "album-plain" },
+                    query: { includeTracks: "false" },
+                    user: { id: "user-1" },
+                } as any,
+                plainRes,
+            );
+
+            expect(likedRes.statusCode).toBe(200);
+            expect(likedRes.body.preference).toBe("liked");
+            expect(plainRes.statusCode).toBe(200);
+            expect(plainRes.body.preference).toBe("neutral");
+        });
+
+        it("leaves preference out when no user is signed in", async () => {
+            mockAlbumFindMany.mockResolvedValueOnce([listRow("album-liked")]);
+            mockAlbumCount.mockResolvedValueOnce(1);
+            const res = createRes();
+
+            await albumsHandler({ query: { filter: "all" } } as any, res);
+
+            expect(res.body.albums[0]).not.toHaveProperty("preference");
+            expect(mockLikedTrackFindMany).not.toHaveBeenCalled();
+        });
     });
 
     it("reports whether a matched REMOTE album is held", async () => {
@@ -2357,6 +2583,10 @@ describe("library catalog list runtime coverage", () => {
         mockAlbumFindFirst
             .mockResolvedValueOnce({
                 id: "album-string-true",
+                title: "Album album-string-true",
+                year: null,
+                location: "LIBRARY",
+                matchedRgMbid: null,
                 artistId: "artist-true",
                 rgMbid: "rg-string-true",
                 coverUrl: "cover-string.jpg",
@@ -2370,11 +2600,18 @@ describe("library catalog list runtime coverage", () => {
                         id: "track-true",
                         playbackId: "t.track-true",
                         title: "Track True",
+                        duration: 180,
+                        trackNo: 1,
+                        discNo: 1,
                     },
                 ],
             })
             .mockResolvedValueOnce({
                 id: "album-bool-true",
+                title: "Album album-bool-true",
+                year: null,
+                location: "LIBRARY",
+                matchedRgMbid: null,
                 artistId: "artist-bool",
                 rgMbid: "rg-bool-true",
                 coverUrl: "cover-bool.jpg",
@@ -2388,6 +2625,9 @@ describe("library catalog list runtime coverage", () => {
                         id: "track-bool",
                         playbackId: "t.track-bool",
                         title: "Track Bool",
+                        duration: 180,
+                        trackNo: 1,
+                        discNo: 1,
                     },
                 ],
             });
@@ -2413,6 +2653,9 @@ describe("library catalog list runtime coverage", () => {
                         id: "track-true",
                         playbackId: "t.track-true",
                         title: "Track True",
+                        duration: 180,
+                        trackNo: 1,
+                        discNo: 1,
                     },
                 ],
                 owned: false,
@@ -2434,6 +2677,9 @@ describe("library catalog list runtime coverage", () => {
                         id: "track-bool",
                         playbackId: "t.track-bool",
                         title: "Track Bool",
+                        duration: 180,
+                        trackNo: 1,
+                        discNo: 1,
                     },
                 ],
                 owned: true,
@@ -2446,6 +2692,9 @@ describe("library catalog list runtime coverage", () => {
             {
                 id: "track-10",
                 title: "Track 10",
+                duration: 200,
+                trackNo: 1,
+                discNo: 1,
                 albumId: "album-10",
                 album: {
                     id: "album-10",
@@ -2702,6 +2951,9 @@ describe("library catalog list runtime coverage", () => {
             {
                 id: "local-zero-likes",
                 title: "Local zero likes",
+                duration: 200,
+                trackNo: 1,
+                discNo: 1,
                 origin: "LOCAL",
                 federationPeer: null,
                 album: {
@@ -2761,6 +3013,7 @@ describe("library catalog list runtime coverage", () => {
                     albumId: "remote-album",
                     artistEntity: null,
                     albumEntity: {
+                        year: null,
                         id: "remote-album",
                         title: "Remote album",
                         rgMbid: "remote:album",
@@ -2846,6 +3099,7 @@ describe("library catalog list runtime coverage", () => {
                     albumId: "remote-album",
                     artistEntity: null,
                     albumEntity: {
+                        year: null,
                         id: "remote-album",
                         title: "Remote album",
                         rgMbid: "remote:album",
@@ -2864,6 +3118,8 @@ describe("library catalog list runtime coverage", () => {
         ]);
         mockAlbumFindMany.mockResolvedValueOnce([]).mockResolvedValueOnce([
             {
+                artistId: "artist-1",
+                year: null,
                 id: "remote-album",
                 title: "Remote album",
                 rgMbid: "remote:album",
@@ -2908,6 +3164,9 @@ describe("library catalog list runtime coverage", () => {
     it("keeps a REMOTE-location album local when local origin did not load it remotely", async () => {
         mockAlbumFindMany.mockResolvedValueOnce([
             {
+                artistId: "artist-1",
+                year: null,
+                rgMbid: null,
                 id: "downloaded-remote-album",
                 title: "Downloaded remote album",
                 location: "REMOTE",
@@ -3020,6 +3279,7 @@ describe("library catalog list runtime coverage", () => {
                     albumId: "library-album",
                     artistEntity: null,
                     albumEntity: {
+                        year: null,
                         id: "library-album",
                         title: "Library album",
                         rgMbid: "rg-library",
@@ -3037,6 +3297,9 @@ describe("library catalog list runtime coverage", () => {
         ]);
         mockAlbumFindMany.mockResolvedValueOnce([
             {
+                artistId: "artist-1",
+                year: null,
+                rgMbid: null,
                 id: "library-album",
                 title: "Library album",
                 location: "LIBRARY",
@@ -3170,6 +3433,9 @@ describe("library catalog list runtime coverage", () => {
             {
                 id: "local-all-row",
                 title: "Zulu local",
+                duration: 200,
+                trackNo: 1,
+                discNo: 1,
                 origin: "LOCAL",
                 federationPeer: null,
                 album: {
@@ -3329,6 +3595,28 @@ describe("library catalog list runtime coverage", () => {
         expect(res.body).toEqual({
             error: "Authentication required for liked playlist",
         });
+        expect(mockLikedTrackFindMany).not.toHaveBeenCalled();
+    });
+
+    it.each([
+        [
+            { cursorLikedAt: "2026-01-01T00:00:00.000Z" },
+            "cursorLikedAt and cursorTrackId must be provided together",
+        ],
+        [
+            { cursorLikedAt: "not-a-date", cursorTrackId: "track-1" },
+            "Invalid cursorLikedAt timestamp",
+        ],
+    ])("rejects a malformed liked cursor %o", async (query, error) => {
+        const res = createRes();
+
+        await likedPlaylistHandler(
+            { query, user: { id: "user-1" } } as any,
+            res,
+        );
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body).toEqual({ error });
         expect(mockLikedTrackFindMany).not.toHaveBeenCalled();
     });
 

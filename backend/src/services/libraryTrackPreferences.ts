@@ -1,9 +1,11 @@
 import { prisma } from "../utils/db";
+import { TRACK_VISIBLE_WHERE } from "../utils/librarySorting";
 import {
     resolveTrackPreference,
     normalizeTrackPreferenceSignal,
     TRACK_DISLIKE_ENTITY_TYPE,
     type ResolvedTrackPreference,
+    type TrackPreferenceState,
 } from "./trackPreference";
 import type { UnifiedTrackResponse } from "./unifiedTrackResponse";
 
@@ -244,4 +246,54 @@ export const buildTrackPreferenceScoreMapForUser = async (
     }
 
     return scoreMap;
+};
+
+/**
+ * Resolves one user's preference for each album from the preferences of its
+ * visible library tracks, the store `POST /library/albums/:id/preference`
+ * writes: `liked` when every track is liked, `disliked` when every track is
+ * disliked, and `neutral` otherwise, including albums with no library tracks.
+ */
+export const loadAlbumPreferenceStatesForUser = async (
+    userId: string,
+    albumIds: string[],
+    client: Pick<
+        typeof prisma,
+        "track" | "likedTrack" | "dislikedEntity"
+    > = prisma,
+): Promise<Map<string, TrackPreferenceState>> => {
+    const uniqueAlbumIds = Array.from(
+        new Set(albumIds.filter((albumId) => albumId.length > 0)),
+    );
+    const states = new Map<string, TrackPreferenceState>(
+        uniqueAlbumIds.map((albumId) => [albumId, "neutral"]),
+    );
+    if (uniqueAlbumIds.length === 0) {
+        return states;
+    }
+
+    const tracks = await client.track.findMany({
+        where: { albumId: { in: uniqueAlbumIds }, ...TRACK_VISIBLE_WHERE },
+        select: { id: true, albumId: true },
+    });
+    const scores = await buildTrackPreferenceScoreMapForUser(
+        userId,
+        tracks.map((track) => track.id),
+        client,
+    );
+
+    const scoresByAlbumId = new Map<string, number[]>();
+    for (const track of tracks) {
+        const albumScores = scoresByAlbumId.get(track.albumId) ?? [];
+        albumScores.push(scores.get(track.id) ?? 0);
+        scoresByAlbumId.set(track.albumId, albumScores);
+    }
+    for (const [albumId, albumScores] of scoresByAlbumId) {
+        if (albumScores.every((score) => score > 0)) {
+            states.set(albumId, "liked");
+        } else if (albumScores.every((score) => score < 0)) {
+            states.set(albumId, "disliked");
+        }
+    }
+    return states;
 };

@@ -84,6 +84,8 @@ describe("system routes integration", () => {
 
     it("GET /api/system/features calls featureDetection.getFeatures and returns result", async () => {
         const features = {
+            musicCNN: true,
+            vibeEmbeddings: false,
             clapAvailable: true,
             tidalAvailable: false,
             allAvailable: false,

@@ -1,0 +1,8 @@
+{
+  "scroll_songs": {
+    "build_p90_ms": 8.0,
+    "build_p99_ms": 16.0
+  },
+  "web_initial_load_gzip_bytes": 5242880,
+  "cold_start_median_ms": 3000
+}

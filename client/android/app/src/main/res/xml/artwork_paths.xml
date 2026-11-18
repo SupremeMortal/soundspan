@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The artwork FileProvider (doc 10, Android Auto): only the profiles tree
+     of the app support directory, under the name "art". The Dart mapping
+     (lib/platform/artwork_content_uri) only emits paths inside a profile's
+     art/ directory. -->
+<paths>
+    <files-path name="art" path="profiles/"/>
+</paths>

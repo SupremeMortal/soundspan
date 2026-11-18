@@ -22,6 +22,7 @@ Rules (enforced by `tool/check_imports.dart`, see [01](01-toolchain-and-reposito
 - `ui` depends on `domain` and on providers. It never sees a wire model, a drift row, or dio.
 - `domain` depends on nothing but Dart and `collection`.
 - `data` maps wire models and drift rows to domain entities. Mapping functions live next to the repository and are unit tested.
+- A controller at a feature's root (`features/<f>/<name>_controller.dart`, beside `ui/`, `domain/` and `data/`) may import `core` and its own feature's `domain` and `data`; only its own `ui` imports it. It is for a feature service that needs a `core` service which may not import features, such as `ListenTogetherController` driving `PlaybackController`.
 - `core` services may depend on each other only in this direction: `storage` ← `auth` ← `profile` ← (`sync`, `downloads`, `realtime`) ← `playback`. `playback` may call `downloads` (to resolve a local file) and `sync` (to report plays); nothing in `core` imports `features`.
 
 ## Domain Model (shared)
@@ -51,6 +52,7 @@ class Track {
   final Preference preference;    // liked | disliked | neutral
   final int? discNumber;
   final int? trackNumber;
+  final String? libraryTrackId;   // the track id the server sent; for lyrics and vibe lookups only
 }
 
 sealed class QueueItem {
@@ -61,7 +63,18 @@ class EpisodeQueueItem extends QueueItem { final Episode episode; final Podcast 
 
 /// Where the item was queued from. Drives loudness "auto" mode and playlist radio.
 enum QueueContextKind { album, playlist, artist, mix, radio, search, library, single }
+class QueueContext { final QueueContextKind kind; final String? id; final String? title; }
 ```
+
+`libraryTrackId` is the `id` the server sent on the track payload. It is passed to `GET /lyrics/:trackId` and the vibe lookups, says nothing about where the track comes from, and is never used to decide playability or to branch.
+
+Browse entities carry only the fields the screens of [09](09-ui-and-design-system.md) show: `Album` (id, title, artist name and id, year, artwork ref, track count, release type, preference), `AlbumDetail` (album, tracks, owned), `Artist` (id, name, artwork ref), `ArtistDetail` (artist, albums, top tracks, similar artists, biography, genres) and `SimilarArtist` (name, artwork ref, library id when the library holds the artist). `Album.trackCount` is set only when the server sent the tracks, `Album.releaseType` stays empty while the library endpoints send none, and `Album.preference` comes from the `preference` field of `GET /library/albums` and `GET /library/albums/:id` (the requesting user's state, read from the track preferences that `POST /library/albums/:id/preference` writes: `liked` or `disliked` when every library track of the album is, otherwise `neutral`); an absent or unknown value is `neutral`, and an artist's discography albums, whose payload carries no preference, stay `neutral` until a like sent from this client is confirmed. Query values (`LibraryOrigin`, and the sort and filter enums of the artists, albums and tracks lists) carry exactly the server's parameter values. The network half of the library repositories, `lib/shared/data/library/library_remote_source.dart`, maps the generated models to these types with the mappers beside it: a wire track without `playbackId` becomes a `Track` with `playbackId == null`, a missing or unknown preference is `neutral` (tracks of the liked list are `liked`), and timestamps are UTC.
+
+The remaining browse sources have the same shape (generated client in the constructor, domain values out, `ApiException` propagates, no providers): `PlaylistRemoteSource`, `SearchRemoteSource` and `HomeRemoteSource` under `lib/shared/data/{playlist,search,home}/`. Their types are `PlaylistSummary` (id, name, track count, owner and public flags, up to four cover refs from the server's cover seeds), `PlaylistItem` (item id, sort, track, `isPlayable`, the server's message), `PlaylistDetail` (summary, items in ascending sort; an item the server sends without a track is left out), `MixSummary` (id, name, description, cover refs), `PodcastSummary` (id, title, author, artwork ref, and the feed URL and iTunes id a subscribe request names it by), `RecentItem` (an artist or a podcast; audiobook entries are dropped because audiobooks are not in v1), `SearchHit` (a track, album, artist or podcast), `LibrarySearchResults` (artists, albums, tracks, podcasts; the server's `remoteTracks` and `remoteAlbums` follow the library tracks and albums in server order) and `DiscoverResults` (hits in server order across kinds, and `AliasInfo`). The playlists list has no total, so its page's `total` is null. No mapped value carries a source or provider; a remote result is an ordinary `Track` or `Album`, and a result without `playbackId` is a non-playable `Track`.
+
+Podcasts have their own feature data layer under `lib/features/podcasts/`: `PodcastRepository` (`domain/`) serves the subscribed podcasts and a `PodcastDetail` (the podcast and its episodes, newest first as the server orders them) as `Stream<Cached<T>>` over the generated `PodcastsClient`, and makes the direct calls `subscribe` (a `PodcastRef`: a feed URL or an iTunes id; `PodcastRef.fromSummary` maps a top-list or search `PodcastSummary`; it returns the server's id of the podcast, so the caller can open it), `unsubscribe` and `postProgress`. `Podcast` adds the description, the episode count and, on a detail, the feed URL it can be subscribed to again by, and `Episode` the description and the user's `EpisodeProgress` (position in seconds, finished). Subscribing and unsubscribing are not outbox operations; while the server is not reachable they throw `Offline`.
+
+The writes M1 needs outside playback are thin typed calls of the same shape, one request each, with no caching, queuing or optimistic state (the outbox of [07](07-offline-and-downloads.md) adds those): `SettingsRepository` (`lib/core/profile/settings/`, `fetch` and `update` of `UserSettings`: `playbackQuality` verbatim, `loudnessMode` as `LoudnessMode { off, track, album, auto, unknown }`, `maxCacheSizeMb`; `update` sends only the fields given and never sends `unknown`), `PreferenceRemoteSource` (`lib/core/sync/data/`, track preferences by `playbackId` with `metadata` from `TrackMeta`, album preferences by album id; `liked`, `disliked` and `neutral` map to the `signal` values `thumbs_up`, `thumbs_down` and `clear`, and the answer is the `state` the server returns; only the outbox handlers call it, and features like through `PreferenceRepository` beside it, which enqueues `thumbs_up` or `clear`), and the playlist writes of `PlaylistRemoteSource` (`create` answers an owned, empty `PlaylistSummary`; `update`, `delete`, `addItem`, which answers the new or already-present `PlaylistItem`, `removeItem`, which sends the `playbackId` as one percent-encoded path segment, and `reorder`, which sends the complete order as `playbackIds`). `LibraryRemoteSource.shuffledTracks` reads `GET /library/tracks/shuffle`. The settings and preference repositories have profile-scoped providers.
 
 The domain `Track` has no source field. Server fields `streamSource`, `tidalTrackId`, `youtubeVideoId`, `provider`, and `mediaSource` are not declared on the wire models either, so they cannot leak in.
 
@@ -79,29 +92,48 @@ Two provider scopes.
 | `activeProfileIdProvider` | `Notifier<String?>` | Persisted in app settings |
 | `appSettingsProvider` | `AppSettings` | Theme mode, locale |
 | `reachabilityProvider` | `ReachabilityController` | See [07](07-offline-and-downloads.md) |
-| `appLoggerProvider` | `AppLogger` | |
+| `appLoggerProvider` | `AppLogger` | `Provider.family` keyed by scope: `ref.read(appLoggerProvider('Downloads'))` |
 
 **Profile scope** (one per signed-in profile; rebuilt when the active profile changes):
 
 ```dart
-/// Throws if read outside a ProfileScope.
-@Riverpod(keepAlive: true, dependencies: [])
-ProfileContext profileContext(Ref ref) => throw UnimplementedError();
+/// Throws if read outside a profile scope. ProfileRuntime overrides it in
+/// each profile container.
+final profileContextProvider = Provider<ProfileContext>(
+  (ref) => throw StateError('read outside a profile scope'),
+  dependencies: const [],
+);
 
 class ProfileScope extends ConsumerWidget {
-  const ProfileScope({required this.profile, required this.child, super.key});
+  const ProfileScope({required this.child, super.key});
   @override
-  Widget build(BuildContext context, WidgetRef ref) => ProviderScope(
-        key: ValueKey(profile.id),               // new key ⇒ old container disposed
-        overrides: [profileContextProvider.overrideWithValue(ProfileContext(profile))],
-        child: child,
-      );
+  Widget build(BuildContext context, WidgetRef ref) {
+    final runtime = ref.watch(profileRuntimeProvider);
+    return ValueListenableBuilder(
+      valueListenable: runtime.state,
+      builder: (context, state, _) => AnimatedSwitcher(   // 150 ms fade-in; none with reduced motion
+        child: state is ProfileRuntimeActive
+            ? UncontrolledProviderScope(
+                key: ValueKey(state.profileId),
+                container: runtime.container!,          // the runtime's nested container
+                child: child,
+              )
+            : const SizedBox.shrink(),
+      ),
+    );
+  }
 }
 ```
 
-Everything that touches a server depends, directly or transitively, on `profileContextProvider`: the API client, both per-profile databases, the image cache manager, repositories, `PlaybackController`, `DownloadController`, `Outbox`, `SocketClient`. Changing the `ValueKey` disposes the whole graph, and each provider's `ref.onDispose` closes its resource (stop playback, close databases, disconnect the socket, cancel timers). This is what makes "switching servers swaps the whole data layer" true by construction instead of by discipline.
+Everything that touches a server depends, directly or transitively, on `profileContextProvider`: the API client, both per-profile databases, the image cache manager, repositories, `PlaybackController`, `DownloadController`, `Outbox`, `SocketClient`. `ProfileRuntime` owns one nested `ProviderContainer` per active profile (see Background Entry Points); switching profiles runs the old container's asynchronous closers, disposes it, closes its databases, and creates the next one, and each provider's `ref.onDispose` closes its resource (stop playback, close databases, disconnect the socket, cancel timers). This is what makes "switching servers swaps the whole data layer" true by construction instead of by discipline.
 
-Riverpod's scoped-provider rule applies: every provider that depends on a scoped provider declares it in `dependencies:`. The generator lint enforces this.
+`ref.onDispose` is synchronous, so a resource that closes asynchronously (a database, the socket, the engine, the downloader) also registers its close with the profile-scoped `ProfileDisposer`. `ProfileRuntime` awaits the registered closers in reverse registration order before it disposes the container; a closer that fails is logged and the others still run. The per-profile databases are the exception: they register with `registerAfterDispose` and close after the container is disposed, because a drift database's close waits on every watch query's listeners, and a listener Riverpod paused (a screen that is not shown) only lets go when the container cancels it. Everything else still closes while the databases are open.
+
+`ProfileScope` shows only the active profile's subtree: when a switch starts, the old subtree is removed at once (nothing of it builds again), and the new one fades in.
+
+Riverpod's scoped-provider rule applies: every provider that depends on a scoped provider declares it in `dependencies:`. Profile-scoped providers are declared by hand with `dependencies:` listing every scoped provider they read.
+
+The UI reads repositories through the profile-scoped providers in `lib/shared/providers/repositories.dart` (`libraryRepositoryProvider`, `playlistRepositoryProvider`, `homeRepositoryProvider`, `searchRepositoryProvider`), typed by the repository interface. They are `FutureProvider`s because the profile's `cache.db` opens asynchronously.
 
 `ProfileContext` carries `profile` (id, base URL, user id, auth kind, device id), `paths` (the profile's directories), and nothing mutable.
 
@@ -113,19 +145,20 @@ Riverpod's scoped-provider rule applies: every provider that depends on a scoped
 
 `bootstrap()` runs these steps in order. Steps 1–6 complete before the first frame; the budget is 300 ms on a mid-range Android device.
 
-1. `WidgetsFlutterBinding.ensureInitialized()`.
+1. `WidgetsFlutterBinding.ensureInitialized()`, then cap the decoded-image memory cache (`configureImageMemoryCache`, [05](05-local-data.md#image-cache)).
 2. Install error hooks: `FlutterError.onError`, `PlatformDispatcher.instance.onError`, and a guarded zone. All route to `AppLogger`. Nothing is sent off the device.
 3. Resolve `AppPaths` (`getApplicationSupportDirectory`, `getApplicationCacheDirectory`); on web this is a no-op.
 4. Open `AppDatabase` and read `AppSettings` and the active profile id.
-5. Desktop only: `windowManager.ensureInitialized()`, restore window bounds, register the tray.
+5. Desktop only: `WindowStateController.start()` attaches `DesktopShell` to the window, sets the minimum size, restores the window bounds and maximized state, and shows the window; register the tray.
 6. Create the root `ProviderContainer` with the opened database and paths as overrides.
 7. `runApp`. The router's redirect sends the user to `/connect` if there is no active profile, otherwise to the shell.
 8. After the first frame, in parallel and without blocking UI:
    - `AudioService.init` (or the platform's media-controls adapter) and audio-session configuration.
-   - `FileDownloader` start-up: re-attach to tasks that ran while the app was dead.
+   - `FileDownloader` start-up: `BackgroundDownloadRouter` listens to the downloader, then starts it, which re-attaches to tasks that ran while the app was dead; it records the events of inactive profiles ([07](07-offline-and-downloads.md), Transfers).
    - `Reachability.start()`.
    - Capability refresh for the active profile ([04](04-auth-and-server-profiles.md)).
-   - Outbox replay and download reconciliation.
+   - Outbox replay and download reconciliation; `startDownloads` starts the active profile's `DownloadScheduler` where `canDownload` is true.
+   - Cache pruning of the active profile's `cache.db` ([05](05-local-data.md#pruning)).
    - Deep-link listener (`app_links`), including the link that launched the app.
 
 Playback restore (showing the last queue, paused) reads only `state.db`, so the mini player appears on the first frame without network.
@@ -148,7 +181,9 @@ Playback restore (showing the last queue, paused) reads only `state.db`, so the 
 ├── /album/:albumId              Pushed inside the current branch
 ├── /artist/:artistId
 ├── /playlist/:playlistId        `liked` is a reserved id for Liked Songs
-├── /mix/:mixId                  M4
+├── /mix/:mixId                  M4, `autoPlaylists`: pushed inside the current branch like a detail
+├── /explore                     M4: pushed inside the current branch like a detail
+├── /vibe                        M4, `audioAnalysis`: pushed inside the current branch like a detail
 └── /listen-together             M4
 /now-playing                     Root navigator, full-screen (compact and medium only)
 /settings                        Root navigator
@@ -156,11 +191,15 @@ Playback restore (showing the last queue, paused) reads only `state.db`, so the 
 ├── /settings/playback
 ├── /settings/storage
 ├── /settings/appearance
+├── /settings/desktop            Listed on desktop platforms and the web
 └── /settings/about
 ```
 
-- Detail routes (`/album/…`) are declared once and attached to every branch, so opening an album from Search keeps the Search tab selected.
-- Guards (`redirect`): no active profile → `/connect`; profile in `signedOut` state → `/connect/sign-in` with the server prefilled; server below `minServer` → `/connect/probe` showing the update message.
+- Detail routes (`album/:albumId`, `artist/:artistId`, `playlist/:playlistId`) are declared once, in a function, and attached as children of every branch root, so opening an album from Search keeps the Search tab selected. go_router cannot match one path in four branches, so their real locations are `/<branch root>/album/:albumId` and so on: `/home/album/42`, `/search/album/42?q=…`, `/library/<tab>/album/42`, `/podcasts/album/42`. The top-level `/album/:albumId`, `/artist/:artistId` and `/playlist/:playlistId` (the form deep links use) redirect into the currently selected branch, or Home when none was shown yet. Screens open details through `DetailNavigation` (`openAlbum(context, id)`, `openArtist`, `openPlaylist`) and never build these paths themselves. A branch holds a stack of details: from a branch root, `DetailNavigation` goes to `/<branch root>/<kind>/<id>`; from a detail, it pushes the top-level path, which the same redirect sends into the selected branch, so the new detail lands on that branch's navigator above the previous one (album → artist → album) and Back walks the stack in reverse. The selected destination stays the same, switching branches and back shows the top of the stack, and selecting the current destination again pops the whole stack. `DetailNavigation.openLocation(router, '/album/42')` applies the same rule to a top-level path, for callers without a `BuildContext` such as the deep-link router; a top-level path given to `GoRouter.go` (a URL typed into the browser) replaces the branch's location. The router sets `GoRouter.optionURLReflectsImperativeAPIs`, so the browser URL, like the window title, shows the top detail.
+- `explore` is attached beside the detail routes under every branch root, and the top-level `/explore` redirects into the selected branch in the same way (`/home/explore`, `/podcasts/explore`); screens open it with `DetailNavigation.openExplore(context)`. It exists on every server, because its radio sections need no server feature; while the server has `discovery` off it shows only those.
+- `vibe` is attached and redirected the same way (`/home/vibe`); screens open it with `DetailNavigation.openVibe(context)`. The sidebar item and the Home card that open it exist only while the server has `audioAnalysis`; on a server without it the route still resolves and the screen says "Not available on this server" without a request. The screen is loaded through a deferred import, so the web build keeps it out of the initial bundle.
+- `/` redirects to `/home`; `/library` and an unknown tab redirect to `/library/playlists`. Selecting the current destination again pops its branch to the root.
+- Guards (`redirect`): no active profile → `/connect`; profile in `signedOut` state → `/connect/sign-in?profile=<id>` with the server prefilled; server below `minServer` → `/connect/probe` showing the update message. `/connect/**` is always reachable, so a second server can be added. The router re-runs the guards when `ProfileRuntime.state` changes and when the active profile's `SessionController` signs out.
 - Deep links: `soundspan://link?code=…&server=…` maps to `/connect/probe` with the code carried as an extra. `soundspan://album/<id>`, `artist/<id>`, `playlist/<id>` open the matching route in the active profile.
 - On desktop and web the route is reflected in the window title and, on web, the URL (path strategy).
 
@@ -182,7 +221,7 @@ WindowClass windowClassOf(Size size) => switch (size.width) {
 |---|---|---|---|
 | Navigation | Bottom bar (4 destinations) | Navigation rail | Sidebar, 256 px, with playlist list |
 | Player | Mini player above the bottom bar; `/now-playing` full screen | Mini player at the bottom; `/now-playing` full screen | Persistent player bar, 96 px; now-playing opens as an overlay over the content area |
-| Queue and lyrics | Tabs inside now-playing | Tabs inside now-playing | Right-hand panel, 360 px, toggled from the player bar |
+| Queue and lyrics | Sheets over now-playing | Sheets over now-playing; beside the controls in landscape | Right-hand panel, 360 px, toggled from the player bar |
 | Detail navigation | Push | List–detail two-pane where it helps (Library → Album) | Push inside the content area |
 | Input | Touch | Touch, optional keyboard | Pointer, keyboard shortcuts, context menus, drag and drop |
 
@@ -217,7 +256,8 @@ _log.info('task finished', {'bytes': size});
 
 - Sinks: debug console in debug builds; a rolling file (`<appSupport>/logs/app.<n>.log`, 5 files × 1 MB) on native targets; an in-memory ring (500 entries) on web.
 - Redaction happens in the logger, before any sink: values of keys named `token`, `refreshToken`, `apiKey`, `password`, `authorization`, `x-api-key`; any `?token=` query value; the host and path prefix of the active profile's base URL (replaced with `<server>`).
-- `Settings → About → Export logs` zips the rolling files through the platform share or save dialog.
+- `Settings → About → Export logs` goes through the `LogExporter` seam (`lib/platform/log_export/`). On native targets it flushes the file sink, zips every `app.<n>.log` into a temporary `soundspan-logs-<yyyyMMdd-HHmmss>.zip` (time from the `Clock`), and hands it to the share sheet on Android and iOS or copies it to the path a save dialog answers on Windows, macOS and Linux; the temporary zip is then deleted. On web it downloads the ring's entries as `soundspan-logs-<yyyyMMdd-HHmmss>.txt`, one JSON object per line, as the file sink writes them. Entries were redacted when logged, and the bundle holds nothing but log entries.
+- A sink that throws does not reach the caller: the logger reports the first failure of each sink through `dart:developer` and keeps delivering to the other sinks.
 - Levels: `fine` for per-request detail (off in release), `info` for lifecycle, `warning` for recovered failures, `severe` for unrecovered ones.
 
 ## Platform Seams
@@ -229,14 +269,34 @@ Each seam is an abstract class in `lib/platform/<name>/<name>.dart` with `_io.da
 | Paths | `AppPaths` | `path_provider` | None (no files) |
 | Secrets | `SecretStore` | `flutter_secure_storage` | Memory + `sessionStorage` |
 | Database opener | `DatabaseOpener` | `drift_flutter` native | drift WASM worker |
-| Player engine factory | `PlayerEngineFactory` | `JustAudioEngine` or `MediaKitEngine` by OS | `JustAudioEngine` |
-| Media controls | `MediaControls` | `audio_service` (Android, iOS, macOS, Linux via MPRIS), SMTC adapter (Windows) | `audio_service` (Media Session API) |
+| Player engine factory | `createPlayerEngine()` (`lib/platform/player_engine/`) | `JustAudioEngine` or `MediaKitEngine` by OS | `JustAudioEngine` |
+| Audio session | `AudioSessionGateway` (`lib/platform/audio_session/audio_session_gateway.dart`) | `audio_session` (Android, iOS, macOS); no-op on Windows and Linux | No-op (focus always granted, no events) |
+| Media controls | `createMediaControls()` (`lib/platform/media_controls/`) returning a `MediaControls` | `audio_service` (Android, iOS, macOS, Linux via MPRIS), SMTC adapter (Windows) | `audio_service` (Media Session API) |
 | Downloader | `Downloader` | `background_downloader` | `UnsupportedDownloader` (feature hidden) |
+| Download notifications | `DownloadNotifier` | `background_downloader` group notifications and foreground mode on Android and iOS; nothing on desktop | No-op |
+| Disk space | `DiskSpace` (`freeBytes(path)`, null when unknown) | `disk_space_2` (Android, iOS, Windows, Linux); null on macOS, which it does not cover | `UnknownDiskSpace` (null) |
+| Media files | `MediaFiles` (`length(path)`, null for a missing file; `replace(from, to)`, a same-directory rename over any existing target; `delete(path)`, a missing file is not an error; `listFiles(directory)`, every file at any depth, listed off the UI isolate; `removeEmptyDirectories(directory)`, deepest first, keeping `directory`) | `dart:io` | No files: `length` is null, `replace` throws, `listFiles` is empty, `delete` and `removeEmptyDirectories` do nothing |
+| File sizes | `FileSizes` (`directoryBytes(path)` and `filesBytes(paths)`, missing counts as zero; `clearDirectory(path)` empties a directory and keeps it), each call on a background isolate | `dart:io` | No files: sizes are zero, nothing is deleted |
 | Stream credentials | `StreamAuth` | Header | `?token=` query |
 | Window and tray | `DesktopShell` | `window_manager`, `tray_manager` | No-op |
 | QR scanner | `QrScanner` | `mobile_scanner` (Android, iOS, macOS); unavailable on Windows and Linux | `mobile_scanner` |
-| Deep links | `DeepLinks` | `app_links` | URL on load |
+| Deep links | `DeepLinks` | `app_links` (Android, iOS, macOS); launch arguments and single-instance forwarding (Windows, Linux) | `?link=&server=` on load |
 | Notifications | `LocalNotifications` | `flutter_local_notifications` | No-op |
+| Connectivity | `ConnectivitySource` | `connectivity_plus` | `connectivity_plus` |
 | Capabilities | `PlatformCapabilities` | Constants per OS | Constants |
+| Persistent log sink | `createPersistentLogSink` (returns a `LogSink`) | `RollingFileLogSink` | `RingLogSink` |
+| Log export | `LogExporter` | Zip through `share_plus` (Android, iOS) or a `file_selector` save dialog (desktop) | Download of the ring as text |
 
-`PlatformCapabilities` is the only place UI asks "can this platform do X": `canDownload`, `canScanQr`, `hasTray`, `hasBackgroundPlayback`, `supportsApiKeyStreaming`. Screens hide features by capability, never by `Platform.isX`.
+`PlatformCapabilities` is the only place UI asks "can this platform do X": `canDownload`, `canScanQr`, `hasTray`, `hasBackgroundPlayback`, `supportsApiKeyStreaming`, `isDesktop`, `allowsPublicCleartextHttp` (false on iOS and macOS, where App Transport Security blocks a public `http://` server), `hasMobileData` (the device can be on a mobile data connection, so `Settings → Playback` shows a separate quality for it), and `hasSystemRoutePicker` (the OS has an audio output picker the now-playing screen embeds: `AVRoutePickerView` on iOS). Screens hide features by capability, never by `Platform.isX`.
+
+| | Android | iOS | macOS | Windows, Linux | Web |
+|---|---|---|---|---|---|
+| `canDownload` | yes | yes | yes | yes | no |
+| `canScanQr` | yes | yes | yes | no | yes |
+| `hasTray` | no | no | no (the Dock keeps the app) | yes (Linux: only when a StatusNotifier host answered `DesktopShell.initTray()`) | no |
+| `hasBackgroundPlayback` | yes | yes | yes | yes | no |
+| `supportsApiKeyStreaming` | yes | yes | yes | yes | no |
+| `isDesktop` | no | no | yes | yes | no |
+| `allowsPublicCleartextHttp` | yes | no | no | yes | yes |
+| `hasMobileData` | yes | yes | no | no | no |
+| `hasSystemRoutePicker` | no | yes | no | no | no |

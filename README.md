@@ -80,6 +80,7 @@ For deployment variants, release channels, compose files, and updates, see [`doc
 
 - Documentation index (all guides): [`docs/README.md`](docs/README.md)
 - Usage guide (navigation, playback, admin): [`docs/USAGE_GUIDE.md`](docs/USAGE_GUIDE.md)
+- Apps for Android, Windows, macOS, Linux, and the web: [`docs/CLIENT_APPS.md`](docs/CLIENT_APPS.md)
 - Deployment modes and updates: [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)
 - Configuration and security: [`docs/CONFIGURATION_AND_SECURITY.md`](docs/CONFIGURATION_AND_SECURITY.md)
 - OIDC and SSO setup: [`docs/OIDC_SSO.md`](docs/OIDC_SSO.md)
@@ -128,7 +129,7 @@ soundspan is browser-first. Use it from your desktop or mobile browser, or insta
 
 ### On mobile
 
-soundspan's mobile story is deliberate: there is no native app, and none is planned. Install the PWA for the full soundspan experience, and use a Subsonic client when you want native ergonomics — offline caching, Android Auto / CarPlay, and platform audio integration through the OpenSubsonic-compatible `/rest` API. Both are first-class.
+On a phone, use the soundspan app for Android ([`docs/CLIENT_APPS.md`](docs/CLIENT_APPS.md)) for background playback, Android Auto, and offline downloads; install the PWA for the full soundspan experience, administration included; or use a Subsonic client through the OpenSubsonic-compatible `/rest` API when you prefer a particular music player or are on iOS.
 
 A per-client compatibility matrix (Symfonium, Tempo, DSub2000, Ultrasonic, play:Sub), connection quickstart, and the extension roadmap live in [`docs/SUBSONIC_CLIENTS.md`](docs/SUBSONIC_CLIENTS.md). The authoritative protocol contract is [`docs/OPENSUBSONIC_COMPATIBILITY.md`](docs/OPENSUBSONIC_COMPATIBILITY.md).
 

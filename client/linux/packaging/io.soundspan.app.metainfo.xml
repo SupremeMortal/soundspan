@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-soundspan-store-exception -->
+<!-- The release entry is filled with the build version by the packaging
+     scripts (common.sh); @VERSION@ and @DATE@ are placeholders. -->
+<component type="desktop-application">
+  <id>io.soundspan.app</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+  <name>soundspan</name>
+  <summary>Music, podcasts and audiobooks from your soundspan server</summary>
+  <description>
+    <p>
+      soundspan is the client for a self-hosted soundspan server. It plays
+      your music library, podcasts and audiobooks, keeps downloads for
+      offline listening and shows synced lyrics.
+    </p>
+  </description>
+  <developer id="io.soundspan">
+    <name>soundspan</name>
+  </developer>
+  <launchable type="desktop-id">io.soundspan.app.desktop</launchable>
+  <url type="homepage">https://github.com/soundspan/soundspan</url>
+  <url type="bugtracker">https://github.com/soundspan/soundspan/issues</url>
+  <categories>
+    <category>AudioVideo</category>
+    <category>Audio</category>
+    <category>Player</category>
+  </categories>
+  <provides>
+    <binary>soundspan</binary>
+  </provides>
+  <content_rating type="oars-1.1"/>
+  <releases>
+    <release version="@VERSION@" date="@DATE@"/>
+  </releases>
+</component>

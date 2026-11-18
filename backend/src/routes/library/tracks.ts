@@ -76,6 +76,7 @@ import {
     rankPlaybackSource,
 } from "../../services/playbackSourcePriority";
 import { streamLibraryTrack } from "../../services/playback/streamLibraryTrack";
+import { encodePlaybackId } from "../../services/playback/playbackId";
 import { bumpSearchCacheVersion } from "../../services/searchCacheVersion";
 import {
     loadLibrarySongsPage,
@@ -112,80 +113,6 @@ export const tracksDetailRouter = Router();
  * Router segment for tracks routes registered at this position.
  */
 export const tracksDeletionRouter = Router();
-/**
- * @openapi
- * /api/library/tracks:
- *   get:
- *     summary: List tracks with optional album filter and pagination
- *     tags: [Library]
- *     security:
- *       - apiKeyAuth: []
- *     parameters:
- *       - in: query
- *         name: albumId
- *         schema:
- *           type: string
- *         description: Filter by album ID
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *           default: 100
- *         description: Number of tracks to return
- *       - in: query
- *         name: offset
- *         schema:
- *           type: integer
- *           default: 0
- *         description: Offset for pagination
- *       - in: query
- *         name: origin
- *         schema:
- *           type: string
- *           enum: [all, local, peers, remote]
- *           default: all
- *         description: Filter tracks by local or federated origin; remote is your liked TIDAL / YouTube Music tracks that are not in the library
- *       - in: query
- *         name: sortBy
- *         schema:
- *           type: string
- *           enum: [name, name-desc]
- *           default: name
- *         description: Sort order (ignored when albumId is provided)
- *     responses:
- *       200:
- *         description: Paginated list of tracks
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 tracks:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       playbackId: { type: string, description: "Opaque track identifier. Do not parse." }
- *                       source: { type: string, enum: [local, federated, tidal, youtube] }
- *                       streamSource: { type: string, enum: [peer, tidal, youtube] }
- *                       tidalTrackId: { type: integer }
- *                       youtubeVideoId: { type: string }
- *                       provider: { type: object }
- *                       album:
- *                         type: object
- *                         properties:
- *                           rgMbid: { type: string, nullable: true }
- *                           matchedRgMbid: { type: string, nullable: true, description: "MusicBrainz release group matched for a streaming-only album; used for add-to-library" }
- *                           matchedInLibrary: { type: boolean, description: "The library already holds the matched release group" }
- *                 total:
- *                   type: integer
- *                 offset:
- *                   type: integer
- *                 limit:
- *                   type: integer
- *       401:
- *         description: Not authenticated
- */
 /**
  * Handles GET /api/library/tracks.
  */
@@ -251,63 +178,6 @@ export async function handleGetTracks(req: Request, res: Response) {
 
 tracksBrowseRouter.get("/tracks", asyncHandler(handleGetTracks));
 
-/**
- * @openapi
- * /api/library/liked:
- *   get:
- *     summary: Get the user's liked tracks playlist with cursor-based pagination
- *     tags: [Library]
- *     security:
- *       - apiKeyAuth: []
- *     parameters:
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *           default: 100
- *         description: Number of tracks to return
- *       - in: query
- *         name: cursorLikedAt
- *         schema:
- *           type: string
- *           format: date-time
- *         description: Cursor timestamp for pagination (must be paired with cursorTrackId)
- *       - in: query
- *         name: cursorTrackId
- *         schema:
- *           type: string
- *         description: Cursor track ID for pagination (must be paired with cursorLikedAt)
- *     responses:
- *       200:
- *         description: Liked tracks playlist with pagination info
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 playlist:
- *                   type: object
- *                 tracks:
- *                   type: array
- *                   items:
- *                     type: object
- *                 total:
- *                   type: integer
- *                 pagination:
- *                   type: object
- *                   properties:
- *                     limit:
- *                       type: integer
- *                     hasMore:
- *                       type: boolean
- *                     nextCursor:
- *                       type: object
- *                       nullable: true
- *       400:
- *         description: Bad request (mismatched cursor params)
- *       401:
- *         description: Not authenticated
- */
 // GET /library/liked?limit=100&cursorLikedAt=<iso>&cursorTrackId=<id>
 /**
  * Handles GET /api/library/liked.
@@ -766,38 +636,6 @@ export async function handleGetLikedTracks(req: Request, res: Response) {
 
 tracksBrowseRouter.get("/liked", asyncHandler(handleGetLikedTracks));
 
-/**
- * @openapi
- * /api/library/tracks/shuffle:
- *   get:
- *     summary: Get random tracks for shuffle play
- *     tags: [Library]
- *     security:
- *       - apiKeyAuth: []
- *     parameters:
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *           default: 100
- *         description: Number of random tracks to return
- *     responses:
- *       200:
- *         description: Shuffled tracks
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 tracks:
- *                   type: array
- *                   items:
- *                     type: object
- *                 total:
- *                   type: integer
- *       401:
- *         description: Not authenticated
- */
 // GET /library/tracks/shuffle?limit=100 - Get random tracks for shuffle play
 /**
  * Handles GET /api/library/tracks/shuffle.
@@ -909,6 +747,7 @@ export async function handleGetShuffledTracks(req: Request, res: Response) {
     // Add coverArt field to albums
     const tracks = tracksData.slice(0, limit).map((track) => ({
         ...track,
+        playbackId: encodePlaybackId({ kind: "t", trackId: track.id }),
         album: {
             ...track.album,
             coverArt: track.album.coverUrl,

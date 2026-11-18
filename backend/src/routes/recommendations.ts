@@ -152,27 +152,6 @@ router.get("/explore", async (req, res) => {
     }
 });
 
-/**
- * @openapi
- * /api/recommendations/for-you:
- *   get:
- *     summary: Get personalized artist recommendations based on listening history
- *     tags: [Recommendations]
- *     security:
- *       - apiKeyAuth: []
- *     parameters:
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *           default: 10
- *         description: Maximum number of recommended artists to return
- *     responses:
- *       200:
- *         description: Recommended artists with metadata and album counts
- *       401:
- *         description: Not authenticated
- */
 router.get("/for-you", async (req, res) => {
     try {
         const { limit = "10" } = req.query;

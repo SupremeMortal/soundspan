@@ -183,6 +183,7 @@ jest.mock("axios", () => ({
 jest.mock("../../config", () => ({ config: { podcastDebug: false } }));
 
 import router, { refreshPodcastFeed } from "../podcasts";
+import { withClientSurfaceValidation } from "./helpers/expectClientSurfaceResponse";
 
 type RouteMethod = "get" | "post" | "delete";
 type RouteLayer = {
@@ -238,22 +239,31 @@ function createRes(): MockRes {
 
 describe("podcasts branch coverage additions", () => {
     const syncCoversHandler = getHandler("/sync-covers", "post");
-    const listHandler = getHandler("/", "get");
+    const listHandler = withClientSurfaceValidation(
+        "listPodcasts",
+        getHandler("/", "get"),
+    );
     const discoverTopHandler = getHandler("/discover/top", "get");
     const discoverGenrePaginatedHandler = getHandler(
         "/discover/genre/:genreId",
         "get",
     );
     const previewHandler = getHandler("/preview/:itunesId", "get");
-    const subscribeHandler = getHandler("/subscribe", "post");
-    const byIdHandler = getHandler("/:id", "get");
+    const subscribeHandler = withClientSurfaceValidation(
+        "subscribePodcast",
+        getHandler("/subscribe", "post"),
+    );
+    const byIdHandler = withClientSurfaceValidation(
+        "getPodcast",
+        getHandler("/:id", "get"),
+    );
     const cacheStatusHandler = getHandler(
         "/:podcastId/episodes/:episodeId/cache-status",
         "get",
     );
-    const progressHandler = getHandler(
-        "/:podcastId/episodes/:episodeId/progress",
-        "post",
+    const progressHandler = withClientSurfaceValidation(
+        "updateEpisodeProgress",
+        getHandler("/:podcastId/episodes/:episodeId/progress", "post"),
     );
     const similarHandler = getHandler("/:id/similar", "get");
     const refreshAllHandler = getHandler("/refresh-all", "post");

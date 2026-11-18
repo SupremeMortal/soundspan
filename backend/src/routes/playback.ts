@@ -25,6 +25,7 @@ import { parsePlaybackId } from "../services/playback/playbackId";
 import {
     PlaybackResolutionError,
     resolvePlayback,
+    type ResolvePlaybackInput,
     type PlaybackQuality,
     type ResolvedPlayback,
 } from "../services/playback/resolvePlayback";
@@ -120,6 +121,7 @@ interface ResolvedRequest {
 async function resolveRequest(
     req: Request<{ playbackId: string }>,
     res: Response,
+    options: Pick<ResolvePlaybackInput, "recordPlay"> = {},
 ): Promise<ResolvedRequest | null> {
     const parsed = parsePlaybackId(req.params.playbackId);
     if (!parsed) {
@@ -142,7 +144,11 @@ async function resolveRequest(
 
     const userId = req.user!.id;
     try {
-        const playback = await resolvePlayback(userId, { parsed, quality });
+        const playback = await resolvePlayback(userId, {
+            parsed,
+            quality,
+            ...options,
+        });
         return { playback, userId };
     } catch (err: unknown) {
         if (err instanceof PlaybackResolutionError) {
@@ -180,6 +186,7 @@ async function dispatchStream(
                 req: req as Request<{ id: string }>,
                 res,
                 playbackId: String(req.params.playbackId),
+                recordPlay: playback.recordPlay,
             });
         case "td":
             return streamTidalTrack({
@@ -219,59 +226,15 @@ async function dispatchStream(
     }
 }
 
-/**
- * @openapi
- * /api/playback/stream/{playbackId}:
- *   get:
- *     summary: Stream audio for any track source
- *     description: >
- *       Streams the audio for a track identified by an opaque playbackId,
- *       whatever source backs it. Supports Range requests. To resume a
- *       download, send the ETag back as If-Range with a Range header: a
- *       matching ETag answers 206, anything else (a changed file, or a
- *       source that has no strong ETag) answers 200 with the full body.
- *       Authenticate with
- *       an X-API-Key header, a Bearer token, or a token query parameter.
- *     tags: [Playback]
- *     security:
- *       - apiKeyAuth: []
- *     parameters:
- *       - in: path
- *         name: playbackId
- *         required: true
- *         description: Opaque track identifier, as returned in track payloads.
- *         schema:
- *           type: string
- *       - in: query
- *         name: quality
- *         schema:
- *           type: string
- *           enum: [original, high, medium, low]
- *         description: Requested quality; the user's saved playback quality when absent.
- *     responses:
- *       200:
- *         description: Audio stream
- *       206:
- *         description: Partial content (Range request)
- *       400:
- *         description: INVALID_PLAYBACK_ID or INVALID_QUALITY
- *       401:
- *         description: Not authenticated
- *       404:
- *         description: TRACK_NOT_FOUND
- *       409:
- *         description: SOURCE_UNAVAILABLE
- *       429:
- *         description: RATE_LIMITED; see the Retry-After header
- *       502:
- *         description: UPSTREAM_FAILED
- */
 router.get(
     "/stream/:playbackId",
     requireAuthOrToken,
     asyncHandler(
         async (req: Request<{ playbackId: string }>, res: Response) => {
-            const resolved = await resolveRequest(req, res);
+            // Exactly "0" opts out; anything else keeps today's behaviour.
+            const resolved = await resolveRequest(req, res, {
+                recordPlay: req.query.report !== "0",
+            });
             if (!resolved) return;
             const { playback, userId } = resolved;
 
@@ -299,87 +262,6 @@ router.get(
     ),
 );
 
-/**
- * @openapi
- * /api/playback/stream-info/{playbackId}:
- *   get:
- *     summary: Describe the audio stream for any track source
- *     description: >
- *       Returns codec, quality and size of what `/api/playback/stream` serves
- *       for a playbackId, in one shape for every source. Fields a source cannot
- *       know are null. Authenticate with an X-API-Key header, a Bearer token, or
- *       a token query parameter.
- *     tags: [Playback]
- *     security:
- *       - apiKeyAuth: []
- *     parameters:
- *       - in: path
- *         name: playbackId
- *         required: true
- *         description: Opaque track identifier, as returned in track payloads.
- *         schema:
- *           type: string
- *       - in: query
- *         name: quality
- *         schema:
- *           type: string
- *           enum: [original, high, medium, low]
- *         description: Requested quality; the user's saved playback quality when absent.
- *     responses:
- *       200:
- *         description: Stream information
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               required: [playbackId, contentType, codec, bitrate, sampleRate, bitDepth, durationMs, contentLength, quality]
- *               properties:
- *                 playbackId:
- *                   type: string
- *                   example: td.123456
- *                 contentType:
- *                   type: string
- *                   nullable: true
- *                   example: audio/flac
- *                 codec:
- *                   type: string
- *                   nullable: true
- *                   example: flac
- *                 bitrate:
- *                   type: number
- *                   nullable: true
- *                   description: Kilobits per second
- *                 sampleRate:
- *                   type: number
- *                   nullable: true
- *                   description: Hertz
- *                 bitDepth:
- *                   type: number
- *                   nullable: true
- *                 durationMs:
- *                   type: number
- *                   nullable: true
- *                 contentLength:
- *                   type: number
- *                   nullable: true
- *                   description: Bytes the stream endpoint serves
- *                 quality:
- *                   type: string
- *                   enum: [original, high, medium, low]
- *                   description: The library quality that was requested or saved
- *       400:
- *         description: INVALID_PLAYBACK_ID or INVALID_QUALITY
- *       401:
- *         description: Not authenticated
- *       404:
- *         description: TRACK_NOT_FOUND
- *       409:
- *         description: SOURCE_UNAVAILABLE
- *       429:
- *         description: RATE_LIMITED; see the Retry-After header
- *       502:
- *         description: UPSTREAM_FAILED
- */
 router.get(
     "/stream-info/:playbackId",
     requireAuthOrToken,

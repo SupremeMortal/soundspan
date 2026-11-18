@@ -100,6 +100,7 @@ jest.mock("../../services/offline/resolveOfflineItems", () => ({
 }));
 
 import router from "../offline";
+import { withClientSurfaceValidation } from "./helpers/expectClientSurfaceResponse";
 
 const MB = 1024 * 1024;
 const DEV_A = "6f1d2c9e-8a3b-4c57-9d0e-1b2a3c4d5e6f";
@@ -136,10 +137,22 @@ async function call(handler: any, req: { body?: unknown; query?: unknown }) {
     return res;
 }
 
-const complete = getHandler("post", "/items/complete");
-const remove = getHandler("delete", "/items");
-const list = getHandler("get", "/items");
-const stats = getHandler("get", "/stats");
+const complete = withClientSurfaceValidation(
+    "completeOfflineItem",
+    getHandler("post", "/items/complete"),
+);
+const remove = withClientSurfaceValidation(
+    "deleteOfflineItems",
+    getHandler("delete", "/items"),
+);
+const list = withClientSurfaceValidation(
+    "listOfflineItems",
+    getHandler("get", "/items"),
+);
+const stats = withClientSurfaceValidation(
+    "getOfflineStats",
+    getHandler("get", "/stats"),
+);
 
 beforeEach(() => {
     jest.clearAllMocks();
@@ -274,9 +287,14 @@ describe("DELETE /api/offline/items", () => {
         expect(res.body).toEqual({ deletedCount: 0 });
     });
 
-    it("answers 400 for an invalid body", async () => {
-        const res = await call(remove, { body: { deviceId: DEV_A } });
+    it.each([
+        { deviceId: DEV_A },
+        { deviceId: "phone", playbackIds: ["t.abc"] },
+        { deviceId: DEV_A, playbackIds: Array(501).fill("t.abc") },
+    ])("answers 400 INVALID_REQUEST for the invalid body %#", async (body) => {
+        const res = await call(remove, { body });
         expect(res.statusCode).toBe(400);
+        expect(res.body.code).toBe("INVALID_REQUEST");
     });
 });
 
@@ -345,10 +363,14 @@ describe("GET /api/offline/items", () => {
         expect(res.body.items[0].revoked).toBe(false);
     });
 
-    it("answers 400 without a valid deviceId", async () => {
-        const res = await call(list, { query: {} });
-        expect(res.statusCode).toBe(400);
-    });
+    it.each([{}, { deviceId: "phone" }])(
+        "answers 400 INVALID_REQUEST for the query %j",
+        async (query) => {
+            const res = await call(list, { query });
+            expect(res.statusCode).toBe(400);
+            expect(res.body.code).toBe("INVALID_REQUEST");
+        },
+    );
 });
 
 describe("GET /api/offline/stats", () => {
@@ -389,5 +411,11 @@ describe("GET /api/offline/stats", () => {
             trackCount: 2,
             device: { deviceId: DEV_A, usedMb: 5, trackCount: 1 },
         });
+    });
+
+    it("answers 400 INVALID_REQUEST for a deviceId that is not a UUID", async () => {
+        const res = await call(stats, { query: { deviceId: "phone" } });
+        expect(res.statusCode).toBe(400);
+        expect(res.body.code).toBe("INVALID_REQUEST");
     });
 });

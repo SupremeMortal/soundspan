@@ -1,0 +1,21 @@
+[
+  {
+    "currentTrack": {
+      "artistName": "Contract Basalt",
+      "id": "cmwhfq888000x07l976fptlcm",
+      "title": "Alder Tone"
+    },
+    "groupType": "host-follower",
+    "host": {
+      "id": "cmwhfq75r000107l99vpcqcqw",
+      "username": "listener"
+    },
+    "id": "cmwhfqr8f002a07l9qbu86pg0",
+    "isMember": false,
+    "isPlaying": false,
+    "joinCode": "AFVR5X",
+    "memberCount": 1,
+    "name": "Captured fixtures",
+    "visibility": "public"
+  }
+]

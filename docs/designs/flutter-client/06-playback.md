@@ -16,7 +16,10 @@ core/playback/
 ├── source_resolver.dart            # QueueItem → EngineSource (local file or stream URL)
 ├── loudness.dart                   # Gain computation
 ├── media_controls/
-│   ├── media_controls.dart         # Interface
+│   ├── media_controls.dart         # Interface, MediaSessionState, NoopMediaControls
+│   ├── media_session_mapper.dart   # PlaybackSnapshot → MediaSessionState
+│   ├── media_controls_binder.dart  # Controller ↔ MediaControls; MediaControlsHost
+│   ├── artwork_pinner.dart         # Cover → URI the OS can load
 │   ├── audio_service_controls.dart # Android, iOS, macOS, web, Linux (MPRIS)
 │   └── smtc_controls.dart          # Windows
 ├── audio_focus.dart                # audio_session wiring
@@ -42,8 +45,8 @@ Checked in the backend source; the contract suite ([11](11-testing-and-ci.md)) k
                  QueueReducer (pure)      SourceResolver ─▶ DownloadStore / StreamUrls
 ```
 
-- **`PlaybackController`** owns the queue and the engine. It exposes `Stream<PlaybackSnapshot>` and command methods. Nothing else calls the engine.
-- **`QueueReducer`** is a pure function `(QueueState, QueueCommand) → QueueState`. All queue rules are tested here with no player.
+- **`PlaybackController`** owns the queue and the engine. It exposes `Stream<PlaybackSnapshot>` and command methods. Nothing else calls the engine. Commands and engine events run one after another; a step still running after 15 s (`slowStepWarning`) is logged as a warning naming its command or event, because every later command waits for it.
+- **`QueueReducer`** is a pure function `(QueueState, QueueCommand) → QueueTransition` (the next `QueueState` and a `QueueEffect`). All queue rules are tested here with no player.
 - **`PlayerEngine`** plays at most two things: the current source and a preloaded next source. It knows nothing about queues, shuffle, or the server.
 - **`MediaControls`** mirrors the snapshot to the OS and turns OS button presses into controller commands.
 
@@ -57,6 +60,7 @@ class EngineSource {
   final Map<String, String> headers;     // Empty for files and on web
   final Duration? knownDuration;
   final Duration startAt;                // Resume position; zero normally
+  final String? streamQuality;           // Track stream's requested quality; null for server default, episodes, files
 }
 
 enum EngineStatus { idle, loading, ready, buffering, ended, error }
@@ -83,7 +87,7 @@ abstract interface class PlayerEngine {
   Stream<EngineEvent> get events;
 
   /// Replace everything. Completes when the source is ready or failed.
-  Future<void> load(EngineSource current, {EngineSource? next, bool autoPlay});
+  Future<void> load(EngineSource current, {EngineSource? next, bool autoPlay = true});
   /// Set, replace, or clear the preloaded next source without disturbing current.
   Future<void> setNext(EngineSource? next);
   Future<void> play();
@@ -103,32 +107,59 @@ class EngineError {
 }
 ```
 
+Contract details every engine keeps (doc comments on `PlayerEngine`, pinned by the conformance suite):
+
+- `state` replays the latest value to a new listener; the initial state is `idle`, not playing, position zero.
+- `load` never throws for a bad source: it completes, emits `Failed` for that `queueItemId`, and the state is `error` with the `EngineError`.
+- A next source that fails to load emits `Failed` with the next item's id; the current item is undisturbed and the next slot is empty.
+- After `AdvancedToNext`, `currentQueueItemId` is the new item, position restarts from zero, and the next slot is empty until `setNext` is called again.
+- After `Completed`, status is `ended`, `playing` is false, and position equals the duration.
+- `seek` clamps to `[0, duration]`. `play` with nothing loaded is a no-op. `setVolume` clamps to 0.0–1.0, `setSpeed` to 0.5–3.0.
+- After `dispose`, both streams are closed and any further call throws `StateError`.
+
+The engine for the platform comes from the root-scope `playerEngineBuilderProvider` (`engines/player_engine_provider.dart`). Its default is the platform factory `createPlayerEngine()` (`lib/platform/player_engine/`): `JustAudioEngine` on Android, iOS, macOS and the web, `MediaKitEngine` on Windows and Linux; on a platform without an engine it throws `UnsupportedError`. The choice is the pure `playerEngineKindFor(operatingSystem)`. Tests override the provider with `FakeEngine.new`.
+
+`FakeEngine` runs on virtual time: `advance(d)` moves playback forward and emits state (every 200 ms while playing, and at every transition) and events in order, with no real timers. Each source is scripted by URI with a `FakeSource` (duration, an optional failure, how far ahead it buffers, and headers it requires, answering 401 without them); a URI with no script fails with `notFound`, and `requested` records every source opened with its headers.
+
 The two-slot contract is the smallest surface that still gives gapless playback. It maps cleanly onto both backends and keeps queue edits (reorder, remove, shuffle toggle) out of engine code: an edit that changes what comes next is one `setNext` call.
 
 ### `JustAudioEngine` (Android, iOS, macOS, web)
 
 - One `AudioPlayer`. `load` calls `setAudioSources([current, next?], initialIndex: 0, initialPosition: startAt)`.
-- `setNext` removes index 1 if present and adds the new source, using the player's playlist mutation calls. The current item is never touched.
+- `setNext` on Android, iOS and web removes index 1 if present and adds the new source, using the player's playlist mutation calls. The current item is never touched.
+- `setNext` on macOS reloads the playlist instead: one `setAudioSources([current, next?], initialIndex: 0, initialPosition: <current position>)` call that keeps the play intent (full-playlist loading, see Spike S1 finding). The `PlayerEngine` interface is the same on every platform.
 - Sources: `AudioSource.uri(uri, headers: headers, tag: queueItemId)` for streams and `AudioSource.file(path, tag: …)` for downloads.
-- Events: a `currentIndexStream` change from 0 to 1 with `ProcessingState.ready` is `AdvancedToNext`. The engine then removes the played item so the new current is index 0 again and waits for the controller's next `setNext`. `ProcessingState.completed` is `Completed`. `playbackEventStream` errors and `errorStream` map to `Failed`; `PlayerException.code` and the HTTP status (when available) set `kind`.
-- Gapless: ExoPlayer and AVQueuePlayer both transition between adjacent playlist items without a gap when the next item is buffered. Web is best-effort.
-- Headers on iOS and macOS are delivered by `just_audio` through a loopback proxy inside the app. The iOS `Info.plist` therefore allows local networking (`NSAllowsLocalNetworking`), which does not weaken transport security for remote hosts. Verify in spike S1.
+- Events: each source carries its `queueItemId` as the tag, and the player moving onto the next source's tag while ready or buffering (index 0 to 1) is `AdvancedToNext`. The engine then removes the played item so the new current is index 0 again and waits for the controller's next `setNext`. `ProcessingState.completed` is `Completed`, after which the engine pauses so `playing` is false. `playbackEventStream` errors and a failed `setAudioSources` map to `Failed` for the item at `PlayerException.index`.
+- Error kind: the player's error carries no HTTP status on Android (`PlayerException` code 0, Spike S1 finding) or on the web (`MediaError` code), so after an `http(s)` source fails the engine asks the server once for the status: `StreamStatusProbe` of `soundspan_api` sends one `GET` of the first byte (`Range: bytes=0-0`) with the source's headers. 404 is `notFound`, 401 `unauthorized`, any other status of 400 or more `http`, and no response `network`; otherwise `PlayerException.code` decides (`decode` for format errors, `network` for connection errors, iOS and macOS `NSURLError` −1013 `unauthorized`), else `unknown`. The mapping is the pure `engineErrorFor` in `engines/just_audio_mapping.dart`.
+- Position is reported ten times a second while playing. Because the darwin implementation can deliver the index change before the position reset (Spike S1 finding), for one second after a transition a position more than 150 ms ahead of the time since the transition is taken for the previous item's end: the engine holds the state update, checking again every 10 ms, until the player reports the new item's own position. It holds it the same way while a next item is loaded and the player's clock has reached the current item's end without the index change, instead of pinning the position to the end. No position is invented, so the gap measured from the state stream is the player's own.
+- Gapless: ExoPlayer (Android) and AVQueuePlayer (iOS) transition between adjacent playlist items without a gap when the next item is buffered. On macOS the transition between the two loaded items is not reliably gapless (Spike S1 finding), so the adapter keeps both items in one full-playlist load and gapless playback on a Mac is confirmed on real hardware. Web is best-effort.
+- Headers are delivered by `just_audio` through a loopback proxy inside the app (`useProxyForRequestHeaders` left at its default). Every request the player makes, range requests included, carries them (Spike S1 finding). The iOS and macOS `Info.plist` therefore allow local networking (`NSAllowsLocalNetworking`), which does not weaken transport security for remote hosts, and the macOS sandbox has `network.client` and `network.server` ([10](10-platform-integration.md)).
 - Android: `AndroidLoadControl` buffer of 30 s min, 120 s max; `androidApplyAudioAttributes: true`; `handleInterruptions: false` (the controller handles focus itself, see Audio Focus).
 
 ### `MediaKitEngine` (Windows, Linux)
 
-- One `Player` from `media_kit` (libmpv), created with `PlayerConfiguration(title: 'soundspan', ready: …)` and video output disabled (`vid=no`).
-- mpv properties set once through `NativePlayer.setProperty`: `gapless-audio=yes`, `prefetch-playlist=yes`, `audio-client-name=soundspan`, `cache=yes`, `demuxer-max-bytes=64MiB`, `network-timeout=30`, `volume-max=100`.
-- `load` opens `Playlist([Media(uri, httpHeaders: headers), Media(next…)])` with `play: autoPlay`; `setNext` uses `player.remove(1)` and `player.add(media)`.
-- Events: `stream.playlist` index change 0 → 1 is `AdvancedToNext`; `stream.completed` true with no next is `Completed`; `stream.error` is `Failed`.
-- Position comes from `stream.position` (already throttled by media_kit).
-- `MediaKit.ensureInitialized()` is called from the engine factory only on Windows and Linux, so the native library is never loaded elsewhere.
+- `engines/media_kit_engine.dart` is the only file that imports `media_kit`. One `Player` from `media_kit` (libmpv), created with `PlayerConfiguration(title: 'soundspan', logLevel: MPVLogLevel.warn)`; the log level is `warn` because ffmpeg logs a failed request's `HTTP error <status>` line at that level.
+- mpv properties set once through `NativePlayer.setProperty`, before the first playlist is opened: `vid=no`, `gapless-audio=yes`, `prefetch-playlist=yes`, `audio-client-name=soundspan`, `cache=yes`, `demuxer-max-bytes=64MiB`, `network-timeout=30`, `volume-max=100`. The engine factory also sets `ao=pulse,pipewire,alsa` on Linux (`mediaKitAudioOutputFor`): PulseAudio, served by pipewire-pulse on PipeWire desktops, comes first, because tearing down mpv's PipeWire output after it failed to connect (the flatpak sandbox has no PipeWire socket) can stall mpv's core for 20 s or more, and nothing reaches mpv until it returns. The flatpak's libmpv is built without the PipeWire output.
+- No synchronous libmpv call is made while playing. media_kit answers `getProperty` and `setProperty` with a blocking libmpv call on the app's isolate, so a read while mpv's core is busy freezes the app; positions come from `stream.position` and `player.state.position` only. Properties are set once at start-up, and `dispose` reads `idle-active` (below).
+- `load` opens `Playlist([Media(uri, httpHeaders: headers, start: startAt), Media(next…)])` with `play: autoPlay` (a file source is opened by its path); it completes when mpv reports the current item's duration, and, for a `startAt` past zero, a position at the resume point (waiting at most 2 s for it), or when the item failed. When mpv has neither reported a duration nor failed the item 45 s after the load started (`loadTimeLimit`, longer than `network-timeout`, so mpv's own error comes first), the engine stops mpv and reports the item `Failed` with a `network` error, so a load never outlives its file and the controller's command queue never waits on it for good. Player calls run one after another; one that has not returned after 45 s (`callTimeLimit`) fails with a `TimeoutException` and the next one runs. `setNext` removes every entry after the playing one with `player.remove` and appends the new one with `player.add(media)`.
+- Headers: with `prefetch-playlist=yes`, mpv opens the next item while the current one plays using the current item's header set, so the next item's requests carry the current item's headers (Spike S2 finding). Every item of a session carries the same credential, so prefetch stays on: the next item is open before the transition, which keeps it gapless against a remote server's latency, and a next item that cannot be opened is reported while the current one still plays.
+- Events: `stream.playlist` index change 0 → 1 with a next item set is `AdvancedToNext`, after which the played entry is removed so the current item is index 0 again; `stream.completed` true with no next item is `Completed` (media_kit also reports `completed` true for a moment at the end of every item before mpv advances, which with a next item set means nothing). After `Completed` the position is the duration and `playing` is false. The mapping is the pure `mediaKitSlotEvent` in `engines/media_kit_mapping.dart`.
+- Failures: `stream.error` is `Failed`. mpv's message names the URL it could not open, so a message naming the next item fails the next item (it is removed and the current one plays on); one naming the current item, or arriving while the current item loads, fails the current item, and the engine stops mpv so it does not move on to the next entry. A message that names neither item after the current one loaded (ffmpeg's connection error, a decode error mpv plays through) is kept and classified together with the next named failure.
+- Error kind: mpv reports errors as text, classified by the pure `classifyMpvError(message, {httpStatus})` in `engines/media_kit_mapping.dart`: 404 is `notFound`, 401 `unauthorized`, other HTTP statuses of 400 or more `http`, connection and timeout failures `network`, demux and decode failures `decode`, a missing local file `notFound`, the rest `unknown`. The status comes from mpv's log: the engine listens to `stream.log` and pairs ffmpeg's last `HTTP error <status>` line (logged at level `warn`, just before mpv's "Failed to open …") with the failure. ffmpeg logs no such line for a 401, at any log level, so when the log carries no status for a failed `http(s)` source the engine asks the server once, as `JustAudioEngine` does: `StreamStatusProbe` of `soundspan_api`, one `GET` of the first byte with the source's headers.
+- Position comes from `stream.position` (mpv's `time-pos`, updated every 50–100 ms while playing). After a transition media_kit first resets the position to zero, mpv then reports the new item's position minus the previous item's audio still buffered (negative), and the previous item's last position can arrive after the index change (Spike S2 finding). For a second after `AdvancedToNext` the engine holds the state update until mpv reports a positive position of the new item that is not further ahead than the time since the transition (the pure `mediaKitPosition`); no position is invented. `pause` reports `playing` false once mpv has paused, at the last position mpv reported then, because a position update already on its way would otherwise move the paused position. A change that carries no position (`stream.buffering`, `stream.buffer`, `stream.duration`) while playing goes out with the next position update, never with the last reported position, which is already behind while the clock runs; when no position update comes within 150 ms (`positionWait`: mpv stalled, so its clock stopped), the change goes out at the last position, which is where mpv stopped. The last state of the ending item is then the one its last position produced, stamped when mpv reported it, so the gap measured from the state stream stays the player's own: a buffering state re-reported with the last position 50 ms after mpv announced it would add 50 ms to the measured gap.
+- Status: after playback starts, resumes or seeks, the status is `buffering` until mpv's position has moved at least 50 ms on, or reached the end of the item (`clockMoved`); positions that jitter by microseconds around the start are not movement. An audio output can take a while to start consuming: a PulseAudio null sink on a CI runner, and in the same way a slow sound server, holds the clock for about two seconds while mpv already reports itself playing.
+- `dispose` closes both streams first, then waits at most 5 s for a pending player call, stops mpv and waits at most 5 s until it reports `idle-active`, then disposes the player (again waiting at most 5 s). media_kit's dispose calls `mpv_terminate_destroy` synchronously on the app's isolate a few seconds later; were mpv still unloading a file then, it would wait for media_kit's `on_unload` hook, which only that blocked isolate can answer, and the app would hang.
+- Device tests: a hosted Windows runner has no audio endpoint, and the Scream virtual sound card cannot be installed there unattended (its driver install waits for a trust prompt), so the Windows harness builds the engine with the constructor parameter `audioOutputOverride: 'null'` (mpv's timing-accurate null output). On Linux the harness passes `audioOutputOverride: 'pulse'` and plays to a PulseAudio null sink: with the production configuration mpv tries its PipeWire output first, and on the runner that output's thread loop hangs in `pw_thread_loop_stop()`, blocking the app's main isolate, even when no PipeWire daemon runs (so `PIPEWIRE_REMOTE` pointing nowhere does not help). Setting `ao` is not enough on its own: media_kit observes `audio-device-list`, so mpv probes every audio output, PipeWire included, to list devices. The Linux conformance job therefore runs with `SPA_PLUGIN_DIR` pointing nowhere, so libpipewire cannot create the probe's thread loop and the probe fails before it starts a thread. The pure `deviceAudioOutput` picks the harness's output per platform; in production the engine factory passes `mediaKitAudioOutputFor` (above).
+- `setVolume(linear)` maps 0.0–1.0 to mpv `volume` 0–100 (`mpvVolume`); `setSpeed` sets mpv `speed` through `player.setRate`.
+- `MediaKit.ensureInitialized()` runs through `MediaKitEngine.ensureInitialized()`, called only by the Windows and Linux branch of the engine factory, so the native library is never loaded elsewhere.
 
 ### Engine Conformance Suite
 
-`test/core/playback/engine_conformance.dart` is one parameterized suite run against `FakeEngine` in unit tests and against the real engine for the current platform in `integration_test/engine_conformance_test.dart` (tag `engine`), using short tone files served by a local `shelf` server that checks headers and Range.
+`integration_test/support/engine_conformance.dart` (under `integration_test/`, because the web build of the device test cannot import files outside it) is one parameterized suite run against `FakeEngine` in unit tests and against the real engine for the current platform in `integration_test/engine_conformance_test.dart` (tag `engine`), using short tone files served by a local `shelf` server that checks headers and Range.
 
 Required behaviours: load and play; pause and resume keep position; seek within buffered and unbuffered ranges; `setNext` then natural end produces exactly one `AdvancedToNext` and no audible gap larger than 20 ms (measured from the position streams, verified by ear in the manual matrix); `setNext(null)` then natural end produces `Completed`; replacing next twice before the transition plays only the last one; a 404 source produces `Failed(notFound)`; a 401 produces `Failed(unauthorized)`; headers reach the server; a local file plays with the network disabled; `stop` then `load` works; `dispose` releases the device.
+
+The suite is `runEngineConformance(name, createHarness)`. An `EngineHarness` supplies engines and sources (a tone, a slowly buffering tone, a 404, a 401, a local file), the credentials a source carries and those the server saw (headers natively, the `token` query value on the web), a way to disable the network, `elapse` (virtual for the fake, real time for devices), the clock `now` that stamps state samples (the sum of `elapse` for the fake, a stopwatch for devices), the gap tolerance (20 ms) and the cases the platform skips. Besides the required behaviours it pins the interface: state replays the latest value to a late listener, position updates at least four times a second while playing, `load` with `startAt` starts there, and `load` with `autoPlay: false` is ready and not playing. Cases are declared with `test` by default and with `testWidgets` on devices, whose results `flutter drive` reports. On devices the harness is `integration_test/support/device_engine_harness*.dart` over the tone server of [11](11-testing-and-ci.md) (`client-device-tests.yml`); the web harness skips the local-file and gap cases. The device gap tolerance is 20 ms on the Android emulator, on Linux, on Windows and on iOS hardware. On the iOS simulator it is 100 ms: its index and position reports jitter around a transition, and the same engine measured gaps of at most 20 ms, then 64, 33 and 62 ms, in successive CI runs. On macOS, whose transition between the two loaded items is not reliably gapless (Spike S1 finding: gaps of 6.4 to 113.5 ms on the hosted runner), the tolerance is 100 ms and gapless playback on a Mac is confirmed on real hardware. The gap at a transition is measured from the position stream only: with `(tA, pA)` the last sample of the ending item and `(tB, pB)` the first of the new one, the gap is `|(tB − tA) − ((durationA − pA) + pB)|`.
 
 ## Queue Model
 
@@ -144,31 +175,37 @@ class QueueState {
   final int revision;                   // Incremented on every change
 }
 
-sealed class QueueCommand {}            // ReplaceAll, PlayNext, Append, RemoveAt, Move, JumpTo,
-                                        // Next, Previous, SetShuffle, SetRepeat, Clear, ItemFinished
+sealed class QueueCommand {}            // ReplaceAll, PlayNext, Append, InsertAt, RemoveAt, Move,
+                                        // JumpTo, Next, Previous, SetShuffle, SetRepeat, Clear,
+                                        // ItemFinished
 ```
+
+`QueueReducer.reduce` returns a `QueueTransition`: the next state plus a `QueueEffect` (`none`, `loadCurrent`, `restartCurrent` or `stop`), so the controller applies the engine change the queue rules imply without re-deriving them; a command that changes nothing returns the identical state, and `revision` grows by one exactly when the state changes.
 
 Rules, each with unit tests:
 
 - **Play order** is `shuffleOrder` if set, else the identity. `current = items[playOrder[cursor]]`. `upNext = items[playOrder[cursor + 1]]`, wrapping when `repeat == all`, and equal to `current` when `repeat == one`.
-- **Shuffle on:** keep the current item at the cursor, shuffle the remaining indices with Fisher–Yates using a seeded `Random` (the seed is injected, so tests are deterministic). Already-played items keep their order behind the cursor.
+- **Shuffle on:** keep the current item at the cursor, shuffle the remaining indices with Fisher–Yates using a seeded `Random` (the seed is injected, so tests are deterministic). Already-played items keep their order behind the cursor. Replacing the queue while shuffled starts at the chosen item and shuffles all the others; clearing it keeps shuffle on. Moving an entry while shuffled changes only the permutation. Wrapping with `repeat == all` does not reshuffle.
 - **Shuffle off:** drop `shuffleOrder`; the cursor becomes the current item's canonical index.
 - **Play next:** insert after the current item in canonical order and, when shuffled, at `cursor + 1` in the permutation.
 - **Append:** add at the end of the canonical list and, when shuffled, at a random position after the cursor.
-- **Remove current:** advance to the next item first, then remove.
-- **Previous:** if position > 3 s, seek to zero; otherwise move the cursor back (wrapping only with `repeat == all`).
-- **Item finished:** `repeat one` → replay; end of queue with `repeat off` → stop, cursor stays on the last item, position zero.
-- **Maximum size:** 5,000 items. "Play" on a larger collection queues the first 5,000 in play order and says so.
+- **Insert at** a play index (a drop into the queue panel): unshuffled, insert at that canonical index; shuffled, append to the canonical list and place the new indices at that position of the permutation. The current item stays current (the cursor moves when the insert lands at or before it); on an empty queue the items become the queue. In a Listen Together group, whose queue inserts only after the current item or at the end, an insert directly after the current item is sent as play next and any other as an append.
+- **Remove current:** advance to the next item first, then remove. Removing the last item in play order wraps to the first with `repeat == all` and otherwise stops on the new last item.
+- **Previous:** if position > 3 s, seek to zero; otherwise (3 s exactly included) move the cursor back (wrapping only with `repeat == all`). At the first item without wrapping, seek to zero.
+- **Item finished:** `repeat one` → replay; end of queue with `repeat all` → the first item in play order (a single item replays); end of queue with `repeat off` → stop, cursor stays on the last item, position zero. `Next` follows the same wrap with `repeat all`; with `repeat one` it is a user skip and behaves as with `repeat off`.
+- **Maximum size:** 5,000 items. "Play" on a larger collection queues the first 5,000 and says so; when the chosen start item lies beyond them, the 5,000-item window slides forward just far enough to end on it. Shuffle, when on, applies to the window. Play next, Append and Insert at queue the leading items that fit. `QueueTransition.dropped` reports how many were left out, for the message.
 - Every `QueueItem` has a client-generated `queueItemId`, so the same track can appear twice and edits address entries, not tracks.
 
 After every reducer step the controller compares the new `upNext` with what the engine has preloaded and calls `setNext` if they differ.
 
 ## Source Resolution
 
-`SourceResolver.resolve(QueueItem) → Future<EngineSource>`:
+`SourceResolver.resolveSource(QueueItem) → Future<ResolvedSource>`: the `EngineSource` and, when it plays a downloaded file, a `LocalDownload` (the item's key and stored quality), so the controller never inspects the URI scheme. `resolve` returns the `EngineSource` alone. On web, and wherever `PlatformCapabilities.canDownload` is false, step 1 is skipped.
 
-1. `DownloadStore.completedFile(itemKey)` → `file://` URI, no headers. The file's existence is checked; a missing file marks the download `missing` and falls through.
+1. `DownloadStore.completedFile(itemKey)` → the absolute path of a `completed` item's file (a path, because `dart:io` stays under `lib/platform/`), played as a `file://` URI with no headers. The file's existence is checked; a missing file marks the download `missing` and falls through.
 2. Offline (forced or unreachable) and no file → throws `NotAvailableOffline`; the controller skips the item.
+
+The choice is by file presence only, never by where a track comes from. A missing file is sent through the state machine as `FileMissing` (the item is queued again and the scheduler pumped).
 3. Otherwise a stream URL:
    - Track: `StreamUrls.track(playbackId, quality: q, reportPlay: false)` where `q` is `quality.wifi` or `quality.cellular` from device settings according to the current connection type, or null for "server default".
    - Episode: `StreamUrls.episode(podcastId, episodeId)`.
@@ -194,10 +231,13 @@ class PlaybackSnapshot {
 ```
 
 - `position` in the snapshot is throttled to 4 Hz for general listeners. The seek bar interpolates locally between updates with a `Ticker`.
+- Widgets read snapshots through two providers: `playbackSnapshotProvider` (every snapshot, for the seek bar and the mini player's progress line) and `playbackStateProvider` (only snapshots that change more than the position and buffered range, for everything else), so the player bar does not rebuild as the position moves. The user volume is a `ValueListenable<double>` on the controller (`volumeListenable`), because it is not part of the snapshot. The shell's player slots show the players once the profile's controller exists and never create it themselves; the controller is created by the first command that reads it.
 - **Failure policy:** on `Failed` for the current item, retry once after 1 s (network and HTTP 5xx kinds only). If it fails again, mark the item failed in the snapshot, show a snackbar, and advance. Three consecutive failed items stop playback with "Can't reach the server" instead of skipping through the whole queue.
 - **`SourceUnavailable` / `notFound`:** no retry; skip with a per-item message.
+- **Offline skip rule:** `NotAvailableOffline` for the item becoming current skips to the next item in play order, without the 1 s retry, without a per-item message and without counting toward the three consecutive failed items. When one full pass over the play order, or the run of skips up to the end of the queue, finds no playable item, playback stops paused with "Not available offline" (`PlaybackErrorKind.notAvailableOffline`) and the cursor goes back to where the run started: the last item that played, or the item the user chose, so `repeat all` cannot loop. `NotAvailableOffline` for the preloaded next source leaves the next slot empty; the skip happens when that item's turn comes.
+- **Downloaded files:** an item that starts playing from a file records `lastPlayedAt` once. A file the engine rejects (`decode` or `notFound`) is marked missing (`FileMissing`) and the item is resolved again at the same position: streamed when online, skipped by the offline rule when not.
 - **Connection type change** (Wi-Fi → mobile data) does not interrupt the current item; the quality setting applies from the next resolved source.
-- **Quality badge:** when an item becomes current and is streamed, `GET /playback/stream-info/:id` is fetched once (cached per `playbackId` + quality for the session) and shown as e.g. "FLAC · 24/96 kHz". For a downloaded file the badge shows "Downloaded" plus the stored quality. The badge has one neutral style; it does not vary by source.
+- **Quality badge:** when an item becomes current and is streamed, `GET /playback/stream-info/:id` is fetched once, at the quality the source was built with (`EngineSource.streamQuality`; cached per `playbackId` + quality for the session) and shown as e.g. "FLAC · 24/96 kHz". For a downloaded file the badge shows "Downloaded" plus the stored quality. The badge has one neutral style; it does not vary by source.
 
 ## Loudness
 
@@ -221,6 +261,8 @@ engineVolume = clamp(userVolume × linear, 0, 1)
 - The engine volume range ends at 1.0 on ExoPlayer, AVPlayer, and HTML audio, so a positive gain is audible only when the user volume is below 1.0. This matches the web player, which also composites gain into element volume. mpv is held to the same range (`volume-max=100`) so every platform behaves alike.
 - Gain is applied when an item becomes current: on `AdvancedToNext` the controller sets the new volume immediately. A gapless transition between tracks with different gains therefore has a volume step at the boundary, the same as on the web.
 - Episodes get `gainDb = 0`.
+- `loudness_binding.dart` applies it: the `PlaybackController` provider starts a `LoudnessBinding` that follows the snapshots and, whenever the current entry changes, sets the `loudness` volume factor from the levelling mode and target of that moment, so the gain never changes in the middle of an item. The mode comes from the profile-scoped `loudnessModeProvider`, which fetches `GET /api/settings` once per profile session, is `off` until that has loaded and when it fails (its `loaded` flag tells the placeholder from a server value), and takes `setLoudnessMode` after the settings screen saved a new mode. The target is `ServerCapabilities.loudnessTargetLufs`.
+- The user volume is stored in `device_settings` `playback.volume` (a decimal string, 0.0–1.0) on every `setVolume` and read when the controller is created (1.0 when unset).
 
 ## OS Media Controls
 
@@ -234,7 +276,9 @@ abstract interface class MediaControls {
 
 `MediaSessionState` carries title, artist, album, duration, artwork as a **local file URI**, position, playing flag, and the available actions (play, pause, next, previous, seek, stop, skip ±N for episodes, like).
 
-Artwork must be a file because OS media surfaces cannot send auth headers: when an item becomes current, `ArtworkPinner` fetches the 512-pixel cover through the authenticated image cache, writes it to `profiles/<id>/art/now-playing.img`, and passes its URI. Until it is ready the previous artwork is cleared.
+Artwork must be a file because OS media surfaces cannot send auth headers: when an item becomes current, `ArtworkPinner` fetches the 512-pixel cover through the authenticated image cache, writes it to `profiles/<id>/art/now-playing.img` (through the `artwork_store` seam, by a temporary file and a rename), and passes its `file://` URI. On web, which has no files, it passes the cover URL with the access token as `?token=` instead, which the Media Session API can load. Until it is ready the previous artwork is cleared; a missing cover or a failed fetch leaves none.
+
+`MediaControlsBinder` connects the active profile's controller to the `MediaControls`. It sends the mapped snapshot when anything but the position changes, or when the position departs by more than 1.5 s from where the last state sent would be by now (a seek or a stall); steady playback sends nothing, since the OS extrapolates. As the `MediaCommandHandler` it dispatches the buttons to the controller; skip ±N seeks by the interval, clamped to the item. `init` is called once after the first frame (bootstrap step 8) with the root `MediaControlsHost`, which forwards to the active profile's binder, rebinds when the active profile changes, and shows the empty state when there is none.
 
 | Target | Implementation | Notes |
 |---|---|---|
@@ -242,10 +286,26 @@ Artwork must be a file because OS media surfaces cannot send auth headers: when 
 | iOS | `audio_service` | Now Playing info and remote command centre; `AVAudioSession` category playback. |
 | macOS | `audio_service` | Now Playing widget and media keys. |
 | Web | `audio_service` | Media Session API. |
-| Linux | `audio_service` with `audio_service_mpris` | MPRIS on the session bus as `org.mpris.MediaPlayer2.soundspan`. |
-| Windows | `smtc_windows` behind `SmtcControls` | System Media Transport Controls: buttons, metadata, timeline, thumbnail. Subject to spike S4. |
+| Linux | `audio_service` with `audio_service_mpris` | MPRIS on the session bus as `org.mpris.MediaPlayer2.soundspan.instance<pid>` (the package appends `.instance<pid>` to `org.mpris.MediaPlayer2.<channel id>`, so the Linux config's channel id and its name, which becomes the MPRIS identity, are both `soundspan`). `Volume` is the user volume: the package is vendored under `client/third_party/audio_service_mpris` with a patch that shows the volume each `MediaSessionState` carries and emits `PropertiesChanged` when it changes; a client setting it reaches the controller's `setVolume` through the `dbusVolume` custom action. |
+| Windows | `client/packages/soundspan_smtc` behind `SmtcControls` | System Media Transport Controls through an in-repo C++/WinRT plugin of about 300 lines: buttons, metadata, timeline, thumbnail. The calls it exposes are listed under Spike S4 finding. |
 
 The handler holds no state of its own; it renders the controller's snapshot. This keeps one source of truth on every platform, including Windows where `audio_service` is absent.
+
+`AudioServiceControls` (`audio_service_controls.dart`) is the `audio_service` adapter. `createMediaControls()` (`lib/platform/media_controls/`) builds it on Android, iOS, macOS, Linux and the web, and `SmtcControls` on Windows. `init` starts the plugin through `AudioService.init` (kept alone in `audio_service_plugin.dart`) with a `SoundspanAudioHandler` whose `play`, `pause`, `stop`, `seek`, `skipToNext`, `skipToPrevious`, `fastForward` and `rewind` forward to the `MediaCommandHandler` (fast-forward and rewind to skip ±N); `click` keeps its default, which pauses or plays from the last published playing flag. The config is that of [10](10-platform-integration.md) (Playback service), with a fast-forward and rewind interval of 15 s and the channel name localized. `update` publishes the translation of `audioServiceStateOf`:
+
+- The media item: id the queue item id, title, artist, album (none for an episode), duration and the artwork URI. The empty state publishes no item.
+- Buttons: previous, play or pause, next, all three compact. A state with skip actions and no next (a single episode) shows rewind, play/pause and fast-forward instead; one with both shows previous, rewind, play/pause, fast-forward and next, with previous, play/pause and next compact.
+- System actions `seek` and `stop` when offered; processing state `buffering` while buffering, `ready` otherwise and `idle` for the empty state; the playing flag, position, speed, and the `Clock` time of the update as the position's time.
+- On Android only, a track (an item with a `playbackId`) also shows the custom Like control after the others, never compact: `MediaControl.custom(name: 'like')` with the drawable `ic_action_like`, or `ic_action_liked` when `MediaSessionState.liked` is set, and the localized label of what pressing it does. `customAction('like')` calls `MediaCommandHandler.setLiked` with the opposite of the liked flag shown. The mapper sets `liked` from the track's preference; `MediaControlsBinder.setLiked` stores the like through the profile's `PreferenceRepository` and shows the item with the new flag until another item becomes current. Episodes are never liked.
+- After 10 minutes continuously paused (a timer cancelled by play) the handler calls `stop`: the controller stops, and the handler publishes no media item and the `idle` state, which ends the Android service and removes the notification. Paused states are not shown again until one is playing; the queue stays persisted. `stop` from the OS controls does the same.
+
+`SmtcControls` (`smtc_controls.dart`) is the Windows adapter. It talks to an `SmtcGateway` (`smtc_gateway.dart`: init, button presses, seek requests, enabled buttons, metadata, status, timeline, clear, dispose), implemented by `WindowsSmtcGateway` over the in-repo plugin `soundspan_smtc`, whose session comes from a `MediaPlayer` with its command manager disabled. `init` maps play, pause, next, previous and stop to the handler directly, fast-forward and rewind to skip ±N, and seek requests to `seek`. `update`:
+
+- The empty state clears the display and sets status closed.
+- Enabled buttons: play and pause together when either action is offered (the media key toggles between them), next, previous, stop, and fast-forward and rewind for the skip actions.
+- Metadata (title, artist, album, thumbnail) is sent only when one of them changed since the last item shown; the thumbnail is the `ArtworkPinner` file, opened by the plugin as a `StorageFile`.
+- Status `changing` while buffering, otherwise `playing` or `paused`.
+- The timeline with every update, and every 5 s while playing, extrapolated from the update by the `Clock`.
 
 ## Audio Focus and Interruptions
 
@@ -258,6 +318,14 @@ The handler holds no state of its own; it renders the controller's snapshot. Thi
 | Transient duck request | Android lowers volume itself; elsewhere multiply volume by 0.3 until it ends |
 | Becoming noisy (headphones unplugged, Bluetooth disconnected) | Pause; never auto-resume |
 | Output device change on desktop | No action |
+
+The rules are `AudioFocusController`, created and disposed with the profile's `PlaybackController`, over the `AudioSessionGateway` seam ([02](02-architecture.md#platform-seams)): `audio_session` on Android, iOS and macOS (`androidWillPauseWhenDucked: false`); a no-op that always grants focus on Windows, Linux and web.
+
+- **Profile.** The session is configured as `music` for a track and `speech` for an episode, again only when the current item's kind changes.
+- **Asking for focus.** When play intent goes from paused to playing (play, play items, jump), the controller awaits its `beforePlay` hook, which asks the OS for focus, before the engine starts. Denied focus leaves the controller paused (play items still replace the queue and load the item, not playing) and emits the `FocusDenied` notice.
+- **Resuming.** An interruption that begins while playing pauses with `PauseOrigin.focus`. Its end with `shouldResume` plays again only when the latest transport command (play, pause, stop, next, previous, jump, seek) is still that pause, so any user command during the interruption cancels the resume; becoming noisy cancels it too.
+- **Ducking.** Where the OS does not duck by itself, the controller's `duck` volume factor is 0.3 until the duck ends; it multiplies with the user volume and the `loudness` factor, clamped to 0.0–1.0.
+- **Giving focus up.** Focus is released when playback stops or the queue is cleared, not on pause.
 
 ## Play Reporting
 
@@ -275,6 +343,8 @@ The handler holds no state of its own; it renders the controller's snapshot. Thi
 
 **Surviving a kill.** The open play (`sessionId`, `playbackId`, metadata, `playedAt`, `listenedMs`) is written to `play_sessions` every 10 s while playing, on pause, and when the app is backgrounded. At start-up any row left by a previous process is closed with its stored total and, if that reaches 5 seconds, enqueued, so a kill loses at most the last 10 seconds of listening and never the play.
 
+**Inputs.** `core/sync` may not import `core/playback`, so the reporter follows a narrow `ListeningSource` (current entry, whether it is audible, the play intent, and the ids of entries that ended) that `ControllerListeningSource` in `core/playback` adapts from the controller. A repeat-one replay keeps the same `queueItemId` and the snapshots alone cannot tell it from continued playback, so `PlaybackController.entryEnded` emits `EntryEnded(queueItemId, natural)` whenever the current entry stops being the one playing: next, previous that moves the cursor, jump, replace, remove, clear, stop, a failure that skips or stops, its natural end and a repeat-one replay. It is never inferred from the position. A play is closed and enqueued in one `state.db` transaction (`Outbox.transaction`), which is what makes it exactly once; the reporter is created with the controller and its writes run in order, recovery first.
+
 **Consequences.**
 
 - The server learns of a play when it ends, not when it starts, so "recently played" on other devices gains a track after it finishes or is skipped.
@@ -290,21 +360,26 @@ The handler holds no state of its own; it renders the controller's snapshot. Thi
 - Triggers: every 15 s while playing (the web cadence), on pause, on track change, on queue edit (debounced 2 s), and on app background. At most one request in flight; a newer state replaces a queued one.
 - Body: `playbackType` (`track` or `podcast`), `playbackId` or `podcastId`, `currentIndex`, `currentTime` (seconds), `isShuffle`, `isPlaying`, and `queue`.
 - The server keeps 100 queue items. The client sends a window of the play order: up to 20 items before the cursor and 79 after, with `currentIndex` relative to the window. Track items are `{ playbackId, metadata }`; episode items use the server's episode item shape.
-- Not sent while offline and not queued in the outbox: only the latest state matters, and it is sent on reconnect.
-- **Restore:** the local `queue_snapshot` is authoritative for this device. `GET /api/playback-state` is consulted only when there is no local snapshot (fresh install or cleared data), which also restores the queue after a reinstall. Restored playback is always paused.
+- Not sent while offline and not queued in the outbox: only the latest state matters, and it is sent on reconnect. A failed request is not retried by itself; the next trigger, or the return to online, sends the then-current state.
+- When the queue becomes empty, `DELETE /api/playback-state` goes through the same single-flight slot instead of a post, so a cleared queue is not restored later.
+- `core/sync` may not import `core/playback`, so `PlaybackStateSync` reads a `SyncedPlayback` view (items, shuffle order, cursor, revision, playing, position) that the playback provider maps from each snapshot. A revision change that keeps the entries and the shuffle order (the cursor moving) is not a queue edit.
+- **Restore:** the local `queue_snapshot` is authoritative for this device. `GET /api/playback-state` is consulted only when there is no local snapshot (fresh install or cleared data), which also restores the queue after a reinstall. Restored playback is always paused. The stored queue is play order, so the tracks are restored in the order received with the cursor at `currentIndex` and the position at `currentTime`; with `isShuffle` the shuffle order is the identity (the order is kept and shuffle shows as on). An episode entry is rebuilt from its podcast and episode ids, title, podcast title, duration and cover; an episode item without its ids reads as an entry without a `playbackId`, so the stored indexes stay aligned. Tracks without a `playbackId` are left out; when the current entry is left out, the first remaining one is current at position zero. A `null` answer, an error or an empty queue restores nothing.
 - **This device only.** Resume restores the state this device wrote. Continuing the queue another device is playing is not part of this plan; its design is [`../cross-device-playback-handoff.md`](../cross-device-playback-handoff.md).
 
 ## Local Queue Persistence
 
-`persistence.dart` writes `queue_snapshot` and `queue_meta` to `state.db`: the full queue on structural change (debounced 500 ms, in one transaction) and the position every 5 s while playing and on pause. On start the controller rebuilds `QueueState`, resolves the current item, and calls `engine.load(current, autoPlay: false)` lazily on the first play press, so start-up costs no network.
+`persistence.dart` (`QueuePersistence`, over the `QueueDao` of `state.db`) writes `queue_snapshot` and `queue_meta`: the full queue on structural change (a new `QueueState.revision`, debounced 500 ms, in one transaction) and the position every 5 s while playing and at once on pause, on stop and when the current item changes (the meta row only; a pending structural write goes with it). Going to the background (`AppLifecycleState.paused` or `detached`) and ending the profile scope flush without waiting for the debounce. An empty queue deletes the rows and the meta row. Nothing is written while a `RemoteDriver` is attached.
+
+On start `PlaybackController.restore()` runs before any command: it rebuilds `QueueState` (items, shuffle order, cursor from the current `queueItemId`, repeat, context, `revision` 0) and publishes it paused (`idle`, `playing` false) at the stored position. It makes no engine call and no network request, so start-up costs no network; the first play press resolves the current item and loads it at the stored position. A stored queue with a row that does not decode, a current id missing from its items or a shuffle order that is not a permutation is deleted with a warning, and the queue starts empty.
 
 ## Podcasts
 
-- `EpisodeQueueItem` plays through the same controller and engine.
+- `EpisodeQueueItem` plays through the same controller and engine. `PlayActions.playEpisode(podcast, episode)`, called by an episode row of the podcast page, replaces the queue with that one episode: one episode at a time.
 - Controls differ by item kind: skip back/forward by `playback.skipSeconds` (default 15) and a speed control (0.5×–3×, remembered in `playback.speed.podcast`) are shown for episodes; shuffle and repeat are hidden. OS controls advertise skip intervals instead of previous/next when the queue holds a single episode.
-- Resume: an episode starts at `progress.currentTime` from the podcast detail payload unless `isFinished`.
-- Progress: `POST /podcasts/:podcastId/episodes/:episodeId/progress { currentTime, duration, isFinished }` every 15 s while playing, on pause, and on finish (`isFinished` when within 30 s of the end). Offline, the latest progress per episode is kept as one coalesced outbox operation.
-- Speed changes the engine speed only for episodes; switching to a track resets it to 1.0.
+- Resume: an episode starts at `progress.currentTime` from the podcast detail payload unless `isFinished` (`episodeResumePosition`); the detail shows the pending `episodeProgress` op of an episode over the cached progress, so a position saved offline wins. Where neither knows a progress, a downloaded episode starts at the position kept in its download's `metaJson` (doc 07, podcast episodes). A restored or retried item starts at its own stored position instead.
+- Progress: `POST /podcasts/:podcastId/episodes/:episodeId/progress { currentTime, duration, isFinished }` every 15 s of audible playback, on pause, when the episode stops being current, and on natural end (`isFinished` then, or when at most 30 s is left). `EpisodeProgressReporter` (`core/sync`) follows the controller through the same `ControllerListeningSource` as `PlayReporter` and enqueues an `EpisodeProgressOp` with whole seconds; nothing is enqueued while the duration is unknown. Offline, the latest progress per episode is kept as one coalesced outbox operation. Its handler (`shared/data/podcast/episode_progress_outbox.dart`, outside `features/` because the handler registry in `core/sync` may not import a feature) posts the op, writes the progress into the cached episode on success, and removes the cached episode when the server answers `notFound`, so its podcast is fetched again.
+- Speed changes the engine speed only for episodes; switching to a track resets it to 1.0. When an episode becomes current the controller reads `playback.speed.podcast` and sets it. `PlaybackController.setEpisodeSpeed` applies a speed to the current entry only when it is an episode, and with `remember` stores it as the episode speed; `Settings → Playback` calls it when the default speed changes, and the player's speed menu (0.5×, 0.75×, 1×, 1.25×, 1.5×, 1.75×, 2×, 2.5×, 3×) stores and applies the choice. The snapshot carries the engine `speed` and the `skipInterval`; `MediaSessionState` reports both, and the seek bar's interpolation runs at that speed.
+- Skip: `PlaybackController.skipForward` and `skipBackward` read `playback.skipSeconds` (default 15) and seek by it, clamped to `[0, duration]`; the player's skip buttons and the OS skip commands both call them.
 
 ## Background Behaviour by Platform
 
@@ -318,3 +393,115 @@ The handler holds no state of its own; it renders the controller's snapshot. Thi
 ## Listen Together Hook
 
 `PlaybackController` exposes a `RemoteDriver` attachment point used by [08](08-realtime.md). While a driver is attached, queue and transport commands from the UI are routed to the driver (which sends them to the server) instead of mutating local state, and the controller applies server state as it arrives. Play reporting and playback-state sync continue unchanged.
+
+```dart
+abstract interface class RemoteDriver {
+  /// Receives every queue and transport command issued while the driver is attached.
+  Future<void> onCommand(PlaybackCommand command);
+
+  /// The current entry cannot play on this device after the controller's own retry.
+  void onCurrentItemFailed(String queueItemId);
+}
+```
+
+`attachRemoteDriver(driver)` throws `StateError` when a driver is attached already; `detachRemoteDriver()` applies commands locally again. `setVolume` always stays local.
+
+The driver applies server state through `remote`, a `RemotePlayback` (`lib/core/playback/remote_playback.dart`) that acts on the reducer and the engine directly, bypassing the routing; reading `remote` without a driver throws `StateError`:
+
+```dart
+abstract interface class RemotePlayback {
+  Future<void> replaceQueue(List<QueueItem> items, int cursor); // keeps the current entry playing when it stays current; otherwise stops
+  Future<void> loadCurrent({required Duration position, required bool play});
+  Future<void> play();
+  Future<void> pause();
+  Future<void> seek(Duration position);
+}
+```
+
+- `setRemoteCanControl(bool)` sets `PlaybackSnapshot.remoteCanControl` (false disables transport controls for a follower in a host-follower group; true whenever no driver is attached). `PlaybackSnapshot.remoteAttached` says whether a driver is attached.
+- Shuffle and repeat are turned off while a driver is attached and restored on detach.
+- While a driver is attached the failure policy still retries, but never skips or stops: an item that would be skipped, or that would stop playback (the three-failures rule included), stays current with its error, the engine is stopped, and `onCurrentItemFailed` hands the decision to the driver (Listen Together sends `track:playback-failed`).
+- Local queue persistence writes nothing while a driver is attached, so a restart never restores a group queue as the user's own.
+- `restoreQueue(queue, position:)` puts a saved queue back paused and unloaded, as `restore` does; Listen Together uses it after leaving.
+
+## Spike S1 finding
+
+A minimal Flutter app played a two-item playlist `[A, B]` through one `AudioPlayer` configured as above (`setAudioSources`, `AudioSource.uri` with an `X-API-Key` header). A and B are 3-second FLAC files (44.1 kHz) cut at a sample boundary from one continuous 440 Hz tone; C is a 3-second 880 Hz tone. An `HttpServer` inside the test process on `127.0.0.1` served them with Range support, rejected requests without the right key with 401 and recorded every request. Position and index were polled every 5 ms against a `Stopwatch`; the timeline is `index × duration(A) + position`, and the gap is the largest `wallClockDelta − timelineDelta` between consecutive samples within 500 ms of the index change. Each question ran five times per platform.
+
+| Platform (CI device) | 1. Gapless `[A, B]` | 2. Header on every request; wrong key fails | 3. Replace item 1 while item 0 plays |
+|---|---|---|---|
+| Android (emulator, API 34, x86_64, `google_apis`) | Yes, 5/5: gap 0.0, 5.1, 4.7, 5.1, 6.7 ms | Yes, 5/5: 2 of 2 requests per run carried the key; wrong key fails with `PlayerException` code 0 ("Source error") | Yes, 5/5: gap at the replacement ≤ 0.02 ms, no state change, C played next, one index change |
+| iOS (simulator, iPhone 16e, macOS 26 arm64 runner) | Yes, 5/5: gap 8.7, 6.7, 6.8, 6.4, 7.6 ms | Yes, 5/5: 4 of 4 requests per run (all range requests) carried the key; wrong key fails with `PlayerException` code −1013 (`NSURLErrorUserAuthenticationRequired`) | Yes, 5/5: gap at the replacement ≤ 0.08 ms, no state change, C played next, one index change |
+| macOS (macOS 26 arm64 runner) | **No**, 3/5: gap 7.8, 6.7, 113.5, 21.4, 6.4 ms | Yes, 5/5: 4 of 4 requests per run (all range requests) carried the key; wrong key fails with `PlayerException` code −1013 | Yes, 5/5: gap at the replacement ≤ 0.04 ms, no state change, C played next, one index change |
+
+In every run on every platform the processing state stayed `ready` across the transition and there was exactly one index change, 0 → 1.
+
+- The darwin implementation can deliver the index change before the position reset: the first sample with index 1 still reports the end position of A. The harness skips such a sample when measuring the gap (one sample in macOS run 4; the consecutive-sample value including it is 2871 ms). An engine reading `currentIndexStream` together with `position` must expect this ordering.
+- AVPlayer reports the duration of the 3.000-second FLAC files as 3.030 s on iOS and macOS; ExoPlayer reports 3.000 s.
+- On Android the HTTP status of a failed request is not in the `PlayerException` (code 0); on iOS and macOS the `NSURLError` code is.
+- Package versions: Flutter 3.50.0 (Dart 3.14.0), `just_audio` 0.10.6, `just_audio_platform_interface` 4.6.0, `audio_session` 0.2.4.
+- Native settings required: Android `usesCleartextTraffic` for the loopback proxy (covered by the global cleartext policy of [10](10-platform-integration.md)); iOS and macOS `NSAllowsLocalNetworking`; macOS `com.apple.security.network.client` and `com.apple.security.network.server`.
+- Whether playback is audibly gapless on a real Android device, iPhone and Mac cannot be measured on CI and is a human checklist row.
+
+Because question 1 is answered no on macOS, macOS takes the full-playlist fallback for `setNext` in `JustAudioEngine`; Android and iOS keep the playlist mutation calls.
+
+## Spike S2 finding
+
+A minimal Flutter desktop app played the same files as Spike S1 (A and B: 3-second 44.1 kHz FLAC cut at a sample boundary from one continuous 440 Hz tone; C: a 3-second 880 Hz tone) from an `HttpServer` inside the test process on `127.0.0.1` with Range support, which rejected requests without `X-API-Key: spike` with 401 and recorded every request. One media_kit `Player` was configured with the mpv properties listed under `MediaKitEngine`, plus `ao=null` because CI runners have no sound card (playback runs in real time against the null output). Media were opened as `Playlist([Media(uri, httpHeaders: …), …])`; the next item was replaced with `player.remove(1)` and `player.add(media)`. Every 5 ms the harness sampled `player.state` and mpv's `playlist-playing-pos`, `audio-pts` and `paused-for-cache`; the gap is the largest `wallClockDelta − timelineDelta` between consecutive samples within 500 ms of the index change, with the timeline `index × 3 s + position`. Each two-item case ran five times per platform.
+
+| Platform (CI runner) | 1. Gapless `[A, B]` | 2. Per-item headers; wrong key fails | 3. Index events; replace next |
+|---|---|---|---|
+| Linux (`ubuntu-latest`, system libmpv 0.41.0, FFmpeg 8.0.1) | Yes, 5/5: position gap 6.1, 6.0, 6.0, 6.0, 6.0 ms; `audio-pts` gap ≤ 0.1 ms; never `paused-for-cache` | **No**: the key reached the server on every request (5/5), but item B's requests carried item A's headers in 5/5 runs; a wrong key fails with `stream.error` "Failed to open …" and no playback (5/5) | Yes: 20 natural transitions reported indices 1 to 20 once each, in order; after `remove(1)` and `add(C)` during item 0, C played next and B was not requested again (5/5) |
+| Windows (`windows-latest`, libmpv v0.36.0-403-g652a1dd907 from `media_kit_libs_windows_audio`, FFmpeg n6.0) | Yes, 5/5: position gap 6.3, 6.1, 7.1, 6.5, 6.1 ms; `audio-pts` gap ≤ 0.4 ms; never `paused-for-cache` | **No**: same result as Linux (key on every request 5/5, B carried A's headers 5/5, wrong key fails 5/5) | Yes: same result as Linux |
+
+The position gap across the 20 natural transitions was at most 6.7 ms on Linux and 7.0 ms on Windows.
+
+- Question 2 fails because mpv's playlist prefetch opens the next file with the options in force at that moment: media_kit sets `http-header-fields` from the current item's `Media` in its `on_load` hook, so the prefetch of item 1 uses item 0's headers, and mpv reuses the prefetched stream when item 1 starts.
+- The doc 13 fallback does not change this. Appending each file with `loadfile <url> append` and its headers as the per-file option `http-header-fields` gave the same result on both platforms (B carried A's headers in 5/5 runs). mpv 0.38 added an index argument before the options argument of `loadfile`, so the fallback has to choose the argument layout by libmpv version: Linux took `<url> append -1 <options>` and Windows took `<url> append <options>`.
+- With `prefetch-playlist=no` and the media_kit `Playlist` path otherwise unchanged, each item carried its own headers (5/5) and the transition stayed gapless on both platforms (position gap ≤ 6.6 ms, `audio-pts` gap ≤ 0.14 ms). Against a loopback server the next file opens within the audio still buffered from the current one. A remote server's latency is not covered by this measurement.
+- Measurement notes for the engine: `player.state.position` follows mpv's `time-pos`, which mpv updates about every 100 ms. media_kit sets the position to zero when a file starts, before the new file's first real position arrives. That first position is negative: mpv subtracts the previous item's audio that is still buffered, about −0.46 s. The index change can also arrive before the previous item's last position update. media_kit sets `stream.buffering` true on every file start, so it cannot detect a stall at a transition; mpv's `paused-for-cache` can. `stream.completed` turns true for a moment at the end of each item.
+- Package versions: Flutter 3.50.0, `media_kit` 1.2.6, `media_kit_libs_linux` 1.2.1, `media_kit_libs_windows_audio` 1.0.9. No mpv property had to differ from the list under `MediaKitEngine`; `ao=null` was set only for the runners.
+- Whether playback is audibly gapless through a real sound device on Windows and Linux cannot be measured on CI and is a human checklist row.
+
+Because question 2 is answered no on both platforms and the fallback also fails it, the `MediaKitEngine` design is not rewritten to the fallback. `MediaKitEngine` keeps prefetch on: every item carries the same credential headers, which the transport already guarantees, and turning prefetch off was measured gapless only against a loopback server.
+
+## Spike S3 finding
+
+A minimal Android app was built with the structure this document and [02](02-architecture.md) describe: `main()` creates one `AudioPlayer` and a controller object in the main isolate, then `AudioService.init` registers a `BaseAudioHandler` that holds no state, forwards `play`, `pause`, `stop` and `seek` to the controller and mirrors the player's state to `playbackState` and `mediaItem`. The manifest and `AudioServiceConfig` were those of [10](10-platform-integration.md) (Android, Playback service): `MainActivity` extends `AudioServiceActivity` with `launchMode="singleTask"`, the `AudioService` service with `foregroundServiceType="mediaPlayback"`, the `MediaButtonReceiver`, channel `io.soundspan.app.playback` named "Playback", `androidNotificationOngoing: true`, `androidStopForegroundOnPause: true`, icon `drawable/ic_stat_soundspan`. A bundled 5-second tone played on a loop (no network). Once a second the app logged its process id, a start counter persisted in a file, the playing flag, the accumulated played time and whether the engine was created under an activity or by the playback service; an `adb` driver read those lines. Every question ran on two emulator images.
+
+| Question | Android 14 (API 34, x86_64, `google_apis`) | Android 13 (API 33, x86_64, `google_apis`) |
+|---|---|---|
+| 1. Playback continues with the screen off, battery unplugged and the device forced into deep idle, engine owned outside the handler | Yes: deep idle state `IDLE` throughout; same process; foreground service still listed; 600.002 s played in 600.000 s; longest stall 9 ms | Yes: deep idle state `IDLE` throughout; same process; foreground service still listed; 600.001 s played in 599.999 s; longest stall 1 ms |
+| 2. After a pause (the service leaves the foreground) and a kill of the process (`kill -9`), a media button (`cmd media_session dispatch play`) restarts playback | Yes, 3/3: each time a new process created the engine with no activity, the handler received `play` 17–27 ms after the engine was created, and the position advanced | Yes, 3/3: each time a new process created the engine with no activity, the handler received `play` 8–9 ms after the engine was created, and the position advanced |
+| 3. Playback continues when the task is removed while playing (`am stack remove`) | Yes: same process, 59.996 s played in a 60 s window | Yes: same process, 58.986 s played in a 60 s window |
+
+- The media button reached the killed app through the media session service's last media-button receiver on the first try every time; the key-event fallback was never needed. The app never restarted on its own after a kill.
+- In a process started by the media button, `main()` runs with no activity and no view. The harness called `AudioService.init` from `main()` before `runApp`, so the handler was registered before any frame; bootstrap step 8 runs it after the first frame, which a process with no view does not produce.
+- Package versions: Flutter 3.50.0 (Dart 3.14.0), `audio_service` 0.18.19, `just_audio` 0.10.6, `audio_session` 0.2.4. The debug APK ran without the Flutter tool attached.
+- One hour of playback with the screen off on real hardware (vendor battery managers) and a restart by tapping play in the media notification itself cannot be measured on CI and are human checklist rows.
+
+Because questions 1 to 3 are answered yes on both images, the design stands: the engine and `PlaybackController` stay outside the handler, and the handler holds no state.
+
+## Spike S4 finding
+
+A minimal Flutter Windows app (app user model id `io.soundspan.app` set in `main.cpp` as [10](10-platform-integration.md) describes) ran an integration test against `smtc_windows` on a `windows-latest` runner (Visual Studio 18 Build Tools). The test initialised the plugin, enabled play, pause, next and previous, set the playback status to playing, updated metadata (title, artist, album, album artist), the timeline (start 0, end 215 s, position 42 s, seek range 0–215 s, then a position update to 43 s) and a thumbnail given as a `file:///` URI of a local PNG, and subscribed to the button-event stream. A Windows PowerShell 5.1 script then read every session back through `Windows.Media.Control.GlobalSystemMediaTransportControlsSessionManager`.
+
+| Question | Answer | Evidence |
+|---|---|---|
+| 1. Builds with the pinned Flutter | Yes, with Rust present | `flutter build windows --release` exits 0 when the image's Rust toolchain is on `PATH`; the Rust crate compiles in about 37 s |
+| 2. No extra toolchain on CI | **No** | With `%USERPROFILE%\.cargo\bin` hidden the build fails: cargokit reports "Precompiled binaries are disabled" and then "rustup not found in PATH". The package ships no precompiled binaries, so every build compiles its Rust crate |
+| 3. Initialises and accepts metadata, timeline and thumbnail | **No** as the client resolves it; yes with `flutter_rust_bridge` pinned to 2.11.1 | With the client's resolution (`flutter_rust_bridge` 2.13.0) initialisation throws "smtc_windows's codegen version (2.11.1) should be the same as runtime version (2.13.0)". With `flutter_rust_bridge` 2.11.1 every call completes (initialise 328 ms, each update ≤ 4 ms) and the system reads back the session `io.soundspan.app` as current, with the title, artist and album that were set, status `Playing`, position 43 000 ms and end time 215 000 ms. The read-back reported no thumbnail for the `file:///` URI |
+| 4. Button events (media keys, flyout buttons) | Not answerable on CI | No hosted runner can press a system media button; the stream was subscribed and received nothing. Human checklist row |
+
+- Package versions: Flutter 3.50.0, `smtc_windows` 1.1.0 (`flutter_rust_bridge` codegen 2.11.1, cargokit build, no precompiled binaries).
+- The system session read-back works on a hosted Windows runner, so a smoke test of the adapter can compare what it set with what `GlobalSystemMediaTransportControlsSessionManager` reports.
+
+Because questions 2 and 3 are answered no, the fallback of [13](13-milestones-and-work-breakdown.md) applies: `smtc_windows` is not a dependency, and the Windows adapter is the in-repo C++/WinRT plugin `client/packages/soundspan_smtc`. It exposes the calls the harness exercised:
+
+- initialise for the process's app user model id, and dispose;
+- enable or disable the play, pause, next and previous buttons;
+- set the playback status (closed, changing, stopped, playing, paused);
+- update metadata as a music item: title, artist, album, album artist;
+- update the timeline: start, end, position, minimum and maximum seek time;
+- set the thumbnail from a local file (`StorageFile` through `RandomAccessStreamReference.CreateFromFile`, since the URI form left no thumbnail in the read-back);
+- a stream of button presses (play, pause, next, previous).

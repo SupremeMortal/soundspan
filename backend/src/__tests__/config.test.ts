@@ -795,6 +795,11 @@ describe("config module", () => {
         expect(fallback.config.jwtSecret).toBe(requiredEnv().SESSION_SECRET);
     });
 
+    it("treats an empty JWT_SECRET as absent and falls back to SESSION_SECRET", async () => {
+        const fallback = await loadConfigModule({ JWT_SECRET: "" });
+        expect(fallback.config.jwtSecret).toBe(requiredEnv().SESSION_SECRET);
+    });
+
     it("rejects JWT_SECRET values shorter than 32 characters", async () => {
         const exitSpy = jest.spyOn(process, "exit").mockImplementation(((
             code?: number,
@@ -959,6 +964,25 @@ describe("config module", () => {
         });
         expect(disabled.config.docsPublic).toBe(false);
         expect(disabled.config.settingsDecryptFailClosed).toBe(false);
+    });
+
+    it("enables client-surface response validation only for 1 and true", async () => {
+        const unset = await loadConfigModule({});
+        expect(unset.config.openapi.validateResponses).toBe(false);
+
+        for (const value of ["1", "true"]) {
+            const enabled = await loadConfigModule({
+                OPENAPI_VALIDATE_RESPONSES: value,
+            });
+            expect(enabled.config.openapi.validateResponses).toBe(true);
+        }
+
+        for (const value of ["0", "yes"]) {
+            const disabled = await loadConfigModule({
+                OPENAPI_VALIDATE_RESPONSES: value,
+            });
+            expect(disabled.config.openapi.validateResponses).toBe(false);
+        }
     });
 
     it("parses metrics access settings with private defaults", async () => {

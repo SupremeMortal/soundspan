@@ -99,6 +99,8 @@ import { registerQueueMetrics } from "./metrics/queueMetrics";
 import { backfillFederationOutboundTokens } from "./services/federationCredentials";
 import { warnIfLegacyDiscoveryMode } from "./utils/legacyDiscoveryDeprecation";
 import { requireNoPendingRestart } from "./services/backup/restartRequired";
+import { clientSurfaceOperations } from "./openapi/clientSurface";
+import { validateClientSurfaceResponses } from "./openapi/responseValidation";
 
 const app = express();
 
@@ -238,6 +240,18 @@ app.use((req, res, next) => {
 // trusting all hops; set TRUST_PROXY_HOPS to a numeric depth (usually 1) so a
 // client can't spoof X-Forwarded-For to evade per-IP rate limits.
 app.set("trust proxy", config.trustProxy);
+
+// Test and CI switch: check client-surface JSON responses against their
+// registered schemas. Never installed unless OPENAPI_VALIDATE_RESPONSES is on.
+if (config.openapi.validateResponses) {
+    app.use(
+        validateClientSurfaceResponses({
+            operations: clientSurfaceOperations,
+            onMismatch: "respond",
+        }),
+    );
+    logger.info("Client-surface response validation enabled");
+}
 
 function buildHealthPayload() {
     return {

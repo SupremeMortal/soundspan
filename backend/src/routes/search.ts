@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { logger } from "../utils/logger";
 import { requireAuth } from "../middleware/auth";
+import { sendRouteFailure } from "../utils/routeErrorResponse";
 import { prisma } from "../utils/db";
 import { lastFmService } from "../services/lastfm";
 import {
@@ -8,7 +9,6 @@ import {
     normalizeCacheQuery,
     type SearchResults,
 } from "../services/search";
-import axios from "axios";
 import { redisClient } from "../utils/redis";
 import { z } from "zod";
 import { LIBRARY_ORIGIN_VALUES } from "../utils/librarySorting";
@@ -16,10 +16,21 @@ import { searchRemoteLibrary } from "../services/remoteLibrary/remoteLibrarySear
 import {
     resolveUsableSearchProviders,
     searchDiscoverMusic,
+    type PlayableProvider,
 } from "../services/discoverMusicSearch";
-import { tryEncodePlaybackId } from "../services/playback/playbackId";
+import {
+    toSearchAlbumPayload,
+    toSearchArtistPayload,
+    toSearchTrackPayload,
+} from "../services/searchPayloads";
 import { resolveSearchProviders } from "../services/searchProviderSettings";
 import { getSystemSettings } from "../utils/systemSettings";
+import { searchItunesPodcasts } from "../services/podcastDirectorySearch";
+import {
+    UNIFIED_SEARCH_MAX_OFFSET,
+    UNIFIED_SEARCH_TYPES,
+    unifiedSearch,
+} from "../services/unifiedSearch";
 
 const router = Router();
 
@@ -45,6 +56,18 @@ const searchQuerySchema = z.object({
     source: z.enum(LIBRARY_ORIGIN_VALUES).default("all"),
 });
 type SearchQuery = z.infer<typeof searchQuerySchema>;
+
+const unifiedSearchQuerySchema = z.object({
+    q: z.string().max(500),
+    type: z.enum(UNIFIED_SEARCH_TYPES).default("all"),
+    limit: z.coerce.number().int().min(1).max(100).default(30),
+    offset: z.coerce
+        .number()
+        .int()
+        .min(0)
+        .max(UNIFIED_SEARCH_MAX_OFFSET)
+        .default(0),
+});
 type RemoteSearchEligibility = Pick<
     SearchQuery,
     "source" | "type" | "genre" | "offset" | "limit"
@@ -234,46 +257,9 @@ async function filterLibraryArtistsFromDiscoverResults(
 
 function transformSearchResults(serviceResults: SearchResults) {
     return {
-        artists: serviceResults.artists,
-        albums: serviceResults.albums.map((album) => ({
-            id: album.id,
-            title: album.title,
-            artistId: album.artistId,
-            year: album.year,
-            coverUrl: album.coverUrl,
-            source: album.source,
-            peer: album.peer,
-            artist: {
-                id: album.artistId,
-                name: album.artistName,
-                mbid: "",
-            },
-        })),
-        tracks: serviceResults.tracks.map((track) => ({
-            id: track.id,
-            playbackId: tryEncodePlaybackId({ kind: "t", trackId: track.id }),
-            title: track.title,
-            albumId: track.albumId,
-            duration: track.duration,
-            trackNo: 0,
-            loudnessLufs: track.loudnessLufs ?? null,
-            truePeakDb: track.truePeakDb ?? null,
-            source: track.source,
-            peer: track.peer,
-            album: {
-                id: track.albumId,
-                title: track.albumTitle,
-                artistId: track.artistId,
-                coverUrl: null,
-                albumLoudnessLufs: track.albumLoudnessLufs ?? null,
-                albumTruePeakDb: track.albumTruePeakDb ?? null,
-                artist: {
-                    id: track.artistId,
-                    name: track.artistName,
-                    mbid: "",
-                },
-            },
-        })),
+        artists: serviceResults.artists.map(toSearchArtistPayload),
+        albums: serviceResults.albums.map(toSearchAlbumPayload),
+        tracks: serviceResults.tracks.map(toSearchTrackPayload),
         audiobooks: serviceResults.audiobooks,
         podcasts: serviceResults.podcasts,
         episodes: serviceResults.episodes,
@@ -315,219 +301,6 @@ async function searchCachedLibrary(
 
 router.use(requireAuth);
 
-/**
- * @openapi
- * /api/search:
- *   get:
- *     summary: Search across your music library
- *     description: Search for artists, albums, tracks, audiobooks, and podcasts in your library using PostgreSQL full-text search. remoteTracks and remoteAlbums are per-user, uncached groups populated only without a genre filter for source=all; type=all includes both groups, while the first page of type=tracks or type=albums includes its corresponding group.
- *     tags: [Search]
- *     security:
- *       - apiKeyAuth: []
- *     parameters:
- *       - in: query
- *         name: q
- *         schema:
- *           type: string
- *         required: true
- *         description: Search query
- *         example: "radiohead"
- *       - in: query
- *         name: type
- *         schema:
- *           type: string
- *           enum: [all, artists, albums, tracks, audiobooks, podcasts, episodes]
- *         description: Type of content to search
- *         default: all
- *       - in: query
- *         name: genre
- *         schema:
- *           type: string
- *         description: Filter tracks by genre
- *       - in: query
- *         name: source
- *         schema:
- *           type: string
- *           enum: [all, local, peers]
- *           default: all
- *         description: Limit music results by owning source
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *           minimum: 1
- *           maximum: 100
- *         description: Maximum number of results per type
- *         default: 20
- *       - in: query
- *         name: offset
- *         schema:
- *           type: integer
- *           minimum: 0
- *           maximum: 10000
- *           default: 0
- *         description: Zero-based result offset for type-scoped searches; ignored when type is all
- *     responses:
- *       200:
- *         description: Search results
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 artists:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/Artist'
- *                 albums:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/Album'
- *                 tracks:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/Track'
- *                 remoteTracks:
- *                   type: array
- *                   description: Liked remote-only tracks from the signed-in user's connected streaming services. This group is loaded per user after the cached library search and is populated only without a genre filter for source=all and either type=all or the first page of type=tracks.
- *                   items:
- *                     type: object
- *                     required: [id, title, duration, trackNo, trackNumber, artistId, albumId, source, streamSource, provider, artist, album]
- *                     properties:
- *                       id:
- *                         type: string
- *                       playbackId:
- *                         type: string
- *                         description: "Opaque track identifier. Do not parse."
- *                       title:
- *                         type: string
- *                       duration:
- *                         type: integer
- *                       trackNo:
- *                         type: integer
- *                         nullable: true
- *                       trackNumber:
- *                         type: integer
- *                         nullable: true
- *                       artistId:
- *                         type: string
- *                         nullable: true
- *                       albumId:
- *                         type: string
- *                         nullable: true
- *                       source:
- *                         type: string
- *                         enum: [tidal, youtube]
- *                       streamSource:
- *                         type: string
- *                         enum: [tidal, youtube]
- *                       tidalTrackId:
- *                         type: integer
- *                       youtubeVideoId:
- *                         type: string
- *                       provider:
- *                         type: object
- *                         required: [tidalTrackId, youtubeVideoId]
- *                         properties:
- *                           tidalTrackId:
- *                             type: integer
- *                             nullable: true
- *                           youtubeVideoId:
- *                             type: string
- *                             nullable: true
- *                       artist:
- *                         type: object
- *                         required: [id, name]
- *                         properties:
- *                           id:
- *                             type: string
- *                             nullable: true
- *                           name:
- *                             type: string
- *                       album:
- *                         type: object
- *                         required: [id, title, rgMbid, matchedRgMbid, matchedInLibrary, coverArt, artist]
- *                         properties:
- *                           id:
- *                             type: string
- *                             nullable: true
- *                           title:
- *                             type: string
- *                           rgMbid:
- *                             type: string
- *                             nullable: true
- *                           matchedRgMbid:
- *                             type: string
- *                             nullable: true
- *                             description: MusicBrainz release group matched for a streaming-only album; used for add-to-library
- *                           matchedInLibrary:
- *                             type: boolean
- *                             description: The library already holds the matched release group
- *                           coverArt:
- *                             type: string
- *                             nullable: true
- *                           artist:
- *                             type: object
- *                             required: [id, name]
- *                             properties:
- *                               id:
- *                                 type: string
- *                                 nullable: true
- *                               name:
- *                                 type: string
- *                 remoteAlbums:
- *                   type: array
- *                   description: Liked remote-only albums from the signed-in user's connected streaming services. This group is loaded per user after the cached library search and remains uncached. It is populated only without a genre filter for source=all with type=all (up to 6 rows) or the first page of type=albums. Rows carry source remote and the contributing remoteSources.
- *                   items:
- *                     type: object
- *                     required: [id, title, artistId, year, coverUrl, source, remoteSources, artist]
- *                     properties:
- *                       id:
- *                         type: string
- *                       title:
- *                         type: string
- *                       artistId:
- *                         type: string
- *                       year:
- *                         type: integer
- *                         nullable: true
- *                       coverUrl:
- *                         type: string
- *                         nullable: true
- *                       source:
- *                         type: string
- *                         enum: [remote]
- *                       remoteSources:
- *                         type: array
- *                         items:
- *                           type: string
- *                           enum: [tidal, youtube]
- *                       artist:
- *                         type: object
- *                         required: [id, name, mbid]
- *                         properties:
- *                           id:
- *                             type: string
- *                           name:
- *                             type: string
- *                           mbid:
- *                             type: string
- *                             nullable: true
- *                 audiobooks:
- *                   type: array
- *                   items:
- *                     type: object
- *                 podcasts:
- *                   type: array
- *                   items:
- *                     type: object
- *       401:
- *         description: Not authenticated
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- */
 router.get("/", async (req, res) => {
     try {
         const parsed = searchQuerySchema.safeParse(req.query);
@@ -574,6 +347,35 @@ router.get("/", async (req, res) => {
     } catch (error) {
         logger.error("Search error:", error);
         res.status(500).json({ error: "Search failed" });
+    }
+});
+
+router.get("/unified", async (req, res) => {
+    try {
+        const parsed = unifiedSearchQuerySchema.safeParse(req.query);
+        if (!parsed.success || !req.user) {
+            return res.status(400).json({ error: "Invalid search query" });
+        }
+        const query = parsed.data.q.trim();
+        if (!query) {
+            return res.json({ items: [], hasMore: false });
+        }
+        return res.json(
+            await unifiedSearch({
+                userId: req.user.id,
+                query,
+                type: parsed.data.type,
+                limit: parsed.data.limit,
+                offset: parsed.data.offset,
+            }),
+        );
+    } catch (error) {
+        return sendRouteFailure(
+            res,
+            logger,
+            ["Unified search error:", "Search failed"],
+            error,
+        );
     }
 });
 
@@ -643,67 +445,6 @@ router.get("/genres", async (req, res) => {
     }
 });
 
-/**
- * @openapi
- * /api/search/discover:
- *   get:
- *     summary: Search for new content to discover (not in your library)
- *     description: >-
- *       Artists and songs come from the catalog providers an admin enabled
- *       (Last.fm, Deezer, TIDAL, YouTube Music), searched in parallel and
- *       merged in the admin's priority order; a lower-priority duplicate of an
- *       artist, or of an artist and title, is dropped. TIDAL counts only for a
- *       user with a TIDAL session and YouTube Music only while it is enabled
- *       and available. Each result carries its `source` provider.
- *     tags: [Search]
- *     security:
- *       - apiKeyAuth: []
- *     parameters:
- *       - in: query
- *         name: q
- *         required: true
- *         schema:
- *           type: string
- *         description: Search query
- *       - in: query
- *         name: type
- *         schema:
- *           type: string
- *           enum: [music, podcasts, all]
- *           default: music
- *         description: Type of content to discover
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *           default: 20
- *           maximum: 50
- *         description: Maximum number of results
- *     responses:
- *       200:
- *         description: Discovery search results with optional alias info
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 results:
- *                   type: array
- *                   items:
- *                     type: object
- *                 aliasInfo:
- *                   type: object
- *                   nullable: true
- *                   properties:
- *                     original:
- *                       type: string
- *                     canonical:
- *                       type: string
- *                     mbid:
- *                       type: string
- *       401:
- *         description: Not authenticated
- */
 router.get("/discover", async (req, res) => {
     try {
         const { q = "", type = "music", limit = "20" } = req.query;
@@ -725,11 +466,19 @@ router.get("/discover", async (req, res) => {
                   req.user?.id,
               )
             : [];
+        // Streaming providers this user can play from, TIDAL first: songs
+        // from other providers are matched against them to stream in place.
+        const playableProviders = searchesMusic
+            ? await resolveUsableSearchProviders<PlayableProvider>(
+                  ["tidal", "youtube"],
+                  req.user?.id,
+              )
+            : [];
 
         // Cache TTL: 15 min (900s) -- external API data rarely changes. The
-        // provider list is part of the key: it follows the admin order and
-        // whether this user can search TIDAL / YouTube Music.
-        const cacheKey = `search:discover:${type}:${normalizeCacheQuery(query)}:${searchLimit}:${providers.join(",")}`;
+        // provider lists are part of the key: they follow the admin order and
+        // whether this user can search and stream TIDAL / YouTube Music.
+        const cacheKey = `search:discover:${type}:${normalizeCacheQuery(query)}:${searchLimit}:${providers.join(",")}:play=${playableProviders.join(",")}`;
         try {
             const cached = await redisClient.get(cacheKey);
             if (cached) {
@@ -784,34 +533,12 @@ router.get("/discover", async (req, res) => {
                 limit: searchLimit,
                 userId: req.user?.id,
                 providers,
+                playableProviders,
             });
         }
 
         if (type === "podcasts" || type === "all") {
-            promiseMap.podcasts = axios
-                .get("https://itunes.apple.com/search", {
-                    params: {
-                        term: query,
-                        media: "podcast",
-                        entity: "podcast",
-                        limit: searchLimit,
-                    },
-                    timeout: 5000,
-                })
-                .then((resp) =>
-                    resp.data.results.map((podcast: any) => ({
-                        type: "podcast",
-                        id: podcast.collectionId,
-                        name: podcast.collectionName,
-                        artist: podcast.artistName,
-                        description: podcast.description,
-                        coverUrl:
-                            podcast.artworkUrl600 || podcast.artworkUrl100,
-                        feedUrl: podcast.feedUrl,
-                        genres: podcast.genres || [],
-                        trackCount: podcast.trackCount,
-                    })),
-                );
+            promiseMap.podcasts = searchItunesPodcasts(query, searchLimit);
         }
 
         // Await all with allSettled so one failure doesn't block others

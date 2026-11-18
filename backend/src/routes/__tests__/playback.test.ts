@@ -1,4 +1,3 @@
-import express from "express";
 import request from "supertest";
 
 jest.mock("../../utils/logger", () => ({
@@ -65,15 +64,29 @@ jest.mock("../../services/playback/playbackStreamInfo", () => ({
 }));
 
 import router from "../playback";
+import { createRouteTestApp } from "./helpers/createRouteTestApp";
 import { PlaybackResolutionError } from "../../services/playback/resolvePlayback";
 
 const NO_MW = { ytMusicStreamLimiter: false, ytMusicEnabledCheck: false };
 const YM_MW = { ytMusicStreamLimiter: true, ytMusicEnabledCheck: true };
 
+/** A complete stream-info body for library track `t.abc` at high quality. */
+function libraryStreamInfo() {
+    return {
+        playbackId: "t.abc",
+        contentType: "audio/mpeg",
+        codec: "mp3",
+        bitrate: 320,
+        sampleRate: 44100,
+        bitDepth: null,
+        durationMs: 215000,
+        contentLength: 8600000,
+        quality: "high",
+    };
+}
+
 function makeApp() {
-    const app = express();
-    app.use("/api/playback", router);
-    return app;
+    return createRouteTestApp("/api/playback", router);
 }
 
 beforeEach(() => {
@@ -158,6 +171,7 @@ describe("GET /api/playback/stream/:playbackId", () => {
         expect(mockResolvePlayback).toHaveBeenCalledWith("user-1", {
             parsed: { kind: "t", trackId: "abc" },
             quality: "high",
+            recordPlay: true,
         });
         expect(mockStreamLibraryTrack).toHaveBeenCalledWith(
             expect.objectContaining({
@@ -412,6 +426,29 @@ describe("GET /api/playback/stream/:playbackId", () => {
         }
     });
 
+    it("sends a successful stream body unchanged under response validation", async () => {
+        mockResolvePlayback.mockResolvedValue({
+            kind: "t",
+            trackId: "abc",
+            quality: "original",
+            middleware: NO_MW,
+        });
+        mockStreamLibraryTrack.mockImplementation(async ({ res }: any) => {
+            res.status(200).type("audio/flac").send(Buffer.from("fLaC-bytes"));
+        });
+        const res = await request(makeApp())
+            .get("/api/playback/stream/t.abc")
+            .buffer(true)
+            .parse((stream, done) => {
+                const chunks: Buffer[] = [];
+                stream.on("data", (chunk: Buffer) => chunks.push(chunk));
+                stream.on("end", () => done(null, Buffer.concat(chunks)));
+            });
+        expect(res.status).toBe(200);
+        expect(res.headers["content-type"]).toBe("audio/flac");
+        expect((res.body as Buffer).toString()).toBe("fLaC-bytes");
+    });
+
     it("answers 502 UPSTREAM_FAILED when a stream service throws", async () => {
         mockResolvePlayback.mockResolvedValue({
             kind: "t",
@@ -423,6 +460,171 @@ describe("GET /api/playback/stream/:playbackId", () => {
         const res = await request(makeApp()).get("/api/playback/stream/t.abc");
         expect(res.status).toBe(502);
         expect(res.body.code).toBe("UPSTREAM_FAILED");
+    });
+
+    describe("report", () => {
+        const LIBRARY_ETAG = '"t.abc-medium-10"';
+        const BODY = "0123456789";
+
+        /** Resolves like the real resolver: `recordPlay` lands on the `t` result. */
+        function resolveLibraryEchoingRecordPlay() {
+            mockResolvePlayback.mockImplementation(
+                async (_userId: string, input: any) => ({
+                    kind: "t",
+                    trackId: "abc",
+                    quality: "medium",
+                    libraryQuality: "medium",
+                    middleware: NO_MW,
+                    recordPlay: input.recordPlay ?? true,
+                }),
+            );
+        }
+
+        /** A library stream with a strong ETag that honours Range and If-Range. */
+        function serveRangedLibraryStream() {
+            mockStreamLibraryTrack.mockImplementation(async ({ req, res }) => {
+                const range: string | undefined = req.headers.range;
+                const ifRange: string | undefined = req.headers["if-range"];
+                const partial =
+                    range !== undefined &&
+                    (ifRange === undefined || ifRange === LIBRARY_ETAG);
+                res.set({ ETag: LIBRARY_ETAG, "Accept-Ranges": "bytes" });
+                if (!partial) {
+                    res.status(200).end(BODY);
+                    return;
+                }
+                const start = Number(/bytes=(\d+)-/.exec(range!)![1]);
+                res.status(206)
+                    .set(
+                        "Content-Range",
+                        `bytes ${start}-${BODY.length - 1}/${BODY.length}`,
+                    )
+                    .end(BODY.slice(start));
+            });
+        }
+
+        it("passes recordPlay false to the library stream service for report=0", async () => {
+            resolveLibraryEchoingRecordPlay();
+            serveRangedLibraryStream();
+            const res = await request(makeApp()).get(
+                "/api/playback/stream/t.abc?report=0",
+            );
+            expect(res.status).toBe(200);
+            expect(mockResolvePlayback).toHaveBeenCalledWith("user-1", {
+                parsed: { kind: "t", trackId: "abc" },
+                quality: undefined,
+                recordPlay: false,
+            });
+            expect(mockStreamLibraryTrack).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    trackId: "abc",
+                    playbackId: "t.abc",
+                    recordPlay: false,
+                }),
+            );
+        });
+
+        it.each([
+            ["no parameter", ""],
+            ["report=1", "?report=1"],
+            ["report=", "?report="],
+            ["report=0&report=0", "?report=0&report=0"],
+            ["report=false", "?report=false"],
+        ])(
+            "keeps recording plays for %s, without an error",
+            async (_label, query) => {
+                resolveLibraryEchoingRecordPlay();
+                serveRangedLibraryStream();
+                const res = await request(makeApp()).get(
+                    `/api/playback/stream/t.abc${query}`,
+                );
+                expect(res.status).toBe(200);
+                expect(mockStreamLibraryTrack).toHaveBeenCalledTimes(1);
+                const { recordPlay } = mockStreamLibraryTrack.mock.calls[0][0];
+                expect(recordPlay === undefined || recordPlay === true).toBe(
+                    true,
+                );
+            },
+        );
+
+        it.each([
+            [
+                "td",
+                "td.123",
+                { tidalId: 123, quality: "LOSSLESS" },
+                mockStreamTidalTrack,
+            ],
+            [
+                "yt",
+                "yt.dQw4w9WgXcQ",
+                { videoId: "dQw4w9WgXcQ", quality: "HIGH" },
+                mockStreamYouTubeVideo,
+            ],
+        ])(
+            "streams a remote %s playbackId with report=0 as before",
+            async (kind, playbackId, fields, service) => {
+                mockResolvePlayback.mockResolvedValue({
+                    kind,
+                    ...fields,
+                    middleware: NO_MW,
+                });
+                service.mockImplementation(async ({ res }: any) => {
+                    res.status(200).end("audio");
+                });
+                const plain = await request(makeApp()).get(
+                    `/api/playback/stream/${playbackId}`,
+                );
+                const unreported = await request(makeApp()).get(
+                    `/api/playback/stream/${playbackId}?report=0`,
+                );
+                expect(unreported.status).toBe(200);
+                expect(unreported.status).toBe(plain.status);
+                expect(unreported.body).toEqual(plain.body);
+                expect(service).toHaveBeenCalledTimes(2);
+                const [first, second] = service.mock.calls.map(
+                    ([input]: any[]) => {
+                        const { req: _req, res: _res, ...rest } = input;
+                        return rest;
+                    },
+                );
+                expect(second).toEqual(first);
+                expect(mockStreamLibraryTrack).not.toHaveBeenCalled();
+            },
+        );
+
+        it.each([
+            ["Range", { Range: "bytes=4-" }],
+            [
+                "Range with a matching If-Range",
+                { Range: "bytes=4-", "If-Range": LIBRARY_ETAG },
+            ],
+            [
+                "Range with a stale If-Range",
+                { Range: "bytes=4-", "If-Range": '"stale"' },
+            ],
+        ])(
+            "answers a %s request the same with and without report=0",
+            async (_label, headers) => {
+                resolveLibraryEchoingRecordPlay();
+                serveRangedLibraryStream();
+                const app = makeApp();
+                const plain = await request(app)
+                    .get("/api/playback/stream/t.abc")
+                    .set(headers);
+                const unreported = await request(app)
+                    .get("/api/playback/stream/t.abc?report=0")
+                    .set(headers);
+                for (const name of [
+                    "etag",
+                    "content-range",
+                    "content-length",
+                ]) {
+                    expect(unreported.headers[name]).toBe(plain.headers[name]);
+                }
+                expect(unreported.status).toBe(plain.status);
+                expect(unreported.text).toBe(plain.text);
+            },
+        );
     });
 
     it("applies the streaming limiter before authentication", async () => {
@@ -492,12 +694,13 @@ describe("GET /api/playback/stream-info/:playbackId", () => {
             middleware: NO_MW,
         };
         mockResolvePlayback.mockResolvedValue(playback);
+        const info = libraryStreamInfo();
         mockGetPlaybackStreamInfo.mockImplementation(async ({ res }: any) => {
-            res.json({ playbackId: "t.abc", quality: "high" });
+            res.json(info);
         });
         const res = await request(makeApp()).get(`${url}/t.abc?quality=high`);
         expect(res.status).toBe(200);
-        expect(res.body).toEqual({ playbackId: "t.abc", quality: "high" });
+        expect(res.body).toEqual(info);
         expect(mockResolvePlayback).toHaveBeenCalledWith("user-1", {
             parsed: { kind: "t", trackId: "abc" },
             quality: "high",
@@ -509,6 +712,35 @@ describe("GET /api/playback/stream-info/:playbackId", () => {
                 userId: "user-1",
             }),
         );
+    });
+
+    it("ignores report=0", async () => {
+        const playback = {
+            kind: "t",
+            trackId: "abc",
+            quality: "high",
+            libraryQuality: "high",
+            middleware: NO_MW,
+        };
+        mockResolvePlayback.mockResolvedValue(playback);
+        mockGetPlaybackStreamInfo.mockImplementation(async ({ res }: any) => {
+            res.json(libraryStreamInfo());
+        });
+        const app = makeApp();
+        const plain = await request(app).get(`${url}/t.abc?quality=high`);
+        const unreported = await request(app).get(
+            `${url}/t.abc?quality=high&report=0`,
+        );
+        expect(plain.status).toBe(200);
+        expect(unreported.status).toBe(plain.status);
+        expect(unreported.body).toEqual(plain.body);
+        expect(mockResolvePlayback.mock.calls[1]).toEqual(
+            mockResolvePlayback.mock.calls[0],
+        );
+        expect(mockResolvePlayback).toHaveBeenLastCalledWith("user-1", {
+            parsed: { kind: "t", trackId: "abc" },
+            quality: "high",
+        });
     });
 
     it("adds a code to error bodies the info service writes", async () => {

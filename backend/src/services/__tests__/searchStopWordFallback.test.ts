@@ -66,6 +66,7 @@ describe("search stop-word fallback", () => {
                 name: "The Artist",
                 mbid: "mbid-1",
                 heroUrl: null,
+                matchedBy: "trigram",
                 rank: 0.77,
             },
         ]);

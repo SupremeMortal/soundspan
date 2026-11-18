@@ -332,36 +332,6 @@ export async function handleOrganizeLibrary(req: Request, res: Response) {
 
 maintenanceRouter.post("/organize", asyncHandler(handleOrganizeLibrary));
 
-/**
- * @openapi
- * /api/library/recently-listened:
- *   get:
- *     summary: Get recently listened artists, audiobooks, and podcasts
- *     tags: [Library]
- *     security:
- *       - apiKeyAuth: []
- *     parameters:
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *           default: 10
- *         description: Maximum number of items to return
- *     responses:
- *       200:
- *         description: Recently listened items
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 items:
- *                   type: array
- *                   items:
- *                     type: object
- *       401:
- *         description: Not authenticated
- */
 // GET /library/recently-listened?limit=10
 /**
  * Handles GET /api/library/recently-listened.
@@ -557,36 +527,6 @@ maintenanceRouter.get(
     asyncHandler(handleGetRecentlyListened),
 );
 
-/**
- * @openapi
- * /api/library/recently-added:
- *   get:
- *     summary: Get recently added artists to the library
- *     tags: [Library]
- *     security:
- *       - apiKeyAuth: []
- *     parameters:
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *           default: 10
- *         description: Maximum number of artists to return
- *     responses:
- *       200:
- *         description: Recently added artists
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 artists:
- *                   type: array
- *                   items:
- *                     type: object
- *       401:
- *         description: Not authenticated
- */
 // GET /library/recently-added?limit=10
 /**
  * Handles GET /api/library/recently-added.

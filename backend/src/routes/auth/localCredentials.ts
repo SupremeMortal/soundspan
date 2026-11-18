@@ -14,53 +14,10 @@ import { config } from "../../config";
 import { runDummyBcrypt } from "../../utils/dummyCredential";
 import { sendRouteError } from "../../utils/routeErrorResponse";
 import { sendLoginSuccess, verifyLoginSecondFactor } from "./shared";
-
-const loginSchema = z.object({
-    username: z.string().min(1),
-    password: z.string().min(1),
-    token: z.string().min(1).optional(),
-});
+import { LoginRequest } from "../../openapi/schemas/session";
 
 /** Register local login, logout, refresh, and current-user routes. */
 export default function registerLocalCredentialRoutes(router: Router): void {
-    /**
-     * @openapi
-     * /api/auth/login:
-     *   post:
-     *     summary: Login with username and password
-     *     tags: [Authentication]
-     *     security: []
-     *     requestBody:
-     *       required: true
-     *       content:
-     *         application/json:
-     *           schema:
-     *             type: object
-     *             required:
-     *               - username
-     *               - password
-     *             properties:
-     *               username:
-     *                 type: string
-     *               password:
-     *                 type: string
-     *                 format: password
-     *     responses:
-     *       200:
-     *         description: Login successful
-     *         content:
-     *           application/json:
-     *             schema:
-     *               oneOf:
-     *                 - $ref: '#/components/schemas/LoginTokenResponse'
-     *                 - $ref: '#/components/schemas/LoginTwoFactorChallenge'
-     *       401:
-     *         description: Invalid credentials
-     *         content:
-     *           application/json:
-     *             schema:
-     *               $ref: '#/components/schemas/Error'
-     */
     async function findLocalLoginUser(username: string) {
         return (
             (await prisma.user.findUnique({ where: { username } })) ??
@@ -76,7 +33,7 @@ export default function registerLocalCredentialRoutes(router: Router): void {
             return sendRouteError(res, 403, "Local login is disabled");
         }
         try {
-            const { username, password, token } = loginSchema.parse(req.body);
+            const { username, password, token } = LoginRequest.parse(req.body);
             const user = await findLocalLoginUser(username);
             if (!user || !user.passwordHash) {
                 await runDummyBcrypt();
@@ -109,17 +66,6 @@ export default function registerLocalCredentialRoutes(router: Router): void {
     // POST /auth/login
     router.post("/login", localLoginHandler);
 
-    /**
-     * @openapi
-     * /api/auth/logout:
-     *   post:
-     *     summary: Logout the current user
-     *     tags: [Authentication]
-     *     security: []
-     *     responses:
-     *       200:
-     *         description: Logged out successfully
-     */
     // POST /auth/logout - JWT is stateless, logout is handled client-side
     router.post("/logout", (req, res) => {
         // With JWT, logout is handled by client removing the token
@@ -127,36 +73,6 @@ export default function registerLocalCredentialRoutes(router: Router): void {
         res.json({ message: "Logged out" });
     });
 
-    /**
-     * @openapi
-     * /api/auth/refresh:
-     *   post:
-     *     summary: Refresh access token using a refresh token
-     *     tags: [Authentication]
-     *     security: []
-     *     requestBody:
-     *       required: true
-     *       content:
-     *         application/json:
-     *           schema:
-     *             type: object
-     *             required:
-     *               - refreshToken
-     *             properties:
-     *               refreshToken:
-     *                 type: string
-     *     responses:
-     *       200:
-     *         description: New access and refresh tokens
-     *       400:
-     *         description: Refresh token required
-     *       401:
-     *         description: Invalid or expired refresh token
-     *       429:
-     *         description: Too many failed refresh attempts
-     *       503:
-     *         description: Authentication persistence is temporarily unavailable
-     */
     // POST /auth/refresh - Refresh access token using refresh token
     router.post("/refresh", async (req, res) => {
         const { refreshToken } = req.body;
@@ -215,26 +131,6 @@ export default function registerLocalCredentialRoutes(router: Router): void {
         });
     });
 
-    /**
-     * @openapi
-     * /api/auth/me:
-     *   get:
-     *     summary: Get current authenticated user
-     *     tags: [Authentication]
-     *     responses:
-     *       200:
-     *         description: Current user information
-     *         content:
-     *           application/json:
-     *             schema:
-     *               $ref: '#/components/schemas/User'
-     *       401:
-     *         description: Not authenticated
-     *         content:
-     *           application/json:
-     *             schema:
-     *               $ref: '#/components/schemas/Error'
-     */
     // GET /auth/me
     router.get("/me", apiLimiter, requireAuth, async (req, res) => {
         const user = await prisma.user.findUnique({
