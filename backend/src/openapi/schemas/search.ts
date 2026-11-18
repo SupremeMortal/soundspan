@@ -136,16 +136,17 @@ export const SearchQuery = z.object({
 
 /**
  * One catalog result outside the library: an artist (`music`), a track
- * (`track`) or a podcast from the iTunes directory (`podcast`). `id` is a
- * number for podcasts (the iTunes collection id) and a string otherwise.
- * Fields that do not apply to a kind are absent. A track can be played when
- * it has a `playbackId`. The server also sends legacy per-source fields for
- * other consumers.
+ * (`track`) or a podcast from the iTunes directory (`podcast`). `id` is
+ * always a string; a podcast also carries its numeric iTunes collection id
+ * as `itunesId`. Fields that do not apply to a kind are absent. A track can
+ * be played when it has a `playbackId`. The server also sends legacy
+ * per-source fields for other consumers.
  */
 export const DiscoverResult = z
     .object({
         type: z.enum(["music", "track", "podcast"]),
-        id: z.union([z.string(), z.number()]),
+        id: z.string(),
+        itunesId: z.number().int().optional(),
         name: z.string(),
         mbid: z.string().optional(),
         image: z.string().nullable().optional(),

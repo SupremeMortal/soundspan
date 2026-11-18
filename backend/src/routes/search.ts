@@ -527,7 +527,8 @@ router.get("/discover", async (req, res) => {
                 .then((resp) =>
                     resp.data.results.map((podcast: any) => ({
                         type: "podcast",
-                        id: podcast.collectionId,
+                        id: podcast.collectionId.toString(),
+                        itunesId: podcast.collectionId,
                         name: podcast.collectionName,
                         artist: podcast.artistName,
                         description: podcast.description,

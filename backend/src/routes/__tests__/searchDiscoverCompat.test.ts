@@ -78,6 +78,14 @@ jest.mock("../../services/remoteLibrary/remoteLibrarySearch", () => ({
     searchRemoteLibrary: jest.fn(),
 }));
 
+const mockAxiosGet = jest.fn();
+jest.mock("axios", () => ({
+    __esModule: true,
+    default: {
+        get: (...args: unknown[]) => mockAxiosGet(...args),
+    },
+}));
+
 import router from "../search";
 import { prisma } from "../../utils/db";
 import { redisClient } from "../../utils/redis";
@@ -130,6 +138,7 @@ describe("search discover compatibility", () => {
         mockGetArtistCorrection.mockResolvedValue(null);
         mockSearchTracks.mockResolvedValue([]);
         mockArtistFindMany.mockResolvedValue([]);
+        mockAxiosGet.mockReset();
     });
 
     it("filters artist discover results already in local library", async () => {
@@ -217,5 +226,47 @@ describe("search discover compatibility", () => {
             }),
         ]);
         expect(mockArtistFindMany).not.toHaveBeenCalled();
+    });
+
+    it("sends podcast discover results with a string id and a numeric itunesId", async () => {
+        mockAxiosGet.mockResolvedValue({
+            data: {
+                results: [
+                    {
+                        collectionId: 123456789,
+                        collectionName: "Reply All",
+                        artistName: "Gimlet",
+                        description: "A podcast about the internet.",
+                        artworkUrl600: "https://img/600.jpg",
+                        artworkUrl100: "https://img/100.jpg",
+                        feedUrl: "https://feeds.example.com/replyall",
+                        genres: ["Technology"],
+                        trackCount: 187,
+                    },
+                ],
+            },
+        });
+
+        const req = {
+            query: { q: "reply all", type: "podcasts", limit: "20" },
+            user: { id: "user-1" },
+        } as any;
+        const res = createRes();
+
+        await discoverHandler(req, res);
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.results).toHaveLength(1);
+        const podcast = res.body.results[0];
+        expect(podcast).toEqual(
+            expect.objectContaining({
+                type: "podcast",
+                id: "123456789",
+                itunesId: 123456789,
+                name: "Reply All",
+            }),
+        );
+        expect(typeof podcast.id).toBe("string");
+        expect(typeof podcast.itunesId).toBe("number");
     });
 });

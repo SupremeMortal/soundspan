@@ -179,7 +179,6 @@ export 'podcasts/models/update_episode_progress_response.dart';
 export 'podcasts/podcasts_client.dart';
 export 'search/models/discover_alias_info.dart';
 export 'search/models/discover_result.dart';
-export 'search/models/discover_result_id.dart';
 export 'search/models/discover_result_type.dart';
 export 'search/models/discover_search_response.dart';
 export 'search/models/search_album.dart';

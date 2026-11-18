@@ -2,7 +2,6 @@
 
 import 'package:freezed_annotation/freezed_annotation.dart';
 
-import 'discover_result_id.dart';
 import 'discover_result_type.dart';
 
 part 'discover_result.freezed.dart';
@@ -34,14 +33,17 @@ class const DiscoverResult({
   @JsonKey(disallowNullValue: true, includeIfNull: false)
   final List<String>? genres,
 
-  @JsonKey(
-    required: true,
-    fromJson: DiscoverResult._read_id,
-    toJson: DiscoverResult._write_id,
-  )
-  required final DiscoverResultId id,
+  @JsonKey(required: true, disallowNullValue: true) required final String id,
 
   @JsonKey(includeIfNull: false) final String? image,
+
+  @JsonKey(
+    disallowNullValue: true,
+    includeIfNull: false,
+    fromJson: DiscoverResult._read_itunesId,
+    toJson: DiscoverResult._write_itunesId,
+  )
+  final int? itunesId,
 
   @JsonKey(
     disallowNullValue: true,
@@ -99,6 +101,7 @@ class const DiscoverResult({
     "genres",
     "id",
     "image",
+    "itunesId",
     "listeners",
     "mbid",
     "name",
@@ -113,9 +116,9 @@ class const DiscoverResult({
   factory DiscoverResult.fromJson(Map<String, Object?> json) =>
       _$DiscoverResultFromJson(json);
 
-  static DiscoverResultId _read_id(Object? value) =>
-      DiscoverResultId.fromJson(value);
-  static Object? _write_id(DiscoverResultId value) => value.toJson();
+  static int? _read_itunesId(Object? value) =>
+      value == null ? null : _readJsonInteger(value);
+  static Object? _write_itunesId(int? value) => value;
   static int? _read_listeners(Object? value) =>
       value == null ? null : _readJsonInteger(value);
   static Object? _write_listeners(int? value) => value;

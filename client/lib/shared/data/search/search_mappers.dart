@@ -102,7 +102,7 @@ LibrarySearchResults librarySearchResultsFromWire(api.SearchResponse wire) =>
 /// One catalogue result, or null for a kind this client does not know.
 /// A track without `playbackId` is not playable.
 SearchHit? searchHitFromDiscover(api.DiscoverResult wire) {
-  final id = wire.id.asString ?? '${wire.id.asNumber}';
+  final id = wire.id;
   final artwork = wire.coverUrl ?? wire.image;
   return switch (wire.type) {
     api.DiscoverResultTypeKnown(value: api.DiscoverResultTypeValue.track) =>

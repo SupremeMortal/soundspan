@@ -107,7 +107,8 @@ Map<String, Object?> _discoverJson({Map<String, Object?>? aliasInfo}) => {
     },
     {
       'type': 'podcast',
-      'id': 42,
+      'id': '42',
+      'itunesId': 42,
       'name': 'Found show',
       'artist': 'Found host',
       'coverUrl': 'http://img/p',

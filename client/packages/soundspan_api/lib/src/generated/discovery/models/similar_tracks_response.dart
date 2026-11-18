@@ -9,9 +9,9 @@ import 'similar_track.dart';
 part 'similar_tracks_response.freezed.dart';
 part 'similar_tracks_response.g.dart';
 
-abstract final class _Scalar990 {
+abstract final class _Scalar989 {
   static mapped1.NullableVibeAudioFeatures read(Object? value) {
-    if (!_matches41(value) || value == null) {
+    if (!_matches39(value) || value == null) {
       throw ArgumentError("Invalid NullableVibeAudioFeatures wire value.");
     }
     return mapped1.vibeAudioFeaturesFromJson(value as Map<String, Object?>);
@@ -19,7 +19,7 @@ abstract final class _Scalar990 {
 
   static Map<String, Object?> write(mapped1.NullableVibeAudioFeatures value) {
     final Map<String, Object?> wire = mapped1.vibeAudioFeaturesToJson(value);
-    if (!_matches41(wire)) {
+    if (!_matches39(wire)) {
       throw ArgumentError("Invalid NullableVibeAudioFeatures wire value.");
     }
     return wire;
@@ -66,13 +66,13 @@ class const SimilarTracksResponse({
     Object? value,
   ) => switch (value) {
     null => null,
-    final item => _Scalar990.read(item),
+    final item => _Scalar989.read(item),
   };
   static Object? _write_sourceFeatures(
     mapped1.NullableVibeAudioFeatures? value,
   ) => switch (value) {
     null => null,
-    final item => _Scalar990.write(item),
+    final item => _Scalar989.write(item),
   };
   static Object? _extras(Map map, String _) => {
     for (final entry in map.entries)
@@ -87,30 +87,30 @@ class const SimilarTracksResponse({
   };
 }
 
-bool _matches41(Object? value) => (_matches42(value));
-bool _matches42(Object? value) =>
+bool _matches39(Object? value) => (_matches40(value));
+bool _matches40(Object? value) =>
     (value is! Map<String, Object?> || value.containsKey("arousal")) &&
     (value is! Map<String, Object?> || value.containsKey("danceability")) &&
     (value is! Map<String, Object?> || value.containsKey("energy")) &&
     (value is! Map<String, Object?> || value.containsKey("valence")) &&
     (value is! Map<String, Object?> ||
         !value.containsKey("arousal") ||
-        _matches43(value["arousal"])) &&
+        _matches41(value["arousal"])) &&
     (value is! Map<String, Object?> ||
         !value.containsKey("danceability") ||
-        _matches44(value["danceability"])) &&
+        _matches42(value["danceability"])) &&
     (value is! Map<String, Object?> ||
         !value.containsKey("energy") ||
-        _matches45(value["energy"])) &&
+        _matches43(value["energy"])) &&
     (value is! Map<String, Object?> ||
         !value.containsKey("valence") ||
-        _matches46(value["valence"])) &&
+        _matches44(value["valence"])) &&
     ((value is Map<String, Object?>) || (value == null));
+bool _matches41(Object? value) =>
+    (((value is num && value.isFinite)) || (value == null));
+bool _matches42(Object? value) =>
+    (((value is num && value.isFinite)) || (value == null));
 bool _matches43(Object? value) =>
     (((value is num && value.isFinite)) || (value == null));
 bool _matches44(Object? value) =>
-    (((value is num && value.isFinite)) || (value == null));
-bool _matches45(Object? value) =>
-    (((value is num && value.isFinite)) || (value == null));
-bool _matches46(Object? value) =>
     (((value is num && value.isFinite)) || (value == null));
