@@ -27,7 +27,7 @@ const microsoftOnlyPolicy = `Package files:
 // Stub apt-get, apt-cache and dpkg. apt-get logs its arguments; apt-cache
 // answers `policy` with policy.txt, or with the Ubuntu policy once a
 // sources file exists in the sources directory.
-function setUp(t, { policy, arch = "amd64" }) {
+function setUp(t, { policy, arch = "amd64", mirrors }) {
     const directory = fs.mkdtempSync(
         path.join(os.tmpdir(), "soundspan-apt-sources-test-"),
     );
@@ -53,10 +53,12 @@ function setUp(t, { policy, arch = "amd64" }) {
         `if ls "${sources}"/*.sources >/dev/null 2>&1; then printf '%s' ${JSON.stringify(ubuntuPolicy)}; else cat "${directory}/policy.txt"; fi`,
     );
     stub("dpkg", `echo ${arch}`);
-    return { directory, bin, sources };
+    const mirrorsFile = path.join(directory, "apt-mirrors.txt");
+    if (mirrors !== undefined) fs.writeFileSync(mirrorsFile, mirrors);
+    return { directory, bin, sources, mirrorsFile };
 }
 
-function run({ directory, bin, sources }) {
+function run({ directory, bin, sources, mirrorsFile }) {
     const result = spawnSync("bash", [script], {
         encoding: "utf8",
         env: {
@@ -64,6 +66,7 @@ function run({ directory, bin, sources }) {
             PATH: `${bin}:${process.env.PATH}`,
             APT_SOURCES_DIR: sources,
             OS_RELEASE_FILE: path.join(directory, "os-release"),
+            APT_MIRRORS_FILE: mirrorsFile,
         },
     });
     const log = path.join(directory, "apt-get.log");
@@ -73,6 +76,9 @@ function run({ directory, bin, sources }) {
             ? fs.readFileSync(log, "utf8").trim().split("\n")
             : [],
         written: fs.readdirSync(sources),
+        mirrors: fs.existsSync(mirrorsFile)
+            ? fs.readFileSync(mirrorsFile, "utf8")
+            : undefined,
     };
 }
 
@@ -118,4 +124,62 @@ test("uses the ports archive on architectures other than amd64", (t) => {
     );
     assert.match(written, /^URIs: http:\/\/ports\.ubuntu\.com\/ubuntu-ports$/m);
     assert.doesNotMatch(written, /security\.ubuntu\.com/);
+});
+
+const ec2Mirrors = [
+    "http://us-east-2.ec2.archive.ubuntu.com/ubuntu/\tpriority:1",
+    "https://archive.ubuntu.com/ubuntu/\tpriority:2",
+    "https://security.ubuntu.com/ubuntu/\tpriority:3",
+    "",
+].join("\n");
+
+test("drops an EC2 mirror from the apt mirror list before updating", (t) => {
+    const env = setUp(t, { policy: ubuntuPolicy, mirrors: ec2Mirrors });
+    const result = run(env);
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(
+        result.mirrors,
+        [
+            "https://archive.ubuntu.com/ubuntu/\tpriority:2",
+            "https://security.ubuntu.com/ubuntu/\tpriority:3",
+            "",
+        ].join("\n"),
+    );
+    assert.deepEqual(result.aptGetCalls, ["update"]);
+    assert.match(result.stderr, /us-east-2\.ec2\.archive\.ubuntu\.com/);
+});
+
+test("falls back to the Ubuntu archive when the mirror list holds only an EC2 mirror", (t) => {
+    const env = setUp(t, {
+        policy: ubuntuPolicy,
+        mirrors:
+            "http://us-east-2.ec2.archive.ubuntu.com/ubuntu/\tpriority:1\n",
+    });
+    const result = run(env);
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(
+        result.mirrors,
+        "http://archive.ubuntu.com/ubuntu/\tpriority:1\n",
+    );
+});
+
+test("leaves a mirror list without an EC2 mirror unchanged", (t) => {
+    const azureMirrors = [
+        "http://azure.archive.ubuntu.com/ubuntu/\tpriority:1",
+        "https://archive.ubuntu.com/ubuntu/\tpriority:2",
+        "https://security.ubuntu.com/ubuntu/\tpriority:3",
+        "",
+    ].join("\n");
+    const env = setUp(t, { policy: ubuntuPolicy, mirrors: azureMirrors });
+    const result = run(env);
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(result.mirrors, azureMirrors);
+    assert.equal(result.stderr, "");
+});
+
+test("does not create a mirror list when the runner has none", (t) => {
+    const env = setUp(t, { policy: ubuntuPolicy });
+    const result = run(env);
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(result.mirrors, undefined);
 });

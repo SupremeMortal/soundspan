@@ -5,12 +5,31 @@
 # locate package". When no index of origin Ubuntu is present after the
 # update, this adds the archive for the image's codename and updates again.
 #
-# Run as root (sudo). APT_SOURCES_DIR and OS_RELEASE_FILE override
-# /etc/apt/sources.list.d and /etc/os-release for the self-test.
+# Before the first update it also drops any *.ec2.archive.ubuntu.com entry
+# from the runner's apt mirror list. Runners that draw that mirror have
+# taken more than 20 minutes to download the Linux build packages, while the
+# Ubuntu and Azure archives serve them in about a minute. When nothing else
+# is left in the list, the Ubuntu archive takes the mirror's place.
+#
+# Run as root (sudo). APT_SOURCES_DIR, OS_RELEASE_FILE and APT_MIRRORS_FILE
+# override /etc/apt/sources.list.d, /etc/os-release and
+# /etc/apt/apt-mirrors.txt for the self-test.
 set -euo pipefail
 
 sources_dir="${APT_SOURCES_DIR:-/etc/apt/sources.list.d}"
 os_release="${OS_RELEASE_FILE:-/etc/os-release}"
+mirrors_file="${APT_MIRRORS_FILE:-/etc/apt/apt-mirrors.txt}"
+ec2_mirror='^[a-z]+://[^/[:space:]]+\.ec2\.archive\.ubuntu\.com([/[:space:]]|$)'
+
+if [[ -f "$mirrors_file" ]] && grep -Eq "$ec2_mirror" "$mirrors_file"; then
+  echo "Dropping the slow EC2 apt mirror from $mirrors_file:" >&2
+  grep -E "$ec2_mirror" "$mirrors_file" >&2
+  kept="$(grep -Ev "$ec2_mirror" "$mirrors_file" || true)"
+  if [[ -z "${kept//[[:space:]]/}" ]]; then
+    kept="$(printf 'http://archive.ubuntu.com/ubuntu/\tpriority:1')"
+  fi
+  printf '%s\n' "$kept" > "$mirrors_file"
+fi
 
 has_ubuntu_archive() {
   # Not `apt-cache policy | grep -q`: grep exiting early would fail the
