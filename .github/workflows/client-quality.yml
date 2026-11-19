@@ -15,6 +15,7 @@ on:
     branches: [main]
     paths:
       - "client/**"
+  workflow_dispatch:
 
 permissions:
   contents: read
