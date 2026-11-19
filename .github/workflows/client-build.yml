@@ -544,8 +544,8 @@ jobs:
           --dart-define-from-file=config/release.json
           --dart-define=RELEASE_REPOSITORY="$GITHUB_REPOSITORY"
 
-      # Re-signs the app ad hoc with the hardened runtime and the release
-      # entitlements, then packs it with an /Applications symlink; the zip
+      # Re-signs the app ad hoc with the hardened runtime and the ad-hoc
+      # entitlements (macos/Runner/AdHoc.entitlements), then packs it with an /Applications symlink; the zip
       # below holds the same re-signed app.
       - name: Disk image
         run: >-

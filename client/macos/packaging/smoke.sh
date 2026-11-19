@@ -5,14 +5,18 @@
 #      /Applications symlink;
 #   2. copies the app out and checks its ad-hoc signature, hardened runtime
 #      and both architectures;
-#   3. checks the built Info.plist and the signed entitlements with
+#   3. checks the built Info.plist and the signed entitlements (the ad-hoc
+#      ones, without keychain-access-groups) with
 #      tool/check_platform_config.dart;
 #   4. launches the executable, expects it alive after 20 s with a log file
 #      in its container, opens soundspan://album/smoke, expects it alive 5 s
 #      later, and quits it;
 #   5. detaches the image.
-# On failure it copies the app logs and the last two minutes of the unified
-# log for the process to the diagnostics directory.
+# On failure it copies to the diagnostics directory the app logs, the last
+# two minutes of the unified log for the process and for the services that
+# can kill it before it writes anything (kernel, amfid, taskgated,
+# syspolicyd), the crash reports of the app, and its signature and
+# entitlements.
 #
 # Usage, from client/:
 #   macos/packaging/smoke.sh <path to .dmg> [diagnostics dir]
@@ -46,6 +50,16 @@ cleanup() {
     fi
     log show --last 2m --predicate 'process == "soundspan"' \
       > "$diagnostics/unified-log.txt" 2>&1 || true
+    log show --last 2m --info --debug --predicate \
+      'process IN {"kernel", "amfid", "taskgated", "taskgated-helper", "syspolicyd"} OR sender IN {"AppleMobileFileIntegrity", "AppleSystemPolicy", "Sandbox"}' \
+      > "$diagnostics/unified-log-system.txt" 2>&1 || true
+    find "$HOME/Library/Logs/DiagnosticReports" /Library/Logs/DiagnosticReports \
+      -maxdepth 1 \( -name 'soundspan*.ips' -o -name 'soundspan*.crash' \) \
+      -exec cp {} "$diagnostics/" \; 2> /dev/null || true
+    if [[ -d "$work/soundspan.app" ]]; then
+      codesign -dvvv --entitlements - --xml "$work/soundspan.app" \
+        > "$diagnostics/signature.txt" 2>&1 || true
+    fi
   fi
   if $mounted; then hdiutil detach "$mount_point" -quiet || hdiutil detach "$mount_point" -force -quiet || true; fi
   rm -rf "$work"
@@ -85,7 +99,7 @@ codesign -d --entitlements - --xml "$app" > "$work/signed.entitlements"
 dart run tool/check_platform_config.dart \
   --macos-plist="$work/Info.plist" \
   --macos-entitlements="$work/signed.entitlements" \
-  --macos-release-entitlements="$work/signed.entitlements"
+  --macos-adhoc-entitlements="$work/signed.entitlements"
 
 # 4. Launch, deep link, quit.
 /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f "$app" || true

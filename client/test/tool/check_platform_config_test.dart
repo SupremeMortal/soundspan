@@ -880,6 +880,37 @@ void main() {
         );
       }
     });
+
+    test('ad hoc passes without a keychain access group', () {
+      final path = _write(
+        'a.entitlements',
+        _entitlements.replaceFirst(
+          '<key>keychain-access-groups</key>\n  <array>\n'
+          '    <string>ABCDE12345.io.soundspan.app</string>\n  </array>',
+          '',
+        ),
+      );
+      expect(checkMacosEntitlements(path, adHoc: true), isEmpty);
+    });
+
+    test('ad hoc fails with the restricted keychain entitlement', () {
+      final path = _write('a.entitlements', _entitlements);
+      expect(
+        checkMacosEntitlements(path, adHoc: true).map((v) => v.toString()),
+        ['$path: unexpected keychain-access-groups'],
+      );
+    });
+
+    test('ad hoc still needs every entitlement of every build', () {
+      final path = _write(
+        'a.entitlements',
+        _entitlements.replaceFirst('com.apple.security.device.camera', 'x'),
+      );
+      expect(
+        checkMacosEntitlements(path, adHoc: true).map((v) => v.entry),
+        contains('<key>com.apple.security.device.camera</key><true/>'),
+      );
+    });
   });
 
   group('iOS privacy manifest', () {
@@ -989,11 +1020,16 @@ void main() {
       '--android-res',
       _res(),
       '--macos-release-entitlements=${_write('built.entitlements', _entitlements)}',
+      '--macos-adhoc-entitlements=${_write('adhoc.entitlements', _entitlements)}',
       '--ios-privacy-manifest=${_write('p.xcprivacy', _privacy)}',
     ]);
     final violations = checkPlatformConfig(paths);
-    expect(violations.map((v) => p.basename(v.path)), ['macos.plist']);
-    expect(violations.single.entry, startsWith('CFBundleURLTypes'));
+    expect(violations.map((v) => p.basename(v.path)), [
+      'macos.plist',
+      'adhoc.entitlements',
+    ]);
+    expect(violations.first.entry, startsWith('CFBundleURLTypes'));
+    expect(violations.last.toString(), endsWith('unexpected keychain-access-groups'));
   });
 
   test('the source files pass', () {

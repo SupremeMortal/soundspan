@@ -10,6 +10,7 @@
 //       [--android-res=<dir>] [--ios-plist=<path>] [--macos-plist=<path>]
 //       [--linux-desktop=<path>] [--macos-entitlements=<path>[,<path>…]]
 //       [--macos-release-entitlements=<path>]
+//       [--macos-adhoc-entitlements=<path>]
 //       [--ios-privacy-manifest=<path>]
 //
 // Paths default to the source files under client/. Run from client/.
@@ -43,7 +44,8 @@ const List<String> macosEntitlements = [
 ];
 
 /// The entitlement the release build adds for secure storage; its value is
-/// an array of access groups.
+/// an array of access groups. It is restricted: macOS kills an ad-hoc
+/// signed app that carries it, so the ad-hoc signed disk image leaves it out.
 const String keychainEntitlement = 'keychain-access-groups';
 
 /// The lowest macOS release the app supports (doc 10, macOS).
@@ -72,6 +74,7 @@ const Map<String, String> defaultPaths = {
       'macos/Runner/DebugProfile.entitlements,'
       'macos/Runner/Release.entitlements',
   'macos-release-entitlements': 'macos/Runner/Release.entitlements',
+  'macos-adhoc-entitlements': 'macos/Runner/AdHoc.entitlements',
   'ios-privacy-manifest': 'ios/Runner/PrivacyInfo.xcprivacy',
 };
 
@@ -113,6 +116,7 @@ List<ConfigViolation> checkPlatformConfig([
       path('macos-release-entitlements'),
       release: true,
     ),
+    ...checkMacosEntitlements(path('macos-adhoc-entitlements'), adHoc: true),
     ...checkIosPrivacyManifest(path('ios-privacy-manifest')),
   ];
 }
@@ -659,10 +663,13 @@ List<ConfigViolation> checkMacosPlist(String path) {
 
 /// The [macosEntitlements] set to true in a macOS `.entitlements` file
 /// (or the output of `codesign -d --entitlements - --xml`); with
-/// [release], also a non-empty [keychainEntitlement] array.
+/// [release], also a non-empty [keychainEntitlement] array; with [adHoc]
+/// (the entitlements of the ad-hoc signed disk image), no
+/// [keychainEntitlement] at all.
 List<ConfigViolation> checkMacosEntitlements(
   String path, {
   bool release = false,
+  bool adHoc = false,
 }) {
   final out = <ConfigViolation>[];
   final top = _readPlistDict(path, out);
@@ -677,6 +684,9 @@ List<ConfigViolation> checkMacosEntitlements(
     if (groups == null || groups.isEmpty || groups.any((g) => g.isEmpty)) {
       out.add(ConfigViolation(path, '$keychainEntitlement with a group'));
     }
+  }
+  if (adHoc && _plistValue(top, keychainEntitlement) != null) {
+    out.add(ConfigViolation(path, keychainEntitlement, unexpected: true));
   }
   return out;
 }

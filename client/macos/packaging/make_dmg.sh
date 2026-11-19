@@ -4,13 +4,15 @@
 #   1. checks that the app is universal (x86_64 and arm64);
 #   2. re-signs it ad hoc, inside out, with the hardened runtime: nested
 #      dylibs and frameworks, then nested helper bundles and the app with
-#      the release entitlements;
+#      the ad-hoc entitlements;
 #   3. creates a compressed, read-only image (UDZO) of a folder holding the
 #      app and an /Applications symlink, with hdiutil.
 #
-# The release entitlements are those Xcode signed the built app with
-# (Release.entitlements with its build variables expanded), unless an
-# entitlements file is passed as the fourth argument.
+# The ad-hoc entitlements are macos/Runner/AdHoc.entitlements, unless an
+# entitlements file is passed as the fourth argument: Release.entitlements
+# without keychain-access-groups, a restricted entitlement that needs a
+# provisioning profile. macOS kills (SIGKILL) an ad-hoc signed app that
+# carries it as soon as it starts.
 #
 # Usage:
 #   macos/packaging/make_dmg.sh <path to soundspan.app> <version> <output dir> [entitlements]
@@ -40,12 +42,7 @@ echo "make_dmg: architectures: $archs"
   fail "the executable is not universal: $archs"
 
 # 2. Ad-hoc signature, inside out.
-entitlements="${4:-}"
-if [[ -z "$entitlements" ]]; then
-  entitlements="$work/release.entitlements"
-  codesign -d --entitlements - --xml "$app" > "$entitlements"
-  [[ -s "$entitlements" ]] || fail "the built app carries no entitlements"
-fi
+entitlements="${4:-$(cd "$(dirname "$0")/../Runner" && pwd)/AdHoc.entitlements}"
 [[ -f "$entitlements" ]] || fail "entitlements not found: $entitlements"
 
 sign() { codesign --force --options runtime --timestamp=none --sign - "$@"; }
