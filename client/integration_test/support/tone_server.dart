@@ -187,10 +187,23 @@ final class ToneServer {
       request.headers[keyHeader] == key ||
       request.url.queryParameters['token'] == key;
 
-  Response _serve(Request request, Uint8List tone, {required bool throttled}) {
+  Response _serve(Request request, Uint8List tone, {required bool throttled}) =>
+      wavResponse(request, tone, headers: _corsHeaders, throttled: throttled);
+
+  /// [tone] as an `audio/wav` answer to [request], with byte ranges: a
+  /// `Range` request is answered 206 with `content-range`, an unsatisfiable
+  /// one 416. [headers] are added to every answer; [throttled] sends the
+  /// body at twice real time. AVPlayer (`JustAudioEngine` on macOS and iOS)
+  /// plays nothing from a server without byte ranges.
+  static Response wavResponse(
+    Request request,
+    Uint8List tone, {
+    Map<String, String> headers = const {},
+    bool throttled = false,
+  }) {
     final length = tone.length;
-    final headers = {
-      ..._corsHeaders,
+    final answer = {
+      ...headers,
       'content-type': 'audio/wav',
       'accept-ranges': 'bytes',
     };
@@ -203,7 +216,7 @@ final class ToneServer {
       final from = match?.group(1) ?? '';
       final to = match?.group(2) ?? '';
       if (match == null || (from.isEmpty && to.isEmpty)) {
-        return _unsatisfiable(headers, length);
+        return _unsatisfiable(answer, length);
       }
       if (from.isEmpty) {
         start = math.max(0, length - int.parse(to));
@@ -212,17 +225,17 @@ final class ToneServer {
         if (to.isNotEmpty) end = math.min(end, int.parse(to));
       }
       if (start >= length || start > end) {
-        return _unsatisfiable(headers, length);
+        return _unsatisfiable(answer, length);
       }
       status = 206;
-      headers['content-range'] = 'bytes $start-$end/$length';
+      answer['content-range'] = 'bytes $start-$end/$length';
     }
-    headers['content-length'] = '${end - start + 1}';
-    if (request.method == 'HEAD') return Response(status, headers: headers);
+    answer['content-length'] = '${end - start + 1}';
+    if (request.method == 'HEAD') return Response(status, headers: answer);
     final body = Uint8List.sublistView(tone, start, end + 1);
     return Response(
       status,
-      headers: headers,
+      headers: answer,
       body: throttled ? _throttle(body) : body,
     );
   }

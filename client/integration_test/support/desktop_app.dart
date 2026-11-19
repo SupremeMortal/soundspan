@@ -9,6 +9,7 @@ library;
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart' show FlutterError, debugPrint;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -77,7 +78,7 @@ final class DesktopApiServer {
   static const Duration trackLength = Duration(seconds: 30);
 
   final HttpServer _server;
-  late final List<int> _tone = ToneServer.wav(trackLength);
+  late final Uint8List _tone = ToneServer.wav(trackLength);
 
   /// The paths requested, in order.
   final List<String> requested = [];
@@ -98,14 +99,8 @@ final class DesktopApiServer {
     final path = '/${request.url.path}';
     requested.add('${request.method} $path');
     if (path.startsWith('/api/playback/stream/')) {
-      return Response.ok(
-        _tone,
-        headers: {
-          'content-type': 'audio/wav',
-          'content-length': '${_tone.length}',
-          'accept-ranges': 'none',
-        },
-      );
+      // With byte ranges, as AVPlayer (JustAudioEngine on macOS) needs.
+      return ToneServer.wavResponse(request, _tone);
     }
     if (path.startsWith('/api/playback/stream-info/')) {
       return _json({
@@ -322,16 +317,20 @@ Future<void> _seedProfile(
 }
 
 /// Pumps in real time until [done] holds, failing with [reason] after
-/// [timeout].
+/// [timeout]; the failure adds what [diagnostics] returns then, if given.
 Future<void> pumpUntil(
   WidgetTester tester,
   bool Function() done, {
   required String reason,
   Duration timeout = const Duration(seconds: 30),
+  String Function()? diagnostics,
 }) async {
   final watch = Stopwatch()..start();
   while (!done()) {
-    if (watch.elapsed > timeout) fail('Timed out: $reason');
+    if (watch.elapsed > timeout) {
+      final extra = diagnostics == null ? '' : '\n${diagnostics()}';
+      fail('Timed out: $reason$extra');
+    }
     await tester.runAsync(
       () => Future<void>.delayed(const Duration(milliseconds: 100)),
     );

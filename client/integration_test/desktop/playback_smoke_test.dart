@@ -62,6 +62,13 @@ void main() {
           controller.snapshot.playing &&
           controller.snapshot.position > const Duration(milliseconds: 500),
       reason: 'the first track plays',
+      diagnostics: () {
+        final snapshot = controller.snapshot;
+        return 'status: ${snapshot.status}, playing: ${snapshot.playing}, '
+            'position: ${snapshot.position}, '
+            'error: ${snapshot.error?.kind}\n'
+            'requests: ${server.requested.join(', ')}';
+      },
     );
     final before = controller.snapshot.position;
     await pumpUntil(
