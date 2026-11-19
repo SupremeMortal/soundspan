@@ -886,7 +886,7 @@ void main() {
         'a.entitlements',
         _entitlements.replaceFirst(
           '<key>keychain-access-groups</key>\n  <array>\n'
-          '    <string>ABCDE12345.io.soundspan.app</string>\n  </array>',
+              '    <string>ABCDE12345.io.soundspan.app</string>\n  </array>',
           '',
         ),
       );
@@ -1029,7 +1029,10 @@ void main() {
       'adhoc.entitlements',
     ]);
     expect(violations.first.entry, startsWith('CFBundleURLTypes'));
-    expect(violations.last.toString(), endsWith('unexpected keychain-access-groups'));
+    expect(
+      violations.last.toString(),
+      endsWith('unexpected keychain-access-groups'),
+    );
   });
 
   test('the source files pass', () {
