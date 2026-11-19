@@ -8,9 +8,11 @@
 #   3. checks the built Info.plist and the signed entitlements (the ad-hoc
 #      ones, without keychain-access-groups) with
 #      tool/check_platform_config.dart;
-#   4. launches the executable, expects it alive after 20 s with a log file
-#      in its container, opens soundspan://album/smoke, expects it alive 5 s
-#      later, and quits it;
+#   4. launches the executable, expects it alive after 20 s, expects a log
+#      file in its container (when start-up wrote none, within 15 s of
+#      opening soundspan://smoke-log, an unknown link the app ignores and
+#      logs), opens soundspan://album/smoke, expects it alive 5 s later, and
+#      quits it;
 #   5. detaches the image.
 # On failure it copies to the diagnostics directory the app logs, the last
 # two minutes of the unified log for the process and for the services that
@@ -108,7 +110,18 @@ app_pid=$!
 echo "smoke: launched pid $app_pid"
 sleep 20
 kill -0 "$app_pid" 2> /dev/null || fail "the app exited within 20 s"
-logs="$(find "$container" -path '*/logs/*.log' 2> /dev/null || true)"
+find_logs() { find "$container" -path '*/logs/*.log' 2> /dev/null || true; }
+logs="$(find_logs)"
+if [[ -z "$logs" ]]; then
+  # A release build logs nothing at start-up; the router logs the link with
+  # an unknown host it ignores, which makes the first entry.
+  open -a "$app" 'soundspan://smoke-log'
+  for _ in $(seq 1 15); do
+    logs="$(find_logs)"
+    [[ -n "$logs" ]] && break
+    sleep 1
+  done
+fi
 [[ -n "$logs" ]] || fail "no log file under $container"
 echo "smoke: log files: $logs"
 open -a "$app" 'soundspan://album/smoke'
