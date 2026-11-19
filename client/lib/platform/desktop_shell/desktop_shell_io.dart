@@ -2,6 +2,7 @@
 
 import 'dart:async';
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:dbus/dbus.dart';
 import 'package:flutter/foundation.dart' show visibleForTesting;
@@ -73,6 +74,9 @@ class WindowManagerDesktopShell implements DesktopShell {
   /// How long a re-application is given to land before the next one.
   static const Duration _reapplyGap = Duration(milliseconds: 120);
 
+  /// The size set by [setMinimumSize], which [setBounds] never goes below.
+  Size? _minimumSize;
+
   Window get _current => _window ?? (throw StateError('init() not called'));
 
   /// Attaches to the window; a later call does nothing.
@@ -110,8 +114,10 @@ class WindowManagerDesktopShell implements DesktopShell {
   }
 
   @override
-  Future<void> setMinimumSize(Size size) async =>
-      _current.minimumSize = size.toNative();
+  Future<void> setMinimumSize(Size size) async {
+    _minimumSize = size;
+    _current.minimumSize = size.toNative();
+  }
 
   @override
   Future<WindowBounds?> getBounds() async {
@@ -127,13 +133,29 @@ class WindowManagerDesktopShell implements DesktopShell {
   /// Moves and resizes the window. On Linux the window manager's title bar
   /// cannot be measured while the window is hidden, so a request made then
   /// sizes the content, not the frame; [showAndFocus] re-applies it once
-  /// the shown window measures them.
+  /// the shown window measures them. A size below the one set by
+  /// [setMinimumSize] is grown to it, since macOS applies a programmatic
+  /// frame as given.
   @override
-  Future<void> setBounds(WindowBounds bounds) async {
+  Future<void> setBounds(WindowBounds requested) async {
     _requests++;
     final window = _current;
+    final bounds = atLeast(requested, _minimumSize);
     _hiddenRequest = Platform.isLinux && !window.isVisible ? bounds : null;
     _apply(window, bounds);
+  }
+
+  /// [bounds] with its width and height grown to at least [minimum]'s,
+  /// keeping its position; as given when [minimum] is null.
+  @visibleForTesting
+  static WindowBounds atLeast(WindowBounds bounds, Size? minimum) {
+    if (minimum == null) return bounds;
+    return WindowBounds(
+      left: bounds.left,
+      top: bounds.top,
+      width: math.max(bounds.width, minimum.width),
+      height: math.max(bounds.height, minimum.height),
+    );
   }
 
   static void _apply(Window window, WindowBounds bounds) =>
