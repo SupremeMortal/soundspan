@@ -115,6 +115,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Client
 
+- On iOS and macOS the native client no longer shows a track as playing, with its position moving, before the player has actually started; the position it shows no longer jumps back a little while a track plays.
 - On macOS the native client's window can no longer be resized below 480 × 600 by a saved or requested size; such a request is grown to the minimum, as on Linux and Windows.
 - The app in the unsigned macOS disk image starts again. It was signed ad hoc with the keychain entitlement that macOS reserves for apps signed with a developer account, and macOS killed it at launch. Because these test builds are unsigned, a saved sign-in may not survive a restart of the app.
 - On Linux the native client waits at most 2 seconds for the session bus when it looks for a tray host at start-up; a bus that does not answer counts as no tray, so the window still opens.

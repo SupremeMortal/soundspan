@@ -142,3 +142,70 @@ Duration? reportedPosition({
   }
   return position;
 }
+
+/// The status and position `JustAudioEngine` reports while one item plays.
+///
+/// `just_audio` marks itself playing as soon as `play` is called, and while
+/// playing and ready it extrapolates the position from its last update. On
+/// iOS and macOS AVPlayer may not have started yet: it can wait to play
+/// first, and its own position then arrives lower than the extrapolated one.
+/// With [confirmStart], after a play request ([playRequested]) a `ready`
+/// player is reported as `buffering`, at the position of its last update,
+/// until the player sends an update of its own that is `ready` while
+/// playing. Whatever the player reports, the position never moves backwards
+/// until [restart] (a seek or a new item) or [reset]. No position is
+/// invented: a held position is one the player reported.
+final class PlayingReport {
+  /// Creates the rule; [confirmStart] on iOS and macOS.
+  new({required this.confirmStart});
+
+  /// Whether `ready` waits for the player to confirm a play request.
+  final bool confirmStart;
+
+  Object? _requested;
+  Duration? _floor;
+
+  /// Records a play request on a player that was not playing. [event] is
+  /// the player's playback event right after the request, the one `just_audio`
+  /// makes up itself; only a different one can confirm the start.
+  void playRequested(Object event) {
+    if (confirmStart) _requested = event;
+  }
+
+  /// Lets the position start again from anywhere: a seek or a new item.
+  void restart() => _floor = null;
+
+  /// Forgets a pending play request and the position: a load or a stop.
+  void reset() {
+    _requested = null;
+    _floor = null;
+  }
+
+  /// What to report for the player's [status], [playing] flag and
+  /// [position] (extrapolated by `just_audio`), when its latest playback
+  /// event is [event] at [eventPosition].
+  ({EngineStatus status, Duration position}) next({
+    required Object event,
+    required EngineStatus status,
+    required bool playing,
+    required Duration position,
+    required Duration eventPosition,
+  }) {
+    final requested = _requested;
+    if (requested != null &&
+        (!playing ||
+            (!identical(event, requested) && status == EngineStatus.ready))) {
+      _requested = null;
+    }
+    var reportedStatus = status;
+    var reported = position;
+    if (_requested != null && status == EngineStatus.ready) {
+      reportedStatus = EngineStatus.buffering;
+      reported = eventPosition;
+    }
+    final floor = _floor;
+    if (floor != null && reported < floor) reported = floor;
+    _floor = reported;
+    return (status: reportedStatus, position: reported);
+  }
+}

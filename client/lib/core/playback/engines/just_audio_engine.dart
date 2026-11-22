@@ -24,7 +24,9 @@ final class JustAudioEngine implements PlayerEngine {
     required this.family,
     required this._statusOf,
     this.reloadOnSetNext = false,
-  }) {
+  }) : _playingReport = PlayingReport(
+         confirmStart: family == PlayerFamily.darwin,
+       ) {
     _subscriptions
       ..add(
         _player.playbackEventStream.listen(
@@ -51,6 +53,10 @@ final class JustAudioEngine implements PlayerEngine {
   final bool reloadOnSetNext;
 
   final StreamStatusOf _statusOf;
+
+  /// Holds `ready` until AVPlayer confirms a start, and the position from
+  /// moving backwards, while one item plays.
+  final PlayingReport _playingReport;
 
   final AudioPlayer _player = AudioPlayer(
     handleInterruptions: false,
@@ -118,6 +124,7 @@ final class JustAudioEngine implements PlayerEngine {
     _ended = false;
     _loading = true;
     _sinceAdvance = null;
+    _playingReport.reset();
     _report();
     await _run(() async {
       try {
@@ -129,8 +136,9 @@ final class JustAudioEngine implements PlayerEngine {
         );
         if (generation != _generation) return;
         _loading = false;
+        _playingReport.restart();
+        if (autoPlay) _requestPlay();
         _report();
-        if (autoPlay) unawaited(_player.play().catchError((Object _) {}));
       } on PlayerInterruptedException {
         // A newer load or stop replaced this one.
       } on Object catch (error) {
@@ -174,7 +182,7 @@ final class JustAudioEngine implements PlayerEngine {
   Future<void> play() async {
     _checkNotDisposed();
     if (_current == null || _error != null) return;
-    unawaited(_player.play().catchError((Object _) {}));
+    _requestPlay();
   }
 
   @override
@@ -192,7 +200,9 @@ final class JustAudioEngine implements PlayerEngine {
     if (duration != null && target > duration) target = duration;
     _ended = false;
     _sinceAdvance = null;
+    _playingReport.restart();
     await _player.seek(target);
+    _playingReport.restart();
     _report();
   }
 
@@ -207,6 +217,7 @@ final class JustAudioEngine implements PlayerEngine {
     _loading = false;
     _ended = false;
     _sinceAdvance = null;
+    _playingReport.reset();
     _report();
     await _run(() async {
       await _player.stop();
@@ -239,6 +250,15 @@ final class JustAudioEngine implements PlayerEngine {
     await _player.dispose();
     await _states.close();
     await _events.close();
+  }
+
+  /// Asks the player to play. A request on a player that is not playing yet
+  /// is recorded with the event `just_audio` makes up for it, so the start
+  /// is only reported once the player itself confirms it.
+  void _requestPlay() {
+    final wasPlaying = _player.playing;
+    unawaited(_player.play().catchError((Object _) {}));
+    if (!wasPlaying) _playingReport.playRequested(_player.playbackEvent);
   }
 
   void _checkNotDisposed() {
@@ -287,6 +307,7 @@ final class JustAudioEngine implements PlayerEngine {
         _current = _next;
         _next = null;
         _sinceAdvance = Stopwatch()..start();
+        _playingReport.restart();
         _report();
         _events.add(event);
         final generation = _generation;
@@ -407,6 +428,7 @@ final class JustAudioEngine implements PlayerEngine {
       status = player == EngineStatus.ended ? EngineStatus.ready : player;
     }
     final duration = current == null ? null : _player.duration;
+    var reportedStatus = status;
     var position = Duration.zero;
     if (current != null) {
       final reported = reportedPosition(
@@ -429,14 +451,32 @@ final class JustAudioEngine implements PlayerEngine {
       }
       _sinceAdvance = null;
       position = reported;
+      if (status == EngineStatus.ready || status == EngineStatus.buffering) {
+        final event = _player.playbackEvent;
+        final playing = _playingReport.next(
+          event: event,
+          status: status,
+          playing: _player.playing,
+          position: position,
+          eventPosition:
+              reportedPosition(
+                raw: event.updatePosition,
+                duration: duration,
+                ended: false,
+              ) ??
+              position,
+        );
+        reportedStatus = playing.status;
+        position = playing.position;
+      }
     }
     final next = EngineState(
-      status: status,
+      status: reportedStatus,
       playing:
           _player.playing &&
-          (status == EngineStatus.ready ||
-              status == EngineStatus.buffering ||
-              status == EngineStatus.loading),
+          (reportedStatus == EngineStatus.ready ||
+              reportedStatus == EngineStatus.buffering ||
+              reportedStatus == EngineStatus.loading),
       currentQueueItemId: current?.queueItemId,
       position: position,
       bufferedPosition: current == null

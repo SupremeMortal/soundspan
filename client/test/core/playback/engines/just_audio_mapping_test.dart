@@ -332,4 +332,188 @@ void main() {
       );
     });
   });
+
+  group('PlayingReport', () {
+    const ready = EngineStatus.ready;
+    const buffering = EngineStatus.buffering;
+
+    Duration ms(num value) => Duration(microseconds: (value * 1000).round());
+
+    test('reproduces the iOS load and play failure without going backwards '
+        'or reporting ready before the player confirms', () {
+      final report = PlayingReport(confirmStart: true);
+      // The player finished loading item a, paused at zero.
+      final loaded = Object();
+      expect(
+        report.next(
+          event: loaded,
+          status: ready,
+          playing: false,
+          position: Duration.zero,
+          eventPosition: Duration.zero,
+        ),
+        (status: ready, position: Duration.zero),
+      );
+
+      // play(): just_audio marks itself playing with an event of its own and
+      // extrapolates from it, before AVPlayer has started.
+      final requested = Object();
+      report.playRequested(requested);
+      expect(
+        report.next(
+          event: requested,
+          status: ready,
+          playing: true,
+          position: ms(6.322),
+          eventPosition: Duration.zero,
+        ),
+        (status: buffering, position: Duration.zero),
+      );
+
+      // AVPlayer waits to play: buffering at its own position.
+      final waiting = Object();
+      expect(
+        report.next(
+          event: waiting,
+          status: buffering,
+          playing: true,
+          position: Duration.zero,
+          eventPosition: Duration.zero,
+        ),
+        (status: buffering, position: Duration.zero),
+      );
+
+      // AVPlayer plays: the first ready report is the player's own position.
+      final playing = Object();
+      final confirmed = report.next(
+        event: playing,
+        status: ready,
+        playing: true,
+        position: ms(1.142),
+        eventPosition: ms(1.142),
+      );
+      expect(confirmed, (status: ready, position: ms(1.142)));
+
+      // From there the position only moves on.
+      expect(
+        report
+            .next(
+              event: playing,
+              status: ready,
+              playing: true,
+              position: ms(101.5),
+              eventPosition: ms(1.142),
+            )
+            .position,
+        ms(101.5),
+      );
+    });
+
+    test('never reports a lower position while one item plays', () {
+      final report = PlayingReport(confirmStart: false);
+      final event = Object();
+      Duration at(Duration position, {EngineStatus status = ready}) => report
+          .next(
+            event: event,
+            status: status,
+            playing: true,
+            position: position,
+            eventPosition: position,
+          )
+          .position;
+
+      expect(at(ms(6.322)), ms(6.322));
+      expect(at(ms(1.142)), ms(6.322));
+      expect(at(ms(300)), ms(300));
+      // A stall the player detects late reports its true, lower position.
+      expect(at(ms(120), status: buffering), ms(300));
+      expect(at(ms(350)), ms(350));
+    });
+
+    test('restart lets a seek or a new item report a lower position', () {
+      final report = PlayingReport(confirmStart: false);
+      final event = Object();
+      Duration at(Duration position) => report
+          .next(
+            event: event,
+            status: ready,
+            playing: true,
+            position: position,
+            eventPosition: position,
+          )
+          .position;
+
+      expect(at(const Duration(seconds: 2)), const Duration(seconds: 2));
+      report.restart();
+      expect(at(ms(500)), ms(500));
+    });
+
+    test('without confirmStart, ready is reported as soon as the player '
+        'says so', () {
+      final report = PlayingReport(confirmStart: false);
+      final requested = Object();
+      report.playRequested(requested);
+      expect(
+        report.next(
+          event: requested,
+          status: ready,
+          playing: true,
+          position: ms(6),
+          eventPosition: Duration.zero,
+        ),
+        (status: ready, position: ms(6)),
+      );
+    });
+
+    test('a pause before the player confirms ends the wait', () {
+      final report = PlayingReport(confirmStart: true);
+      final requested = Object();
+      report.playRequested(requested);
+      expect(
+        report
+            .next(
+              event: requested,
+              status: ready,
+              playing: false,
+              position: Duration.zero,
+              eventPosition: Duration.zero,
+            )
+            .status,
+        ready,
+      );
+      // A later report of the same event while playing is not held back.
+      expect(
+        report
+            .next(
+              event: requested,
+              status: ready,
+              playing: true,
+              position: ms(10),
+              eventPosition: Duration.zero,
+            )
+            .status,
+        ready,
+      );
+    });
+
+    test('reset forgets a pending request', () {
+      final report = PlayingReport(confirmStart: true);
+      final requested = Object();
+      report
+        ..playRequested(requested)
+        ..reset();
+      expect(
+        report
+            .next(
+              event: requested,
+              status: ready,
+              playing: true,
+              position: ms(10),
+              eventPosition: Duration.zero,
+            )
+            .status,
+        ready,
+      );
+    });
+  });
 }
